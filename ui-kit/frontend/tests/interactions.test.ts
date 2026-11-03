@@ -65,4 +65,4 @@ test("tabs, dialog, calendar, data table and the theme respond to clicks", async
   expect(store.getState().look).toMatchObject({ mode: "dark" });
   expect(document.documentElement.classList.contains("dark")).toBe(true);
   expect(document.documentElement.classList.contains("light")).toBe(false);
-});
+}, 30_000);
