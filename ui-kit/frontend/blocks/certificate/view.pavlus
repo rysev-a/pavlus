@@ -1,0 +1,18 @@
+// A certificate of completion, to embed. State = the props (from `props` in
+// certificate.ts): name, course, date, facts ([{ label, value }]), serial.
+article.k-cert(aria-label="Certificate of completion")
+  div.k-cert__frame
+    span.k-cert__seal 🎓
+    p.k-cert__kicker Certificate of completion
+    p.k-cert__lead This certifies that
+    h2.k-cert__name {name}
+    p.k-cert__lead has successfully completed the course
+    h3.k-cert__course {course}
+    ul.k-cert__facts
+      for fact in facts key fact.label
+        li
+          strong {fact.value}
+          small {fact.label}
+    div.k-cert__foot
+      span {date}
+      span No. {serial}

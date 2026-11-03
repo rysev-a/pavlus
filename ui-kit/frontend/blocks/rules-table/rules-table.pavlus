@@ -1,0 +1,8 @@
+import Rules from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Inbound rules
+    p.k-demo__note Try a port of 70000, a source of 10.0.0.999, or the same rule twice. SSH from everywhere is flagged as open to the world.
+    div.k-preview.k-preview--block
+      +Rules#rules(...rules)

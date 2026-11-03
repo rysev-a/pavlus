@@ -1,0 +1,20 @@
+.k-mch { display: grid; gap: calc(14px * var(--k-block, 1)); min-width: 0; }
+.k-mch__top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.k-mch__label { color: var(--muted-foreground); font-size: 13px; }
+.k-mch__ranges { display: inline-flex; padding: 3px; border-radius: var(--radius-md); background: var(--muted); }
+.k-mch__range { padding: 4px 12px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--muted-foreground); font: inherit; font-size: 13px; cursor: pointer; }
+.k-mch__range.is-on { background: var(--background); color: var(--foreground); box-shadow: var(--shadow-xs); }
+.k-mch__range:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+.k-mch__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: calc(14px * var(--k-block, 1)); }
+.k-mch__card { display: grid; gap: 8px; min-width: 0; padding: calc(14px * var(--k-block, 1)) calc(16px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); color: var(--card-foreground); }
+.k-mch__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.k-mch__title { margin: 0; font-size: 13px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: .05em; }
+.k-mch__now { font-size: 20px; font-variant-numeric: tabular-nums; }
+.k-mch__plot { display: flex; align-items: flex-end; gap: 2px; height: 92px; padding-bottom: 1px; border-bottom: 1px solid var(--border); background: repeating-linear-gradient(to top, transparent 0 22px, color-mix(in srgb, var(--border) 60%, transparent) 22px 23px); }
+.k-mch__col { display: flex; flex: 1; align-items: flex-end; height: 100%; min-width: 0; }
+.k-mch__fill { display: block; width: 100%; min-height: 2px; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--t) 55%, transparent); transition: height .25s ease; }
+.k-mch__fill.is-hot { background: var(--destructive); }
+.k-mch__fill.is-last { background: var(--t); }
+.k-mch__col:hover .k-mch__fill { background: var(--t); }
+.k-mch__axis { display: flex; justify-content: space-between; color: var(--muted-foreground); font-size: 11px; }
+.k-mch__detail { color: var(--muted-foreground); font-size: 12.5px; font-variant-numeric: tabular-nums; }

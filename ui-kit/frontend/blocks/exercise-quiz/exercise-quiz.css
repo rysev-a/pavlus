@@ -1,0 +1,19 @@
+.k-exq { display: grid; gap: calc(12px * var(--k-block, 1)); }
+.k-exq__prompt { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.45; }
+.k-exq__hint { margin: 0; color: var(--muted-foreground); font-size: 13px; }
+.k-exq__options { display: grid; gap: calc(8px * var(--k-block, 1)); }
+.k-exq__opt { display: flex; align-items: center; gap: 12px; width: 100%; padding: calc(11px * var(--k-block, 1)) calc(14px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--foreground); font: inherit; text-align: left; cursor: pointer; transition: border-color .12s, background-color .12s; }
+.k-exq__opt:hover:not(:disabled) { border-color: var(--primary); }
+.k-exq__opt:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+.k-exq__opt:disabled { cursor: default; }
+.k-exq__opt.is-selected { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--background)); }
+.k-exq__opt.is-mono .k-exq__text { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 14px; }
+.k-exq__opt[data-mark="correct"] { border-color: var(--success); background: var(--success-bg); }
+.k-exq__opt[data-mark="wrong"] { border-color: var(--destructive); background: var(--danger-bg); }
+.k-exq__box { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border: 1.5px solid var(--input); border-radius: 5px; background: var(--background); color: var(--primary-foreground); }
+.k-exq__box--round { border-radius: 50%; }
+.k-exq__box .k-icon { width: 13px; height: 13px; }
+.k-exq__opt.is-selected .k-exq__box { border-color: var(--primary); background: var(--primary); }
+.k-exq__opt[data-mark="correct"] .k-exq__box { border-color: var(--success); background: var(--success); }
+.k-exq__opt[data-mark="wrong"] .k-exq__box { border-color: var(--destructive); background: var(--destructive); }
+.k-exq__text { flex: 1; min-width: 0; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }

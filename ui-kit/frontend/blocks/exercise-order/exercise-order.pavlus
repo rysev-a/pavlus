@@ -1,0 +1,13 @@
+import Order from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Put the commands in order
+    p.k-demo__note Two orders are right here: git add can come before or after the second line.
+    div.k-preview.k-preview--column
+      +Order#order(...order)
+      div.k-row
+        button.ui-button.ui-button-default.ui-button-sm(type="button" @click=check) Check
+        button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=shuffle) Shuffle again
+        if result
+          span(class="ui-pill ui-pill-{resultTone}") {result}
