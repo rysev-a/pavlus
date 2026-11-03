@@ -1,0 +1,11 @@
+import Card from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Sale, new and sold out
+    p.k-demo__note A cover is a gradient and an emoji. The first card has a quick view button; the last one is out of stock.
+    div.k-preview.k-preview--block
+      div.k-pcard-demo
+        for card in cards key card.id
+          +Card#card(...card)
+      p.k-hint(style="margin-top: 16px") {last}

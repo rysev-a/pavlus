@@ -1,0 +1,23 @@
+import Cart from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A cart and the shelf it fills from
+    p.k-demo__note Add things, change the quantity, try the code PAVLUS10. Shipping is free from $100; tax is 8%.
+    div.k-preview.k-preview--block
+      div.k-cart-demo
+        div.k-cart-demo__shelf
+          for item in items key item.id
+            div.k-cart-demo__item
+              span.k-cart__art(style="--hue: {item.hue}") {item.emoji}
+              div.k-cart__text
+                strong.k-cart__name {item.name}
+                span.k-cart__variant {item.priceLabel}
+              button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=addDemo(item.id)) Add
+        div.k-cart-demo__cart
+          +Cart#cart(...cart)
+  section.k-demo
+    h2.k-demo__title The empty cart
+    div.k-preview.k-preview--block
+      div.k-narrow
+        +Cart#blank(...blank)

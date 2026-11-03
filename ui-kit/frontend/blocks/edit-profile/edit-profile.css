@@ -1,0 +1,13 @@
+.k-ep-card { width: min(100%, 36rem); }
+.k-ep-card .ui-card-content { padding: calc(24px * var(--k-block, 1)); }
+.k-ep .ui-form { gap: calc(16px * var(--k-block, 1)); }
+.k-ep-who { display: flex; align-items: center; gap: calc(16px * var(--k-block, 1)); }
+.k-ep .k-ep-avatar { width: 64px; height: 64px; font-size: 22px; flex: none; }
+.k-ep-who-text { min-width: 0; }
+.k-ep-who-name { margin: 0; font-size: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-ep-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: calc(16px * var(--k-block, 1)); }
+.k-ep-count { display: flex; justify-content: space-between; gap: 12px; }
+.k-ep-counter { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted-foreground); }
+.k-ep-counter[data-low="true"] { color: var(--destructive); font-weight: 600; }
+.k-ep-notify { display: grid; gap: calc(12px * var(--k-block, 1)); margin: 0; padding: 0; border: 0; }
+.k-ep-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }

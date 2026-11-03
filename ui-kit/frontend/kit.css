@@ -181,3 +181,123 @@
 .k-field-row { display: flex; gap: 8px; }
 .k-dismiss { position: fixed; inset: 0; z-index: 40; background: transparent; }
 .k-above { position: relative; z-index: 50; }
+
+/* ---- the top menu ---- */
+.k-topmenu { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.k-topmenu__link { padding: 6px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--muted-foreground); white-space: nowrap; transition: background-color .15s, color .15s; }
+.k-topmenu__link:hover { background: var(--accent); color: var(--accent-foreground); }
+.k-topmenu__link.is-active { background: var(--accent); color: var(--foreground); }
+.k-topmenu__link:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+.ui-shell-header-start { padding-left: 0; }
+@media (max-width: 640px) {
+  .k-topmenu__link { padding: 6px 8px; font-size: 13px; }
+  .k-github { display: none; }
+}
+.k-wide.ui-shell-content { max-width: none; padding-inline: 0; padding-top: 12px; }
+.k-template-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0 16px 12px; font-size: 13px; }
+.k-template-bar a { color: var(--muted-foreground); }
+.k-template-bar a:hover { color: var(--foreground); text-decoration: underline; }
+.k-template-bar__sep { color: var(--muted-foreground); }
+.home__grid--wide { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.home__card .ui-card-description { font-size: 13px; }
+
+/* ---- the configurator ---- */
+.k-demo__sub { margin: 8px 0 0; font-size: 13px; font-weight: 500; color: var(--muted-foreground); }
+.k-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.k-option {
+  display: grid; align-content: start; gap: 4px; padding: 16px; text-align: left;
+  border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); color: var(--card-foreground);
+  cursor: pointer; transition: border-color .15s, box-shadow .15s, background-color .15s;
+}
+.k-option:hover { background: var(--accent); }
+.k-option.is-active { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.k-option:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+.k-option__name { font-size: 14px; font-weight: 600; }
+.k-option__note { font-size: 12px; color: var(--muted-foreground); line-height: 1.4; }
+.k-option__sample { font-size: 28px; line-height: 1.1; }
+.k-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.k-swatch {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-md);
+  font-size: 13px; font-weight: 500; text-align: left; cursor: pointer; transition: transform .1s, box-shadow .15s;
+}
+.k-swatch:hover { transform: translateY(-1px); }
+.k-swatch.is-active { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary); }
+.k-swatch:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+.k-swatch__dot { flex: none; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 1px rgb(0 0 0 / .15); }
+.k-size-rows { display: grid; gap: 12px; }
+.k-size-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.k-size-row__label { min-width: 80px; font-size: 14px; font-weight: 500; }
+.k-theming-preview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; width: 100%; }
+.k-theming-preview__col { display: grid; gap: 16px; }
+@media (max-width: 800px) { .k-theming-preview { grid-template-columns: minmax(0, 1fr); } }
+.k-code-block { margin: 0; padding: 16px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--muted); font-family: var(--font-mono); font-size: 12px; line-height: 1.6; max-height: 320px; }
+
+/* ---- sizes: the three scales (--k-ui, --k-text, --k-block). Font sizes and
+   control heights are scaled where the stylesheets are loaded (vite.config.mjs);
+   the paddings and gaps of blocks are here. ---- */
+.ui-card-header { padding: calc(24px * var(--k-block, 1)) calc(24px * var(--k-block, 1)) 0; }
+.ui-card-content, .ui-card-content:first-child { padding: calc(24px * var(--k-block, 1)); }
+.ui-card-footer { padding: 0 calc(24px * var(--k-block, 1)) calc(24px * var(--k-block, 1)); }
+.ui-form { gap: calc(24px * var(--k-block, 1)); }
+.ui-field-group { gap: calc(20px * var(--k-block, 1)); }
+.ui-fieldset { gap: calc(16px * var(--k-block, 1)); }
+.ui-page-header { margin-bottom: calc(24px * var(--k-block, 1)); }
+.ui-shell-content { padding: calc(24px * var(--k-block, 1)) calc(16px * var(--k-block, 1)) calc(32px * var(--k-block, 1)); }
+.ui-shell-content > * + *:not(dialog) { margin-top: calc(24px * var(--k-block, 1)); }
+.ui-shell-content > .ui-page-header + *:not(dialog) { margin-top: calc(24px * var(--k-block, 1)); }
+.k-demo { margin-top: calc(28px * var(--k-block, 1)); gap: calc(12px * var(--k-block, 1)); }
+.k-preview { padding: calc(24px * var(--k-block, 1)); gap: calc(12px * var(--k-block, 1)); }
+.k-wide.ui-shell-content { padding-inline: 0; }
+.k-block { padding: calc(24px * var(--k-block, 1)); }
+.k-block-gap { gap: calc(16px * var(--k-block, 1)); }
+
+/* ---- styles (html[data-style]; the radius is --radius, set by the look) ---- */
+html[data-style="official"] { --shadow-xs: none; --shadow-sm: none; --shadow-md: 0 1px 0 rgb(0 0 0 / .1); --shadow-lg: 0 2px 0 rgb(0 0 0 / .12); }
+html[data-style="official"] .ui-badge, html[data-style="official"] .ui-pill,
+html[data-style="official"] .ui-avatar, html[data-style="official"] .ui-avatar-fallback,
+html[data-style="official"] .ui-person-avatar, html[data-style="official"] .ui-progress,
+html[data-style="official"] .ui-progress-indicator, html[data-style="official"] .ui-switch-input,
+html[data-style="official"] .ui-switch-input::before, html[data-style="official"] .ui-skeleton-circle { border-radius: 0; }
+html[data-style="official"] .ui-page-title, html[data-style="official"] .ui-card-title { letter-spacing: 0; font-weight: 700; }
+html[data-style="official"] .ui-button { text-transform: none; letter-spacing: .01em; }
+html[data-style="official"] .ui-card, html[data-style="official"] .ui-alert { border-color: color-mix(in srgb, var(--foreground) 35%, var(--border)); }
+
+html[data-style="casual"] { --shadow-sm: 0 6px 18px rgb(0 0 0 / .07); --shadow-xs: 0 2px 6px rgb(0 0 0 / .05); --shadow-md: 0 10px 28px rgb(0 0 0 / .1); }
+html[data-style="casual"] .ui-button, html[data-style="casual"] .ui-input, html[data-style="casual"] .ui-select-control,
+html[data-style="casual"] .ui-tabs-list, html[data-style="casual"] .ui-tabs-trigger, html[data-style="casual"] .ui-command-input { border-radius: 999px; }
+html[data-style="casual"] .ui-card { border-color: transparent; }
+html[data-style="casual"] .ui-page-title { letter-spacing: -.01em; }
+
+html[data-style="funny"] { --shadow-xs: none; --shadow-sm: 4px 4px 0 var(--foreground); --shadow-md: 5px 5px 0 var(--foreground); --shadow-lg: 8px 8px 0 var(--foreground); }
+html[data-style="funny"] .ui-card, html[data-style="funny"] .ui-alert, html[data-style="funny"] .ui-input,
+html[data-style="funny"] .ui-select-control, html[data-style="funny"] .ui-textarea-control, html[data-style="funny"] .ui-data-table,
+html[data-style="funny"] .ui-stat-card, html[data-style="funny"] .ui-accordion, html[data-style="funny"] .k-preview { border: 2px solid var(--foreground); }
+html[data-style="funny"] .ui-button:not(.ui-button-ghost):not(.ui-button-link) { border: 2px solid var(--foreground); box-shadow: 3px 3px 0 var(--foreground); transition: transform .12s, box-shadow .12s, background-color .15s; }
+html[data-style="funny"] .ui-button:not(.ui-button-ghost):not(.ui-button-link):hover { transform: translate(-1px, -1px) rotate(-1.2deg); box-shadow: 5px 5px 0 var(--foreground); }
+html[data-style="funny"] .ui-button:not(.ui-button-ghost):not(.ui-button-link):active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--foreground); }
+html[data-style="funny"] .ui-badge, html[data-style="funny"] .ui-pill { border: 2px solid var(--foreground); }
+html[data-style="funny"] .ui-page-title { transform: rotate(-1deg); transform-origin: left; }
+html[data-style="funny"] .ui-sidebar-button[data-active="true"] { box-shadow: 2px 2px 0 var(--foreground); }
+
+html[data-style="cs"] { --shadow-xs: none; --shadow-sm: none; --shadow-md: none; --shadow-lg: 0 0 0 1px var(--border); }
+html[data-style="cs"] .ui-card, html[data-style="cs"] .ui-alert, html[data-style="cs"] .ui-data-table { border-style: dashed; }
+html[data-style="cs"] .ui-badge, html[data-style="cs"] .ui-pill, html[data-style="cs"] .ui-avatar, html[data-style="cs"] .ui-avatar-fallback,
+html[data-style="cs"] .ui-person-avatar { border-radius: 2px; }
+html[data-style="cs"] .ui-badge, html[data-style="cs"] .ui-pill { text-transform: uppercase; letter-spacing: .05em; }
+html[data-style="cs"] .ui-page-title::before { content: "> "; color: var(--primary); }
+html[data-style="cs"] .ui-card-title::before { content: "# "; color: var(--muted-foreground); }
+html[data-style="cs"] .ui-switch-input, html[data-style="cs"] .ui-switch-input::before, html[data-style="cs"] .ui-progress,
+html[data-style="cs"] .ui-progress-indicator { border-radius: 2px; }
+
+html[data-style="biology"] .ui-card, html[data-style="biology"] .ui-alert, html[data-style="biology"] .ui-data-table,
+html[data-style="biology"] .k-preview, html[data-style="biology"] .k-option { border-radius: 32px 12px 32px 12px; }
+html[data-style="biology"] .ui-button { border-radius: 18px 6px 18px 6px; }
+html[data-style="biology"] .ui-input, html[data-style="biology"] .ui-select-control, html[data-style="biology"] .ui-textarea-control { border-radius: 14px 5px 14px 5px; }
+html[data-style="biology"] .ui-badge, html[data-style="biology"] .ui-pill { border-radius: 12px 4px 12px 4px; }
+html[data-style="biology"] .ui-avatar, html[data-style="biology"] .ui-avatar-fallback, html[data-style="biology"] .ui-person-avatar { border-radius: 60% 40% 55% 45% / 50% 55% 45% 50%; }
+html[data-style="biology"] .ui-tabs-list, html[data-style="biology"] .ui-tabs-trigger { border-radius: 14px 5px 14px 5px; }
+
+/* ---- narrow screens ---- */
+.ui-pagination-content { flex-wrap: wrap; justify-content: center; }
+.k-size-row .ui-button-group { max-width: 100%; overflow-x: auto; }
+.k-size-row { min-width: 0; }

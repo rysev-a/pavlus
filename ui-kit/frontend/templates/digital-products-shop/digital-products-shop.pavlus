@@ -1,0 +1,108 @@
+// The Digital Products Shop: built from the site-nav, hero, filter-bar,
+// product-grid, product-detail, shop-cart and checkout-summary blocks.
+import SiteNav from "../../blocks/site-nav/view.pavlus"
+import Hero from "../../blocks/hero/view.pavlus"
+import Bar from "../../blocks/filter-bar/view.pavlus"
+import Grid from "../../blocks/product-grid/view.pavlus"
+import Detail from "../../blocks/product-detail/view.pavlus"
+import Cart from "../../blocks/shop-cart/view.pavlus"
+import Confirm from "../../blocks/checkout-summary/view.pavlus"
+
+div.k-template.dp
+  div.dp-wrap
+    div.dp-bar
+      +SiteNav#nav(brand="Pixelcrate" links=links)
+      button.ui-button.ui-button-outline.dp-cart(type="button" aria-label="Open the cart, {cart.count} files" @click=openCart)
+        span.k-icon.k-cart-icon
+        | Cart
+        span.dp-cart__count(class:is-empty={cart.count === 0}) {cart.count}
+    section.dp-hero
+      +Hero#hero(align="center" eyebrow="3,400 files · new ones every week" title="Assets for the things you build" text="3D models, code plugins, UI kits and fonts from independent makers. Pay once, download instantly, use forever." primaryLabel="Browse the files" primaryHref="#files" secondaryLabel="How licenses work" secondaryHref="#licenses")
+      ul.dp-trust
+        li
+          span.k-icon.k-icon-check
+          | Instant download
+        li
+          span.k-icon.k-icon-check
+          | Lifetime updates
+        li
+          span.k-icon.k-icon-check
+          | 14-day refund
+    section.dp-shop#files
+      +Bar#bar(...bar)
+      +Grid#grid(cards=cards emptyTitle="No files match" emptyText="Try another type, a higher price or fewer words in the search.")
+    section.dp-licenses#licenses
+      h2.dp-h2 Two licenses, no surprises
+      div.dp-licenses__grid
+        div.ui-card
+          div.ui-card-header
+            span.ui-badge.ui-badge-secondary Personal
+            h3.ui-card-title For you and your hobby
+            p.ui-card-description Learning, portfolios, school work and projects that do not earn money.
+          div.ui-card-content
+            ul.dp-list
+              li
+                span.k-icon.k-icon-check
+                | One person, any number of projects
+              li
+                span.k-icon.k-icon-check
+                | No client work
+              li
+                span.k-icon.k-icon-check
+                | Credit appreciated
+        div.ui-card
+          div.ui-card-header
+            span.ui-badge.ui-badge-success Commercial
+            h3.ui-card-title For work that pays
+            p.ui-card-description Client projects, products you sell, apps, games and ads.
+          div.ui-card-content
+            ul.dp-list
+              li
+                span.k-icon.k-icon-check
+                | Up to 5 team members
+              li
+                span.k-icon.k-icon-check
+                | Unlimited end products
+              li
+                span.k-icon.k-icon-check
+                | No attribution needed
+    footer.dp-footer#help
+      div
+        strong Pixelcrate
+        p Files by independent makers. You buy, they get 80%.
+      div
+        strong Help
+        p Licenses · Refunds · Selling with us
+      p.dp-footer__fine Made with pavlus. The downloads in this demo are text files.
+
+  if cartOpen
+    div.k-modal.k-modal--sheet
+      div.k-modal__scrim(@click=closeCart)
+      div.ui-sheet.dp-drawer(role="dialog" aria-modal="true" aria-label="Your cart")
+        div.dp-drawer__head
+          h2.dp-drawer__title Your cart
+          span.ui-badge.ui-badge-secondary {cart.count}
+          button.ui-button.ui-button-ghost.ui-button-icon-sm.dp-drawer__close(type="button" aria-label="Close the cart" @click=closeCart)
+            span.k-icon.k-icon-x
+        div.dp-drawer__body
+          +Cart#cart(...cart)
+  if detail
+    div.k-modal
+      div.k-modal__scrim(@click=closeDetail)
+      div.ui-dialog.dp-dialog(role="dialog" aria-modal="true" aria-label=detail.title)
+        button.ui-button.ui-button-ghost.ui-button-icon-sm.dp-dialog__close(type="button" aria-label="Close" @click=closeDetail)
+          span.k-icon.k-icon-x
+        +Detail#detail(...detail)
+  if confirmation
+    div.k-modal
+      div.k-modal__scrim(@click=closeConfirmation)
+      div.ui-dialog.dp-dialog.dp-dialog--narrow(role="dialog" aria-modal="true" aria-label="Order placed")
+        +Confirm#confirm(...confirmation)
+  if toast
+    div.ui-toaster.ui-toaster-bottom-right(role="region" aria-label="Notifications")
+      div.ui-toast(data-measured data-expanded role="status" style="--toast-index: 0; --toast-height: 56px; --toast-offset-y: 0px; --toast-swipe-movement-x: 0px; --toast-swipe-movement-y: 0px")
+        div.ui-toast-content(data-expanded)
+          span.ui-toast-icon
+            span.k-icon.k-icon-check
+          div.ui-toast-body
+            p.ui-toast-title {toast}

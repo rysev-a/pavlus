@@ -1,0 +1,13 @@
+.k-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(164px, 1fr)); gap: calc(16px * var(--k-block, 1)); }
+.k-stat { gap: 2px; padding: calc(18px * var(--k-block, 1)); }
+.k-stat .ui-stat-card-top { margin-bottom: calc(8px * var(--k-block, 1)); }
+.k-stat .ui-stat-card-icon { width: 34px; height: 34px; }
+.k-stat__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 20px; font-size: 12px; }
+.k-stat__delta { font-weight: 600; font-variant-numeric: tabular-nums; }
+.k-stat__delta--up { color: var(--success-fg); }
+.k-stat__delta--down { color: var(--danger-fg); }
+.k-stat__delta--flat { color: var(--muted-foreground); }
+.k-stat__hint { color: var(--muted-foreground); }
+.k-stat__bars { display: flex; align-items: flex-end; gap: 3px; height: 36px; margin-top: calc(12px * var(--k-block, 1)); }
+.k-stat__bar { flex: 1; min-height: 3px; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--primary) 28%, transparent); transition: height .3s ease; }
+.k-stat__bar--last { background: var(--primary); }

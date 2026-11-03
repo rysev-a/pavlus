@@ -1,21 +1,29 @@
-// The shell: the sidebar with every component, the top bar, the page the
-// route selects, and the footer.
+// The shell: the top menu, the sidebar of the section, the page the route
+// selects, and the footer.
 import Sidebar from "./components/sidebar/sidebar.pavlus"
 import Header from "./components/header/header.pavlus"
 import Footer from "./components/footer/footer.pavlus"
 
-div.app.ui-shell(data-sidebar=sidebar)
+div.app.ui-shell(data-sidebar={hasNav ? sidebar : "closed"})
   aside.ui-shell-aside
-    +Sidebar#sidebar(nav=nav route=route root=root)
+    +Sidebar#sidebar(nav=nav route=route root=root section=section)
   div.ui-shell-scrim(@click=closeSidebar)
   div.ui-shell-body
-    +Header#header(theme=theme)
-    main.ui-shell-content
-      // the title of a component page comes from the registry, the pages hold only demos
+    +Header#header(menu=menu section=section mode=active.mode hasNav=hasNav root=root)
+    main.ui-shell-content(class:k-wide={section === "templates" && current})
       if current
-        div.ui-page-header
-          div
-            h1.ui-page-title {current.title}
-            p.ui-page-description {current.description}
+        if section === "templates"
+          // a template is a whole site: only a thin bar says which one
+          div.k-template-bar
+            a(href={root + "/templates"} @click.prevent=navigate("/templates")) Templates
+            span.k-template-bar__sep /
+            strong {current.title}
+            span.k-muted {current.description}
+        else
+          // the title of a component or block comes from its entry, the pages hold only demos
+          div.ui-page-header
+            div
+              h1.ui-page-title {current.title}
+              p.ui-page-description {current.description}
       +outlet
     +Footer#footer(current=current source=source)

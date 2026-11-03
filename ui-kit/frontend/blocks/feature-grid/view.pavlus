@@ -1,0 +1,10 @@
+// A grid of feature cards, to embed. State = the props: `items`, a list of
+// { icon, title, text } (icon = a glyph name, see glyphs.css), and `align`
+// ("center" or nothing).
+ul.k-fg(class:k-fg--center={align === "center"})
+  for item in items key item.title
+    li.k-fg__item
+      span.k-fg__icon
+        span.k-icon.k-icon-lg.k-glyph(data-glyph=item.icon)
+      h3.k-fg__title {item.title}
+      p.k-fg__text {item.text}

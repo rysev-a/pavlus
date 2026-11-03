@@ -1,0 +1,13 @@
+import Grid from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Sortable, with pills and actions
+    div.k-preview.k-preview--block
+      +Grid#grid(columns=columns rows=rows empty="No services." footer=footer pickable=false)
+    if message
+      p.k-demo__note {message}
+  section.k-demo
+    h2.k-demo__title Empty state
+    div.k-preview.k-preview--block
+      +Grid#none(columns=columns rows=nothing empty="Nothing matches your filters." footer="")

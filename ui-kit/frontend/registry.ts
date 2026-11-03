@@ -1,10 +1,24 @@
-/** Every shadcn component the kit shows: one page each, grouped in the sidebar. */
+import type { LookPreset } from "./theming.ts";
+
+/** The sections of the top menu. */
+export type Section = "components" | "blocks" | "templates" | "theming";
+
+/** One page of the kit: a component, a block or a template. */
 export interface Entry {
-  /** The path of its page (`/button`) and the folder in `pages/`. */
+  /** The folder name: `button`, `shop-cart`... */
   slug: string;
   title: string;
   group: string;
   description: string;
+  section: "components" | "blocks" | "templates";
+  /** The route: `/button`, `/blocks/shop-cart`, `/templates/pet-shop`. */
+  path: string;
+  /** Where its source is, under `frontend/`: `pages/button`. */
+  dir: string;
+  /** A template's own look, applied while its page is open. */
+  look?: LookPreset;
+  /** Position inside its group. */
+  order?: number;
 }
 
 const e = (
@@ -12,7 +26,15 @@ const e = (
   slug: string,
   title: string,
   description: string,
-): Entry => ({ slug, title, group, description });
+): Entry => ({
+  slug,
+  title,
+  group,
+  description,
+  section: "components",
+  path: `/${slug}`,
+  dir: `pages/${slug}`,
+});
 
 export const entries: Entry[] = [
   e(
@@ -284,6 +306,7 @@ export const entries: Entry[] = [
 export interface NavItem {
   path: string;
   title: string;
+  description: string;
 }
 export interface NavGroup {
   title: string;
@@ -296,7 +319,128 @@ export function navOf(list: Entry[]): NavGroup[] {
   for (const entry of list) {
     let group = groups.find((g) => g.title === entry.group);
     if (!group) groups.push((group = { title: entry.group, items: [] }));
-    group.items.push({ path: `/${entry.slug}`, title: entry.title });
+    group.items.push({
+      path: entry.path,
+      title: entry.title,
+      description: entry.description,
+    });
   }
   return groups;
+}
+
+/**
+ * What a block or a template says about itself: `meta.ts` in its folder
+ * exports `meta`. Adding one is adding the folder; nothing else lists it.
+ */
+export interface Meta {
+  title: string;
+  group: string;
+  description: string;
+  /** Position inside its group (default: by title). */
+  order?: number;
+  /** Templates: the look applied while the page is open. */
+  look?: LookPreset;
+}
+
+const blockMetas = import.meta.glob<{ meta: Meta }>("./blocks/*/meta.ts", {
+  eager: true,
+});
+const templateMetas = import.meta.glob<{ meta: Meta }>(
+  "./templates/*/meta.ts",
+  {
+    eager: true,
+  },
+);
+
+function collect(
+  metas: Record<string, { meta: Meta }>,
+  section: "blocks" | "templates",
+  groups: string[],
+): Entry[] {
+  const list = Object.entries(metas).map(([file, { meta }]): Entry => {
+    const slug = file.split("/")[2];
+    return {
+      slug,
+      title: meta.title,
+      group: meta.group,
+      description: meta.description,
+      section,
+      path: `/${section}/${slug}`,
+      dir: `${section}/${slug}`,
+      look: meta.look,
+      order: meta.order,
+    };
+  });
+  const rank = (g: string) => {
+    const i = groups.indexOf(g);
+    return i < 0 ? groups.length : i;
+  };
+  const order = (x: Entry) => x.order ?? 1000;
+  return list.sort(
+    (a, b) =>
+      rank(a.group) - rank(b.group) ||
+      a.group.localeCompare(b.group) ||
+      order(a) - order(b) ||
+      a.title.localeCompare(b.title),
+  );
+}
+
+export const BLOCK_GROUPS = [
+  "Authentication",
+  "Payments",
+  "Profile",
+  "Media",
+  "Travel",
+  "Shop",
+  "Site sections",
+  "Dashboard",
+  "Tools",
+];
+
+export const TEMPLATE_GROUPS = [
+  "Personal & Portfolio",
+  "Shops",
+  "Admin Panels & Dashboards",
+  "Apps & Business Sites",
+  "Special Web Tools",
+];
+
+export const blocks: Entry[] = collect(blockMetas, "blocks", BLOCK_GROUPS);
+export const templates: Entry[] = collect(
+  templateMetas,
+  "templates",
+  TEMPLATE_GROUPS,
+);
+
+/** Every page that has an `Entry`. */
+export const allEntries: Entry[] = [...entries, ...blocks, ...templates];
+
+export const MENU: { path: string; title: string; section: Section }[] = [
+  { path: "/", title: "Components", section: "components" },
+  { path: "/blocks", title: "Blocks", section: "blocks" },
+  { path: "/templates", title: "Templates", section: "templates" },
+  { path: "/theming", title: "Theming", section: "theming" },
+];
+
+/** Which section a route belongs to. */
+export function sectionOf(path: string): Section {
+  if (path === "/blocks" || path.startsWith("/blocks/")) return "blocks";
+  if (path === "/templates" || path.startsWith("/templates/"))
+    return "templates";
+  if (path === "/theming") return "theming";
+  return "components";
+}
+
+/** The sidebar of a section (Theming has none). */
+export function navFor(section: Section): NavGroup[] {
+  switch (section) {
+    case "components":
+      return navOf(entries);
+    case "blocks":
+      return navOf(blocks);
+    case "templates":
+      return navOf(templates);
+    default:
+      return [];
+  }
 }

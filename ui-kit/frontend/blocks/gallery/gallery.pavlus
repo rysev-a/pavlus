@@ -1,0 +1,9 @@
+// The demo embeds the part as a child: `children` in gallery.ts.
+import Gallery from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Categories, masonry grid and lightbox
+    p.k-demo__note Pick a category, open a photo, then use the arrows (or the arrow keys).
+    div.k-preview.k-preview--block
+      +Gallery#gallery(...gallery)

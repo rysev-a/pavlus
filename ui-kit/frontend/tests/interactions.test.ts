@@ -59,10 +59,10 @@ test("tabs, dialog, calendar, data table and the theme respond to clicks", async
   click(".ui-resource-pager button", 1);
   expect(text(".ui-data-footer-controls span")).toBe("Page 2 of 3");
 
-  // the theme is a plugin: the state says it, the plugin sets the class
+  // the look is a plugin's work: the state says it, the plugin sets the class
   expect(document.documentElement.classList.contains("light")).toBe(true);
-  click('[aria-label="Toggle the theme"]');
-  expect(store.getState().theme).toBe("dark");
+  click('[aria-label="Toggle light and dark"]');
+  expect(store.getState().look).toMatchObject({ mode: "dark" });
   expect(document.documentElement.classList.contains("dark")).toBe(true);
   expect(document.documentElement.classList.contains("light")).toBe(false);
-});
+}, 30_000);

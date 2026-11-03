@@ -1,0 +1,58 @@
+// A store back office: a dashboard, products, a warehouse and orders. The
+// shell, and one view at a time (`screen`), all made of blocks.
+import Nav from "../../blocks/admin-shell/view.pavlus"
+import Top from "../../blocks/admin-shell/topbar.pavlus"
+import Stats from "../../blocks/stat-cards/view.pavlus"
+import BarChart from "../../blocks/bar-chart/view.pavlus"
+import Meters from "../../blocks/progress-list/view.pavlus"
+import StatusList from "../../blocks/status-list/view.pavlus"
+import DataGrid from "../../blocks/data-grid/view.pavlus"
+import FilterBar from "../../blocks/list-filter/view.pavlus"
+import Sheet from "../../blocks/record-sheet/view.pavlus"
+
+div.k-template.k-ashell.sm(data-nav={navOpen ? "open" : "closed"})
+  aside.k-ashell__side
+    +Nav#nav(brand="Maple & Co" tagline="Store manager" groups=groups active=screen user=user)
+  div.k-ashell__scrim(@click=closeNav)
+  div.k-ashell__main
+    +Top#top(title=title subtitle="Tuesday, 3 November 2026" notice=notice actions=actions user=user)
+    main.k-ashell__content
+      if screen === "dashboard"
+        +Stats#stats(cards=dashStats)
+        div.sm__cols
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title Sales, last seven days
+              p.ui-card-description Thousands of dollars a day
+            div.ui-card-content
+              +BarChart#sales(columns=salesCols height="190px")
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title Orders by status
+              p.ui-card-description Everything but cancelled orders
+            div.ui-card-content
+              +Meters#flow(items=statusBars)
+        div.ui-card
+          div.ui-card-header
+            h3.ui-card-title Needs a restock
+            p.ui-card-description The products that are low or out of stock
+          div.ui-card-content.sm__flush
+            +StatusList#alerts(rows=alertList empty="Every product is well stocked.")
+      else if screen === "products"
+        +FilterBar#pfilter(filters=pFilters query=pQuery placeholder="Search a name, a SKU or a category" actions=productActions)
+        +DataGrid#products(columns=pCols rows=pList empty="No product matches." footer=pFooter pickable=true)
+      else if screen === "warehouse"
+        if alertCount > 0
+          div.ui-alert.ui-alert-warning
+            span.ui-alert-icon
+              span.k-icon.k-icon-alert
+            div.ui-alert-body
+              p.ui-alert-title Low stock
+              div.ui-alert-description {alertCount} active products are at or below their reorder level.
+        +Stats#wstats(cards=wStats)
+        +FilterBar#wfilter(filters=wFilters query="" placeholder="" actions=warehouseActions)
+        +StatusList#warehouse(rows=wList empty="Nothing in this group.")
+      else if screen === "orders"
+        +FilterBar#ofilter(filters=oFilters query=oQuery placeholder="Search a customer or a number" actions=none)
+        +DataGrid#orders(columns=oCols rows=oList empty="No order matches." footer=oFooter pickable=true)
+  +Sheet#sheet(open=sheet.open title=sheet.title description=sheet.description details=sheet.details fields=sheet.fields buttons=sheet.buttons)

@@ -1,0 +1,11 @@
+import StatsStrip from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Outlined
+    div.k-preview.k-preview--block
+      +StatsStrip#plain(stats=stats)
+  section.k-demo
+    h2.k-demo__title On the brand colour
+    div.k-preview.k-preview--block
+      +StatsStrip#brand(stats=stats tone="primary")

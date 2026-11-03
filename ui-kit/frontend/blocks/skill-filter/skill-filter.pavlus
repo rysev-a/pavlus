@@ -1,0 +1,8 @@
+import SkillFilter from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Multi-select chips
+    div.k-preview.k-preview--block
+      +SkillFilter#filter(title="Skills" chips=chips selectedCount=selected.length)
+    p.k-hint Selected: {selected.length === 0 ? "nothing" : selected.join(", ")}

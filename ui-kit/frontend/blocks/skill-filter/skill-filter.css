@@ -1,0 +1,13 @@
+.k-sf { display: grid; gap: calc(10px * var(--k-block, 1)); }
+.k-sf__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
+.k-sf__title { font-size: 14px; font-weight: 600; }
+.k-sf__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.k-sf__chip { display: inline-flex; align-items: center; gap: 6px; height: calc(32px * var(--k-ui, 1)); padding: 0 12px; border: 1px solid var(--input); border-radius: 999px; background: var(--background); color: var(--foreground); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s, transform .1s; }
+.k-sf__chip:hover { background: var(--accent); }
+.k-sf__chip:active { transform: scale(.97); }
+.k-sf__chip:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+.k-sf__chip[aria-pressed="true"] { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+.k-sf__chip[aria-pressed="true"]:hover { background: var(--primary); opacity: .92; }
+.k-sf__chip .k-icon { width: 14px; height: 14px; }
+.k-sf__count { min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--muted); color: var(--muted-foreground); font-size: 11px; line-height: 18px; text-align: center; }
+.k-sf__chip[aria-pressed="true"] .k-sf__count { background: color-mix(in srgb, var(--primary-foreground) 22%, transparent); color: var(--primary-foreground); }

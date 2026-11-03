@@ -1,0 +1,49 @@
+// A photographer's site, made of blocks: site navigation, hero, the gallery
+// and the booking calendar (both children with their own state: `children` in
+// the .ts) and the link list.
+import SiteNav from "../../blocks/site-nav/view.pavlus"
+import Hero from "../../blocks/hero/view.pavlus"
+import Gallery from "../../blocks/gallery/view.pavlus"
+import Booking from "../../blocks/booking-calendar/view.pavlus"
+import LinkList from "../../blocks/link-list/view.pavlus"
+
+div.k-template.pp#top
+  div.pp__nav
+    div.pp__wrap
+      +SiteNav#nav(brand=brand links=nav ctaLabel="Book a session" ctaHref="#booking")
+  main.pp__wrap
+    section.pp__hero
+      +Hero#hero(eyebrow="Weddings / Portraits / Travel / Events" title=headline text=bio primaryLabel="View the gallery" primaryHref="#gallery" secondaryLabel="Book a session" secondaryHref="#booking" align="center")
+    section.pp__section#gallery
+      div.pp__head
+        p.pp__kicker Portfolio
+        h2.pp__title Recent work
+      +Gallery#gallery(...gallery)
+    section.pp__section#booking
+      div.pp__head
+        p.pp__kicker Booking
+        h2.pp__title Reserve a session
+        p.pp__lead Choose what you need, pick a free day and a time. I confirm every booking by email within a day.
+      div.ui-card.pp__booking
+        div.ui-card-content
+          +Booking#booking(...booking)
+    section.pp__section.pp__about#about
+      div.pp__about-text
+        p.pp__kicker About
+        h2.pp__title {aboutTitle}
+        for para in about key para
+          p.pp__lead {para}
+      ul.pp__numbers
+        for n in numbers key n.label
+          li
+            strong {n.value}
+            span {n.label}
+    section.pp__section#contact
+      div.pp__head
+        p.pp__kicker Contact
+        h2.pp__title Say hello
+      div.pp__contact
+        +LinkList#contacts(links=contacts)
+    footer.pp__footer
+      span {brand}
+      span Built with pavlus

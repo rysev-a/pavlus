@@ -1,0 +1,14 @@
+// The hero, to embed: `import Hero from "../hero/view.pavlus"` and
+// `+Hero#hero(title="..." text="..." primaryLabel="Start" primaryHref="#start")`.
+// State = the props: eyebrow, title, text, primaryLabel, primaryHref,
+// secondaryLabel, secondaryHref, align ("center" or nothing).
+section.k-hero(class:k-hero--center={align === "center"})
+  if eyebrow
+    span.ui-badge.ui-badge-secondary {eyebrow}
+  h1.k-hero__title {title}
+  p.k-hero__text {text}
+  if primaryLabel
+    div.k-hero__actions
+      a.ui-button.ui-button-default.ui-button-lg(href=primaryHref) {primaryLabel}
+      if secondaryLabel
+        a.ui-button.ui-button-outline.ui-button-lg(href=secondaryHref) {secondaryLabel}

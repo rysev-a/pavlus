@@ -1,0 +1,13 @@
+// The demo embeds the part as a child: `children` in project-grid.ts.
+import ProjectGrid from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Filters, cards and a detail window
+    p.k-demo__note Pick a category, then open a card.
+    div.k-preview.k-preview--block
+      +ProjectGrid#grid(...grid)
+  section.k-demo
+    h2.k-demo__title Cards that only link
+    div.k-preview.k-preview--block
+      +ProjectGrid#plain(...plain)

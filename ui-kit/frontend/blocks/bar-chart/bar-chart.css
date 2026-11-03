@@ -1,0 +1,7 @@
+.k-bchart { display: flex; align-items: stretch; gap: clamp(2px, 1.2%, 10px); min-height: 120px; }
+.k-bchart__col { display: flex; flex: 1; flex-direction: column; align-items: stretch; min-width: 0; text-align: center; }
+.k-bchart__track { display: flex; flex: 1; align-items: flex-end; border-bottom: 1px solid var(--border); background: repeating-linear-gradient(to top, transparent 0, transparent calc(25% - 1px), color-mix(in srgb, var(--border) 60%, transparent) calc(25% - 1px), color-mix(in srgb, var(--border) 60%, transparent) 25%); }
+.k-bchart__bar { display: block; width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; background: var(--t); opacity: .85; transition: height .3s ease, opacity .15s; }
+.k-bchart__col:hover .k-bchart__bar { opacity: 1; }
+.k-bchart__value { min-height: 16px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.k-bchart__label { margin-top: 4px; overflow: hidden; font-size: 11px; color: var(--muted-foreground); text-overflow: ellipsis; white-space: nowrap; }

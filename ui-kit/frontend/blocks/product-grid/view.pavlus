@@ -1,0 +1,18 @@
+// A grid of product cards, to embed. State = the props: `cards` (a list of
+// CardItem, see `cardOf` in ../product-card/product-card.ts), emptyTitle,
+// emptyText. Messages from a card arrive as `<name>.card.add`, `.card.open`,
+// `.card.preview` with the product id; `clear` is sent from the empty state.
+import Card from "../product-card/view.pavlus"
+
+section.k-pgrid
+  if cards.length === 0
+    div.k-pgrid__empty
+      span.k-pgrid__empty-art 🔍
+      strong {emptyTitle}
+      p {emptyText}
+      button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=clear) Clear filters
+  else
+    ul.k-pgrid__list
+      for card in cards key card.id
+        li.k-pgrid__cell
+          +Card#card(...card)

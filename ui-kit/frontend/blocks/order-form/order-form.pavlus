@@ -1,0 +1,9 @@
+import Order from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Pickup, courier or a table
+    p.k-demo__note {note}
+    div.k-preview.k-preview--block
+      div.k-order-demo
+        +Order#order(...order)

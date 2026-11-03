@@ -1,15 +1,19 @@
-// The top bar: the sidebar switch, a link to the code and the theme switch.
-// State = the props passed by the shell (`theme`). Its clicks reach the shell
-// as `header.toggleSidebar` / `header.toggleTheme`.
+// The top bar: the sidebar switch, the sections (Components, Blocks, Templates,
+// Theming), a link to the code and the light/dark switch. State = the props
+// passed by the shell. Its clicks reach the shell as `header.toggleSidebar`,
+// `header.toggleTheme` and `header.navigate`.
 header.ui-shell-header
-  button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Toggle the sidebar" @click=toggleSidebar)
-    span.k-icon.k-icon-menu
+  if hasNav
+    button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Toggle the sidebar" @click=toggleSidebar)
+      span.k-icon.k-icon-menu
+  nav.k-topmenu(aria-label="Sections")
+    for item in menu key item.path
+      a.k-topmenu__link(href={root + item.path} class:is-active={item.section === section} @click.prevent=navigate(item.path)) {item.title}
   div.ui-shell-header-start
-    span.k-header-title shadcn components, as pavlus templates
   div.ui-shell-header-actions
-    a.ui-button.ui-button-ghost.ui-button-sm(href="https://github.com/rysev-a/pavlus/tree/main/ui-kit" target="_blank" rel="noreferrer") GitHub
-    button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Toggle the theme" @click=toggleTheme)
-      if theme === "dark"
+    a.ui-button.ui-button-ghost.ui-button-sm.k-github(href="https://github.com/rysev-a/pavlus/tree/main/ui-kit" target="_blank" rel="noreferrer") GitHub
+    button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Toggle light and dark" @click=toggleTheme)
+      if mode === "dark"
         span.k-icon.k-icon-sun
       else
         span.k-icon.k-icon-moon

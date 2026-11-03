@@ -1,0 +1,21 @@
+// A row of filter tabs with counts, a search box and buttons, to embed.
+// State = the props: `filters` ([{ id, label, count, active }]), `query`,
+// `placeholder` (no search box when empty), `actions` ([{ id, label, icon,
+// variant }]). Events, with the name of the embed in front: `pick` (the
+// filter id), `search` (the input), `action` (the action id).
+div.k-lfilter
+  div.ui-tabs-list.k-lfilter__tabs(role="tablist")
+    for filter in filters key filter.id
+      button.ui-tabs-trigger.k-lfilter__tab(type="button" role="tab" aria-selected={filter.active ? "true" : "false"} @click=pick(filter.id))
+        | {filter.label}
+        span.k-lfilter__count {filter.count}
+  if placeholder
+    div.k-lfilter__search
+      span.k-icon.k-icon-search
+      input.ui-input(type="search" placeholder=placeholder aria-label={placeholder} value=query @input=search)
+  div.k-lfilter__actions
+    for item in actions key item.id
+      button(type="button" class="ui-button ui-button-sm ui-button-{item.variant}" @click=action(item.id))
+        if item.icon
+          span(class="k-icon {item.icon}")
+        | {item.label}

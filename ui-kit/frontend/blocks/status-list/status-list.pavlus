@@ -1,0 +1,12 @@
+import List from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Servers with meters
+    div.k-preview.k-preview--block
+      +List#servers(rows=servers empty="No servers.")
+  section.k-demo
+    h2.k-demo__title Tasks with a select and a button
+    div.k-preview.k-preview--block
+      +List#tasks(rows=tasks empty="Nothing to do.")
+    p.k-demo__note {message}

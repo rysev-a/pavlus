@@ -1,0 +1,24 @@
+// The top bar of an app inside a page, to embed. State = the props: title,
+// subtitle, `notice` (a short message, or empty), `actions`: [{ id, label,
+// icon, variant }] (`variant` is a button variant: default, outline...) and
+// `user.initials`. Events: `<name>.toggle` (the menu button, narrow screens),
+// `<name>.action` (the id of the action), `<name>.dismiss` (the notice).
+header.k-atop
+  button.ui-button.ui-button-ghost.ui-button-icon.k-atop__menu(type="button" aria-label="Open the menu" @click=toggle)
+    span.k-icon.k-icon-menu
+  div.k-atop__titles
+    h1.k-atop__title {title}
+    if subtitle
+      p.k-atop__sub {subtitle}
+  div.k-atop__actions
+    if notice
+      button.ui-pill.ui-pill-success.k-atop__notice(type="button" aria-label="Dismiss" @click=dismiss)
+        span.k-icon.k-icon-check
+        | {notice}
+    for item in actions key item.id
+      button(type="button" class="ui-button ui-button-sm ui-button-{item.variant}" @click=action(item.id))
+        if item.icon
+          span(class="k-icon {item.icon}")
+        | {item.label}
+    span.ui-avatar.k-atop__avatar
+      span.ui-avatar-fallback {user.initials}

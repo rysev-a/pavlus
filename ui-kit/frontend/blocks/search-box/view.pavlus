@@ -1,0 +1,32 @@
+// A search field with a panel of results, to embed. State = the props: `query`,
+// `placeholder`, `open` (show the panel), `results` and `total` (from
+// `searchView` in search-box.ts). Events reach the parent as
+// `<name>.setQuery` (the input event), `.clear`, `.pick` (the result id),
+// `.key` (Escape closes, Enter picks the first result).
+div.k-sb
+  div.k-input-group.k-sb__field
+    span.k-input-group__addon.k-input-group__addon--start
+      span.k-icon.k-icon-search
+    input.ui-input(type="text" placeholder=placeholder aria-label=placeholder autocomplete="off" value=query @input=setQuery @keydown=key)
+    if query
+      button.k-sb__clear(type="button" aria-label="Clear the search" @click=clear)
+        span.k-icon.k-icon-x
+  if open
+    div.k-sb__panel
+      if results.length === 0
+        p.k-sb__empty No pages match "{query}".
+      else
+        p.k-sb__count {total} {total === 1 ? "page" : "pages"} found
+        ul.k-sb__list
+          for result in results key result.id
+            li
+              button.k-sb__result(type="button" @click=pick(result.id))
+                span.k-sb__title
+                  span.k-sb__name
+                    for seg, i in result.titleSegs key i
+                      span(data-hit={seg.hit ? "true" : null}) {seg.t}
+                  if result.group
+                    span.k-sb__group {result.group}
+                span.k-sb__snippet
+                  for seg, i in result.snippetSegs key i
+                    span(data-hit={seg.hit ? "true" : null}) {seg.t}

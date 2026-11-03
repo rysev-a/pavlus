@@ -1,0 +1,16 @@
+import Slots from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Pick a time
+    p.k-demo__note A 45 minute service on Wednesday 4 November: the lunch break and the times others booked are not free.
+    div.k-preview.k-preview--block
+      +Slots#slots(slots=slots empty=empty)
+    p.k-hint
+      | Selected:
+      |
+      span.k-state {selected}
+  section.k-demo
+    h2.k-demo__title A day off
+    div.k-preview.k-preview--block
+      +Slots#off(slots=sunday empty="Closed on Sundays: choose another day.")

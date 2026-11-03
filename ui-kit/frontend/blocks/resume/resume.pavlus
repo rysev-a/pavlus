@@ -1,0 +1,14 @@
+import Resume from "./view.pavlus"
+import Skills from "./skills.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Full resume
+    div.k-preview.k-preview--block
+      +Resume#resume(...resume)
+  section.k-demo
+    h2.k-demo__title Skills with levels
+    p.k-demo__note The bars are a part on their own, used by the resume and by the developer landing page.
+    div.k-preview.k-preview--block
+      div.k-narrow
+        +Skills#skills(skills=resume.skills)

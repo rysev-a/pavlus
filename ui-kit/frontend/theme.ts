@@ -1,52 +1,83 @@
 import type { Effect, Plugin } from "@service-laboratory/pavlus";
+import {
+  defaultLook,
+  type Look,
+  type LookPreset,
+  parseLook,
+  varsOf,
+} from "./theming.ts";
 
-export type Theme = "light" | "dark";
-
+/** What the application asks of the page: show this look. */
 export interface ThemeEffect extends Effect {
   plugin: "theme";
-  type: "set";
-  theme: Theme;
+  type: "apply";
+  look: Look;
+  /** The CSS variables of the look (computed by the pure `varsOf`). */
+  vars: Record<string, string>;
+  /** Remember it for the next visit (a template's own look is not remembered). */
+  persist: boolean;
 }
 
-/** Builds the effect the theme plugin handles (see `themeEffector.set`). */
 export const themeEffector = {
-  set: (theme: Theme): ThemeEffect => ({ plugin: "theme", type: "set", theme }),
+  apply: (look: Look, persist = true): ThemeEffect => ({
+    plugin: "theme",
+    type: "apply",
+    look,
+    vars: varsOf(look),
+    persist,
+  }),
 };
 
-const KEY = "ui-kit-theme";
+const KEY = "ui-kit-look";
 
-/** The theme the visitor chose before, else the one the system prefers. */
-export function initialTheme(win: Window = window): Theme {
+/** The look the visitor chose before, else the system's light or dark. */
+export function initialLook(win: Window = window): Look {
+  const dark = win.matchMedia?.("(prefers-color-scheme: dark)").matches;
+  const fallback = defaultLook(dark ? "dark" : "light");
   try {
     const saved = win.localStorage.getItem(KEY);
-    if (saved === "light" || saved === "dark") return saved;
+    if (saved) return parseLook(JSON.parse(saved), fallback);
   } catch {
-    // storage blocked: fall through to the system preference
+    // storage blocked or not JSON: the default
   }
-  return win.matchMedia?.("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return fallback;
 }
 
+/** A template's look: the defaults, then what the template sets. */
+export const presetLook = (
+  preset: LookPreset | undefined,
+  mode: Look["mode"],
+): Look => parseLook({ ...defaultLook(mode), ...preset }, defaultLook(mode));
+
 /**
- * The only code that touches `<html>` for the theme: the tokens in
- * styles.css switch on its `dark` / `light` class. The application just
- * returns `themeEffector.set(...)`.
+ * The only code that touches `<html>` for the look: the `dark` / `light`
+ * class, the CSS variables, `data-style`. The application just returns
+ * `themeEffector.apply(look)`.
  */
 export function createThemePlugin(
   doc: Document = document,
 ): Plugin<ThemeEffect, unknown> {
+  let set = new Set<string>();
   return {
     name: "theme",
     handle(effect) {
-      if (effect.type !== "set") return;
+      if (effect.type !== "apply") return;
       const root = doc.documentElement;
-      root.classList.toggle("dark", effect.theme === "dark");
-      root.classList.toggle("light", effect.theme === "light");
+      for (const name of set) {
+        if (!(name in effect.vars)) root.style.removeProperty(name);
+      }
+      for (const [name, value] of Object.entries(effect.vars)) {
+        root.style.setProperty(name, value);
+      }
+      set = new Set(Object.keys(effect.vars));
+      root.classList.toggle("dark", effect.look.mode === "dark");
+      root.classList.toggle("light", effect.look.mode === "light");
+      root.dataset.style = effect.look.style;
+      if (!effect.persist) return;
       try {
-        doc.defaultView?.localStorage.setItem(KEY, effect.theme);
+        doc.defaultView?.localStorage.setItem(KEY, JSON.stringify(effect.look));
       } catch {
-        // storage blocked: the theme just is not remembered
+        // storage blocked: the look is just not remembered
       }
     },
   };

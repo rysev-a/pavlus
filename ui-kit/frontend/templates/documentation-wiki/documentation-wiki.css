@@ -1,0 +1,10 @@
+.dw { background: var(--background); color: var(--foreground); }
+.dw__wrap { width: min(100%, 1240px); margin-inline: auto; padding-inline: 20px; }
+.dw__top { border-bottom: 1px solid var(--border); background: var(--card); }
+.dw .k-sitenav { padding-block: 12px; }
+.dw__body { padding-block: calc(24px * var(--k-block, 1)) calc(48px * var(--k-block, 1)); }
+.dw__footer { padding-block: 20px; border-top: 1px solid var(--border); font-size: 14px; color: var(--muted-foreground); }
+.dw .k-dl__nav, .dw .k-dl__toc { top: 24px; }
+@media (max-width: 800px) {
+  .dw .k-sitenav__links { display: none; }
+}
