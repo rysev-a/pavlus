@@ -1,0 +1,8 @@
+import Mood from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title How are you feeling?
+    div.k-preview.k-preview--block
+      +Mood#mood(moods=moods)
+      p.k-mood__out {said}

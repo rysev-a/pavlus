@@ -1,0 +1,19 @@
+// Habit reminders, to embed. State = the props: `rows` (reminderRows() from
+// reminders.ts: { id, icon, name, time, on, options }) and `summary` (a
+// line about the next reminder). Events: `<name>.toggle` (the id),
+// `<name>.time` (the id; the chosen time is in the event).
+div.k-remind
+  p.k-remind__summary {summary}
+  ul.k-remind__list
+    for row in rows key row.id
+      li.k-remind__row(class:k-remind__row--off={!row.on})
+        span.k-remind__icon {row.icon}
+        span.k-remind__name {row.name}
+        select.ui-select-control.k-remind__time(aria-label="Time for {row.name}" disabled={!row.on} @change=time(row.id))
+          for opt in row.options key opt.value
+            option(value=opt.value selected={opt.selected}) {opt.label}
+        div.ui-switch
+          input.ui-switch-input(id="remind-{row.id}" type="checkbox" role="switch" checked={row.on} @change=toggle(row.id))
+          label.ui-switch-label(for="remind-{row.id}") On
+  if rows.length === 0
+    p.k-remind__empty No habits to remind you about.

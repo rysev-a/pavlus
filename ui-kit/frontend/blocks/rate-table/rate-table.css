@@ -1,0 +1,13 @@
+.k-rtable { min-width: 0; max-width: 100%; }
+.k-rtable__row { cursor: pointer; }
+.k-rtable__row[data-selected="true"] { background: var(--muted); }
+.k-rtable__carrier { display: flex; align-items: flex-start; gap: 10px; min-width: 12rem; }
+.k-rtable__mode { font-size: 22px; line-height: 1.2; }
+.k-rtable__name { display: grid; gap: 2px; min-width: 0; }
+.k-rtable__name small { color: var(--muted-foreground); font-size: 12px; }
+.k-rtable__badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.k-rtable__num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.k-rtable__num small { display: block; color: var(--muted-foreground); font-size: 12px; }
+.k-rtable__rel { display: flex; align-items: center; gap: 8px; min-width: 7rem; font-size: 13px; font-variant-numeric: tabular-nums; }
+.k-rtable .k-rtable__bar { flex: 1; --progress: var(--t); }
+.k-rtable__act { text-align: right; }

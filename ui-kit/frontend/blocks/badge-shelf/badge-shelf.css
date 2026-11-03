@@ -1,0 +1,9 @@
+.k-bshelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: calc(12px * var(--k-block, 1)); margin: 0; padding: 0; list-style: none; }
+.k-bshelf__badge { display: grid; justify-items: center; gap: 4px; padding: calc(16px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); color: var(--card-foreground); text-align: center; }
+.k-bshelf__medal { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin-bottom: 4px; border-radius: 50%; background: var(--muted); font-size: 28px; filter: grayscale(1); opacity: .5; }
+.k-bshelf__badge[data-earned="true"] { border-color: var(--primary); }
+.k-bshelf__badge[data-earned="true"] .k-bshelf__medal { background: var(--secondary); filter: none; opacity: 1; box-shadow: 0 0 0 3px var(--background), 0 0 0 5px var(--primary); }
+.k-bshelf__hint { color: var(--muted-foreground); font-size: 12px; line-height: 1.35; }
+.k-bshelf .k-bshelf__bar { width: 100%; margin-top: 6px; }
+.k-bshelf__progress { color: var(--muted-foreground); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.k-bshelf__badge[data-earned="true"] .k-bshelf__progress { color: var(--primary); font-weight: 600; }

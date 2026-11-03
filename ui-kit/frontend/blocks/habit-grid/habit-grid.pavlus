@@ -1,0 +1,14 @@
+import Grid from "./view.pavlus"
+import Heat from "./heatmap.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title The week
+    p.k-demo__note Click a box to check a day in or out. Rest days are dotted, later days are inert.
+    div.k-preview.k-preview--block
+      +Grid#grid(days=days rows=rows)
+  section.k-demo
+    h2.k-demo__title The month as a heatmap
+    p.k-demo__note The darker the box, the more of the day's habits were done. It follows the grid above.
+    div.k-preview.k-preview--block
+      +Heat#heat(title=heatTitle weekdays=weekdays weeks=weeks)

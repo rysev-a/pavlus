@@ -1,0 +1,8 @@
+import Shelf from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Achievements
+    p.k-demo__note Earned badges first. The numbers come from a streak of 9 days and 64 check-ins.
+    div.k-preview.k-preview--block
+      +Shelf#shelf(badges=badges)

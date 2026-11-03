@@ -1,0 +1,9 @@
+import Rates from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Rotterdam to Warsaw, 12 pallets
+    p.k-demo__note Click a header to sort. Click a row to select it, Book to take the offer.
+    div.k-preview.k-preview--block
+      +Rates#rates(columns=columns rows=rows)
+      p.k-rtable__out {said}
