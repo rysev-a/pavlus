@@ -1,0 +1,12 @@
+import Vitals from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A healthy reading
+    div.k-preview.k-preview--block
+      +Vitals#healthy(heading="Today, 09:40" items=healthy)
+  section.k-demo
+    h2.k-demo__title A reading with flags
+    div.k-preview.k-preview--block
+      +Vitals#unwell(heading="Admission, 03:15" items=unwell)
+    p.k-demo__note BMI of 82 kg at 178 cm: {bmiText}. {flagCount} readings outside the range.
