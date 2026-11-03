@@ -31,15 +31,19 @@ import {
   sectionOf,
   templates,
 } from "./registry.ts";
+import { randomEffector } from "./random.ts";
 import { presetLook, themeEffector } from "./theme.ts";
 import {
+  allThemes,
   catalog,
   type Catalog,
   cssOf,
   defaultLook,
   flipMode,
   type Look,
+  withBundle,
   withChoice,
+  withTheme,
 } from "./theming.ts";
 
 export type SidebarState = "open" | "closed";
@@ -208,10 +212,30 @@ export class AppShell extends Component<AppState> {
     return this._choose(withChoice(state.look, row, id));
   }
 
-  /** `palette(id, mode)`: a palette is a name in a mode, so it sets both. */
+  /**
+   * `palette(id, mode)`: a theme is a name in a mode, so it sets both; with the
+   * bundle on it also sets the font, the sizes and the style the theme comes with.
+   */
   "theming.palette"(msg: Message, state: AppState): Effect[] {
     const [palette, mode] = msg.payload as [string, Look["mode"]];
-    return this._choose({ ...state.look, palette, mode });
+    return this._choose(withTheme(state.look, palette, mode));
+  }
+
+  /** The "themes set font, sizes and style too" switch. */
+  "theming.bundle"(msg: Message, state: AppState): Effect[] {
+    return this._choose(withBundle(state.look, Boolean(msg.event?.checked)));
+  }
+
+  /** The random button: ask the random plugin which theme, apply it when it answers. */
+  "theming.random"(): Effect[] {
+    return [randomEffector.int(allThemes().length, "randomPicked")];
+  }
+
+  randomPicked(msg: Message, state: AppState): Effect[] {
+    const pick = allThemes()[msg.payload as number];
+    return pick
+      ? this._choose(withTheme(state.look, pick.palette, pick.mode))
+      : [];
   }
 
   "theming.reset"(_msg: Message, state: AppState): Effect[] {

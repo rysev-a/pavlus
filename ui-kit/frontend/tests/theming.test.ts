@@ -13,7 +13,9 @@ import {
   parseLook,
   STYLES,
   varsOf,
+  withBundle,
   withChoice,
+  withTheme,
 } from "../theming.ts";
 
 /** `hsl(217 91% 40%)` or `#fff` → its luminance. */
@@ -134,4 +136,138 @@ test("font sizes and control heights are scaled where the stylesheet is loaded",
   expect(out).toContain("height: 56px");
   expect(out).toContain("line-height: 20px");
   expect(out).toContain("padding: 8px 36px");
+});
+
+// ---- Visual Studio Code themes, theme bundles, the random plugin ----
+
+test("there are 20 dark and 20 light editor themes, each readable", async () => {
+  const { VSCODE_THEMES, vsVars } = await import("../vscode-themes.ts");
+  const { contrastOf } = await import("../color.ts");
+  expect(VSCODE_THEMES.filter((t) => t.mode === "dark")).toHaveLength(20);
+  expect(VSCODE_THEMES.filter((t) => t.mode === "light")).toHaveLength(20);
+  expect(new Set(VSCODE_THEMES.map((t) => t.id)).size).toBe(40);
+  for (const th of VSCODE_THEMES) {
+    const v = vsVars(th);
+    const on = (a: string, b: string) => contrastOf(v[a], v[b]);
+    expect(
+      on("--foreground", "--background"),
+      `${th.id} text`,
+    ).toBeGreaterThanOrEqual(7);
+    expect(
+      on("--primary-foreground", "--primary"),
+      `${th.id} primary`,
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      on("--muted-foreground", "--background"),
+      `${th.id} muted`,
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      on("--card-foreground", "--card"),
+      `${th.id} card`,
+    ).toBeGreaterThanOrEqual(7);
+    expect(
+      on("--accent-foreground", "--accent"),
+      `${th.id} accent`,
+    ).toBeGreaterThanOrEqual(7);
+    // a partner is a theme of the other mode
+    if (th.pair) {
+      const pair = VSCODE_THEMES.find((x) => x.id === th.pair);
+      expect(pair?.mode, `${th.id} pair`).toBe(
+        th.mode === "dark" ? "light" : "dark",
+      );
+    }
+  }
+});
+
+test("picking a theme sets font, sizes and style when the bundle is on, only colors when off", () => {
+  const look = {
+    ...defaultLook(),
+    font: "serif",
+    text: "xl",
+    style: "official",
+  };
+  const dracula = withTheme(look, "vs-dracula", "dark");
+  expect(dracula).toMatchObject({
+    palette: "vs-dracula",
+    mode: "dark",
+    font: "mono",
+    style: "cs",
+    text: "sm",
+    ui: "sm",
+  });
+  // what a theme does not name goes back to the default, not to the last theme's
+  expect(withTheme(dracula, "vs-palenight", "dark")).toMatchObject({
+    font: "rounded",
+    style: "casual",
+    text: "md",
+    ui: "md",
+    block: "md",
+  });
+  expect(withTheme(dracula, "zinc", "light")).toMatchObject({
+    font: "sans",
+    style: "default",
+    text: "md",
+    mode: "light",
+  });
+  // an editor theme has a fixed mode
+  expect(withTheme(look, "vs-light-plus", "dark").mode).toBe("light");
+  // bundle off: colors only
+  const colorsOnly = withTheme(
+    { ...look, bundle: false },
+    "vs-dracula",
+    "dark",
+  );
+  expect(colorsOnly).toMatchObject({
+    palette: "vs-dracula",
+    font: "serif",
+    text: "xl",
+    style: "official",
+  });
+  expect(withBundle(look, false).bundle).toBe(false);
+  // and a saved look keeps the switch, and the mode of an editor theme
+  expect(
+    parseLook(
+      { palette: "vs-nord-light", mode: "dark", bundle: false },
+      defaultLook(),
+    ),
+  ).toMatchObject({ palette: "vs-nord-light", mode: "light", bundle: false });
+});
+
+test("the light and dark switch goes to the partner of an editor theme", () => {
+  const dracula = withTheme(defaultLook(), "vs-dracula", "dark");
+  expect(flipMode(dracula)).toMatchObject({
+    palette: "vs-alucard",
+    mode: "light",
+  });
+  expect(flipMode(flipMode(dracula)).palette).toBe("vs-dracula");
+  // no partner: the stock palette of the other mode
+  expect(
+    flipMode(withTheme(defaultLook(), "vs-monokai", "dark")),
+  ).toMatchObject({ palette: "zinc", mode: "light" });
+  // an editor theme becomes CSS variables, with its font and size scales in the look
+  const v = varsOf(dracula);
+  expect(v["--background"]).toBe("#282a36");
+  expect(v["--font-sans"]).toContain("monospace");
+  expect(v["--k-text"]).toBe("0.95");
+});
+
+test("the random button covers every theme and the plugin answers with a message", async () => {
+  const { allThemes } = await import("../theming.ts");
+  const { createRandomPlugin, randomEffector } = await import("../random.ts");
+  const all = allThemes();
+  expect(all).toHaveLength(100); // 30 palettes x 2 modes + 40 editor themes
+  expect(new Set(all.map((t) => `${t.palette}/${t.mode}`)).size).toBe(100);
+
+  const sent: unknown[] = [];
+  const ctx = { dispatch: (m: unknown) => sent.push(m) } as never;
+  const plugin = createRandomPlugin(() => 0.999999);
+  plugin.handle(randomEffector.int(100, "randomPicked"), ctx);
+  createRandomPlugin(() => 0).handle(
+    randomEffector.int(100, "randomPicked"),
+    ctx,
+  );
+  expect(sent).toEqual([
+    { id: "randomPicked", payload: 99 },
+    { id: "randomPicked", payload: 0 },
+  ]);
 });
