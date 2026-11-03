@@ -1,0 +1,20 @@
+// A guitar neck, to embed. State = the props: `rows` (6 strings, the thinnest
+// first, each with `tuning` and `cells`) and `frets` (the numbers and inlay
+// dots under the neck); see `neckGrid` in guitar-neck.ts. A click sends
+// `press(string, fret)`: in a parent it arrives as `<id>.press`.
+div.k-neck(role="group" aria-label="Guitar neck")
+  div.k-neck__board
+    for row in rows key row.string
+      div.k-neck__string
+        span.k-neck__tuning {row.tuning}
+        for cell in row.cells key cell.id
+          button.k-neck__cell(type="button" class:k-neck__cell--open={cell.fret === 0} data-state={cell.state || null} aria-label={cell.name} @click=press(cell.string, cell.fret))
+            span.k-neck__dot {cell.label}
+  div.k-neck__marks
+    span.k-neck__mark-open
+    for mark in frets key mark.fret
+      span.k-neck__mark
+        span.k-neck__fretno {mark.fret}
+        span.k-neck__inlays
+          for dot in mark.dots key dot
+            span.k-neck__inlay

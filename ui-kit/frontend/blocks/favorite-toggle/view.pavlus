@@ -1,0 +1,7 @@
+// A heart that saves something, to embed. State = the props: `id` (sent back),
+// `active`, `label` (optional text next to the heart), `size` ("lg" for a big
+// one). A click sends `toggle(id)` (`<id>.toggle` in a parent).
+button.k-fav(type="button" aria-pressed={active ? "true" : "false"} aria-label={active ? "Remove from favorites" : "Add to favorites"} class:is-active={active} class:k-fav--lg={size === "lg"} @click=toggle(id))
+  span.k-icon.k-icon-heart(class:k-icon-heart-fill={active})
+  if label
+    span.k-fav__label {label}

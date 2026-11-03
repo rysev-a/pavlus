@@ -1,0 +1,13 @@
+import Nav from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Jump between questions
+    p.k-demo__note Filled buttons are answered, a dot marks a question flagged for review, the ring is where you are.
+    div.k-preview.k-preview--block
+      div.k-narrow
+        +Nav#nav(items=items summary=summary)
+    p.k-hint
+      | On question
+      |
+      span.k-state {current + 1}

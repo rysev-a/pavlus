@@ -1,0 +1,21 @@
+// A classifieds card, to embed. State = the props (see `cardsOf` in
+// listing-card.ts): id, title, priceLabel, location, ago, badge, emoji,
+// tone (1-5), favorite. It sends `open(id)`, and the heart's `fav.toggle(id)`
+// (`<id>.open` and `<id>.fav.toggle` in a parent).
+import Fav from "../favorite-toggle/view.pavlus"
+
+article.k-listing
+  div.k-listing__media(data-tone={tone})
+    button.k-listing__open(type="button" aria-label={"Open " + title} @click=open(id))
+      span.k-listing__emoji {emoji}
+    if badge
+      span.ui-badge.ui-badge-default.k-listing__badge {badge}
+    div.k-listing__fav
+      +Fav#fav(id=id active=favorite)
+  div.k-listing__body
+    strong.k-listing__price {priceLabel}
+    button.k-listing__title(type="button" @click=open(id)) {title}
+    span.k-listing__meta
+      span.k-icon.k-icon-pin
+      | {location}
+      span.k-muted · {ago}

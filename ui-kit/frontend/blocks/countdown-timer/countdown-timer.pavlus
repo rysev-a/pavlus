@@ -1,0 +1,15 @@
+import Timer from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Ninety seconds
+    p.k-demo__note The tick comes from the time plugin (an interval), so the page code never reads a clock. The bar turns amber with a quarter left and red with a tenth.
+    div.k-preview.k-preview--column
+      div.k-narrow
+        +Timer#timer(...timer)
+      div.k-row
+        if running
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=pause) Pause
+        else
+          button.ui-button.ui-button-default.ui-button-sm(type="button" disabled={remaining === 0} @click=start) {remaining === total ? "Start" : "Resume"}
+        button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=reset) Reset

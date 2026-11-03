@@ -1,0 +1,19 @@
+// A month to pick a day from, to embed. State = the props: `title`, `weekdays`,
+// `cells` ({ key, day, iso, disabled, selected }), `canGoBack`. It sends
+// `prev`, `next` and `pick(iso)` (`<id>.prev` ... in a parent). Build the props
+// with `pickerProps(month, rules)` from day-picker.ts.
+div.ui-calendar.k-days
+  div.ui-calendar-header
+    button.ui-calendar-nav(type="button" aria-label="Previous month" disabled={!canGoBack} @click=prev)
+      span.k-icon.k-icon-chevron-left
+    h3.ui-calendar-title {title}
+    button.ui-calendar-nav(type="button" aria-label="Next month" @click=next)
+      span.k-icon.k-icon-chevron-right
+  div.ui-calendar-grid
+    for name in weekdays key name
+      span.ui-calendar-weekday {name}
+    for cell in cells key cell.key
+      if cell.day
+        button.ui-calendar-day(type="button" disabled={cell.disabled} class:ui-calendar-day-selected={cell.selected} aria-pressed={cell.selected ? "true" : "false"} @click=pick(cell.iso)) {cell.day}
+      else
+        span.ui-calendar-empty
