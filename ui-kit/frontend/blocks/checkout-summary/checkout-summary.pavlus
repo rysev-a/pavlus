@@ -1,0 +1,9 @@
+import Confirm from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Order confirmation with download links
+    p.k-demo__note The links save a small text file: the shop has no real files.
+    div.k-preview.k-preview--block
+      div.k-narrow(style="width: min(100%, 36rem)")
+        +Confirm#done(...done)

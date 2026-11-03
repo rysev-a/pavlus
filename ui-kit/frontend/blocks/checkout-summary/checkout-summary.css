@@ -1,0 +1,28 @@
+.k-confirm { display: grid; gap: calc(20px * var(--k-block, 1)); }
+.k-confirm__head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: calc(16px * var(--k-block, 1)); align-items: start; }
+.k-confirm__check { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--success-bg); color: var(--success-fg); }
+.k-confirm__text { display: grid; justify-items: start; gap: 6px; }
+.k-confirm__title { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+.k-confirm__text p { margin: 0; font-size: 14px; color: var(--muted-foreground); }
+.k-confirm__rows { display: grid; margin: 0; padding: 0; list-style: none; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.k-confirm__row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: calc(12px * var(--k-block, 1)); }
+.k-confirm__row + .k-confirm__row { border-top: 1px solid var(--border); }
+.k-confirm__art {
+  --l1: 90%; --l2: 74%;
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--radius-md); font-size: 22px;
+  background: linear-gradient(135deg, hsl(var(--hue) 85% var(--l1)), hsl(calc(var(--hue) + 35) 75% var(--l2)));
+}
+.dark .k-confirm__art { --l1: 42%; --l2: 30%; }
+.k-confirm__info { display: grid; min-width: 0; font-size: 14px; }
+.k-confirm__note { font-size: 12px; color: var(--muted-foreground); }
+.k-confirm__amount { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.k-confirm__figures { display: grid; gap: 6px; margin: 0; font-size: 14px; }
+.k-confirm__figure { display: flex; justify-content: space-between; gap: 12px; }
+.k-confirm__figure dt { color: var(--muted-foreground); }
+.k-confirm__figure dd { margin: 0; font-variant-numeric: tabular-nums; }
+.k-confirm__figure.is-total { padding-top: 8px; border-top: 1px solid var(--border); font-size: 16px; font-weight: 700; }
+.k-confirm__figure.is-total dt { color: var(--foreground); }
+@media (max-width: 520px) {
+  .k-confirm__row { grid-template-columns: 44px minmax(0, 1fr) auto; }
+  .k-confirm__download { grid-column: 2 / -1; justify-self: start; }
+}

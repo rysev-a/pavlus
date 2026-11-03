@@ -1,0 +1,94 @@
+// The Pet Shop: built from the site-nav, hero, filter-bar, product-grid,
+// product-detail, shop-cart and checkout-summary blocks.
+import SiteNav from "../../blocks/site-nav/view.pavlus"
+import Hero from "../../blocks/hero/view.pavlus"
+import Bar from "../../blocks/filter-bar/view.pavlus"
+import Grid from "../../blocks/product-grid/view.pavlus"
+import Detail from "../../blocks/product-detail/view.pavlus"
+import Cart from "../../blocks/shop-cart/view.pavlus"
+import Confirm from "../../blocks/checkout-summary/view.pavlus"
+
+div.k-template.ps
+  div.ps-promo Free delivery over $100 · code PAVLUS10 takes 10% off
+  div.ps-wrap
+    div.ps-bar
+      +SiteNav#nav(brand="Paws & Co" links=links)
+      button.ui-button.ui-button-outline.ps-cart(type="button" aria-label="Open the cart, {cart.count} items" @click=openCart)
+        span.k-icon.k-cart-icon
+        | Cart
+        span.ps-cart__count(class:is-empty={cart.count === 0}) {cart.count}
+    section.ps-hero
+      div.ps-hero__text
+        +Hero#hero(eyebrow="Spring sale: up to 22% off" title="Good food and great toys for every pet" text="Vet-approved food, toys that survive the weekend and cosy beds for dogs, cats and birds. Delivered in a day." primaryLabel="Shop all products" primaryHref="#products" secondaryLabel="Why Paws & Co" secondaryHref="#why")
+      div.ps-hero__art(aria-hidden="true")
+        span.ps-tile.ps-tile--a(style="--hue: 30") 🐕
+        span.ps-tile.ps-tile--b(style="--hue: 200") 🐈
+        span.ps-tile.ps-tile--c(style="--hue: 100") 🦜
+        span.ps-tile.ps-tile--d(style="--hue: 340") 🦴
+    section.ps-shop#products
+      div.ps-shop__head
+        h2.ps-h2 Shop for your pet
+        p.ps-lead Pick a pet, a type and a budget. Everything is in stock and ships from our warehouse in Portland.
+      +Bar#bar(...bar)
+      +Grid#grid(cards=cards emptyTitle="Nothing matches that" emptyText="Try another pet, a bigger budget or fewer words in the search.")
+    section.ps-why#why
+      h2.ps-h2 Why pet owners stay with us
+      div.ps-perks
+        div.ui-card
+          div.ui-card-header
+            span.ps-perk__icon 🩺
+            h3.ui-card-title Vet-approved
+            p.ui-card-description Every food is checked by our two in-house vets before it reaches the shelf.
+        div.ui-card
+          div.ui-card-header
+            span.ps-perk__icon 📦
+            h3.ui-card-title Delivered in a day
+            p.ui-card-description Order before 3 pm and it leaves the same day. Free over $100.
+        div.ui-card
+          div.ui-card-header
+            span.ps-perk__icon 💛
+            h3.ui-card-title 30-day happiness promise
+            p.ui-card-description If your pet does not love it, we take it back and refund it. No questions.
+    footer.ps-footer
+      div
+        strong Paws & Co
+        p 214 Harbor Lane, Portland. Open every day, 9 to 7.
+      div
+        strong Help
+        p Delivery · Returns · Feeding guides
+      div
+        strong Follow
+        p Instagram · Pet club · Newsletter
+      p.ps-footer__fine Made with pavlus. Prices in US dollars, tax added in the cart.
+
+  if cartOpen
+    div.k-modal.k-modal--sheet
+      div.k-modal__scrim(@click=closeCart)
+      div.ui-sheet.ps-drawer(role="dialog" aria-modal="true" aria-label="Your cart")
+        div.ps-drawer__head
+          h2.ps-drawer__title Your cart
+          span.ui-badge.ui-badge-secondary {cart.count}
+          button.ui-button.ui-button-ghost.ui-button-icon-sm.ps-drawer__close(type="button" aria-label="Close the cart" @click=closeCart)
+            span.k-icon.k-icon-x
+        div.ps-drawer__body
+          +Cart#cart(...cart)
+  if detail
+    div.k-modal
+      div.k-modal__scrim(@click=closeDetail)
+      div.ui-dialog.ps-dialog(role="dialog" aria-modal="true" aria-label=detail.title)
+        button.ui-button.ui-button-ghost.ui-button-icon-sm.ps-dialog__close(type="button" aria-label="Close" @click=closeDetail)
+          span.k-icon.k-icon-x
+        +Detail#detail(...detail)
+  if confirmation
+    div.k-modal
+      div.k-modal__scrim(@click=closeConfirmation)
+      div.ui-dialog.ps-dialog.ps-dialog--narrow(role="dialog" aria-modal="true" aria-label="Order placed")
+        +Confirm#confirm(...confirmation)
+  if toast
+    div.ui-toaster.ui-toaster-bottom-right(role="region" aria-label="Notifications")
+      div.ui-toast(data-measured data-expanded role="status" style="--toast-index: 0; --toast-height: 56px; --toast-offset-y: 0px; --toast-swipe-movement-x: 0px; --toast-swipe-movement-y: 0px")
+        div.ui-toast-content(data-expanded)
+          span.ui-toast-icon
+            span.k-icon.k-icon-check
+          div.ui-toast-body
+            p.ui-toast-title {toast}

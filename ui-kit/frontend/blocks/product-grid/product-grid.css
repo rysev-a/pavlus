@@ -1,0 +1,6 @@
+.k-pgrid__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: calc(18px * var(--k-block, 1)); margin: 0; padding: 0; list-style: none; }
+.k-pgrid__cell { display: grid; min-width: 0; }
+.k-pgrid__cell > * { min-width: 0; }
+.k-pgrid__empty { display: grid; justify-items: center; gap: 8px; padding: calc(56px * var(--k-block, 1)) 16px; border: 1px dashed var(--border); border-radius: var(--radius-xl); text-align: center; }
+.k-pgrid__empty-art { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--muted); font-size: 28px; }
+.k-pgrid__empty p { margin: 0 0 8px; max-width: 36ch; font-size: 14px; color: var(--muted-foreground); }
