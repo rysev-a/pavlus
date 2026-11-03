@@ -1,0 +1,9 @@
+import Chat from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A conversation
+    p.k-demo__note Send a message: the other side answers after a moment (a timer from the time plugin, a canned line from a seeded list).
+    div.k-preview.k-preview--block
+      div.k-narrow
+        +Chat#chat(...chat)

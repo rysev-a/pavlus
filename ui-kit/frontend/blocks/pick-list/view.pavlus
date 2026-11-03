@@ -1,0 +1,13 @@
+// A list of choices, to embed: `+Picks#cats(...cats)`. State = title ("" for
+// none), chips (true: a wrapping row of chips instead of a column), items ({ id,
+// label, emoji, count, active }). A click sends `pick(id)` (`<name>.pick`).
+section.k-picks(class:k-picks--chips={chips})
+  if title
+    h3.k-picks__title {title}
+  div.k-picks__list(role="group" aria-label={title || "Choices"})
+    for it in items key it.id
+      button.k-picks__item(type="button" aria-pressed={it.active ? "true" : "false"} class:is-active={it.active} @click=pick(it.id))
+        if it.emoji
+          span.k-picks__emoji {it.emoji}
+        span.k-picks__label {it.label}
+        span.k-picks__count {it.count}

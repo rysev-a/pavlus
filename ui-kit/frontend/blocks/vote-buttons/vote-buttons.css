@@ -1,0 +1,12 @@
+.k-vote { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; flex: none; }
+.k-vote--row { flex-direction: row; gap: 6px; }
+.k-vote__btn { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 1px solid transparent; border-radius: var(--radius-md); background: transparent; color: var(--muted-foreground); cursor: pointer; }
+.k-vote__btn:hover { background: var(--accent); color: var(--foreground); }
+.k-vote__btn:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+.k-vote__btn.is-on { background: color-mix(in srgb, var(--primary) 15%, transparent); color: var(--primary); }
+.k-vote__btn.is-down { background: color-mix(in srgb, var(--destructive) 15%, transparent); color: var(--destructive); }
+.k-vote__score { min-width: 2ch; font-size: 15px; text-align: center; font-variant-numeric: tabular-nums; }
+.k-vote__score.is-up { color: var(--primary); }
+.k-vote__score.is-down { color: var(--destructive); }
+.k-icon.k-vote-up { --k-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m18 15-6-6-6 6'/%3E%3C/svg%3E"); width: 18px; height: 18px; }
+.k-icon.k-vote-down { --k-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); width: 18px; height: 18px; }

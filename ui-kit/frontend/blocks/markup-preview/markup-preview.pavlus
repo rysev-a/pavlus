@@ -1,0 +1,11 @@
+import Preview from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Write on the left, read on the right
+    p.k-demo__note Supported: a line starting with # (heading), - (list), > (quote), a fenced code block, and **bold**, *italic* and `code` inside a line.
+    div.k-preview.k-preview--block
+      div.k-mkp-demo
+        textarea.ui-textarea-control(rows="10" aria-label="Text" value=text @input=typing)
+        div.k-mkp-demo__out
+          +Preview#preview(...preview)

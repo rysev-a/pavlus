@@ -1,0 +1,26 @@
+// An inbox, to embed: `+Inbox#inbox(...inbox)`. State = title, query (the search
+// box text), items ({ id, name, initials, tone, preview, time, unread (a
+// count), active, online }). Messages (`<name>.pick` ...): pick(id), search
+// (read `msg.event.value`).
+section.ui-card.k-convo
+  header.k-convo__head
+    h3.k-convo__title {title}
+  div.k-convo__search
+    input.ui-input(type="search" aria-label="Search conversations" placeholder="Search" value=query @input=search)
+  if items.length === 0
+    p.k-convo__empty No conversations match.
+  ul.k-convo__list
+    for c in items key c.id
+      li
+        button.k-convo__row(type="button" class:is-active={c.active} aria-current={c.active ? "true" : null} @click=pick(c.id))
+          span.k-convo__av(style="--t: var(--chart-{c.tone})")
+            | {c.initials}
+            if c.online
+              span.k-convo__online(aria-label="Online")
+          span.k-convo__text
+            span.k-convo__line
+              strong.k-convo__name {c.name}
+              span.k-convo__time {c.time}
+            span.k-convo__preview(class:is-unread={c.unread > 0}) {c.preview}
+          if c.unread
+            span.ui-badge.ui-badge-default {c.unread}

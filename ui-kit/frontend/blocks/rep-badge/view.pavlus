@@ -1,0 +1,8 @@
+// A reputation badge, to embed: `+Rep#rep(...badge)` where `badge` comes from
+// `badgeOf` in rep-badge.ts. State = emoji, label, tier (0-5; 6 = moderator),
+// points (text like "1.2k", or "" to hide).
+span.k-repb(data-tier={tier})
+  span.k-repb__emoji {emoji}
+  span.k-repb__label {label}
+  if points
+    span.k-repb__points {points}

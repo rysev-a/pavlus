@@ -1,0 +1,25 @@
+// A row of stories and a viewer, to embed: `+Stories#stories(...stories)`.
+// State = stories ({ id, label, initials, tone, emoji, seen }), current (the
+// open story { label, initials, tone, emoji, text, ago } or null). Messages
+// (`<name>.open` ...): open(id), add, close.
+section.k-stories
+  div.k-stories__row
+    button.k-stories__item(type="button" @click=add)
+      span.k-stories__ring.k-stories__ring--add
+        span.k-stories__face
+          span.k-icon.k-icon-plus
+      span.k-stories__label Your story
+    for s in stories key s.id
+      button.k-stories__item(type="button" class:is-seen={s.seen} aria-label="Open the story of {s.label}" @click=open(s.id))
+        span.k-stories__ring(style="--t: var(--chart-{s.tone})")
+          span.k-stories__face {s.emoji || s.initials}
+        span.k-stories__label {s.label}
+  if current
+    div.k-stories__viewer(style="--t: var(--chart-{current.tone})")
+      header.k-stories__bar
+        strong {current.label}
+        span.k-stories__ago {current.ago}
+        button.k-stories__close(type="button" aria-label="Close the story" @click=close)
+          span.k-icon.k-icon-x
+      div.k-stories__big {current.emoji}
+      p.k-stories__text {current.text}

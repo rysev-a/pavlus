@@ -1,0 +1,24 @@
+// A list of people, to embed: `+People#people(...list)`. State = title ("" for
+// none), empty (text when the list is empty), people ({ id, name, initials, tone,
+// sub, done, primaryLabel, secondaryLabel ("" for no second button) }).
+// Messages (`<name>.primary` ...): primary(id), secondary(id), open(id).
+section.ui-card.k-people
+  if title
+    h3.k-people__title {title}
+  if people.length === 0
+    p.k-people__empty {empty}
+  ul.k-people__list
+    for p in people key p.id
+      li.k-people__row
+        button.k-people__who(type="button" @click=open(p.id))
+          span.k-people__av(style="--t: var(--chart-{p.tone})") {p.initials}
+          span.k-people__text
+            strong.k-people__name {p.name}
+            span.k-people__sub {p.sub}
+        div.k-people__acts
+          if p.secondaryLabel
+            button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=secondary(p.id)) {p.secondaryLabel}
+          button.ui-button.ui-button-sm(type="button" class:ui-button-default={!p.done} class:ui-button-outline={p.done} @click=primary(p.id))
+            if p.done
+              span.k-icon.k-icon-check
+            | {p.primaryLabel}

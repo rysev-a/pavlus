@@ -1,0 +1,13 @@
+import Head from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A person
+    p.k-demo__note Follow changes the button and the follower count.
+    div.k-preview.k-preview--block
+      +Head#person(...person)
+  section.k-demo
+    h2.k-demo__title A company
+    p.k-demo__note A square logo, no handle and a different button.
+    div.k-preview.k-preview--block
+      +Head#company(...company)
