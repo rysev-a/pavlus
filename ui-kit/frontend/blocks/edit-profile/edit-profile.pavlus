@@ -1,0 +1,73 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Account settings
+    div.k-preview.k-preview--center.k-ep
+      div.ui-card.k-ep-card
+        div.ui-card-header
+          h3.ui-card-title Edit profile
+          p.ui-card-description This is how other people see you on the team.
+        form.ui-card-content(novalidate @submit.prevent=save)
+          div.ui-form
+            if justSaved
+              div.ui-alert.ui-alert-success
+                span.ui-alert-icon
+                  span.k-icon.k-icon-check
+                div.ui-alert-body
+                  p.ui-alert-title Profile saved
+                  div.ui-alert-description Your changes are live. {saved.name} is now a {roleLabel}.
+            div.k-ep-who
+              span.ui-person-avatar.k-ep-avatar(style="--hue: {hue}") {initials}
+              div.k-ep-who-text
+                p.k-ep-who-name {draft.name}
+                p.k-hint @{draft.username} · {roleLabel}
+            div.k-ep-pair
+              div.ui-field(data-invalid={errors.name ? "true" : null})
+                label.ui-label(for="ep-name") Full name
+                input.ui-input#ep-name(type="text" autocomplete="off" value=draft.name @input=setText("name"))
+                if errors.name
+                  p.ui-field-error {errors.name}
+              div.ui-field(data-invalid={errors.username ? "true" : null})
+                label.ui-label(for="ep-username") Username
+                input.ui-input#ep-username(type="text" autocomplete="off" value=draft.username @input=setText("username"))
+                if errors.username
+                  p.ui-field-error {errors.username}
+            div.ui-field(data-invalid={errors.email ? "true" : null})
+              label.ui-label(for="ep-email") Email
+              input.ui-input#ep-email(type="email" autocomplete="off" value=draft.email @input=setText("email"))
+              if errors.email
+                p.ui-field-error {errors.email}
+            div.ui-field
+              label.ui-label(for="ep-bio") Bio
+              textarea.ui-textarea-control#ep-bio(rows="4" maxlength="160" placeholder="A line or two about you" value=draft.bio @input=setText("bio"))
+              div.k-ep-count
+                span.k-hint Shown on your public page.
+                span.k-ep-counter(data-low={bioLeft < 20 ? "true" : null}) {bioCount} / 160
+            div.ui-select
+              label.ui-select-label(for="ep-role") Role
+              select.ui-select-control#ep-role(@change=setText("role"))
+                option(value="owner" selected={draft.role === "owner"}) Owner
+                option(value="admin" selected={draft.role === "admin"}) Administrator
+                option(value="editor" selected={draft.role === "editor"}) Editor
+                option(value="viewer" selected={draft.role === "viewer"}) Viewer
+            fieldset.ui-fieldset.k-ep-notify
+              legend.ui-field-legend Notifications
+              div.ui-switch.ui-switch-with-description
+                input.ui-switch-input#ep-n-email(type="checkbox" role="switch" checked={draft.notifyEmail} @change=setFlag("notifyEmail"))
+                div.ui-switch-text
+                  label.ui-switch-label(for="ep-n-email") Email digest
+                  p.ui-switch-description A summary of comments and mentions, once a day.
+              div.ui-switch.ui-switch-with-description
+                input.ui-switch-input#ep-n-push(type="checkbox" role="switch" checked={draft.notifyPush} @change=setFlag("notifyPush"))
+                div.ui-switch-text
+                  label.ui-switch-label(for="ep-n-push") Push notifications
+                  p.ui-switch-description Get a ping when someone replies to you.
+              div.ui-switch.ui-switch-with-description
+                input.ui-switch-input#ep-n-news(type="checkbox" role="switch" checked={draft.notifyNews} @change=setFlag("notifyNews"))
+                div.ui-switch-text
+                  label.ui-switch-label(for="ep-n-news") Product news
+                  p.ui-switch-description New features and release notes, about twice a month.
+            div.k-ep-actions
+              button.ui-button.ui-button-default#ep-save(type="submit" disabled={!dirty}) Save changes
+              button.ui-button.ui-button-outline#ep-reset(type="button" disabled={!dirty} @click=reset) Reset
+              if dirty
+                span.k-hint You have unsaved changes.

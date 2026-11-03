@@ -1,0 +1,66 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Checkout
+    div.k-preview.k-cc
+      div.k-cc-side
+        div.k-cc-card(class:is-flipped={focus === "cvc"} data-brand={brand})
+          div.k-cc-face.k-cc-front
+            div.k-cc-top
+              span.k-cc-chip
+              div.k-cc-brand(data-brand={brand})
+                if brand === "mastercard"
+                  span.k-cc-mc
+                else if brand === "visa"
+                  span.k-cc-visa VISA
+                else if brand === "amex"
+                  span.k-cc-amex AMEX
+                else
+                  span.k-icon.k-icon-lg.k-cc-wifi
+            p.k-cc-number(data-active={focus === "number" ? "true" : null}) {shownNumber}
+            div.k-cc-bottom
+              div.k-cc-part(data-active={focus === "name" ? "true" : null})
+                span.k-cc-caption Card holder
+                span.k-cc-value {shownName}
+              div.k-cc-part.k-cc-part-end(data-active={focus === "expiry" ? "true" : null})
+                span.k-cc-caption Expires
+                span.k-cc-value {shownExpiry}
+          div.k-cc-face.k-cc-back
+            span.k-cc-stripe
+            div.k-cc-signature
+              span.k-cc-sign
+              span.k-cc-code(data-active={focus === "cvc" ? "true" : null}) {shownCvc}
+            p.k-cc-fine Customer service: 0800 555 0142
+        p.k-hint The card turns around while you type the security code.
+      form.ui-form.k-cc-form(novalidate @submit.prevent=pay)
+        if paid
+          div.ui-alert.ui-alert-success
+            span.ui-alert-icon
+              span.k-icon.k-icon-check
+            div.ui-alert-body
+              p.ui-alert-title Payment of {amount} received
+              div.ui-alert-description A receipt was sent to the address on file. Thank you, {name}.
+          button.ui-button.ui-button-outline(type="button" @click=again) Pay with another card
+        else
+          div.ui-field(data-invalid={errors.number ? "true" : null})
+            label.ui-label(for="cc-number") Card number
+            input.ui-input#cc-number(type="text" inputmode="numeric" autocomplete="off" placeholder="4242 4242 4242 4242" value=number @input=setField("number") @focus=focusField("number") @blur=blurField("number"))
+            if errors.number
+              p.ui-field-error {errors.number}
+          div.ui-field(data-invalid={errors.name ? "true" : null})
+            label.ui-label(for="cc-name") Name on card
+            input.ui-input#cc-name(type="text" autocomplete="off" placeholder="Ann Lee" value=name @input=setField("name") @focus=focusField("name") @blur=blurField("name"))
+            if errors.name
+              p.ui-field-error {errors.name}
+          div.k-cc-pair
+            div.ui-field(data-invalid={errors.expiry ? "true" : null})
+              label.ui-label(for="cc-expiry") Expiry
+              input.ui-input#cc-expiry(type="text" inputmode="numeric" autocomplete="off" placeholder="MM/YY" value=expiry @input=setField("expiry") @focus=focusField("expiry") @blur=blurField("expiry"))
+              if errors.expiry
+                p.ui-field-error {errors.expiry}
+            div.ui-field(data-invalid={errors.cvc ? "true" : null})
+              label.ui-label(for="cc-cvc") CVC
+              input.ui-input#cc-cvc(type="text" inputmode="numeric" autocomplete="off" placeholder="123" value=cvc @input=setField("cvc") @focus=focusField("cvc") @blur=blurField("cvc"))
+              if errors.cvc
+                p.ui-field-error {errors.cvc}
+          button.ui-button.ui-button-default(type="submit") Pay {amount}
+          p.k-hint Try 4242 4242 4242 4242, 5555 5555 5555 4444 or 3782 822463 10005 with any future date.
