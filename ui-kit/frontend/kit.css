@@ -402,3 +402,22 @@ html[data-style="mdn"] .ui-badge, html[data-style="mdn"] .ui-pill { border-radiu
 @media (max-width: 640px) {
   .k-themepanel { top: 0; right: 0; bottom: 0; width: 100vw; max-width: 100vw; border-radius: 0; }
 }
+
+/* ---- the range calendar ---- */
+.k-range { display: grid; gap: 12px; width: min(100%, 40rem); }
+.k-range__presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.k-range .ui-calendar.ui-calendar-range { width: 100%; }
+.k-range__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+.k-range__summary { color: var(--muted-foreground); }
+.k-range__pop { padding: 12px; width: min(94vw, 42rem); }
+.k-range__pop .k-range { width: 100%; }
+
+/* ---- the multi-select ---- */
+.ui-multi-select[data-open="true"] .ui-multi-select-control { position: relative; z-index: 45; }
+.k-ms-x { --k-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E"); width: 12px; height: 12px; }
+.k-ms-option { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
+.k-ms-option__text { display: grid; gap: 1px; min-width: 0; }
+.k-ms-option__hint { font-size: 12px; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-ms-retry { display: grid; place-items: center; padding: 0 8px 12px; }
+.k-ms-note { padding: 8px; font-size: 12px; text-align: center; color: var(--muted-foreground); border-top: 1px solid var(--border); margin-top: 4px; }
+.ui-multi-select-option[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
