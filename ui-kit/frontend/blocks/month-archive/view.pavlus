@@ -1,0 +1,28 @@
+// A month calendar for an archive, to embed. State = the props: the fields of
+// `archiveView()` (title, weekdays, cells, totalText), spread or one by one.
+// Days with entries are buttons with dots under the number. Events:
+// `<name>.prev`, `<name>.next`, `<name>.pick` (the ISO date of a day).
+div.k-march
+  div.k-march__head
+    button.ui-button.ui-button-ghost.ui-button-icon.k-march__nav(type="button" aria-label="Previous month" @click=prev)
+      span.k-icon.k-icon-chevron-left
+    div.k-march__titles
+      strong.k-march__title {title}
+      small.k-march__total {totalText}
+    button.ui-button.ui-button-ghost.ui-button-icon.k-march__nav(type="button" aria-label="Next month" @click=next)
+      span.k-icon.k-icon-chevron-right
+  div.k-march__grid
+    for name in weekdays key name
+      span.k-march__wd {name}
+    for cell in cells key cell.key
+      if cell.blank
+        span.k-march__blank
+      else if cell.count > 0
+        button.k-march__day.k-march__day--has(type="button" data-today={cell.today ? "true" : null} data-selected={cell.selected ? "true" : null} aria-label="{cell.iso}: {cell.count} entries" @click=pick(cell.iso))
+          span.k-march__num {cell.day}
+          span.k-march__dots
+            for dot in cell.dots key dot
+              span.k-march__dot
+      else
+        span.k-march__day(data-today={cell.today ? "true" : null})
+          span.k-march__num {cell.day}

@@ -1,0 +1,39 @@
+// Diary entries, to embed. State = the props: `entries` (a list of
+// entryCard() from entry.ts), `full` (true: the whole text, false: an
+// excerpt with "Read more") and `reader` (true: the big quiet reading page).
+// Events: `<name>.open` (the id: the entry opens), `<name>.read` (the id:
+// reading mode), `<name>.tag` (a tag), `<name>.comments` (the id).
+div.k-jentry(class:k-jentry--reader={reader})
+  for entry in entries key entry.id
+    article.k-jentry__post
+      header.k-jentry__head
+        span.k-jentry__pic(style="--hue: {entry.hue}") {entry.initials}
+        div.k-jentry__who
+          strong {entry.authorName}
+          span.k-jentry__when {entry.dateText} · {entry.time}
+        span(class="ui-pill ui-pill-{entry.privacyTone}") {entry.privacyLabel}
+      h2.k-jentry__title
+        button.k-jentry__open(type="button" @click=open(entry.id)) {entry.title}
+      ul.k-jentry__meta
+        if entry.moodEmoji
+          li {entry.moodEmoji} {entry.moodLabel}
+        if entry.music
+          li ♪ {entry.music}
+        if entry.location
+          li ⌖ {entry.location}
+      div.k-jentry__body
+        if full
+          for para, i in entry.paragraphs key i
+            p {para}
+        else
+          p {entry.excerpt}
+          if entry.truncated
+            button.k-jentry__more(type="button" @click=open(entry.id)) Read more
+      footer.k-jentry__foot
+        div.k-jentry__tags
+          for t in entry.tags key t
+            button.k-jentry__tag(type="button" @click=tag(t)) #{t}
+        div.k-jentry__acts
+          span.k-jentry__time {entry.minutesText}
+          button.k-jentry__act(type="button" @click=comments(entry.id)) {entry.commentsText}
+          button.k-jentry__act(type="button" @click=read(entry.id)) Reading mode

@@ -1,0 +1,8 @@
+import Friends from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Friends and their latest entries
+    p.k-demo__note Private entries never show. Open one and the New marker goes away.
+    div.k-preview.k-preview--block
+      +Friends#friends(friends=cards empty="You have no friends yet.")

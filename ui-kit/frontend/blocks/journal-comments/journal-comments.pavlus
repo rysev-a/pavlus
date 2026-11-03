@@ -1,0 +1,9 @@
+import Comments from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Comments and a form
+    p.k-demo__note Try posting an empty comment, then a real one.
+    div.k-preview.k-preview--block
+      div.k-jcom-demo
+        +Comments#com(heading=heading comments=cards draft=draft error=error)

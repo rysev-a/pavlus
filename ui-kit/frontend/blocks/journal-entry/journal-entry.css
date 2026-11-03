@@ -1,0 +1,36 @@
+.k-jentry { display: grid; gap: calc(40px * var(--k-block, 1)); }
+.k-jentry__post { display: grid; gap: calc(14px * var(--k-block, 1)); padding-bottom: calc(40px * var(--k-block, 1)); border-bottom: 1px solid var(--border); }
+.k-jentry__post:last-child { border-bottom: 0; padding-bottom: 0; }
+.k-jentry__head { display: flex; align-items: center; gap: 12px; }
+.k-jentry__pic { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: color-mix(in oklab, hsl(var(--hue) 65% 55%) 24%, var(--background)); color: color-mix(in oklab, hsl(var(--hue) 70% 45%) 80%, var(--foreground)); font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+.k-jentry__who { display: grid; flex: 1; min-width: 0; line-height: 1.35; }
+.k-jentry__when { color: var(--muted-foreground); font-size: .85em; }
+.k-jentry__title { margin: 0; font-size: 1.75em; font-weight: 600; line-height: 1.2; letter-spacing: -.02em; text-wrap: balance; }
+.k-jentry__open { display: block; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.k-jentry__open:hover { color: var(--primary); }
+.k-jentry__meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; padding: 0; list-style: none; color: var(--muted-foreground); font-size: .88em; }
+.k-jentry__body { display: grid; gap: 1em; font-size: 1.08em; line-height: 1.75; }
+.k-jentry__body p { margin: 0; max-width: 40em; }
+.k-jentry__more { justify-self: start; padding: 0; border: 0; background: none; color: var(--primary); font: inherit; font-size: .9em; font-weight: 600; cursor: pointer; }
+.k-jentry__more:hover { text-decoration: underline; }
+.k-jentry__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.k-jentry__tags, .k-jentry__acts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.k-jentry__tag { padding: 0; border: 0; background: none; color: var(--primary); font: inherit; font-size: .9em; cursor: pointer; }
+.k-jentry__tag:hover { text-decoration: underline; }
+.k-jentry__time { color: var(--muted-foreground); font-size: .85em; }
+.k-jentry__act { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--foreground); font: inherit; font-size: .85em; cursor: pointer; }
+.k-jentry__act:hover { background: var(--muted); }
+
+/* reading mode: one entry, a narrow column, big type, nothing else */
+.k-jentry--reader { max-width: 40rem; margin-inline: auto; }
+.k-jentry--reader .k-jentry__post { gap: calc(24px * var(--k-block, 1)); border: 0; padding: 0; }
+.k-jentry--reader .k-jentry__title { font-size: 2.6em; line-height: 1.1; }
+.k-jentry--reader .k-jentry__body { font-size: 1.3em; line-height: 1.85; gap: 1.2em; }
+.k-jentry--reader .k-jentry__pic { width: 36px; height: 36px; font-size: 13px; }
+.k-jentry--reader .k-jentry__body p:first-child::first-letter { float: left; margin: .05em .12em 0 0; font-size: 3.2em; line-height: .8; font-weight: 600; color: var(--primary); }
+.k-jentry--reader .k-jentry__acts { display: none; }
+@media (max-width: 640px) {
+  .k-jentry__title { font-size: 1.5em; }
+  .k-jentry--reader .k-jentry__title { font-size: 2em; }
+  .k-jentry--reader .k-jentry__body { font-size: 1.15em; }
+}

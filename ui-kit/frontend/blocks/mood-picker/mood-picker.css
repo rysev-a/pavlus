@@ -1,0 +1,6 @@
+.k-mood { display: flex; flex-wrap: wrap; gap: calc(8px * var(--k-block, 1)); }
+.k-mood__out { margin: calc(12px * var(--k-block, 1)) 0 0; font-size: 13px; color: var(--muted-foreground); }
+.k-mood__item { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 8px; border: 1px solid var(--border); border-radius: 999px; background: var(--card); color: var(--foreground); font: inherit; font-size: 13px; cursor: pointer; transition: border-color .15s, background .15s; }
+.k-mood__item:hover { border-color: var(--primary); }
+.k-mood__item[data-active="true"] { border-color: var(--primary); background: var(--secondary); color: var(--secondary-foreground); font-weight: 600; box-shadow: 0 0 0 1px var(--primary); }
+.k-mood__emoji { font-size: 1.25em; line-height: 1; }
