@@ -1,0 +1,10 @@
+.lh { display: grid; justify-items: center; min-height: calc(100vh - 160px); padding: calc(48px * var(--k-block, 1)) 16px; background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary) 28%, transparent), transparent 55%), var(--background); }
+.lh__card { display: grid; justify-items: center; gap: calc(14px * var(--k-block, 1)); width: min(100%, 460px); text-align: center; }
+.lh__avatar { width: 96px; height: 96px; box-shadow: 0 0 0 4px var(--background), 0 0 0 6px var(--primary); }
+.lh__avatar .ui-avatar-fallback { font-size: 40px; font-weight: 700; background: var(--primary); color: var(--primary-foreground); }
+.lh__name { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
+.lh__handle { margin: -8px 0 0; color: var(--primary); font-weight: 500; }
+.lh__bio { margin: 0; max-width: 40ch; color: var(--muted-foreground); line-height: 1.55; }
+.lh .k-linklist { width: 100%; text-align: left; }
+.lh__socials { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.lh__footer { margin: 16px 0 0; font-size: 12px; color: var(--muted-foreground); }

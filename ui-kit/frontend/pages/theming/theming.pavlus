@@ -1,0 +1,119 @@
+// The configurator. State = the props passed by the shell: `look` (the
+// visitor's choices), `catalog` (what there is to choose from) and `css`
+// (the look as CSS). A click is `theming.choose(row, id)` or
+// `theming.palette(id, mode)`: the shell stores the look and the theme plugin
+// applies it to the whole site, so everything on this page changes at once.
+section.theming
+  div.ui-page-header
+    div
+      h1.ui-page-title Theming
+      p.ui-page-description Fonts, colors, sizes and style of the whole kit. Every change applies at once and is remembered in this browser.
+    div.ui-page-actions
+      button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=reset) Reset to default
+
+  section.k-demo
+    h2.k-demo__title Style
+    p.k-demo__note Corners, outlines and shadows. A style also suggests a font, which you can change below.
+    div.k-options
+      for style in catalog.styles key style.id
+        button.k-option(type="button" class:is-active={look.style === style.id} aria-pressed={look.style === style.id ? "true" : "false"} @click=choose("style", style.id))
+          strong.k-option__name {style.name}
+          span.k-option__note {style.note}
+
+  section.k-demo
+    h2.k-demo__title Fonts
+    p.k-demo__note System font stacks: nothing is downloaded, so what you see depends on your device.
+    div.k-options
+      for font in catalog.fonts key font.id
+        button.k-option.k-option--font(type="button" class:is-active={look.font === font.id} aria-pressed={look.font === font.id ? "true" : "false"} @click=choose("font", font.id))
+          span.k-option__sample(style="font-family: {font.stack}") Aa
+          strong.k-option__name {font.name}
+          span.k-option__note {font.note}
+
+  section.k-demo
+    h2.k-demo__title Colors
+    p.k-demo__note 30 light and 30 dark themes. A theme is a name in a mode; the light and dark switch in the top bar picks the other mode of the same name.
+    h3.k-demo__sub Light
+    div.k-swatches
+      for sw in catalog.light key sw.id
+        button.k-swatch(type="button" class:is-active={look.palette === sw.id && look.mode === "light"} aria-pressed={look.palette === sw.id && look.mode === "light" ? "true" : "false"} style="background: {sw.bg}; color: {sw.fg}" @click=palette(sw.id, "light"))
+          span.k-swatch__dot(style="background: {sw.primary}")
+          span {sw.name}
+    h3.k-demo__sub Dark
+    div.k-swatches
+      for sw in catalog.dark key sw.id
+        button.k-swatch(type="button" class:is-active={look.palette === sw.id && look.mode === "dark"} aria-pressed={look.palette === sw.id && look.mode === "dark" ? "true" : "false"} style="background: {sw.bg}; color: {sw.fg}" @click=palette(sw.id, "dark"))
+          span.k-swatch__dot(style="background: {sw.primary}")
+          span {sw.name}
+
+  section.k-demo
+    h2.k-demo__title Sizes
+    p.k-demo__note Three scales: the controls (buttons, inputs, rows), the text, and the blocks (padding and gaps of cards, forms and pages).
+    div.k-size-rows
+      div.k-size-row
+        span.k-size-row__label Controls
+        div.ui-button-group.ui-button-group-horizontal(role="group")
+          for size in catalog.ui key size.id
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" class:ui-button-secondary={look.ui === size.id} aria-pressed={look.ui === size.id ? "true" : "false"} @click=choose("ui", size.id)) {size.name}
+      div.k-size-row
+        span.k-size-row__label Text
+        div.ui-button-group.ui-button-group-horizontal(role="group")
+          for size in catalog.text key size.id
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" class:ui-button-secondary={look.text === size.id} aria-pressed={look.text === size.id ? "true" : "false"} @click=choose("text", size.id)) {size.name}
+      div.k-size-row
+        span.k-size-row__label Blocks
+        div.ui-button-group.ui-button-group-horizontal(role="group")
+          for size in catalog.block key size.id
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" class:ui-button-secondary={look.block === size.id} aria-pressed={look.block === size.id ? "true" : "false"} @click=choose("block", size.id)) {size.name}
+
+  section.k-demo
+    h2.k-demo__title Preview
+    div.k-preview.k-preview--block
+      div.k-theming-preview
+        div.ui-card
+          div.ui-card-header
+            h3.ui-card-title Create a project
+            p.ui-card-description Deploy your new project in one click.
+          div.ui-card-content
+            div.ui-form
+              div.ui-field
+                label.ui-label(for="th-name") Name
+                input.ui-input#th-name(type="text" placeholder="Name of your project")
+              div.ui-field
+                label.ui-label(for="th-fw") Framework
+                select.ui-select-control#th-fw
+                  option Pavlus
+                  option Next.js
+                  option Astro
+              div.ui-switch
+                input.ui-switch-input#th-sw(type="checkbox" role="switch" checked)
+                label.ui-switch-label(for="th-sw") Deploy on push
+          div.ui-card-footer
+            button.ui-button.ui-button-outline(type="button") Cancel
+            button.ui-button.ui-button-default(type="button") Deploy
+        div.k-theming-preview__col
+          div.k-row
+            span.ui-badge.ui-badge-default Default
+            span.ui-badge.ui-badge-secondary Secondary
+            span.ui-badge.ui-badge-outline Outline
+            span.ui-badge.ui-badge-success Success
+            span.ui-badge.ui-badge-destructive Destructive
+          div.ui-alert.ui-alert-info
+            span.ui-alert-icon
+              span.k-icon.k-icon-info
+            div.ui-alert-body
+              p.ui-alert-title Heads up!
+              div.ui-alert-description The look applies to every page of the kit.
+          div.ui-progress
+            div.ui-progress-indicator(style="width: 64%")
+          div.k-row
+            button.ui-button.ui-button-default.ui-button-sm(type="button") Default
+            button.ui-button.ui-button-secondary.ui-button-sm(type="button") Secondary
+            button.ui-button.ui-button-outline.ui-button-sm(type="button") Outline
+            button.ui-button.ui-button-ghost.ui-button-sm(type="button") Ghost
+            button.ui-button.ui-button-destructive.ui-button-sm(type="button") Delete
+
+  section.k-demo
+    h2.k-demo__title Export
+    p.k-demo__note The variables of your look, to paste into a stylesheet.
+    pre.k-code-block {css}

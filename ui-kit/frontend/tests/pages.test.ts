@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { expect, test } from "vitest";
-import { entries } from "../registry.ts";
+import { allEntries, entries } from "../registry.ts";
 
 /**
  * Boots the whole site like the browser does (main.ts, real plugins, real
@@ -32,12 +32,19 @@ test("every component has a page that renders", async () => {
   expect(document.querySelectorAll(".home__card")).toHaveLength(entries.length);
 
   const broken: string[] = [];
-  for (const entry of entries) {
-    await visit(`/${entry.slug}`);
-    const title = document.querySelector(".ui-page-title")?.textContent;
-    const demos = document.querySelectorAll(".k-demo").length;
+  for (const entry of allEntries) {
+    await visit(entry.path);
+    // a template is a whole site: its bar names it, the other pages have a title
+    const title =
+      entry.section === "templates"
+        ? document.querySelector(".k-template-bar strong")?.textContent
+        : document.querySelector(".ui-page-title")?.textContent;
+    const demos =
+      entry.section === "templates"
+        ? document.querySelectorAll(".k-template").length
+        : document.querySelectorAll(".k-demo").length;
     if (title !== entry.title || demos === 0) {
-      broken.push(`${entry.slug}: title ${title}, ${demos} demos`);
+      broken.push(`${entry.path}: title ${title}, ${demos} demos`);
     }
   }
   expect(broken).toEqual([]);
