@@ -1,0 +1,67 @@
+// A table of firewall rules with a row to add one, to embed. State = the
+// props (from `rulesProps` in rules.ts): rows ({ id, protoLabel, port,
+// source, action, tone, risky, note }), the draft (proto, port, source,
+// action, note), portError, sourceError, noPort. Events, with the name of the
+// embed in front: `remove` (the rule id), `field` (the field name; the value
+// is in the event) and `add`.
+div.k-rtab
+  div.ui-data-table
+    div.ui-data-scroll
+      table
+        thead
+          tr
+            th Action
+            th Protocol
+            th Port
+            th Source
+            th Note
+            th
+        tbody
+          if rows.length === 0
+            tr
+              td.ui-resource-empty(colspan="6") No rules: all inbound traffic is blocked.
+          for rule in rows key rule.id
+            tr
+              td
+                span(class="ui-pill ui-pill-{rule.tone}") {rule.action}
+              td
+                span.k-rtab__mono {rule.protoLabel}
+              td
+                span.k-rtab__mono {rule.port}
+              td
+                span.k-rtab__mono {rule.source}
+                if rule.risky
+                  span.ui-pill.ui-pill-warning.k-rtab__risk open to the world
+              td.k-rtab__note {rule.note}
+              td.k-rtab__end
+                button.ui-button.ui-button-ghost.ui-button-icon.ui-button-sm(type="button" aria-label="Remove the rule" @click=remove(rule.id))
+                  span.k-icon.k-ai-trash
+  form.k-rtab__form(@submit.prevent=add)
+    div.ui-field
+      label.ui-label(for="rtab-action") Action
+      select.ui-select-control(id="rtab-action" @change=field("action"))
+        option(value="allow" selected={action === "allow"}) Allow
+        option(value="deny" selected={action === "deny"}) Deny
+    div.ui-field
+      label.ui-label(for="rtab-proto") Protocol
+      select.ui-select-control(id="rtab-proto" @change=field("proto"))
+        option(value="tcp" selected={proto === "tcp"}) TCP
+        option(value="udp" selected={proto === "udp"}) UDP
+        option(value="icmp" selected={proto === "icmp"}) ICMP
+    div.ui-field(data-invalid={portError ? "true" : null})
+      label.ui-label(for="rtab-port") Port
+      input.ui-input(id="rtab-port" type="text" value={noPort ? "" : port} placeholder={noPort ? "not used" : "443 or 8000-8100"} disabled={noPort} autocomplete="off" @input=field("port"))
+      if portError
+        p.ui-field-error {portError}
+    div.ui-field(data-invalid={sourceError ? "true" : null})
+      label.ui-label(for="rtab-source") Source
+      input.ui-input(id="rtab-source" type="text" value=source placeholder="any or 10.0.0.0/16" autocomplete="off" @input=field("source"))
+      if sourceError
+        p.ui-field-error {sourceError}
+    div.ui-field
+      label.ui-label(for="rtab-note") Note
+      input.ui-input(id="rtab-note" type="text" value=note placeholder="What it is for" autocomplete="off" @input=field("note"))
+    div.k-rtab__submit
+      button.ui-button.ui-button-default(type="submit")
+        span.k-icon.k-icon-plus
+        | Add rule

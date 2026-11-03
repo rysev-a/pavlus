@@ -1,0 +1,14 @@
+// A multiple choice exercise, to embed. State = the props (from `choiceProps`
+// in quiz.ts): prompt, multiple, mono, locked and options ({ id, text,
+// selected, mark }). Sends `choose(optionId)`. The Check button and the
+// feedback belong to the exercise footer block.
+div.k-exq
+  p.k-exq__prompt {prompt}
+  p.k-exq__hint {multiple ? "Select all that apply." : "Pick one answer."}
+  div.k-exq__options(role={multiple ? "group" : "radiogroup"})
+    for option in options key option.id
+      button.k-exq__opt(type="button" role={multiple ? "checkbox" : "radio"} aria-checked={option.selected ? "true" : "false"} class:is-selected={option.selected} class:is-mono={mono} data-mark={option.mark || null} disabled={locked} @click=choose(option.id))
+        span.k-exq__box(class:k-exq__box--round={!multiple})
+          if option.selected
+            span.k-icon.k-icon-check
+        span.k-exq__text {option.text}

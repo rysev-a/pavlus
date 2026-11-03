@@ -1,0 +1,23 @@
+// A schedule grouped by day, to embed. State = the props: `days` (agendaDays():
+// { id, label, note, entries: [{ id, time, title, sub, status, tone, action,
+// done }] }) and `empty`. Events, with the name of the embed in front: `pick`
+// (entry id) and `act` (entry id; the button of the row).
+div.k-agenda
+  for day in days key day.id
+    section.k-agenda__day
+      header.k-agenda__head
+        h3 {day.label}
+        if day.note
+          span.ui-badge {day.note}
+      ul.k-agenda__list
+        for entry in day.entries key entry.id
+          li(class="k-agenda__row k-adm-t-{entry.tone}" class:k-agenda__row--done={entry.done} @click=pick(entry.id))
+            span.k-agenda__time {entry.time}
+            div.k-agenda__text
+              strong {entry.title}
+              small {entry.sub}
+            span(class="ui-pill ui-pill-{entry.tone}") {entry.status}
+            if entry.action
+              button.ui-button.ui-button-outline.ui-button-xs(type="button" @click.stop=act(entry.id)) {entry.action}
+  if days.length === 0
+    p.k-agenda__empty {empty}

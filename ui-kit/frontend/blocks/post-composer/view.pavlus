@@ -1,0 +1,22 @@
+// A post box, to embed: `+Composer#composer(...composer)`. State = me (my
+// initials), placeholder, draft, left (characters left, may be < 0), moods ({ id,
+// label, emoji, active }), photo (an emoji or "" when no photo is attached),
+// canPost. Messages (`<name>.draft` ...): draft (read `msg.event.value`),
+// mood(id), photo (add or remove the tile), post.
+section.ui-card.k-compose
+  form.k-compose__form(novalidate @submit.prevent=post)
+    div.k-compose__top
+      span.k-compose__av {me}
+      textarea.ui-textarea-control.k-compose__text(rows="3" aria-label="Write a post" placeholder=placeholder value=draft @input=draft)
+    if photo
+      div.k-compose__photo
+        span {photo}
+        button.k-compose__remove(type="button" aria-label="Remove the photo" @click=photo)
+          span.k-icon.k-icon-x
+    div.k-compose__bar
+      div.k-compose__moods(role="group" aria-label="Mood")
+        for m in moods key m.id
+          button.k-compose__mood(type="button" title=m.label aria-pressed={m.active ? "true" : "false"} class:is-on={m.active} @click=mood(m.id)) {m.emoji}
+        button.k-compose__mood.k-compose__attach(type="button" aria-label="Add a photo" class:is-on={photo !== ""} @click=photo) 🖼️
+      span.k-compose__left(class:is-over={left < 0}) {left}
+      button.ui-button.ui-button-default.ui-button-sm(type="submit" disabled={!canPost}) Post

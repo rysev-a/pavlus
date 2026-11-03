@@ -1,0 +1,11 @@
+import Thread from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A conversation with an internal note
+    div.k-preview.k-preview--block
+      +Thread#thread(messages=messages empty="No messages.")
+  section.k-demo
+    h2.k-demo__title Empty
+    div.k-preview.k-preview--block
+      +Thread#none(messages=none empty="The customer has not written yet.")

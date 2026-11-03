@@ -12,10 +12,20 @@ and what is built from them. The top menu has four sections:
 - **Templates**: 20 whole sites and apps (portfolios, four shops, four admin
   panels, landing pages, a docs wiki, a music practice tool, a quiz platform,
   a classifieds board...), each built from blocks and each with **its own look**.
+- **A Source tab on every page**: Preview and Source (the pavlus template, its
+  logic, its stylesheet, highlighted; the page stays mounted underneath).
+- **A theming panel**, fixed on the right and opened from the top bar, with the same
+  choices as the Theming page, on any page, a template included.
 - **Theming**: a configurator for the whole kit: 10 fonts, 30 light and 30 dark
-  palettes, three size scales (controls, text, blocks) and six styles (default,
-  official, casual, funny, computer science, biology). It applies at once, is
-  remembered in the browser and can be exported as CSS.
+  palettes, 20 dark and 20 light themes in the spirit of Visual Studio Code
+  (Dracula, Nord, Tokyo Night, Solarized, GitHub, Catppuccin...), 124 themes of
+  design systems (shadcn/ui, Radix Colors, Bulma, Flowbite, MDN, Material Design,
+  Ant Design) with their fonts and styles, three size scales (controls, text,
+  blocks) and twelve styles (default, official, casual, funny, computer science,
+  biology, Radix, Bulma, Flowbite, Material, Ant Design, MDN). Picking a theme also sets the font, sizes
+  and style it comes with (a switch turns that off), and a button picks a random
+  theme. It applies at once, is remembered in the browser and can be exported as
+  CSS.
 
 The stateful pages (tabs, dialog, calendar, data table, music player, carts,
 quizzes...) are pavlus components with pure handlers, the rest are templates
@@ -53,8 +63,11 @@ UI_KIT_BASE=/pavlus/ npm run build --workspace ui-kit   # what the workflow buil
   See [AUTHORING.md](./AUTHORING.md): the conventions, the rule that templates are
   built from blocks, and the traps of the template language.
 - **Theming** is data: `theming.ts` holds the catalogs and the pure functions that
-  turn a look into CSS variables; the `theme` plugin (`theme.ts`) is the only code
-  that touches `<html>`. A template's `look` is applied while its page is open.
+  turn a look into CSS variables (`vscode-themes.ts` the 40 editor themes, `brand-themes.ts` the design systems', `color.ts`
+  the contrast maths that keeps every one readable); the `theme` plugin (`theme.ts`)
+  is the only code that touches `<html>`, and the `random` plugin (`random.ts`) is
+  where the random button gets its number, because application code cannot call
+  `Math.random()`. A template's `look` is applied while its page is open.
   Font sizes and control heights are scaled where the stylesheets are loaded
   (`scaleSizes` in `vite.config.mjs`), so the admin-app stylesheet stays as it is.
 - **Plugins.** `main.ts` is the only file with side effects: the store, DOM,
@@ -65,6 +78,11 @@ UI_KIT_BASE=/pavlus/ npm run build --workspace ui-kit   # what the workflow buil
   plugin takes a `window` option, so `base-window.ts` shows it a window
   without the base and puts it back on `pushState`; pages are routed as
   `/button` and the links are real `href`s (`{root}/button`).
+- **Source tab.** `source.ts` bundles every file of a page folder as a lazy raw
+  chunk (`import.meta.glob(..., { query: "?raw" })`); a `source` plugin loads the
+  one asked for and the pure `highlight` turns it into tokens. The pavlus
+  highlighter is a few regular expressions, tested by re-joining the tokens of every
+  file of the kit.
 - **Direct links.** Pages has no history fallback, so the build also emits
   `404.html` (a copy of `index.html`): opening `/pavlus/button` directly gets
   the app, which routes it. See `vite.config.mjs`.

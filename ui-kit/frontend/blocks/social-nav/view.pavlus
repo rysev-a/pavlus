@@ -1,0 +1,16 @@
+// An app bar, to embed: `+Nav#nav(...nav)`. State = brand, mark (one letter),
+// me (my initials), items ({ id, label, glyph (a glyph name: home, users,
+// message, bell...), badge (a number or 0), active }), meActive. Messages
+// (`<name>.go` ...): go(id), home, me.
+header.k-socnav
+  button.k-socnav__brand(type="button" @click=home)
+    span.ui-brand-mark {mark}
+    strong {brand}
+  nav.k-socnav__items(aria-label="Main")
+    for i in items key i.id
+      button.k-socnav__item(type="button" class:is-active={i.active} aria-current={i.active ? "page" : null} @click=go(i.id))
+        span.k-icon.k-glyph.k-socnav__glyph(data-glyph={i.glyph})
+        span.k-socnav__label {i.label}
+        if i.badge
+          span.k-socnav__badge {i.badge}
+  button.k-socnav__me(type="button" aria-label="My profile" class:is-active={meActive} @click=me) {meInitials}

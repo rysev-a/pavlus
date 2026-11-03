@@ -1,0 +1,24 @@
+// Lines with a switch and a price box, to embed: a menu, a price list.
+// State = the props: `rows` (rowsOf from catalog.ts: { id, icon, name, sub,
+// group, draft, on, state, error, shown }), `empty` (the text when there is
+// nothing) and `symbol` (the currency in front of the box). Events, with the
+// name of the embed in front: `toggle` (line id) and `price` (line id; the
+// text is in the event).
+ul.k-cedit
+  for row in rows key row.id
+    li(class="k-cedit__row" class:k-cedit__row--off={!row.on})
+      span.k-cedit__tile {row.icon}
+      div.k-cedit__text
+        strong {row.name}
+        small
+          | {row.group}
+          if row.sub
+            |  - {row.sub}
+      div.k-cedit__price
+        span.k-cedit__symbol {symbol}
+        input.ui-input.k-cedit__input(type="text" inputmode="decimal" aria-label="Price of {row.name}" aria-invalid={row.error ? "true" : null} title={row.error} value=row.draft @input=price(row.id))
+      div.ui-switch.k-cedit__switch
+        input.ui-switch-input(type="checkbox" role="switch" id="cedit-{row.id}" checked={row.on} @change=toggle(row.id))
+        label.ui-switch-label(for="cedit-{row.id}") {row.state}
+  if rows.length === 0
+    li.k-cedit__empty {empty}

@@ -1,0 +1,27 @@
+// Friends and the latest entry of each, to embed. State = the props:
+// `friends`, a list of friendCards() from friends.ts, and `empty` (the text
+// without friends). A click on a card sends `<name>.open` with the id of the
+// entry (or `<name>.profile` with the friend's id when there is none).
+ul.k-flat
+  for friend in friends key friend.id
+    li.k-flat__card(class:k-flat__card--fresh={friend.fresh})
+      span.k-flat__pic(style="--hue: {friend.hue}") {friend.initials}
+      div.k-flat__main
+        p.k-flat__who
+          strong {friend.name}
+          span @{friend.handle}
+          if friend.fresh
+            span.ui-pill.ui-pill-info New
+        if friend.hasPost
+          h3.k-flat__title
+            button.k-flat__open(type="button" @click=open(friend.postId)) {friend.title}
+        p.k-flat__excerpt {friend.excerpt}
+        if friend.hasPost
+          p.k-flat__meta
+            span {friend.when}
+            if friend.moodEmoji
+              span {friend.moodEmoji}
+            if friend.music
+              span ♪ {friend.music}
+  if friends.length === 0
+    li.k-flat__empty {empty}

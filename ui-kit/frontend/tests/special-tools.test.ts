@@ -46,7 +46,7 @@ test("the special tools respond to clicks", async () => {
   click(".k-piano__black", 0);
   expect(text(".mtt__big-name")).toBe("D♭");
   // the quiz: a wrong answer, then a skip
-  click(".ui-tabs-trigger", 1);
+  click(".k-pane .ui-tabs-trigger", 1);
   expect(text(".mtt__prompt")).toMatch(/^Find /);
   const asked = text(".mtt__prompt").replace("Find ", "");
   const keys = [...document.querySelectorAll(".k-piano__white")];

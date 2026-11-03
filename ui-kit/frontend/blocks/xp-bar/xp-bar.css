@@ -1,0 +1,12 @@
+.k-xpbar { display: flex; flex-wrap: wrap; align-items: center; gap: calc(14px * var(--k-block, 1)) calc(24px * var(--k-block, 1)); padding: calc(14px * var(--k-block, 1)) calc(18px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); color: var(--card-foreground); box-shadow: var(--shadow-xs); }
+.k-xpbar__level { display: flex; align-items: center; gap: 12px; }
+.k-xpbar__badge { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--primary); color: var(--primary-foreground); font-size: 20px; font-weight: 700; box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent); }
+.k-xpbar__who { display: grid; line-height: 1.25; }
+.k-xpbar__who small, .k-xpbar__stat small, .k-xpbar__head small { color: var(--muted-foreground); font-size: 12px; }
+.k-xpbar__meter { display: grid; flex: 1 1 200px; gap: 6px; min-width: 0; }
+.k-xpbar__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.k-xpbar__stat { display: flex; align-items: center; gap: 10px; }
+.k-xpbar__stat div { display: grid; line-height: 1.2; }
+.k-xpbar__icon { font-size: 22px; line-height: 1; }
+.k-xpbar__stat.is-cold { opacity: .6; filter: grayscale(1); }
+@media (max-width: 560px) { .k-xpbar__meter { flex-basis: 100%; order: 3; } }

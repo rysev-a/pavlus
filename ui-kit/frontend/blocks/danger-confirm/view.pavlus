@@ -1,0 +1,22 @@
+// A confirmation dialog, to embed. State = the props (from `askConfirm` in
+// confirm.ts): open, title, text, confirmLabel, danger, expect (the text to
+// type, or empty), typed, canConfirm. Events, with the name of the embed in
+// front: `cancel`, `confirm`, `type` (the text is in the event).
+div.k-dconf-host
+  if open
+    div.k-modal
+      div.k-modal__scrim(@click=cancel)
+      div.ui-dialog.k-dconf(role="alertdialog" aria-modal="true" aria-label={title})
+        div.ui-dialog-header
+          h2.ui-dialog-title {title}
+          p.ui-dialog-description {text}
+        if expect
+          div.ui-field.k-dconf__field
+            label.ui-label(for="dconf-input")
+              | Type
+              strong.k-dconf__expect {expect}
+              |  to confirm
+            input.ui-input(id="dconf-input" type="text" value=typed autocomplete="off" @input=type)
+        div.ui-dialog-footer
+          button.ui-button.ui-button-outline(type="button" @click=cancel) Cancel
+          button(type="button" class="ui-button" class:ui-button-destructive={danger} class:ui-button-default={!danger} disabled={!canConfirm} @click=confirm) {confirmLabel}

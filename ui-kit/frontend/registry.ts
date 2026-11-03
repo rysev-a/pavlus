@@ -395,6 +395,11 @@ export const BLOCK_GROUPS = [
   "Site sections",
   "Dashboard",
   "Tools",
+  "Social",
+  "Messaging",
+  "Personal",
+  "Logistics",
+  "Learning",
 ];
 
 export const TEMPLATE_GROUPS = [
@@ -403,6 +408,14 @@ export const TEMPLATE_GROUPS = [
   "Admin Panels & Dashboards",
   "Apps & Business Sites",
   "Special Web Tools",
+  "CRM & Sales",
+  "Business Admin",
+  "Social Networking",
+  "Messaging",
+  "Logistics",
+  "HR & People",
+  "Personal Productivity",
+  "Learning",
 ];
 
 export const blocks: Entry[] = collect(blockMetas, "blocks", BLOCK_GROUPS);

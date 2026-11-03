@@ -1,0 +1,24 @@
+// A log of who did what, to embed. State = the props: `groups` (groupByDay()
+// from log.ts) and `empty` (the text when there are none). Event, with the
+// name of the embed in front: `pick` (entry id).
+div.k-alog
+  for group in groups key group.id
+    section.k-alog__group
+      h3.k-alog__day {group.label}
+      ul.k-alog__list
+        for item in group.items key item.id
+          li(class="k-alog__item k-adm-t-{item.tone}" @click=pick(item.id))
+            span.k-alog__avatar {item.initials}
+            div.k-alog__body
+              p.k-alog__line
+                strong {item.actor}
+                span.k-alog__verb {item.verb}
+                strong.k-alog__target {item.target}
+              if item.text
+                p.k-alog__text {item.text}
+            div.k-alog__side
+              if item.tag
+                span.k-alog__tag {item.tag}
+              time.k-alog__time {item.time}
+  if groups.length === 0
+    p.k-alog__empty {empty}

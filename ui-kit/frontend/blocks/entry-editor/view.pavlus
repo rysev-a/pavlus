@@ -1,0 +1,47 @@
+// The form of a diary entry, to embed. State = the props: `draft` ({ title,
+// body, tags, music, location }), `errors` ({ title, body, tags, mood } as
+// text, empty when fine), `privacies` (privacyChoices() from editor.ts),
+// `editing` (true: an existing entry), `counter` (e.g. "12 words"). Events:
+// `<name>.field` (the field id; the value is in the event), `<name>.privacy`
+// (the id), `<name>.save`, `<name>.discard`.
+form.k-jedit(@submit.prevent=save)
+  div.ui-field(data-invalid={errors.title ? "true" : null})
+    label.ui-label(for="jedit-title") Title
+    input.ui-input.k-jedit__title#jedit-title(type="text" placeholder="What is today's entry about?" value=draft.title @input=field("title"))
+    if errors.title
+      p.ui-field-error {errors.title}
+  if errors.mood
+    p.ui-field-error.k-jedit__mooderr {errors.mood}
+  div.ui-field(data-invalid={errors.body ? "true" : null})
+    label.ui-label(for="jedit-body") Your entry
+    textarea.ui-textarea-control.k-jedit__body#jedit-body(rows="12" placeholder="Write freely. A blank line starts a new paragraph." value=draft.body @input=field("body"))
+    if errors.body
+      p.ui-field-error {errors.body}
+    else
+      p.ui-field-description {counter}
+  div.k-jedit__row
+    div.ui-field(data-invalid={errors.tags ? "true" : null})
+      label.ui-label(for="jedit-tags") Tags
+      input.ui-input#jedit-tags(type="text" placeholder="autumn, walks, city" value=draft.tags @input=field("tags"))
+      if errors.tags
+        p.ui-field-error {errors.tags}
+    div.ui-field
+      label.ui-label(for="jedit-music") Currently listening to
+      input.ui-input#jedit-music(type="text" placeholder="Artist, track" value=draft.music @input=field("music"))
+  div.ui-field
+    label.ui-label(for="jedit-place") Location
+    input.ui-input#jedit-place(type="text" placeholder="Where are you?" value=draft.location @input=field("location"))
+  fieldset.k-jedit__privacy
+    legend.ui-label Who can read it
+    div.k-jedit__choices(role="radiogroup" aria-label="Privacy")
+      for choice in privacies key choice.id
+        button.k-jedit__choice(type="button" role="radio" aria-checked={choice.active ? "true" : "false"} data-active={choice.active ? "true" : null} @click=privacy(choice.id))
+          strong {choice.label}
+          small {choice.hint}
+  div.k-jedit__actions
+    button.ui-button.ui-button-ghost(type="button" @click=discard) Discard
+    button.ui-button.ui-button-default(type="submit")
+      if editing
+        | Save changes
+      else
+        | Publish entry

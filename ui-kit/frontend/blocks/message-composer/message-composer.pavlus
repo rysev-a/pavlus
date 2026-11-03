@@ -1,0 +1,8 @@
+import Composer from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Template, fields, preview and send
+    p.k-demo__note Pick a template, edit it, click a field to add it at the end. The preview fills the fields in. Empty the subject or shorten the text and press Send to see the checks.
+    div.k-preview.k-preview--block
+      +Composer#composer(...composer)

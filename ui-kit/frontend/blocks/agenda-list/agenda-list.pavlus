@@ -1,0 +1,8 @@
+import Agenda from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Viewings this week
+    div.k-preview.k-preview--block
+      +Agenda#agenda(days=days empty="Nothing is scheduled.")
+    p.k-demo__note {message}

@@ -1,0 +1,12 @@
+.ui-card.k-cand { gap: calc(14px * var(--k-block, 1)); padding: calc(18px * var(--k-block, 1)); min-width: 0; }
+.k-cand__top { display: flex; align-items: center; gap: 14px; }
+.k-cand__avatar { display: grid; place-items: center; flex: none; width: 52px; height: 52px; border-radius: 999px; background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 45%, var(--chart-2))); color: var(--primary-foreground); font-weight: 650; font-size: 17px; }
+.k-cand__who { flex: 1; min-width: 0; }
+.k-cand__name { margin: 0; font-size: 18px; font-weight: 650; }
+.k-cand__role { margin: 2px 0 0; font-size: 13.5px; color: var(--muted-foreground); }
+.k-cand__facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 16px; margin: 0; }
+.k-cand__facts dt { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-foreground); }
+.k-cand__facts dd { margin: 2px 0 0; font-size: 13.5px; overflow-wrap: anywhere; }
+.k-cand__skills { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.k-cand__note { margin: 0; padding: 10px 12px; border-left: 3px solid var(--border); background: var(--muted); border-radius: var(--radius-md); font-size: 13.5px; line-height: 1.5; }
+.k-cand__actions { display: flex; flex-wrap: wrap; gap: 8px; }

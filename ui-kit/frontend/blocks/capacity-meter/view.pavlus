@@ -1,0 +1,25 @@
+// How full a place is, to embed. State = the props, a meter() from meter.ts
+// spread in: label, pct, tone, value, max, text, status, note. `compact` shows
+// a bar instead of the ring.
+div(class="k-cmeter k-adm-t-{tone}" class:k-cmeter--compact={compact})
+  if compact
+    div.k-cmeter__line
+      div.k-cmeter__head
+        strong {label}
+        span(class="ui-pill ui-pill-{tone}") {status}
+      div.ui-progress.k-cmeter__bar
+        div.ui-progress-indicator(style="width: {pct}%")
+      div.k-cmeter__foot
+        span {text}
+        span.k-muted {note}
+  else
+    div.k-cmeter__ring(style="--pct: {pct}" role="img" aria-label="{label}: {pct}%")
+      div.k-cmeter__hole
+        strong {value}
+        small of {max}
+    div.k-cmeter__body
+      span.k-cmeter__label {label}
+      strong.k-cmeter__text {text}
+      div.k-cmeter__row
+        span(class="ui-pill ui-pill-{tone}") {status}
+        span.k-muted {note}

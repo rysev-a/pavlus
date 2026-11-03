@@ -1,0 +1,27 @@
+// A post, to embed: `+Post#post(...post)` where `post` comes from `postProps`
+// in feed-post.ts. State = id, name, handle, initials, tone (1-5), ago, text,
+// mood (text or ""), photo (an emoji or ""), phototone (1-5), likes, liked,
+// comments, shares, shared. Messages (`<name>.like` ...) carry the id:
+// like, comment, share, open (the author).
+article.ui-card.k-fpost
+  header.k-fpost__head
+    button.k-fpost__av(type="button" aria-label="Open {name}" style="--t: var(--chart-{tone})" @click=open(id)) {initials}
+    div.k-fpost__who
+      strong.k-fpost__name {name}
+      span.k-fpost__sub @{handle} · {ago}
+    if mood
+      span.ui-badge.ui-badge-secondary {mood}
+  p.k-fpost__text {text}
+  if photo
+    div.k-fpost__photo(style="--t: var(--chart-{phototone})")
+      span.k-fpost__emoji {photo}
+  footer.k-fpost__actions
+    button.k-fpost__act(type="button" aria-pressed={liked ? "true" : "false"} aria-label="Like" class:is-on={liked} @click=like(id))
+      span.k-icon.k-icon-heart(class:k-icon-heart-fill={liked})
+      | {likes}
+    button.k-fpost__act(type="button" aria-label="Comments" @click=comment(id))
+      span.k-icon.k-glyph(data-glyph="message")
+      | {comments}
+    button.k-fpost__act(type="button" aria-pressed={shared ? "true" : "false"} aria-label="Share" class:is-on={shared} @click=share(id))
+      span.k-icon.k-glyph(data-glyph="repeat")
+      | {shares}

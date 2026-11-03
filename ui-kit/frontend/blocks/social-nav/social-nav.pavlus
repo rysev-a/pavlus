@@ -1,0 +1,10 @@
+import Nav from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title App bar
+    p.k-demo__note Pick a tab. At phone width the tabs sit in a bar fixed to the bottom of the window.
+    div.k-preview.k-preview--block
+      +Nav#nav(...nav)
+    p.k-hint
+      | Tab: {current}

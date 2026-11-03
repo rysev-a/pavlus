@@ -1,0 +1,8 @@
+import Month from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title November 2026 with events
+    div.k-preview.k-preview--block
+      +Month#month(month=month)
+    p.k-demo__note {note}

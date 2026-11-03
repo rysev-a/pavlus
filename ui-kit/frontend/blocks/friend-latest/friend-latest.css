@@ -1,0 +1,13 @@
+.k-flat { display: grid; gap: calc(12px * var(--k-block, 1)); margin: 0; padding: 0; list-style: none; }
+.k-flat__card { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: calc(16px * var(--k-block, 1)); padding: calc(18px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); color: var(--card-foreground); }
+.k-flat__card--fresh { border-color: var(--primary); }
+.k-flat__pic { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: color-mix(in oklab, hsl(var(--hue) 65% 55%) 24%, var(--background)); color: color-mix(in oklab, hsl(var(--hue) 70% 45%) 80%, var(--foreground)); font-weight: 600; }
+.k-flat__main { display: grid; gap: 4px; min-width: 0; }
+.k-flat__who { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; }
+.k-flat__who span:not(.ui-pill) { color: var(--muted-foreground); font-size: .88em; }
+.k-flat__title { margin: 0; font-size: 1.2em; font-weight: 600; line-height: 1.3; letter-spacing: -.01em; }
+.k-flat__open { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.k-flat__open:hover { color: var(--primary); }
+.k-flat__excerpt { margin: 0; color: var(--muted-foreground); line-height: 1.6; }
+.k-flat__meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 0; font-size: .82em; color: var(--muted-foreground); }
+.k-flat__empty { padding: 24px; text-align: center; color: var(--muted-foreground); }

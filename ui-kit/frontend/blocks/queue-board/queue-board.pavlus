@@ -1,0 +1,8 @@
+import Queue from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Waiting room, 10:20
+    div.k-preview.k-preview--block
+      +Queue#queue(lanes=lanes)
+    p.k-demo__note Average wait of those still waiting: {average} min.

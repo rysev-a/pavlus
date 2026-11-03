@@ -1,0 +1,45 @@
+.itc { display: grid; gap: calc(20px * var(--k-block, 1)); max-width: 980px; margin-inline: auto; padding: calc(16px * var(--k-block, 1)) 16px calc(40px * var(--k-block, 1)); }
+.itc > * { min-width: 0; }
+.itc__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.itc__brand { display: inline-flex; align-items: center; gap: 10px; padding: 0; border: 0; background: transparent; color: var(--foreground); font: inherit; font-size: 20px; cursor: pointer; }
+.itc__tag { color: var(--muted-foreground); font-size: 14px; }
+.itc__toast { margin-left: auto; }
+.itc__hero { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: calc(24px * var(--k-block, 1)); padding: calc(24px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-xl); background: radial-gradient(circle at 0 0, color-mix(in srgb, var(--primary) 12%, transparent), transparent 55%), var(--card); }
+.itc__herotext { display: grid; flex: 1 1 320px; gap: 10px; justify-items: start; }
+.itc__title { margin: 0; font-size: clamp(26px, 4.4vw, 38px); line-height: 1.1; letter-spacing: -.02em; }
+.itc__blurb { margin: 0; max-width: 58ch; color: var(--muted-foreground); line-height: 1.55; }
+.itc__herostat { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.itc__ring { --pct: 0; display: grid; place-items: center; width: 116px; height: 116px; border-radius: 50%; background: conic-gradient(var(--primary) calc(var(--pct) * 1%), var(--muted) 0); }
+.itc__ringinner { display: grid; place-items: center; align-content: center; width: 80%; height: 80%; border-radius: 50%; background: var(--card); }
+.itc__ringinner strong { font-size: 26px; line-height: 1; }
+.itc__ringinner span { color: var(--muted-foreground); font-size: 12px; }
+.itc__count { margin: 0; color: var(--muted-foreground); font-size: 14px; }
+.itc .k-icon { width: 14px; height: 14px; }
+.itc__lesson { display: grid; gap: calc(16px * var(--k-block, 1)); }
+.itc__lesson > * { min-width: 0; }
+.itc__lhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.itc__ltitles { display: grid; flex: 1 1 200px; line-height: 1.25; min-width: 0; }
+.itc__ltitles small { color: var(--muted-foreground); font-size: 13px; }
+.itc__ltitles h2 { margin: 0; font-size: 24px; }
+.itc__steps { display: grid; gap: 6px; }
+.itc__steptext { color: var(--muted-foreground); font-size: 13px; }
+.itc__prose { display: grid; gap: calc(14px * var(--k-block, 1)); max-width: 72ch; }
+.itc__p { margin: 0; line-height: 1.65; }
+.itc__h { margin: 4px 0 0; font-size: 17px; }
+.itc__list { display: grid; gap: 6px; margin: 0; padding-left: 20px; line-height: 1.55; }
+.itc__exhead > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.itc__worth { color: var(--muted-foreground); font-size: 13px; }
+.itc__exbody { display: grid; gap: calc(18px * var(--k-block, 1)); }
+.itc__task { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.45; }
+.itc__termgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 250px); gap: calc(16px * var(--k-block, 1)); align-items: start; }
+.itc__goals { display: grid; gap: 10px; padding: calc(14px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--muted); }
+.itc__goalstitle { margin: 0; color: var(--muted-foreground); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.itc__done { text-align: center; }
+.itc__donebody { display: grid; justify-items: center; gap: calc(14px * var(--k-block, 1)); }
+.itc__donebody > * { min-width: 0; max-width: 100%; }
+.itc__party { font-size: 52px; line-height: 1; }
+.itc__donebody .k-stats { width: 100%; text-align: left; }
+.itc__donebtns { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.itc__cert { display: grid; gap: calc(18px * var(--k-block, 1)); }
+.itc__certname { max-width: 360px; }
+@media (max-width: 760px) { .itc__termgrid { grid-template-columns: minmax(0, 1fr); } }

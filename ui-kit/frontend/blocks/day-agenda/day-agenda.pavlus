@@ -1,0 +1,9 @@
+import Agenda from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Today and tomorrow
+    p.k-demo__note It is 14:20 on November 3, 2026: the project proposal is on now, the Spanish class is next, earlier items fade.
+    div.k-preview.k-preview--block
+      +Agenda#plan(days=days empty="Nothing planned." checkable=true)
+    p.k-demo__note {message}

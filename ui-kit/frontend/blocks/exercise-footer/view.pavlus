@@ -1,0 +1,31 @@
+// The bottom of an exercise, to embed under any exercise block. State = the
+// props (from `footerProps` in footer.ts): status ("", "correct", "wrong"),
+// feedback, xpText, hints ([{ id, text }] shown so far), hintsLeft, hintLabel,
+// canCheck, checkLabel, nextLabel, resetLabel (empty: no button). Events, with
+// the name of the embed in front: `check`, `hint`, `next`, `reset`.
+div.k-exf
+  if hints.length > 0
+    ul.k-exf__hints
+      for tip in hints key tip.id
+        li
+          span.k-exf__bulb 💡
+          span {tip.text}
+  if status
+    div.k-exf__result(data-status={status} role="status")
+      div.k-exf__head
+        strong {status === "correct" ? "Correct!" : "Not quite"}
+        if xpText
+          span.ui-pill.ui-pill-success {xpText}
+      if feedback
+        p.k-exf__text {feedback}
+  div.k-exf__actions
+    if status === "correct"
+      button.ui-button.ui-button-default(type="button" @click=next)
+        | {nextLabel}
+        span.k-icon.k-ai-arrow-right
+    else
+      button.ui-button.ui-button-default(type="button" disabled={!canCheck} @click=check) {checkLabel}
+      if hintsLeft > 0
+        button.ui-button.ui-button-outline(type="button" @click=hint) {hintLabel}
+    if resetLabel
+      button.ui-button.ui-button-ghost(type="button" @click=reset) {resetLabel}

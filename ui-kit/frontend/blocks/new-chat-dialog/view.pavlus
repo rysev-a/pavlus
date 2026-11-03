@@ -1,0 +1,51 @@
+// The "new chat" dialog, to embed. State = the props: `open`, `mode`
+// (direct or group), `name`, `query`, `showError` (show the validation
+// message) and `dialog` (from `dialogView` in new-chat.ts: rows, error,
+// canCreate, summary). Events, with the name of the embed in front: `close`,
+// `setMode` (direct or group), `setName` and `setQuery` (the input event),
+// `toggle` (a person id) and `create`.
+div.k-ncd-host
+  if open
+    div.k-modal
+      div.k-modal__scrim(@click=close)
+      div.ui-dialog.k-ncd(role="dialog" aria-modal="true" aria-label="New chat")
+        div.ui-dialog-header
+          h2.ui-dialog-title New chat
+          p.ui-dialog-description Start a conversation with one person, or make a group.
+        div.k-ncd__modes(role="tablist")
+          button.k-ncd__mode(type="button" role="tab" aria-selected={mode === "direct" ? "true" : "false"} @click=setMode("direct"))
+            span.k-icon.k-icon-user
+            | Direct message
+          button.k-ncd__mode(type="button" role="tab" aria-selected={mode === "group" ? "true" : "false"} @click=setMode("group"))
+            span.k-icon.k-mi-users
+            | New group
+        if mode === "group"
+          div.ui-field
+            label.ui-label(for="k-ncd-name") Group name
+            input.ui-input#k-ncd-name(type="text" maxlength="40" placeholder="Weekend hike, Project Atlas..." value=name @input=setName)
+        div.ui-field
+          label.ui-label(for="k-ncd-search") {mode === "group" ? "Add people" : "Choose a person"}
+          div.k-input-group
+            span.k-input-group__addon.k-input-group__addon--start
+              span.k-icon.k-icon-search
+            input.ui-input#k-ncd-search(type="search" placeholder="Search people" autocomplete="off" value=query @input=setQuery)
+        if dialog.rows.length === 0
+          p.k-ncd__none Nobody matches "{query}".
+        else
+          ul.k-ncd__people
+            for p in dialog.rows key p.id
+              li
+                button.k-ncd__person(type="button" role={mode === "group" ? "checkbox" : "radio"} aria-checked={p.picked ? "true" : "false"} class:is-picked={p.picked} @click=toggle(p.id))
+                  span.k-mavatar.k-mavatar--sm(style="--k-hue: {p.hue}" data-online={p.online ? "true" : null}) {p.initials}
+                  span.k-ncd__text
+                    strong {p.name}
+                    span.k-muted {p.sub}
+                  span.k-ncd__mark
+                    if p.picked
+                      span.k-icon.k-icon-check
+        p.k-ncd__summary {dialog.summary}
+        if showError && dialog.error
+          p.k-ncd__error(role="alert") {dialog.error}
+        div.ui-dialog-footer
+          button.ui-button.ui-button-outline(type="button" @click=close) Cancel
+          button.ui-button.ui-button-default(type="button" @click=create) {mode === "group" ? "Create group" : "Start chat"}

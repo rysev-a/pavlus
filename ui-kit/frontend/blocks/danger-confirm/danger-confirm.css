@@ -1,0 +1,4 @@
+.k-dconf-host { display: contents; }
+.k-modal .ui-dialog.k-dconf { width: min(100%, 26rem); }
+.k-dconf__field { margin-top: calc(16px * var(--k-block, 1)); }
+.k-dconf__expect { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }

@@ -1,0 +1,13 @@
+.k-feed { position: relative; display: grid; gap: calc(14px * var(--k-block, 1)); margin: 0; padding: 0; list-style: none; min-width: 0; }
+.k-feed::before { content: ""; position: absolute; top: 14px; bottom: 14px; left: 13px; width: 2px; background: var(--border); }
+.k-feed__item { position: relative; display: flex; gap: 12px; min-width: 0; }
+.k-feed__dot { z-index: 1; flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 2px solid var(--background); border-radius: 999px; background: var(--t-bg); color: var(--t-fg); }
+.k-feed__dot .k-icon { width: 13px; height: 13px; }
+.k-feed__body { flex: 1; min-width: 0; padding-top: 3px; }
+.k-feed__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 10px; }
+.k-feed__title { font-size: 13.5px; }
+.k-feed__when { color: var(--muted-foreground); font-size: 12px; white-space: nowrap; }
+.k-feed__text { margin: 2px 0 0; font-size: 13px; line-height: 1.45; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.k-feed__who { display: block; margin-top: 2px; font-size: 12px; color: var(--muted-foreground); }
+.k-feed__empty { padding: 14px; border: 1px dashed var(--border); border-radius: var(--radius-lg); font-size: 13px; color: var(--muted-foreground); text-align: center; }
+.k-feed__demo { width: 100%; max-width: 28rem; }

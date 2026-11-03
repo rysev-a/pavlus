@@ -1,0 +1,7 @@
+.sc__cols { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: calc(20px * var(--k-block, 1)); align-items: start; }
+.sc__cols--even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.sc__cols--news { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
+.sc__form { display: grid; gap: calc(14px * var(--k-block, 1)); }
+.sc__form .ui-button { justify-self: start; }
+.sc__feed { display: grid; gap: calc(16px * var(--k-block, 1)); min-width: 0; align-content: start; }
+@media (max-width: 1000px) { .sc__cols, .sc__cols--even, .sc__cols--news { grid-template-columns: minmax(0, 1fr); } }

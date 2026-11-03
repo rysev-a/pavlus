@@ -1,0 +1,20 @@
+// Search over articles, to embed. State = the props: `query` (seeds the box),
+// `placeholder`, `items` (suggest(): { id, title, snippet, tag, hits }) and
+// `empty` (the text when nothing matches). Events, with the name of the embed
+// in front: `search` (the input) and `use` (article id).
+div.k-sugg
+  div.k-sugg__search
+    span.k-icon.k-icon-search
+    input.ui-input(type="search" placeholder=placeholder aria-label={placeholder} value=query @input=search)
+  ul.k-sugg__list
+    for item in items key item.id
+      li.k-sugg__item
+        div.k-sugg__text
+          div.k-sugg__top
+            strong {item.title}
+            span.ui-badge.ui-badge-secondary {item.tag}
+          p {item.snippet}
+          small {item.hits}
+        button.ui-button.ui-button-outline.ui-button-xs(type="button" @click=use(item.id)) Use in reply
+    if items.length === 0
+      li.k-sugg__empty {empty}

@@ -1,0 +1,12 @@
+.k-jcom { display: grid; gap: calc(16px * var(--k-block, 1)); }
+.k-jcom__heading { margin: 0; font-size: 1.1em; font-weight: 600; }
+.k-jcom__empty { margin: 0; color: var(--muted-foreground); font-size: .92em; }
+.k-jcom__list { display: grid; gap: calc(16px * var(--k-block, 1)); margin: 0; padding: 0; list-style: none; }
+.k-jcom__item { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; }
+.k-jcom__pic { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: color-mix(in oklab, hsl(var(--hue) 65% 55%) 24%, var(--background)); color: color-mix(in oklab, hsl(var(--hue) 70% 45%) 80%, var(--foreground)); font-size: 12px; font-weight: 600; }
+.k-jcom__body { min-width: 0; }
+.k-jcom__head { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0; font-size: .88em; }
+.k-jcom__head span { color: var(--muted-foreground); }
+.k-jcom__text { margin: 2px 0 0; line-height: 1.6; overflow-wrap: anywhere; }
+.k-jcom__form { display: grid; gap: 10px; }
+.k-jcom__actions { display: flex; justify-content: flex-end; }

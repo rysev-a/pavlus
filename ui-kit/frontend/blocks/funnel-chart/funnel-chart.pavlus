@@ -1,0 +1,11 @@
+import Funnel from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Hiring: five stages
+    div.k-preview.k-preview--block
+      +Funnel#hiring(...hiring)
+  section.k-demo
+    h2.k-demo__title Three stages
+    div.k-preview.k-preview--block
+      +Funnel#signup(...signup)

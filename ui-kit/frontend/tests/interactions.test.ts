@@ -30,7 +30,7 @@ test("tabs, dialog, calendar, data table and the theme respond to clicks", async
 
   // tabs
   expect(text(".ui-card-title")).toBe("Account");
-  click(".ui-tabs-trigger", 1);
+  click(".k-pane .ui-tabs-trigger", 1);
   expect(text(".ui-card-title")).toBe("Password");
   expect(store.getState().tabs).toMatchObject({ active: "password" });
 

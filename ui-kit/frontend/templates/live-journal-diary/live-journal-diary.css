@@ -1,0 +1,39 @@
+/* The layout of the diary page; the pieces are blocks. */
+.ld { max-width: 72rem; margin-inline: auto; padding: 0 calc(20px * var(--k-block, 1)) calc(64px * var(--k-block, 1)); color: var(--foreground); }
+.ld__masthead { display: grid; gap: calc(20px * var(--k-block, 1)); padding: calc(40px * var(--k-block, 1)) 0 calc(8px * var(--k-block, 1)); }
+.ld__eyebrow { margin: 0; color: var(--primary); font-size: .8rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
+.ld__title { margin: 4px 0 0; font-size: clamp(2.4rem, 7vw, 4rem); font-weight: 600; line-height: 1; letter-spacing: -.03em; }
+.ld__tagline { margin: 10px 0 0; color: var(--muted-foreground); font-size: 1rem; }
+.ld .ld__tabs { width: fit-content; max-width: 100%; overflow-x: auto; }
+.ld__main { display: grid; gap: calc(28px * var(--k-block, 1)); padding-top: calc(16px * var(--k-block, 1)); }
+.ld__cols { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: calc(48px * var(--k-block, 1)); align-items: start; }
+.ld__cols--write { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.ld__cols--archive { grid-template-columns: 20rem minmax(0, 1fr); }
+.ld__col, .ld__side { display: grid; gap: calc(24px * var(--k-block, 1)); min-width: 0; }
+.ld__side--sticky { position: sticky; top: 90px; }
+.ld__single { display: grid; gap: calc(28px * var(--k-block, 1)); max-width: 46rem; min-width: 0; }
+.ld .ld__card { gap: calc(14px * var(--k-block, 1)); padding: calc(20px * var(--k-block, 1)); }
+.ld__cardtitle { margin: 0; font-size: 1rem; font-weight: 600; letter-spacing: -.01em; }
+.ld__intro { display: grid; gap: 6px; }
+.ld__h2 { margin: 0; font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 600; line-height: 1.15; letter-spacing: -.02em; }
+.ld__lead { margin: 0; color: var(--muted-foreground); }
+.ld__filter { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 14px; border: 1px dashed var(--primary); border-radius: var(--radius-lg); color: var(--primary); font-size: .92rem; }
+.ld__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.ld__comments { padding-top: calc(28px * var(--k-block, 1)); border-top: 1px solid var(--border); }
+.ld__previewlabel { margin: 0; color: var(--muted-foreground); font-size: .75rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.ld__paper { padding: calc(28px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 6%, transparent); }
+.ld__empty { padding: calc(40px * var(--k-block, 1)); }
+
+/* reading mode: the chrome goes away */
+.ld__reading { display: grid; gap: calc(40px * var(--k-block, 1)); padding-top: calc(28px * var(--k-block, 1)); }
+.ld__readbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 40rem; width: 100%; margin-inline: auto; }
+.ld__readhint { color: var(--muted-foreground); font-size: .85rem; }
+
+@media (max-width: 960px) {
+  .ld__cols, .ld__cols--write, .ld__cols--archive { grid-template-columns: minmax(0, 1fr); }
+  .ld__side--sticky { position: static; }
+}
+@media (max-width: 640px) {
+  .ld__masthead { padding-top: calc(24px * var(--k-block, 1)); }
+  .ld__readhint { display: none; }
+}

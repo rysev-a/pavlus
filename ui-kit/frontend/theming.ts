@@ -4,7 +4,18 @@
  * applies what `varsOf` returns, and the configurator page (Theming) shows
  * the catalogs below.
  */
+import { FAMILIES } from "./brand-themes.ts";
+import {
+  HEX_THEMES,
+  type Preset,
+  type VsTheme,
+  vsThemeById,
+  vsVars,
+} from "./vscode-themes.ts";
+
 export type Mode = "light" | "dark";
+
+export type { Preset };
 
 /** One choice per row of the configurator. Every field is an id of a catalog. */
 export interface Look {
@@ -17,6 +28,11 @@ export interface Look {
   text: string;
   block: string;
   style: string;
+  /**
+   * When on, picking a theme also sets the font, the three size scales and the
+   * style the theme comes with (not just its colours).
+   */
+  bundle: boolean;
 }
 
 /** What a template may set: the rest comes from the defaults. */
@@ -30,6 +46,7 @@ export const defaultLook = (mode: Mode = "light"): Look => ({
   text: "md",
   block: "md",
   style: "default",
+  bundle: true,
 });
 
 // ---- fonts: system stacks only, nothing is downloaded ----
@@ -110,6 +127,39 @@ export const FONTS: Font[] = [
     note: "Casual, playful",
     stack:
       "'Segoe Print', 'Bradley Hand', Chilanka, TSCu_Comic, casual, cursive",
+  },
+  {
+    id: "roboto",
+    name: "Roboto",
+    note: "Material Design's face",
+    stack: '"Roboto", "Helvetica Neue", Arial, sans-serif',
+  },
+  {
+    id: "inter",
+    name: "Inter",
+    note: "Flowbite and Radix: a tall, even screen face",
+    stack:
+      '"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+  },
+  {
+    id: "segoe",
+    name: "Segoe UI",
+    note: "Ant Design's system stack",
+    stack:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+  {
+    id: "sourcesans",
+    name: "Source Sans",
+    note: "Bulma's open humanist sans",
+    stack:
+      '"Source Sans 3", "Source Sans Pro", BlinkMacSystemFont, -apple-system, "Segoe UI", sans-serif',
+  },
+  {
+    id: "helvetica",
+    name: "Helvetica / Arial",
+    note: "The plain neutral grotesque",
+    stack: '"Helvetica Neue", Helvetica, Arial, sans-serif',
   },
 ];
 
@@ -208,6 +258,48 @@ export const STYLES: Style[] = [
     radius: "1.5rem",
     font: "humanist",
   },
+  {
+    id: "radix",
+    name: "Radix",
+    note: "Soft tinted surfaces, medium corners, a two-ring focus",
+    radius: "0.5rem",
+    font: "inter",
+  },
+  {
+    id: "bulma",
+    name: "Bulma",
+    note: "Friendly boxes with a soft drop shadow and semibold type",
+    radius: "0.375rem",
+    font: "sourcesans",
+  },
+  {
+    id: "flowbite",
+    name: "Flowbite",
+    note: "Tailwind-like: rounded-lg, a thin shadow, a wide 4px focus ring",
+    radius: "0.5rem",
+    font: "inter",
+  },
+  {
+    id: "material",
+    name: "Material",
+    note: "Pill buttons, elevated cards without borders, regular-weight headings",
+    radius: "0.75rem",
+    font: "roboto",
+  },
+  {
+    id: "ant",
+    name: "Ant Design",
+    note: "Compact, 6px corners, light shadows, regular weight",
+    radius: "0.375rem",
+    font: "segoe",
+  },
+  {
+    id: "mdn",
+    name: "MDN",
+    note: "Plain documentation: small corners, underlined links, bold headings",
+    radius: "0.25rem",
+    font: "helvetica",
+  },
 ];
 
 // ---- palettes: 30 names, each a light and a dark theme ----
@@ -259,6 +351,44 @@ export const PALETTES: Palette[] = [
   p("lavender", "Lavender", 250, 60),
   p("berry", "Berry", 320, 55),
 ];
+
+/**
+ * What each of the 30 palettes brings besides its colours: a font, a style and
+ * sizes that suit its character (a rose is round and friendly, a graphite is
+ * dense and technical). Applied when the theme bundle is on.
+ */
+export const PALETTE_PRESETS: Record<string, Preset> = {
+  zinc: { font: "sans", style: "default" },
+  slate: { font: "system", style: "official", text: "sm" },
+  stone: { font: "classical", style: "official" },
+  graphite: { font: "mono", style: "cs", text: "sm", ui: "sm" },
+  red: { font: "rounded", style: "funny" },
+  rose: { font: "rounded", style: "casual" },
+  pink: { font: "rounded", style: "casual", ui: "lg" },
+  fuchsia: { font: "handwritten", style: "funny" },
+  purple: { font: "geometric", style: "casual" },
+  violet: { font: "geometric", style: "default" },
+  indigo: { font: "sans", style: "default" },
+  blue: { font: "system", style: "default" },
+  sky: { font: "humanist", style: "casual" },
+  cyan: { font: "geometric", style: "cs" },
+  teal: { font: "humanist", style: "default" },
+  emerald: { font: "humanist", style: "biology" },
+  green: { font: "rounded", style: "biology" },
+  lime: { font: "rounded", style: "funny", text: "lg" },
+  yellow: { font: "handwritten", style: "funny", text: "lg" },
+  amber: { font: "slab", style: "casual" },
+  orange: { font: "rounded", style: "casual" },
+  coral: { font: "rounded", style: "funny" },
+  sunset: { font: "serif", style: "casual" },
+  peach: { font: "serif", style: "casual", block: "lg" },
+  sand: { font: "serif", style: "official" },
+  mint: { font: "rounded", style: "biology" },
+  forest: { font: "serif", style: "biology" },
+  ocean: { font: "geometric", style: "default" },
+  lavender: { font: "humanist", style: "casual", block: "lg" },
+  berry: { font: "rounded", style: "funny" },
+};
 
 const hsl = (h: number, s: number, l: number): string =>
   `hsl(${Math.round(h)} ${Math.round(s)}% ${Math.round(l)}%)`;
@@ -393,21 +523,66 @@ export function swatchOf(palette: Palette, mode: Mode): Swatch {
   };
 }
 
+/** What a theme that comes as hex colours looks like, for the configurator. */
+export function vsSwatchOf(theme: VsTheme): Swatch {
+  const v = vsVars(theme);
+  return {
+    id: theme.id,
+    name: theme.name,
+    bg: v["--background"],
+    fg: v["--foreground"],
+    primary: v["--primary"],
+  };
+}
+
+/** One tab of the colour picker: a source of themes, in a light and a dark list. */
+export interface ThemeFamily {
+  id: string;
+  name: string;
+  light: Swatch[];
+  dark: Swatch[];
+}
+
 /** The catalogs as the configurator page shows them. */
 export interface Catalog {
   fonts: Font[];
-  light: Swatch[];
-  dark: Swatch[];
+  /** Generated palettes, the editor themes and the design systems', as tabs. */
+  families: ThemeFamily[];
   ui: Size[];
   text: Size[];
   block: Size[];
   styles: Style[];
 }
 
+const familyOf = (id: string, name: string, list: VsTheme[]): ThemeFamily => ({
+  id,
+  name,
+  light: list.filter((x) => x.mode === "light").map(vsSwatchOf),
+  dark: list.filter((x) => x.mode === "dark").map(vsSwatchOf),
+});
+
 export const catalog = (): Catalog => ({
   fonts: FONTS,
-  light: PALETTES.map((x) => swatchOf(x, "light")),
-  dark: PALETTES.map((x) => swatchOf(x, "dark")),
+  families: [
+    {
+      id: "generated",
+      name: "Generated",
+      light: PALETTES.map((x) => swatchOf(x, "light")),
+      dark: PALETTES.map((x) => swatchOf(x, "dark")),
+    },
+    familyOf(
+      "vscode",
+      "VS Code",
+      HEX_THEMES.filter((x) => !x.family),
+    ),
+    ...FAMILIES.map((f) =>
+      familyOf(
+        f.id,
+        f.name,
+        HEX_THEMES.filter((x) => x.family === f.id),
+      ),
+    ),
+  ],
   ui: UI_SIZES,
   text: TEXT_SIZES,
   block: BLOCK_SIZES,
@@ -422,8 +597,9 @@ const byId = <T extends { id: string }>(list: T[], id: string): T =>
 /** Every CSS variable a look sets on `<html>`. Pure: the same look, the same map. */
 export function varsOf(look: Look): Record<string, string> {
   const style = byId(STYLES, look.style);
+  const vs = vsThemeById(look.palette);
   const vars: Record<string, string> = {
-    ...paletteVars(byId(PALETTES, look.palette), look.mode),
+    ...(vs ? vsVars(vs) : paletteVars(byId(PALETTES, look.palette), look.mode)),
     "--font-sans": byId(FONTS, look.font).stack,
     "--k-ui": String(scaleOf(UI_SIZES, look.ui)),
     "--k-text": String(scaleOf(TEXT_SIZES, look.text)),
@@ -451,21 +627,80 @@ export function parseLook(raw: unknown, fallback: Look): Look {
     string,
     unknown
   >;
+  const vs = typeof o.palette === "string" ? vsThemeById(o.palette) : undefined;
   return {
-    mode: MODES.includes(o.mode as Mode) ? (o.mode as Mode) : fallback.mode,
-    palette: idOf(PALETTES, o.palette, fallback.palette),
+    // an editor theme is either light or dark: its mode is not a choice
+    mode: vs
+      ? vs.mode
+      : MODES.includes(o.mode as Mode)
+        ? (o.mode as Mode)
+        : fallback.mode,
+    palette: vs ? vs.id : idOf(PALETTES, o.palette, fallback.palette),
     font: idOf(FONTS, o.font, fallback.font),
     ui: idOf(UI_SIZES, o.ui, fallback.ui),
     text: idOf(TEXT_SIZES, o.text, fallback.text),
     block: idOf(BLOCK_SIZES, o.block, fallback.block),
     style: idOf(STYLES, o.style, fallback.style),
+    bundle: typeof o.bundle === "boolean" ? o.bundle : fallback.bundle,
   };
 }
 
-/** The same palette in the other mode. */
-export const flipMode = (look: Look): Look => ({
+/**
+ * The same palette in the other mode. A Visual Studio Code theme goes to its
+ * partner (Dracula to Alucard, Tokyo Night to Tokyo Night Light); one without a
+ * partner goes to the stock palette of the other mode.
+ */
+export function flipMode(look: Look): Look {
+  const mode: Mode = look.mode === "light" ? "dark" : "light";
+  const vs = vsThemeById(look.palette);
+  if (!vs) return { ...look, mode };
+  const pair = vs.pair ? vsThemeById(vs.pair) : undefined;
+  return { ...look, mode, palette: pair?.mode === mode ? pair.id : "zinc" };
+}
+
+/** Every theme there is, for the random button: 30 palettes in two modes and the 40 editor themes. */
+export function allThemes(): { palette: string; mode: Mode }[] {
+  return [
+    ...PALETTES.flatMap((p) =>
+      (["light", "dark"] as const).map((mode) => ({ palette: p.id, mode })),
+    ),
+    ...HEX_THEMES.map((t) => ({ palette: t.id, mode: t.mode })),
+  ];
+}
+
+/** What a theme brings besides colours. */
+export function presetOf(palette: string): Preset {
+  return vsThemeById(palette)?.preset ?? PALETTE_PRESETS[palette] ?? {};
+}
+
+/**
+ * Picks a theme: its colours, and with the bundle on also its font, sizes and
+ * style (what the theme does not name goes back to the default, so a theme
+ * never inherits the last one's font).
+ */
+export function withTheme(look: Look, palette: string, mode: Mode): Look {
+  const vs = vsThemeById(palette);
+  const next: Look = {
+    ...look,
+    palette: vs ? vs.id : palette,
+    mode: vs ? vs.mode : mode,
+  };
+  if (!look.bundle) return next;
+  const base = defaultLook(next.mode);
+  const preset = presetOf(next.palette);
+  return {
+    ...next,
+    font: preset.font ?? base.font,
+    ui: preset.ui ?? base.ui,
+    text: preset.text ?? base.text,
+    block: preset.block ?? base.block,
+    style: preset.style ?? base.style,
+  };
+}
+
+export const withBundle = (look: Look, bundle: boolean): Look => ({
   ...look,
-  mode: look.mode === "light" ? "dark" : "light",
+  bundle,
 });
 
 /** A change from the configurator: one row, one id. */

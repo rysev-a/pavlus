@@ -1,0 +1,16 @@
+import XpBar from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Earn XP, level up
+    p.k-demo__note A level asks for more XP than the one before. A hint costs 3 XP, a wrong check 1 XP, and an exercise never gives less than a quarter of its value.
+    div.k-preview.k-preview--column
+      div.k-row
+        button.ui-button.ui-button-default.ui-button-sm(type="button" @click=gain(15)) Solve an exercise (+15)
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=gain(40)) Finish a lesson (+40)
+        button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=resetXp) Reset
+      +XpBar#bar(...bar)
+  section.k-demo
+    h2.k-demo__title A fresh learner
+    div.k-preview.k-preview--block
+      +XpBar#fresh(...fresh)

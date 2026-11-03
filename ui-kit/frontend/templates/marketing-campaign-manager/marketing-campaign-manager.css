@@ -1,0 +1,19 @@
+.mkt__split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(20px * var(--k-block, 1)); align-items: start; }
+.mkt__split--calendar { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
+.mkt__split--composer { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.mkt__form { display: grid; gap: calc(14px * var(--k-block, 1)); }
+.mkt__when { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(12px * var(--k-block, 1)); }
+.mkt__schedule { justify-self: start; }
+.mkt__preview { position: sticky; top: 90px; display: grid; gap: 10px; min-width: 0; }
+.mkt__previewtitle { margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-foreground); }
+.mkt__save { margin-top: calc(18px * var(--k-block, 1)); }
+.mkt__inline { display: flex; gap: 8px; }
+.mkt__inline .ui-input { flex: 1; min-width: 0; }
+.mkt__saved { display: grid; gap: calc(8px * var(--k-block, 1)); margin: 0; padding: 0; list-style: none; }
+.mkt__saved li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: calc(10px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.mkt__saved li > div { display: grid; min-width: 0; }
+.mkt__saved small { color: var(--muted-foreground); font-size: 12.5px; }
+@media (max-width: 1000px) {
+  .mkt__split, .mkt__split--calendar, .mkt__split--composer { grid-template-columns: minmax(0, 1fr); }
+  .mkt__preview { position: static; }
+}

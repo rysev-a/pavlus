@@ -1,0 +1,35 @@
+.k-mread { display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%; background: var(--card); color: var(--card-foreground); }
+.k-mread-demo { max-width: 720px; height: 520px; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.k-mread-demo--short { height: 220px; }
+.k-mread__bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: calc(6px * var(--k-block, 1)) calc(10px * var(--k-block, 1)); border-bottom: 1px solid var(--border); }
+.k-mread__tools { display: flex; flex-wrap: wrap; gap: 2px; margin-left: auto; }
+.k-mread .k-mread__back { display: none; }
+.k-mread__scroll { flex: 1; min-height: 0; overflow-y: auto; padding: calc(16px * var(--k-block, 1)); display: grid; gap: calc(12px * var(--k-block, 1)); align-content: start; }
+.k-mread__head { display: grid; gap: 8px; }
+.k-mread__subject { margin: 0; font-size: 20px; line-height: 1.3; letter-spacing: -.01em; }
+.k-mread__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; }
+.k-mread__msg { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--background); min-width: 0; }
+.k-mread__msg.is-unread { border-color: color-mix(in oklab, var(--primary) 50%, var(--border)); }
+.k-mread__who { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: var(--radius-lg); }
+.k-mread__who:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+.k-mread__names { display: grid; flex: 1; min-width: 0; gap: 1px; overflow: hidden; font-size: 14px; }
+.k-mread__from { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; min-width: 0; overflow-wrap: anywhere; }
+.k-mread__to, .k-mread__snippet, .k-mread__date { font-size: 12px; color: var(--muted-foreground); }
+.k-mread__snippet { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-mread__date { flex: none; }
+.k-mread__body { display: grid; gap: 10px; padding: 0 14px 12px calc(14px + 30px + 10px); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.k-mread__body p { margin: 0; white-space: pre-wrap; }
+.k-mread__quote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--border); color: var(--muted-foreground); white-space: pre-wrap; }
+.k-mread__files { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0 14px 12px calc(14px + 30px + 10px); list-style: none; }
+.k-mread__file { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--muted); font-size: 13px; }
+.k-mread__file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.k-mread__reply { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 14px calc(14px + 30px + 10px); }
+.k-mread__empty { display: grid; flex: 1; place-content: center; justify-items: center; gap: 6px; padding: 24px; text-align: center; color: var(--muted-foreground); }
+.k-mread__empty strong { color: var(--foreground); font-size: 16px; }
+.k-mread__empty p { margin: 0; max-width: 28ch; font-size: 14px; }
+.k-mread__empty .k-icon { width: 34px; height: 34px; opacity: .6; }
+@media (max-width: 640px) {
+  .k-mread .k-mread__back { display: inline-flex; }
+  .k-mread__body, .k-mread__files, .k-mread__reply { padding-left: 14px; }
+  .k-mread__subject { font-size: 18px; }
+}
