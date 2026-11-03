@@ -1,0 +1,18 @@
+.k-dsched { border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); color: var(--card-foreground); overflow: hidden; box-shadow: var(--shadow-xs); }
+.k-dsched__scroll { overflow-x: auto; }
+.k-dsched__table { min-width: 800px; }
+.k-dsched__row { display: grid; grid-template-columns: 96px repeat(var(--hours), minmax(58px, 1fr)); align-items: stretch; border-bottom: 1px solid var(--border); }
+.k-dsched__row:last-child { border-bottom: 0; }
+.k-dsched__head { background: color-mix(in srgb, var(--muted) 55%, transparent); }
+.k-dsched__door { position: sticky; left: 0; z-index: 2; display: grid; align-content: center; gap: 1px; padding: 6px 12px; border-right: 1px solid var(--border); background: var(--card); line-height: 1.2; }
+.k-dsched__head .k-dsched__door { background: var(--muted); color: var(--muted-foreground); font-size: 12px; font-weight: 500; }
+.k-dsched__door small { color: var(--muted-foreground); font-size: 11px; }
+.k-dsched__hour { display: grid; place-items: center; padding: 8px 0; border-left: 1px solid color-mix(in srgb, var(--border) 60%, transparent); color: var(--muted-foreground); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.k-dsched__hour--now { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); font-weight: 700; }
+.k-dsched__free { position: relative; height: 52px; padding: 0; border: 0; border-left: 1px solid color-mix(in srgb, var(--border) 60%, transparent); background: transparent; cursor: pointer; transition: background-color .12s; }
+.k-dsched__free:hover, .k-dsched__free:focus-visible { outline: none; background: color-mix(in srgb, var(--primary) 16%, transparent); }
+.k-dsched__free:hover::after, .k-dsched__free:focus-visible::after { content: "+"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--primary); font-size: 18px; font-weight: 600; }
+.k-dsched__appt { display: grid; align-content: center; gap: 1px; min-width: 0; margin: 5px 2px; padding: 0 9px; border: 0; border-left: 3px solid var(--t); border-radius: var(--radius-md); background: var(--t-bg); color: var(--t-fg); line-height: 1.2; text-align: left; cursor: pointer; transition: filter .12s, box-shadow .12s; }
+.k-dsched__appt:hover, .k-dsched__appt:focus-visible { outline: none; filter: brightness(.96); box-shadow: 0 0 0 2px var(--t); }
+.k-dsched__appt strong { overflow: hidden; font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+.k-dsched__appt small { overflow: hidden; font-size: 11px; opacity: .8; text-overflow: ellipsis; white-space: nowrap; }
