@@ -1,7 +1,12 @@
 import type { LookPreset } from "./theming.ts";
 
 /** The sections of the top menu. */
-export type Section = "components" | "blocks" | "templates" | "theming";
+export type Section =
+  | "components"
+  | "blocks"
+  | "templates"
+  | "theming"
+  | "docs";
 
 /** One page of the kit: a component, a block or a template. */
 export interface Entry {
@@ -445,6 +450,7 @@ export const MENU: { path: string; title: string; section: Section }[] = [
   { path: "/blocks", title: "Blocks", section: "blocks" },
   { path: "/templates", title: "Templates", section: "templates" },
   { path: "/theming", title: "Theming", section: "theming" },
+  { path: "/docs/overview", title: "Docs", section: "docs" },
 ];
 
 /** Which section a route belongs to. */
@@ -453,6 +459,7 @@ export function sectionOf(path: string): Section {
   if (path === "/templates" || path.startsWith("/templates/"))
     return "templates";
   if (path === "/theming") return "theming";
+  if (path === "/docs" || path.startsWith("/docs/")) return "docs";
   return "components";
 }
 

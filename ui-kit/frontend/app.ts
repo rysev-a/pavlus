@@ -11,6 +11,8 @@ import {
   storeEffector as store,
 } from "@service-laboratory/pavlus/plugins";
 import view from "./app.pavlus";
+import { docsPage, type DocsState, docsState } from "./docs/docs-page.ts";
+import { docPath, docsNav, type Lang, LANGS, PAGES } from "./docs/pages.ts";
 import {
   homeView,
   indexView,
@@ -97,6 +99,10 @@ export interface AppState {
   sidebar: SidebarState;
   /** A narrow screen: the sidebar is a drawer that closes after a click. */
   compact: boolean;
+  /** The Docs keep their own state (docs/docs-page.ts), under `docs`. */
+  docs: DocsState;
+  /** The sidebar of the Docs in each language. */
+  docsNavs: Record<Lang, NavGroup[]>;
   /** The state of each page that has some, under its key (see pages.ts). */
   [page: string]: unknown;
 }
@@ -105,6 +111,7 @@ export interface Environment {
   root: string;
   look: Look;
   compact: boolean;
+  lang?: Lang;
 }
 
 /** Everything the page knows about the outside world comes in as data. */
@@ -136,6 +143,11 @@ export function initialState(env: Environment): AppState {
     shown: cat.families[0],
     sidebar: env.compact ? "closed" : "open",
     compact: env.compact,
+    docs: docsState(env.lang ?? "en"),
+    docsNavs: Object.fromEntries(LANGS.map((l) => [l, docsNav(l)])) as Record<
+      Lang,
+      NavGroup[]
+    >,
     ...pageStates(),
   };
 }
@@ -206,6 +218,17 @@ export class AppShell extends Component<AppState> {
       }),
     },
     "*": { view: notFoundView, props: (s) => ({ root: s.root }) },
+    // every page of the Docs is the same view, with the page loaded into the state
+    ...Object.fromEntries(
+      ["/docs", ...PAGES.map((p) => docPath(p.slug))].map((path) => [
+        path,
+        {
+          component: docsPage,
+          key: "docs",
+          props: (s: AppState) => ({ root: s.root }),
+        },
+      ]),
+    ),
   });
 
   /** The router reports the location: the route, the entry, the section, the look. */
@@ -217,7 +240,7 @@ export class AppShell extends Component<AppState> {
     const path = (msg.payload as { path: string }).path;
     const current = allEntries.find((e) => e.path === path) ?? null;
     const section = sectionOf(path);
-    const nav = navFor(section);
+    const nav = section === "docs" ? docsNav(state.docs.lang) : navFor(section);
     // a template shows itself in its own look; every other page in the visitor's
     const active = current?.look
       ? presetLook(current.look, state.look.mode)
