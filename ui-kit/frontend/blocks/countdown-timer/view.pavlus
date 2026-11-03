@@ -1,0 +1,12 @@
+// A countdown with a bar, to embed. State = the props (see `timerProps` in
+// countdown-timer.ts): label, clock (`mm:ss`), percent (0-100), tone
+// (ok, warn, danger), finished. The tick itself is the parent's: it asks the
+// time plugin for `setInterval` and updates the props.
+div.k-timer(role="timer" data-tone={tone} class:is-finished={finished})
+  div.k-timer__row
+    span.k-timer__label
+      span.k-icon.k-icon-clock
+      | {label}
+    strong.k-timer__clock {clock}
+  div.ui-progress.ui-progress-sm(role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={percent} class:ui-progress-warning={tone === "warn"} class:ui-progress-danger={tone === "danger"})
+    div.ui-progress-indicator(style="width: {percent}%")

@@ -1,0 +1,108 @@
+// A test platform: a catalogue, a timed test and a results page with a review.
+// The question, the navigator and the timer are the blocks quiz-question,
+// question-navigator and countdown-timer.
+import Question from "../../blocks/quiz-question/view.pavlus"
+import Nav from "../../blocks/question-navigator/view.pavlus"
+import Timer from "../../blocks/countdown-timer/view.pavlus"
+
+div.k-template.qep
+  header.qep__bar
+    button.qep__brand(type="button" @click=toCatalogue)
+      span.ui-brand-mark Q
+      strong Quizzy
+    span.k-muted Practice tests with answers and explanations
+  if screen === "catalogue"
+    section.qep__catalogue
+      div.qep__intro
+        h1.qep__title Pick a test, beat the clock
+        p.k-muted Every test has a time limit and a pass mark. You see the right answers when you finish, and you can retake it as often as you like.
+      div.qep__grid
+        for card in cards key card.id
+          div.ui-card.qep__card
+            div.ui-card-header
+              span.qep__emoji {card.emoji}
+              h2.ui-card-title {card.title}
+              p.ui-card-description {card.blurb}
+            div.ui-card-content
+              div.qep__tags
+                span.ui-badge.ui-badge-secondary {card.level}
+                span.ui-badge.ui-badge-outline {card.count} questions
+                span.ui-badge.ui-badge-outline {card.minutes} min
+                span.ui-badge.ui-badge-outline Pass at {card.pass}%
+            div.ui-card-footer.qep__card-foot
+              span(class:k-muted={card.best < 0}) {card.bestLabel}
+              button.ui-button.ui-button-default.ui-button-sm(type="button" @click=start(card.id)) {card.best < 0 ? "Start" : "Take again"}
+      if history.length > 0
+        div.ui-card.qep__history
+          div.ui-card-header
+            h2.ui-card-title Recent results
+          div.ui-card-content
+            ul.qep__history-list
+              for line in history key line
+                li {line}
+  else if screen === "quiz"
+    section.qep__test
+      div.qep__testbar
+        div
+          h1.qep__test-title {testTitle}
+          p.k-muted Question {question.number} of {question.total}
+        div.qep__timer
+          +Timer#timer(...timer)
+      div.qep__testgrid
+        div.qep__stage
+          +Question#question(...question)
+          div.qep__controls
+            button.ui-button.ui-button-outline(type="button" disabled={isFirst} @click=prev) Previous
+            if isLast
+              button.ui-button.ui-button-default(type="button" @click=submit) Submit test
+            else
+              button.ui-button.ui-button-default(type="button" @click=next) Next
+          if confirming
+            div.ui-alert.ui-alert-warning(role="alert")
+              span.ui-alert-icon
+                span.k-icon.k-icon-alert
+              div.ui-alert-body
+                p.ui-alert-title {unanswered} questions are still open
+                div.ui-alert-description Unanswered questions count as wrong. Submit anyway?
+                div.k-row
+                  button.ui-button.ui-button-default.ui-button-sm(type="button" @click=submit) Yes, submit
+                  button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=keepGoing) Keep going
+        aside.ui-card.qep__side
+          div.ui-card-header
+            h2.ui-card-title Questions
+            p.ui-card-description Click a number to jump. Flag the ones to come back to.
+          div.ui-card-content
+            +Nav#nav(items=items summary=summary)
+          div.ui-card-footer
+            button.ui-button.ui-button-default.ui-button-sm(type="button" @click=submit) Submit test
+  else
+    section.qep__result
+      div.ui-card.qep__score(data-passed={result.passed ? "true" : "false"})
+        div.qep__ring(style="--pct: {result.percent}")
+          div.qep__ring-inner
+            strong {result.percent}%
+            span {result.correct}/{result.total}
+        div.qep__score-text
+          span.ui-badge(class:ui-badge-success={result.passed} class:ui-badge-destructive={!result.passed}) {result.passed ? "Passed" : "Failed"}
+          h1.qep__title {result.headline}
+          p.k-muted {result.title}: {result.correct} of {result.total} correct, pass mark {result.pass}%.
+          div.qep__facts
+            span {result.answered} answered
+            span {result.skipped} skipped
+            span Time used {result.used}
+            if result.timeUp
+              span.qep__timeup Time ran out
+          div.k-row
+            button.ui-button.ui-button-default(type="button" @click=retake) Retake the test
+            button.ui-button.ui-button-outline(type="button" @click=toCatalogue) All tests
+      div.qep__reviewhead
+        h2.qep__review-title Review
+        div.ui-switch
+          input.ui-switch-input#qep-wrong(type="checkbox" role="switch" checked={onlyWrong} @change=toggleWrong)
+          label.ui-switch-label(for="qep-wrong") Only the ones I missed
+      if review.length === 0
+        div.ui-empty-state
+          p There is nothing to review: every answer was right.
+      div.qep__review
+        for item in review key item.id
+          +Question#review(...item.question)

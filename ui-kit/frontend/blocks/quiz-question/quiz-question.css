@@ -1,0 +1,34 @@
+.k-question { display: grid; gap: calc(16px * var(--k-block, 1)); width: 100%; padding: calc(20px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); color: var(--card-foreground); box-shadow: var(--shadow-xs); }
+.k-question__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.k-question__hint { font-size: 13px; color: var(--muted-foreground); }
+.k-question__flag { margin-left: auto; }
+.k-question__flag.is-flagged { color: var(--warning); }
+.k-question__text { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.35; letter-spacing: -.01em; }
+.k-question__options { display: grid; gap: calc(8px * var(--k-block, 1)); }
+.k-qopt {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: calc(12px * var(--k-block, 1)) calc(14px * var(--k-block, 1)); text-align: left;
+  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--foreground); font: inherit; cursor: pointer;
+  transition: border-color .12s, background-color .12s;
+}
+.k-qopt:hover { border-color: var(--primary); }
+.k-qopt:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+.k-qopt.is-selected { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--background)); }
+.k-qopt__box { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border: 1.5px solid var(--input); border-radius: 5px; color: var(--primary-foreground); background: var(--background); }
+.k-qopt__box--round { border-radius: 50%; }
+.k-qopt__box .k-icon { width: 13px; height: 13px; }
+.k-qopt.is-selected .k-qopt__box { border-color: var(--primary); background: var(--primary); }
+.k-qopt__text { flex: 1; min-width: 0; font-size: 15px; line-height: 1.4; }
+.k-qopt__tag { flex: none; font-size: 12px; font-weight: 600; }
+.k-qopt[data-mark="correct"] { border-color: var(--success); background: var(--success-bg); }
+.k-qopt[data-mark="correct"] .k-qopt__tag, .k-qopt[data-mark="missed"] .k-qopt__tag { color: var(--success-fg); }
+.k-qopt[data-mark="correct"] .k-qopt__box { border-color: var(--success); background: var(--success); }
+.k-qopt[data-mark="wrong"] { border-color: var(--destructive); background: var(--danger-bg); }
+.k-qopt[data-mark="wrong"] .k-qopt__tag { color: var(--danger-fg); }
+.k-qopt[data-mark="wrong"] .k-qopt__box { border-color: var(--destructive); background: var(--destructive); }
+.k-qopt[data-mark="missed"] { border-style: dashed; border-color: var(--success); }
+.k-question__feedback { display: grid; gap: 4px; padding: calc(12px * var(--k-block, 1)) calc(14px * var(--k-block, 1)); border-left: 4px solid var(--muted-foreground); border-radius: var(--radius-sm); background: var(--muted); }
+.k-question[data-verdict="correct"] .k-question__feedback { border-left-color: var(--success); }
+.k-question[data-verdict="wrong"] .k-question__feedback { border-left-color: var(--destructive); }
+.k-question__verdict { font-size: 14px; }
+.k-question__explain { margin: 0; font-size: 14px; line-height: 1.55; color: var(--muted-foreground); }
+.k-icon.k-icon-flag { --k-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 22V4M4 4h13l-2 4 2 4H4'/%3E%3C/svg%3E"); }
