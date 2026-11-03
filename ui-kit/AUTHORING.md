@@ -105,3 +105,64 @@ narrow window (390px). Put what you learned about the traps above in your report
 
 Tests for logic go in `frontend/tests/<slug>.test.ts` (pure functions: import
 them from your `<slug>.ts`).
+
+## Pitfalls found while building the first 20 templates
+
+CSS (all block and template stylesheets are loaded on every page, in no fixed order):
+
+- **Class names are global.** Prefix every class with something unique to the
+  block (`k-lfilter`, `k-sstrip`). `tests/css-prefixes.test.ts` fails when two
+  blocks define the same bare class; it was added after `stat-cards` and
+  `stats-strip` both defined `.k-stats`. A template may restyle an embedded
+  block, but only under its own parent selector (`.dr .k-hero__title`).
+- **Specificity beats order.** `.k-icon` sets `--k-icon: none`, so a custom icon
+  is `.k-icon.k-foo-icon { --k-icon: url(...) }` (two classes), never a bare
+  `.k-foo-icon`. The same goes for overriding a `.ui-*` rule, `.ui-card` (a column
+  flex), `.ui-avatar` sizes, `.k-preview` (a flex row) and `.ui-button-outline`
+  (it has a dark-mode variant): qualify with a parent class.
+- A bare `span` with `width: 40%` is `display: inline` and ignores the width: use
+  a `div`, or set `display: block`.
+- Grid and flex children need `min-width: 0` or they overflow a 390px screen.
+  `.k-wide` (templates) has no side padding: give the template its own.
+- A sticky bar inside a template sits below the app header: `top: 76px`, and give
+  its sections `scroll-margin-top`. Hash links (`#pricing`) work with the router.
+- The size scales (`scaleSizes` in `vite.config.mjs`) rewrite `font-size` and any
+  `width` / `height` / `min-*` of exactly 24, 28, 32, 36 or 40px in the kit's CSS
+  files. That is meant for controls; keep other boxes off those exact numbers
+  or accept that they scale with "Controls".
+- Embedding the page of a block (`auth.pavlus`) brings its demo frame along: hide
+  `.k-demo__title` and the border of `.k-preview` from your template's CSS.
+
+Templates and state:
+
+- **Events of an embedded part reach the parent as `<id>.<message>`**, one prefix
+  per embedding level (`grid.card.add`). Handle them with a quoted method name:
+  `"grid.card.add"(msg) { ... }`. A block that embeds another block loses that
+  routing, so templates embed blocks directly and a block does not embed a block.
+- A stateful part has its own `view.pavlus`; its demo page declares it in
+  `children` and its initial state is `{ key: partInitial }`. A template does the
+  same. `props: (s) => ({...})` in `children` gives the child read-only inputs.
+- A handler sees the state **before** the message. A parent that observes
+  `"cart.add"` must recompute from the payload, not read what the child is about to
+  write. `ctx.send("child", "msg", payload)` returns effects: spread them.
+- **No bracket access, no filtering in templates.** Keep the changing state in a
+  `core` object and recompute every derived list in one pure `derive(core)`; a
+  `_commit(state, patch)` helper then emits `store.set` for the patch and for each
+  derived field. Do not give a derived list the name of a data list.
+- Roots: wrap a part in one element (a root-level `if` or several roots are not
+  safe). `@click.stop` with no message needs a no-op id. A `for` variable named
+  like a tag (`option`) is confusing; a handler named like a state field
+  (`volume`) works but is confusing too.
+- Dynamic classes: `class:name=cond` next to the static `.name`, or
+  `class="a {expr}"`; variants as `data-x=expr`.
+- Inputs: the DOM plugin writes `value`, `checked` and `selected` as properties
+  when the state changes, so a handler can reformat what was typed (the caret then
+  jumps to the end) and a state-driven clear works. `@focus` and `@blur` work.
+  `option(selected={x === y})` with `@change` for selects; for radios read
+  `msg.event.value`.
+- Time: no `Date.now()`. Ask `time.now("clock")` and handle the reply, or keep a
+  fixed "today" in the state. Reply ids of a child are prefixed back to the child.
+  To focus an element an `if` has just rendered: `time.setTimeout(id, 0, "msg")`
+  then `dom.focus("#id")` in `msg`.
+- A `.pavlus` typo (a stray quote after an event) does not always fail the build
+  loudly: open the page.

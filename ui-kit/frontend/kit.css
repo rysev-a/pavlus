@@ -296,3 +296,8 @@ html[data-style="biology"] .ui-input, html[data-style="biology"] .ui-select-cont
 html[data-style="biology"] .ui-badge, html[data-style="biology"] .ui-pill { border-radius: 12px 4px 12px 4px; }
 html[data-style="biology"] .ui-avatar, html[data-style="biology"] .ui-avatar-fallback, html[data-style="biology"] .ui-person-avatar { border-radius: 60% 40% 55% 45% / 50% 55% 45% 50%; }
 html[data-style="biology"] .ui-tabs-list, html[data-style="biology"] .ui-tabs-trigger { border-radius: 14px 5px 14px 5px; }
+
+/* ---- narrow screens ---- */
+.ui-pagination-content { flex-wrap: wrap; justify-content: center; }
+.k-size-row .ui-button-group { max-width: 100%; overflow-x: auto; }
+.k-size-row { min-width: 0; }
