@@ -1,0 +1,16 @@
+.k-composer { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: calc(16px * var(--k-block, 1)); align-items: start; }
+.ui-card.k-composer__form, .ui-card.k-composer__preview { gap: calc(12px * var(--k-block, 1)); padding: calc(18px * var(--k-block, 1)); min-width: 0; }
+.k-composer__templates { display: flex; flex-wrap: wrap; gap: 6px; }
+.k-composer__tpl { padding: 4px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--card); color: var(--foreground); font: inherit; font-size: 13px; cursor: pointer; }
+.k-composer__tpl:hover { background: var(--muted); }
+.k-composer__tpl.is-active { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+.k-composer__to { margin: 0; font-size: 14px; }
+.k-composer__chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.k-composer__hint { font-size: 12.5px; color: var(--muted-foreground); }
+.k-composer__chip { padding: 2px 8px; border: 1px dashed var(--border); border-radius: var(--radius-md); background: var(--muted); color: var(--foreground); font: inherit; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; cursor: pointer; }
+.k-composer__chip:hover { border-color: var(--primary); }
+.k-composer__send { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.k-composer__previewlabel { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-foreground); }
+.k-composer__subject { margin: 0; font-size: 16px; font-weight: 600; }
+.k-composer__text { margin: 0; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+@media (max-width: 800px) { .k-composer { grid-template-columns: minmax(0, 1fr); } }

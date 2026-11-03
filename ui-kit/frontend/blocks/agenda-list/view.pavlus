@@ -1,0 +1,29 @@
+// A day plan in time order, to embed. State = the props from agendaOf() in
+// agenda.ts: `days` ([{ id, label, items: [{ id, title, sub, tone, start,
+// end, dur, state, done }] }]), `empty` (the text for no items) and
+// `checkable` (show a tick button). `tone` is c1..c5, pr or de, as in the
+// week calendar. Events, with the name of the embed in front: `pick` (id) and
+// `toggle` (id).
+div.k-agenda
+  for day in days key day.id
+    section.k-agenda__day
+      h3.k-agenda__label {day.label}
+      ol.k-agenda__list
+        for item in day.items key item.id
+          li(class="k-agenda__item k-wcal-c-{item.tone}" data-state={item.state})
+            div.k-agenda__time
+              strong {item.start}
+              small {item.end}
+            span.k-agenda__rail
+            button.k-agenda__body(type="button" @click=pick(item.id))
+              strong.k-agenda__title {item.title}
+              small {item.dur}{item.sub ? ", " + item.sub : ""}
+            if item.state === "now"
+              span.ui-pill.ui-pill-success.k-agenda__flag Now
+            else if item.state === "next"
+              span.ui-pill.ui-pill-info.k-agenda__flag Next
+            if checkable
+              button.ui-button.ui-button-outline.ui-button-icon-xs.k-agenda__tick(type="button" aria-label={item.done ? "Mark as not done" : "Mark as done"} aria-pressed={item.done ? "true" : "false"} @click=toggle(item.id))
+                span.k-icon.k-icon-check
+  if days.length === 0
+    p.k-agenda__empty {empty}

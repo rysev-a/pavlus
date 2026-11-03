@@ -1,0 +1,59 @@
+// A recruiting app: the shell, and one view at a time (`screen`), all made of
+// blocks.
+import Nav from "../../blocks/admin-shell/view.pavlus"
+import Top from "../../blocks/admin-shell/topbar.pavlus"
+import Stats from "../../blocks/stat-cards/view.pavlus"
+import DataGrid from "../../blocks/data-grid/view.pavlus"
+import FilterBar from "../../blocks/list-filter/view.pavlus"
+import Kanban from "../../blocks/kanban-board/view.pavlus"
+import Candidate from "../../blocks/candidate-card/view.pavlus"
+import Score from "../../blocks/scorecard/view.pavlus"
+import Agenda from "../../blocks/agenda-list/view.pavlus"
+import Funnel from "../../blocks/funnel-chart/view.pavlus"
+import BarChart from "../../blocks/bar-chart/view.pavlus"
+import Sheet from "../../blocks/record-sheet/view.pavlus"
+
+div.k-template.k-ashell.rp(data-nav={navOpen ? "open" : "closed"})
+  aside.k-ashell__side
+    +Nav#nav(brand="Talentlane" tagline="Recruiting" groups=groups active=screen user=user)
+  div.k-ashell__scrim(@click=closeNav)
+  div.k-ashell__main
+    +Top#top(title=title subtitle="Tuesday, 3 November 2026" notice=notice actions=actions user=user)
+    main.k-ashell__content
+      if screen === "jobs"
+        +Stats#jobstats(cards=jobStats)
+        +DataGrid#jobs(columns=jobCols rows=jobRows empty="No job openings." footer="Click a row to see its candidates on the board." pickable=true)
+      else if screen === "pipeline"
+        +FilterBar#jobfilter(filters=boardFilters query="" placeholder="" actions=none)
+        p.rp__hint Move a card with its arrows, or click it to open the profile. Hiring needs an offer first.
+        +Kanban#board(columns=boardCols)
+      else if screen === "candidate"
+        div.rp__picker
+          label.ui-label(for="rp-person") Candidate
+          select.ui-select-control#rp-person(@change=pickPerson)
+            for opt in options key opt.value
+              option(value=opt.value selected={opt.selected}) {opt.label}
+        div.rp__cols
+          div.rp__stack
+            +Candidate#card(...profile)
+            div.ui-card.rp__card
+              h3 Offer
+              p.rp__offer
+                span(class="ui-pill ui-pill-{offerTone}") {offerLine}
+          div.rp__stack
+            +Score#score(...score)
+      else if screen === "interviews"
+        +Stats#intstats(cards=interviewStats)
+        +Agenda#agenda(days=agenda empty="No interviews booked.")
+      else if screen === "stats"
+        +Stats#hirestats(cards=statCards)
+        div.rp__cols
+          div.ui-card.rp__card
+            h3 Hiring funnel
+            p.rp__hint Everyone who reached a stage counts for it, rejected people included.
+            +Funnel#funnel(...funnel)
+          div.ui-card.rp__card
+            h3 Time to hire by department
+            p.rp__hint Days from applying to being hired. Amber is above 45 days.
+            +BarChart#hire(columns=hireBars height="200px")
+  +Sheet#sheet(open=sheet.open title=sheet.title description=sheet.description details=none fields=sheet.fields buttons=sheet.buttons)

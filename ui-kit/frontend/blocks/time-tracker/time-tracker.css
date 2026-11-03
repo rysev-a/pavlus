@@ -1,0 +1,22 @@
+.ui-card.k-ttrack { gap: calc(14px * var(--k-block, 1)); padding: calc(18px * var(--k-block, 1)); min-width: 0; }
+.k-ttrack__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.k-ttrack__time { display: grid; gap: 2px; }
+.k-ttrack__label { font-size: 12.5px; color: var(--muted-foreground); }
+.k-ttrack__clock { font-size: 34px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -.02em; line-height: 1.1; color: var(--muted-foreground); }
+.k-ttrack__clock.is-running { color: var(--foreground); }
+.k-ttrack__cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.k-ttrack__cat { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--card); color: var(--foreground); font: inherit; font-size: 13px; cursor: pointer; }
+.k-ttrack__cat:hover { background: var(--muted); }
+.k-ttrack__cat.is-active { border-color: var(--cat, var(--primary)); background: color-mix(in srgb, var(--cat, var(--primary)) 20%, var(--card)); font-weight: 600; }
+.k-ttrack__dot { flex: none; width: 9px; height: 9px; border-radius: 999px; background: var(--cat, var(--primary)); }
+.k-ttrack__fast { font-size: 13px; }
+.k-ttrack__loghead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding-top: 6px; border-top: 1px solid var(--border); font-size: 14px; }
+.k-ttrack__total { font-size: 12.5px; color: var(--muted-foreground); }
+.k-ttrack__log { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; max-height: 260px; overflow-y: auto; }
+.k-ttrack__entry { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+.k-ttrack__entry:first-child { border-top: 0; }
+.k-ttrack__what { display: grid; flex: 1; min-width: 0; line-height: 1.3; }
+.k-ttrack__what strong { font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-ttrack__what small { font-size: 12px; color: var(--muted-foreground); }
+.k-ttrack__dur { font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.k-ttrack__none { padding: 10px 0; font-size: 13px; color: var(--muted-foreground); }
