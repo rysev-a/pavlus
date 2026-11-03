@@ -53,7 +53,9 @@ test("a server-rendered page is hydrated: same nodes, no second load, then it is
     // The listeners are on: a click works, and the admin page loads its data.
     (document.querySelectorAll(".users__item")[1] as HTMLElement).click();
     expect(store.getState().dashboard.overview.users.selectedId).toBe(2);
-    (document.querySelectorAll(".top-menu__link")[3] as HTMLElement).click();
+    // The admin page has no menu link any more: go there like the router does.
+    window.history.pushState(null, "", "/admin");
+    window.dispatchEvent(new PopStateEvent("popstate"));
     expect(window.location.pathname).toBe("/admin");
     await until(() => text(".roles__name").length > 0);
     expect(api.requests).toEqual(["GET /api/roles"]);

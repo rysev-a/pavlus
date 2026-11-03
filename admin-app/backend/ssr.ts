@@ -30,13 +30,28 @@ export interface Page {
   html: string;
   /** The state the page was rendered from, as JSON. */
   state: string;
+  /** The theme from the settings, put on `<html>` as a class. */
+  theme?: "light" | "dark";
 }
 
 /** The app's `fetch`, answered by the API handlers directly: no socket. */
 function inProcess(query: Query): typeof fetch {
   return async (input, init) => {
     const url = new URL(String(input), "http://ssr.local");
-    const reply = await handleApi(init?.method ?? "GET", url.pathname, query);
+    let body: unknown;
+    if (typeof init?.body === "string") {
+      try {
+        body = JSON.parse(init.body);
+      } catch {
+        body = undefined;
+      }
+    }
+    const reply = await handleApi(
+      init?.method ?? "GET",
+      url.pathname,
+      query,
+      body,
+    );
     return new Response(JSON.stringify(reply.body), {
       status: reply.status,
       headers: { "content-type": "application/json" },
@@ -69,6 +84,7 @@ export async function renderPage(
       createLoggerPlugin({ sink: silent }),
       inert("dom"),
       inert("router"),
+      inert("theme"),
     ],
   });
   try {
@@ -81,9 +97,13 @@ export async function renderPage(
     app.dispose();
   }
   const state = store.getState();
+  const theme = await query<{ theme: "light" | "dark" }>(
+    `SELECT theme FROM settings WHERE id = 1`,
+  ).then((rows) => rows[0]?.theme ?? "light");
   return {
     html: renderToString(view, state),
     state: serializeState(state, frontend.components),
+    theme,
   };
 }
 
@@ -100,7 +120,11 @@ export function renderDocument(template: string, page: Page): string {
   if (!template.includes(marker) || !template.includes("</head>")) {
     throw new Error('ssr: the template needs <div id="app"></div> and <head>');
   }
-  return template
+  // The theme is a class on `<html>`: the CSS tokens pick it up before the app runs.
+  const themed = page.theme
+    ? template.replace("<html", `<html class="${page.theme}"`)
+    : template;
+  return themed
     .replace("</head>", `  ${script}\n  </head>`)
     .replace(marker, `<div id="app">${page.html}</div>`);
 }

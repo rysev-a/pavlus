@@ -11,16 +11,29 @@ try {
   const { rows } = await pool.query<{
     users: number;
     roles: number;
+    permissions: number;
+    categories: number;
     products: number;
     payments: number;
+    orders: number;
+    tasks: number;
+    processes: number;
   }>(
     `SELECT (SELECT count(*) FROM users)::int AS users,
             (SELECT count(*) FROM roles)::int AS roles,
+            (SELECT count(*) FROM permissions)::int AS permissions,
+            (SELECT count(*) FROM categories)::int AS categories,
             (SELECT count(*) FROM products)::int AS products,
-            (SELECT count(*) FROM payments)::int AS payments`,
+            (SELECT count(*) FROM payments)::int AS payments,
+            (SELECT count(*) FROM orders)::int AS orders,
+            (SELECT count(*) FROM tasks)::int AS tasks,
+            (SELECT count(*) FROM processes)::int AS processes`,
   );
+  const c = rows[0];
   console.log(
-    `database ready: ${rows[0].users} users, ${rows[0].roles} roles, ${rows[0].products} products, ${rows[0].payments} payments`,
+    `database ready: ${c.users} users, ${c.roles} roles, ${c.permissions} permissions, ` +
+      `${c.categories} categories, ${c.products} products, ${c.payments} payments, ` +
+      `${c.orders} orders, ${c.tasks} tasks, ${c.processes} processes`,
   );
 } finally {
   await pool.end();

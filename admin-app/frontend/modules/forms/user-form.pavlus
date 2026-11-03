@@ -1,0 +1,32 @@
+// Create or edit a user: `route.params.id` decides (see user-form.ts). The
+// roles come from the API for the select; Save goes back to the list.
+section.user-form.form
+  div.ui-page-header
+    div
+      h1.page-title.ui-page-title {route.params.id ? "Edit user" : "New user"}
+      p.page-intro.ui-page-description The user's name, email and role.
+  div.ui-card
+    div.ui-card-content
+      if status === "loading"
+        p.status.ui-card-description Loading...
+      else if status === "failed"
+        p.status.status--error.ui-card-description Could not load the user
+      else
+        form.form__body(@submit.prevent=save)
+          div.form__field
+            label.form__label.ui-field-label(for="user-name") Name
+            input#user-name.ui-input(value=values.name @input=setName placeholder="Ann" autocomplete="off")
+          div.form__field
+            label.form__label.ui-field-label(for="user-email") Email
+            input#user-email.ui-input(type="email" value=values.email @input=setEmail placeholder="ann@example.com" autocomplete="off")
+          div.form__field
+            label.form__label.ui-field-label(for="user-role") Role
+            select#user-role.ui-select-control(value=values.roleId @change=setRole)
+              option(value="") Pick a role
+              for role in roles key role.id
+                option(value=role.id selected=(values.roleId == role.id)) {role.name}
+          if saveStatus === "failed"
+            p.status.status--error.form__error Could not save: the email must be unique and a role picked.
+          div.form__actions
+            button.ui-button.ui-button-primary(type="submit" disabled=(saveStatus === "saving")) Save
+            a.ui-button.ui-button-outline(href="/auth/users" @click.prevent=navigate("/auth/users")) Cancel

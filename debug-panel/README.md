@@ -65,18 +65,25 @@ const app = createApp({
   Must get the **same instances** the app uses.
 - `debug.onStep` — records each message with its effects. Without it there
   are no steps in the panel.
+- `flushMs` — how long events batch before crossing to the panel (default
+  60 ms). `flushMs: 0` streams each change as it happens — the store
+  timeline updates in realtime.
 
 `admin-app/frontend/main.ts` is wired like this and is the reference
 example.
 
 ## What the panel shows
 
-| Tab          | Content                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Messages** | Every message: id, payload, effect count. Click a message to inspect it in the pane on the right — payload and each effect's raw object in the expand/collapse viewer.                                                                                                                                                                                                                                                                                    |
-| **Effects**  | Every effect ever performed, filterable per plugin (`all` / `store` / `dom` / …). `dur` = plugin's sync handle time, `⧗` = http request → answer-message round trip. Click a row for the raw effect object.                                                                                                                                                                                                                                               |
-| **Store**    | The state (left) and the change timeline (right), both in the expand/collapse viewer. The **stepper** (circles left of the buttons) is one circle per change — click to jump; dashed = redoable. **⟵ back** = undo, **forward ⟶** = redo. Click a change to travel to it (undo/redo) — no change is ever removed; undone ones stay as dashed rows. Hover a change to preview its value in the pane below; hover the preview to light its row in the list. |
-| **Apps**     | The page's apps and their components (`children` / `routing`, via `app` in `createPavlusDebug`) as an SVG tree, one node per component (tooltip = its dotted message prefix). Click a node to filter messages and effects to that app.                                                                                                                                                                                                                    |
+| Tab          | Content                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Messages** | Every message: id, payload, effect count. Click a message to inspect it in the pane on the right — payload and each effect's raw object in the expand/collapse viewer.                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Effects**  | Every effect ever performed, filterable per plugin (`all` / `store` / `dom` / …). `dur` = plugin's sync handle time, `⧗` = http request → answer-message round trip. Click an effect to inspect its raw object in the pane on the right.                                                                                                                                                                                                                                                                                                                                                     |
+| **Store**    | The state (left) and the change timeline (right), both in the expand/collapse viewer. The **stepper** (circles left of the buttons) is one circle per change — click to jump; dashed = redoable. **⟵ back** = undo, **forward ⟶** = redo. Click a change to travel to it (undo/redo) — no change is ever removed; undone ones stay as dashed rows. Hover a change to preview its value in the pane below; hover the preview to light its row in the list. The preview pane always shows a change (the current one until you hover another to pin it); drag the dividers to resize the panes. |
+| **Apps**     | The page's apps and their components (`children` / `routing`, via `app` in `createPavlusDebug`) as an SVG tree, one node per component (tooltip = its dotted message prefix). Click an app or component to filter messages and effects to that app and inspect it in the pane on the right — plugins, message / effect / timeline counts, and its state in the viewer. Click **all apps** to clear.                                                                                                                                                                                          |
+
+Every two-pane tab (Messages, Effects, Store, Apps) has draggable dividers: drag
+the vertical one to resize the left/right split, and on Store also the
+horizontal one under the timeline to resize the preview pane.
 
 The toolbar dot: grey = no agent yet, amber = waiting for a reply, green =
 connected. **rescan** re-asks the page for agents (use after wiring an app
@@ -103,6 +110,13 @@ is a real gotcha:
 5. If the panel says "panel disconnected — reconnecting…", the background
    worker was suspended (idle ~30s). It reconnects by itself; press
    **rescan** if it doesn't.
+6. You navigated and the Store tab flashed "no pavlus agent on this page
+   yet". A document load (typed URL, hard reload) starts a fresh agent, so
+   the panel now polls for its hello every 500 ms and shows an amber
+   "page changed — waiting for the pavlus agent…" with the previous
+   recording kept on screen until the new page replaces it. Plain
+   client-side route changes (pushState links) never reload the document
+   and don't affect the panel at all.
 
 ## How the pieces talk
 

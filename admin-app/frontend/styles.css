@@ -129,6 +129,10 @@
 /* Base */
 * { box-sizing: border-box; border-color: var(--border); }
 html, body { margin: 0; min-height: 100%; }
+/* The page keeps its width when a scrollbar appears: the gutter is always reserved.
+   Browsers without the property keep a scrollbar track instead. */
+html { scrollbar-gutter: stable; }
+@supports not (scrollbar-gutter: stable) { html { overflow-y: scroll; } }
 body {
   background: var(--background);
   color: var(--foreground);
@@ -160,8 +164,9 @@ h1, h2, h3, h4, p { margin: 0; }
 }
 
 /* ==== 2. ui_kit/styles/shell.css ==== */
-/* Application shell: sidebar column + floating top bar + page. Below 800px the sidebar is an
-   off-canvas drawer opened by the top bar's trigger. */
+/* Application shell: sidebar column + floating top bar + page. The desktop trigger toggles
+   `data-sidebar` ("closed" = collapsed column); below 800px the sidebar is an off-canvas
+   drawer driven by `data-drawer` (the mobile trigger opens it, the scrim closes it). */
 .ui-shell { display: grid; grid-template-columns: 256px minmax(0, 1fr); min-height: 100vh; transition: grid-template-columns .2s ease; }
 .ui-shell[data-sidebar="closed"] { grid-template-columns: 0 minmax(0, 1fr); }
 /* The sidebar column stays in view while the page scrolls: sticky on the aside itself (an overflow:hidden parent would
@@ -178,6 +183,11 @@ h1, h2, h3, h4, p { margin: 0; }
 .ui-shell-header-start { flex: 1; min-width: 0; padding-left: 4px; }
 .ui-shell-header-actions { display: flex; align-items: center; gap: 4px; }
 .ui-shell-header-actions .ui-avatar { margin-left: 8px; }
+/* The top bar's triggers: icon-only buttons, the glyph is a CSS mask like the kit's other
+   icons. Below 800px the desktop trigger is replaced by the mobile one. */
+.ui-button.ui-shell-trigger::before { content: ""; width: 16px; height: 16px; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.ui-button.ui-shell-trigger--desktop { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpath d='M9 3v18'/%3E%3C/svg%3E"); }
+.ui-button.ui-shell-trigger--mobile { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6h16'/%3E%3Cpath d='M4 12h16'/%3E%3Cpath d='M4 18h16'/%3E%3C/svg%3E"); display: none; }
 .ui-shell-content { flex: 1; width: 100%; max-width: 1480px; margin: 0 auto; padding: 24px 16px 32px; }
 .ui-shell-footer:empty { display: none; }
 
@@ -198,8 +208,10 @@ h1, h2, h3, h4, p { margin: 0; }
     position: fixed; inset: 0 auto 0 0; z-index: 60; width: 256px; overflow: visible; visibility: visible;
     transform: translateX(-100%); transition: transform .2s ease; box-shadow: var(--shadow-lg);
   }
-  .ui-shell[data-sidebar="open"] .ui-shell-aside { transform: translateX(0); }
-  .ui-shell[data-sidebar="open"] .ui-shell-scrim { display: block; position: fixed; inset: 0; z-index: 55; background: color-mix(in srgb, var(--overlay) 80%, transparent); }
+  .ui-shell[data-drawer="open"] .ui-shell-aside { transform: translateX(0); }
+  .ui-shell[data-drawer="open"] .ui-shell-scrim { display: block; position: fixed; inset: 0; z-index: 55; background: color-mix(in srgb, var(--overlay) 80%, transparent); }
+  .ui-button.ui-shell-trigger--desktop { display: none; }
+  .ui-button.ui-shell-trigger--mobile { display: inline-flex; }
   .ui-shell-header { margin: 8px 8px 0; }
   .ui-shell-content { padding: 16px 8px 24px; }
 }
@@ -985,8 +997,20 @@ details[open] > .ui-navigation-trigger > .ui-navigation-chevron { transform: rot
 .ui-sidebar-button:focus-visible, .ui-sidebar-sub-button:focus-visible, .ui-sidebar-account-trigger:focus-visible { box-shadow: 0 0 0 2px var(--sidebar-ring); }
 .ui-sidebar-icon { display: inline-grid; place-items: center; width: 20px; height: 20px; flex: none; }
 .ui-sidebar-icon .ui-icon { width: 18px; height: 18px; }
+/* Menu icons: lucide glyphs as CSS masks, so they take the text colour. Icons live in CSS
+   (the DOM plugin builds HTML elements only), the name comes from the state via `data-icon`;
+   an unknown name just shows nothing. */
+.ui-sidebar-icon[data-icon] { background: currentColor; -webkit-mask: var(--icon) center / 18px no-repeat; mask: var(--icon) center / 18px no-repeat; }
+.ui-sidebar-icon[data-icon="home"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3Cpath d='M9 22V12h6v10'/%3E%3C/svg%3E"); }
+.ui-sidebar-icon[data-icon="dashboard"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='7' height='9' x='3' y='3' rx='1'/%3E%3Crect width='7' height='5' x='14' y='3' rx='1'/%3E%3Crect width='7' height='9' x='14' y='12' rx='1'/%3E%3Crect width='7' height='5' x='3' y='16' rx='1'/%3E%3C/svg%3E"); }
+.ui-sidebar-icon[data-icon="info"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E"); }
+.ui-sidebar-icon[data-icon="shield"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z'/%3E%3C/svg%3E"); }
+.ui-sidebar-icon[data-icon="shop"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='21' r='1'/%3E%3Ccircle cx='19' cy='21' r='1'/%3E%3Cpath d='M2.05 2.05h2l2.66 12.56a2 2 0 0 0 2 1.54h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12'/%3E%3C/svg%3E"); }
+.ui-sidebar-icon[data-icon="system"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='8' x='2' y='2' rx='2' ry='2'/%3E%3Crect width='20' height='8' x='2' y='14' rx='2' ry='2'/%3E%3Cline x1='6' x2='6.01' y1='6' y2='6'/%3E%3Cline x1='6' x2='6.01' y1='18' y2='18'/%3E%3C/svg%3E"); }
 .ui-sidebar-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ui-sidebar-chevron { display: inline-grid; place-items: center; flex: none; color: var(--muted-foreground); transition: transform .15s; }
+/* The chevron itself: a CSS-drawn corner, turned down by default and right when open. */
+.ui-sidebar-chevron::after { content: ""; width: 5px; height: 5px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(-45deg); }
 .ui-sidebar-collapsible[open] > summary .ui-sidebar-chevron { transform: rotate(90deg); }
 .ui-sidebar-sub { margin: 2px 0 4px 18px; padding-left: 10px; border-left: 1px solid var(--sidebar-border); }
 .ui-sidebar-sub-button { display: block; padding: 6px 8px; border-radius: var(--radius-md); font-size: 14px; color: var(--muted-foreground); transition: background-color .15s, color .15s; }
@@ -1224,7 +1248,6 @@ button.ui-sidebar-button { font-size: 14px; }
 
 /* ==== 13. admin-app: layout and the few rules the kit does not have ==== */
 .page { max-width: 1100px; }
-.ui-menubar .top-menu__link--active { background: var(--accent); color: var(--accent-foreground); }
 .tabs__link--active { background: var(--background); color: var(--foreground); box-shadow: var(--shadow-sm); }
 .filter { width: 280px; height: 32px; }
 .status--error { color: var(--destructive); }
@@ -1250,3 +1273,17 @@ button.ui-sidebar-button { font-size: 14px; }
 .about__page { display: flex; align-items: center; gap: 4px; }
 .not-found .page-title { color: var(--foreground); font-size: 16px; font-weight: 600; }
 .bottom { max-width: 1100px; width: 100%; margin: 0 auto; padding: 0 16px 24px; font-size: 12px; }
+
+/* ==== 11. App pages: lists, forms, settings ==== */
+/* The generic list page and the create/edit forms share the page header and the
+   ui tables; only the form layout and the theme radios are app-specific. */
+.form { max-width: 560px; }
+.form__body { display: block; }
+.form__field { display: grid; gap: 6px; margin: 0 0 16px; }
+.form__actions { display: flex; gap: 8px; margin-top: 4px; }
+.form__error { margin: 0 0 16px; }
+/* Settings: the theme radios. */
+.settings__options { display: flex; gap: 20px; margin-bottom: 16px; }
+.settings__option { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+.settings__saved { margin-left: 12px; }
+.settings__error { margin-left: 12px; font-size: 14px; }

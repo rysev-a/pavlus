@@ -1,9 +1,13 @@
-// The shell: the header, whichever page the route selects, and the footer.
+// The shell: the sidebar, the header, whichever page the route selects, and the footer.
+import Sidebar from "./components/sidebar/sidebar.pavlus"
 import Header from "./components/header/header.pavlus"
 import Footer from "./components/footer/footer.pavlus"
 
-div.app.ui-shell-body
-  +Header#header(menu=menu route=route)
-  main.page.ui-shell-content
-    +outlet
-  +Footer#footer
+div.ui-shell(data-sidebar={sidebarOpen ? "open" : "closed"} data-drawer={drawerOpen ? "open" : "closed"})
+  +Sidebar#sidebar(menu=menu route=route)
+  div.ui-shell-body
+    +Header#header
+    main.page.ui-shell-content
+      +outlet
+    +Footer#footer
+  div.ui-shell-scrim(@click=closeDrawer)

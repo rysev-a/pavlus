@@ -1,0 +1,34 @@
+// The generic list page: a header, a table of `columns` over `items`, and the
+// actions the props ask for ("New" at the top, "Edit" per row). State = the
+// list's slice (items, status) plus those props; its clicks reach this
+// component as `<name>.navigate`.
+section(class=section)
+  div.ui-page-header
+    div
+      h1.page-title.ui-page-title {title}
+      p.page-intro.ui-page-description {subtitle}
+    if createPath
+      a.ui-button.ui-button-primary(href=createPath @click.prevent=navigate(createPath)) New
+  if status === "loading"
+    p.status.ui-page-description Loading...
+  else if status === "failed"
+    p.status.status--error.ui-page-description Could not load the list
+  else if items.length === 0
+    p.ui-page-description Nothing here yet.
+  else
+    div.ui-table-container
+      table.ui-table
+        thead.ui-table-header
+          tr.ui-table-row
+            for col in columns key col.field
+              th.ui-table-head {col.title}
+            if editPath
+              th.ui-table-head
+        tbody.ui-table-body
+          for item in items key item.id
+            tr(class={section + "__row"})
+              for col in columns key col.field
+                td.ui-table-cell {item[col.field]}
+              if editPath
+                td.ui-table-cell
+                  a.ui-button.ui-button-outline.ui-button-sm(href={editPath + "/" + item.id + "/edit"} @click.prevent=navigate(editPath + "/" + item.id + "/edit")) Edit

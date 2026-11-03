@@ -15,11 +15,11 @@ test("main.ts boots the whole app on the dashboard route, like the browser does"
   globalThis.fetch = api.fetch;
   try {
     const { store } = await import("../main.ts");
-    expect(text(".top-menu__link")).toEqual([
-      "Home",
+    expect(text(".ui-sidebar-button")).toEqual([
+      "Auth",
       "Dashboard",
-      "About",
-      "Admin",
+      "Shop",
+      "System",
     ]);
     expect(text(".status")).toEqual(["Loading..."]);
     await new Promise((r) => setTimeout(r, 200)); // a round trip to Postgres

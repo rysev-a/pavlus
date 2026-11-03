@@ -116,9 +116,85 @@ footer.site { margin: 64px 0 0; border-top: 1px solid var(--border); padding: 26
 .fv-dots { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
 .fv-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--border); background: #e2e6ee; cursor: pointer; padding: 0; }
 .fv-dot.on { background: var(--accent); border-color: var(--accent); }
-.fv-caption { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 10px 16px 14px; background: var(--panel); border-top: 1px solid var(--border); font-size: 13.5px; color: var(--muted); }
+.fv-caption { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 10px 16px 14px; background: var(--panel); border-top: 1px solid var(--border); font-size: 13.5px; color: var(--muted); min-height: 92px; }
 .fv-counter { font-weight: 700; color: var(--ink); font-size: 12px; white-space: nowrap; }
 .fv-label { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--accent); }
+/* hero stage: diagram + toy browser, synced */
+.stage { position: relative; display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 20px; align-items: stretch; margin: 26px 0 0; }
+@media (max-width: 1080px) { .stage { grid-template-columns: 1fr; } }
+.fv-dots { gap: 4px; }
+.fv-dot { width: 8px; height: 8px; }
+.fv-dot.fv-gap { margin-left: 11px; }
+.fv-phase { font-size: 11px; font-weight: 700; color: var(--accent); background: #eef2ff; border: 1px solid #dfe3ff; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.tb { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); box-shadow: 0 10px 30px rgba(31,36,48,0.08); overflow: hidden; }
+.tb-chrome { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: #eef1f6; border-bottom: 1px solid var(--border); }
+.tb-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.tb-dot.r { background: #ff5f57; }
+.tb-dot.y { background: #febc2e; }
+.tb-dot.g { background: #28c840; }
+.tb-url { flex: 1; margin-left: 8px; font: 11.5px/1.2 ui-monospace, Menlo, monospace; color: var(--muted); background: #fff; border: 1px solid var(--border); border-radius: 7px; padding: 5px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#fv-fly { position: absolute; width: 13px; height: 13px; border-radius: 50%; background: var(--accent); border: 2px solid #fff; box-shadow: 0 0 0 3px rgba(79,70,229,.16), 0 2px 10px rgba(31,36,48,.28); pointer-events: none; opacity: 0; z-index: 30; transform: translate(-50%,-50%); }
+@keyframes tbfx { 0%,100% { border-color: var(--border); box-shadow: none; } 50% { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,.2); } }
+.tb-url.fx { animation: tbfx .45s ease-in-out 2; }
+.tb-col { display: flex; flex-direction: column; min-width: 0; }
+.tb-col .tb { flex: 1; }
+.srv-link { align-self: center; width: 0; height: 18px; border-left: 2px dashed #94a3b8; }
+.srv { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--panel); border: 1.5px solid var(--border); border-radius: 12px; box-shadow: 0 6px 20px rgba(31,36,48,0.07); transition: border-color .25s ease, box-shadow .25s ease; }
+.srv-led { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; transition: background .2s; }
+#fv-srv.on .srv-led { background: #16a34a; animation: fvled .45s ease-in-out 3; }
+#fv-srv.on { border-color: #16a34a; }
+#fv-srv.lit { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,.16), 0 6px 20px rgba(31,36,48,0.07); }
+.srv-txt { display: flex; flex-direction: column; line-height: 1.3; }
+.srv-txt b { font-size: 13px; }
+.srv-txt span { font: 10.5px/1.3 ui-monospace, Menlo, monospace; color: var(--muted); }
+.srv-cap { margin: 8px 0 0; text-align: center; font-size: 10.5px; font-style: italic; color: var(--faint); }
+@keyframes fvled { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
+.tb-body { flex: 1; padding: 12px 14px 14px; min-height: 250px; }
+.tb-nav { display: flex; gap: 12px; align-items: baseline; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 10px; }
+.tb-nav b { color: var(--ink); font-size: 12.5px; margin-right: 4px; }
+.tb-nav span.on { color: var(--accent); font-weight: 700; }
+.tb-view h4 { margin: 2px 0 8px; font-size: 13px; }
+.tb-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tb-card { border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; display: flex; flex-direction: column; }
+.tb-card b { font-size: 16px; }
+.tb-card span { font-size: 10.5px; color: var(--muted); }
+.tb-sk { height: 14px; border-radius: 6px; background: linear-gradient(90deg, #e9edf3, #f6f8fb, #e9edf3); background-size: 200% 100%; animation: tbsk 1.2s linear infinite; margin: 9px 0; }
+@keyframes tbsk { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.tb-row { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 8px; padding: 6px 9px; margin: 6px 0; font-size: 12px; }
+.tb-row .tb-id { color: var(--faint); font: 11px ui-monospace, Menlo, monospace; }
+.tb-row .tb-sp { flex: 1; }
+.tb-btn { font-style: normal; font-size: 10.5px; font-weight: 700; color: var(--accent); border: 1px solid var(--border); border-radius: 6px; padding: 2px 7px; background: #fff; flex: none; }
+.tb-btn.danger { color: #dc2626; }
+.tb-btn.primary { color: #fff; background: var(--accent); border-color: var(--accent); }
+.tb-in { flex: 1; font: 12px ui-monospace, Menlo, monospace; border: 1px solid var(--accent); border-radius: 6px; padding: 3px 8px; min-width: 60px; }
+.tb-dev { border-top: 1px solid var(--border); background: var(--code-bg); color: var(--code-text); font: 11px/1.45 ui-monospace, Menlo, Consolas, monospace; }
+.tb-tabs { display: flex; align-items: center; gap: 2px; padding: 3px 8px 0; background: #0b1220; border-bottom: 1px solid #1e293b; }
+.tb-tab { font: 11px ui-monospace, Menlo, monospace; color: #7c8aa0; background: none; border: none; border-bottom: 2px solid transparent; padding: 4px 10px 5px; cursor: pointer; }
+.tb-tab.on { color: #e2e8f0; border-bottom-color: var(--accent); }
+.tb-spring { flex: 1; }
+.tb-step { color: #64748b; padding-right: 6px; }
+.tb-line { display: flex; align-items: center; gap: 8px; padding: 6px 12px; }
+.tb-dbg { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb-pane { display: none; height: 96px; overflow: auto; padding: 4px 12px 8px; }
+.tb-pane.on { display: block; }
+.tb-ev { display: flex; gap: 7px; padding: 1px 0; color: #94a3b8; white-space: nowrap; }
+.tb-ev.new { color: #e2e8f0; }
+.tb-ev .tb-ln { color: #475569; }
+.tb-cm { display: flex; gap: 7px; padding: 1px 0; color: #94a3b8; white-space: nowrap; }
+.tb-cm.cur { color: #e2e8f0; }
+.tb-cm .tb-n { color: #6ee7b7; }
+.tb-tl { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; padding: 7px 2px 3px; }
+.tb-tick { width: 7px; height: 7px; border-radius: 50%; border: 1px solid #334155; background: transparent; padding: 0; cursor: pointer; flex: none; }
+.tb-tick.c { background: #16a34a; border-color: #16a34a; }
+.tb-tick.cur { box-shadow: 0 0 0 2px var(--code-bg), 0 0 0 3.5px var(--accent); }
+.tb-tl-cap { color: #64748b; padding: 3px 2px 6px; }
+.tb-chip { font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 5px; padding: 2px 6px; background: #1e293b; flex: none; }
+.tb-chip.t-msg { color: #93c5fd; }
+.tb-chip.t-fx { color: #c4b5fd; }
+.tb-chip.t-net { color: #67e8f9; }
+.tb-chip.t-state { color: #6ee7b7; }
+.tb-chip.t-dom { color: #fcd34d; }
+.tb-chip.t-app, .tb-chip.t-ssr { color: #cbd5e1; }
 </style>
 </head>
 <body>
@@ -136,7 +212,140 @@ footer.site { margin: 64px 0 0; border-top: 1px solid var(--border); padding: 26
   <h1>The framework where your code is a pure function</h1>
   <p class="lead">pavlus applications are 100% pure functions: a handler takes a message and the state, and returns effects — plain data. Plugins do every dirty thing (DOM, HTTP, time, storage). Templates compile to two pure functions, <code>render(state)</code> and <code>diff(prev,&nbsp;next)</code> — one click becomes a handful of patches, not a re-render.</p>
 
-  <h3>Why</h3>
+  <div class="stage">
+    <div id="fv-fly"></div>
+    <div class="flowviz">
+      <svg id="flowviz-svg" xmlns="http://www.w3.org/2000/svg" width="1240" height="700" viewBox="0 0 1240 700" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1240" height="700" fill="#f6f8fa"/>
+<text x="24" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" font-weight="600" xml:space="preserve">One pure application — plugins do every dirty thing</text>
+<text x="1216" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">messages in → effects out</text>
+<rect x="60" y="56" width="330" height="372" rx="14" fill="#eef2ff" stroke="#6366f1" stroke-dasharray="6 4"/>
+<text x="76" y="80" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#4f46e5" font-weight="600" xml:space="preserve">YOUR APPLICATION</text>
+<rect data-node="app" x="85" y="96" width="280" height="118" rx="10" fill="#ffffff" stroke="#6366f1" stroke-width="1.6"/>
+<text x="225" y="122" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">application</text>
+<text x="225" y="144" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#7c3aed" text-anchor="middle" xml:space="preserve">app(message, state) → Effect[]</text>
+<text x="225" y="164" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">no Date.now(), no fetch(),</text>
+<text x="225" y="180" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">no DOM — handlers are pure</text>
+<text x="225" y="202" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the only code you write</text>
+<rect data-node="core" x="85" y="282" width="280" height="128" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="225" y="308" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">core — createApp()</text>
+<text x="225" y="330" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">queue → app(msg, state)</text>
+<text x="225" y="346" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">effects → plugins, in order</text>
+<text x="225" y="362" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">state changed → onState(all)</text>
+<text x="225" y="390" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the only code that calls the app</text>
+<line x1="185" y1="278" x2="185" y2="218" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="185,218 181,227 189,227" fill="#2563eb"/>
+<text x="175" y="252" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">app(msg, state)</text>
+<line x1="265" y1="218" x2="265" y2="278" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="265,278 269,269 261,269" fill="#7c3aed"/>
+<text x="275" y="252" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">Effect[] — data</text>
+<text x="680" y="80" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">plugins — all the dirty work</text>
+<rect data-node="dom" x="520" y="92" width="320" height="88" rx="10" fill="#ffffff" stroke="#d97706" stroke-width="1.4"/>
+<text x="680" y="118" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#d97706" text-anchor="middle" font-weight="600" xml:space="preserve">dom plugin</text>
+<text x="680" y="140" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">build(vnodes) · apply(patches)</text>
+<text x="680" y="156" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">owns every listener</text>
+<text x="680" y="174" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">all DOM mutation lives here</text>
+<rect data-node="store" x="520" y="214" width="320" height="88" rx="10" fill="#ffffff" stroke="#059669" stroke-width="1.4"/>
+<text x="680" y="240" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#059669" text-anchor="middle" font-weight="600" xml:space="preserve">store plugin — the state</text>
+<text x="680" y="262" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">set · merge · undo · restoreTo</text>
+<text x="680" y="278" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">immutable, structural sharing</text>
+<text x="680" y="296" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">a new object on every commit</text>
+<rect data-node="http" x="520" y="336" width="320" height="88" rx="10" fill="#ffffff" stroke="#0ea5e9" stroke-width="1.4"/>
+<text x="680" y="362" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#0ea5e9" text-anchor="middle" font-weight="600" xml:space="preserve">http plugin</text>
+<text x="680" y="384" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">request(id, url…) · cancel(id)</text>
+<text x="680" y="400" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">reply → ctx.dispatch(msg)</text>
+<text x="680" y="418" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">all network lives here</text>
+<rect data-node="logger" x="520" y="458" width="320" height="88" rx="10" fill="#ffffff" stroke="#667085" stroke-width="1.4"/>
+<text x="680" y="484" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#667085" text-anchor="middle" font-weight="600" xml:space="preserve">logger plugin</text>
+<text x="680" y="506" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">every message · every effect</text>
+<text x="680" y="522" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">history with undo markers</text>
+<text x="680" y="540" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">feeds the debug panel</text>
+<line x1="365" y1="319" x2="520" y2="319" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="520,319 511,315 511,323" fill="#7c3aed"/>
+<text x="442" y="307" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">handle(effects)</text>
+<path d="M 520 441 L 430 441 L 430 394 L 365 394" fill="none" stroke="#2563eb" stroke-width="1.6"/>
+<line x1="430" y1="394" x2="365" y2="394" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="365,394 374,398 374,390" fill="#2563eb"/>
+<text x="442" y="461" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">dispatch(msg)</text>
+<line x1="1210" y1="92" x2="1210" y2="546" stroke="#667085" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="1210" y="82" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#667085" text-anchor="middle" font-weight="600" xml:space="preserve">browser</text>
+<line x1="840" y1="136" x2="1200" y2="136" stroke="#d97706" stroke-width="1.4"/>
+<polygon points="1200,136 1191,132 1191,140" fill="#d97706"/>
+<text x="1020" y="124" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">build · apply(patches)</text>
+<line x1="840" y1="258" x2="1200" y2="258" stroke="#059669" stroke-width="1.4"/>
+<polygon points="1200,258 1191,254 1191,262" fill="#059669"/>
+<text x="1020" y="246" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">the store tab</text>
+<line x1="840" y1="378" x2="1200" y2="378" stroke="#0ea5e9" stroke-width="1.4"/>
+<polygon points="1200,378 1191,374 1191,382" fill="#0ea5e9"/>
+<text x="1020" y="366" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">fetch()</text>
+<line x1="840" y1="502" x2="1200" y2="502" stroke="#667085" stroke-width="1.4"/>
+<polygon points="1200,502 1191,498 1191,506" fill="#667085"/>
+<text x="1020" y="490" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">the pavlus tab</text>
+<line x1="70" y1="576" x2="94" y2="576" stroke="#2563eb" stroke-width="2"/>
+<text x="100" y="580" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">message (in)</text>
+<line x1="185" y1="576" x2="209" y2="576" stroke="#7c3aed" stroke-width="2"/>
+<text x="215" y="580" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">effect (out)</text>
+<line x1="300" y1="576" x2="324" y2="576" stroke="#059669" stroke-width="2"/>
+<text x="330" y="580" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">state change</text>
+<line x1="415" y1="576" x2="439" y2="576" stroke="#d97706" stroke-width="2"/>
+<text x="445" y="580" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">DOM work</text>
+<line x1="530" y1="576" x2="554" y2="576" stroke="#0ea5e9" stroke-width="2"/>
+<text x="560" y="580" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">network</text>
+<style>rect[data-node]{transition:stroke-width .25s ease}rect[data-node].lit{stroke-width:3.4;filter:drop-shadow(0 0 5px rgba(79,70,229,0.35))}</style><circle id="fv-packet" r="7" fill="#2563eb" stroke="#ffffff" stroke-width="2" opacity="0"/></svg>
+      <div class="fv-bar">
+        <button class="fv-btn" id="fv-prev">‹ prev</button>
+        <button class="fv-btn primary" id="fv-play">▶ play</button>
+        <button class="fv-btn" id="fv-next">next ›</button>
+        <span class="fv-phase"></span>
+        <div class="fv-dots"></div>
+      </div>
+      <div class="fv-caption"><span class="fv-counter"></span><code class="fv-label"></code><span class="fv-text"></span></div>
+    </div>
+
+    <div class="tb-col">
+    <div class="tb" id="toy-browser">
+      <div class="tb-chrome"><span class="tb-dot r"></span><span class="tb-dot y"></span><span class="tb-dot g"></span><span class="tb-url" id="tb-url">localhost:3000/</span></div>
+      <div class="tb-body">
+        <div class="tb-nav"><b>admin</b><span data-nav="overview" class="on">overview</span><span data-nav="users">users</span></div>
+        <div class="tb-view" id="tb-view"></div>
+      </div>
+      <div class="tb-dev">
+        <div class="tb-tabs">
+          <button class="tb-tab on" data-tab="pavlus">pavlus</button>
+          <button class="tb-tab" data-tab="store">store</button>
+          <span class="tb-spring"></span>
+          <span class="tb-step" id="tb-step"></span>
+        </div>
+        <div class="tb-line"><span class="tb-chip" id="tb-chip"></span><span class="tb-dbg" id="tb-dbg"></span></div>
+        <div class="tb-pane on" data-pane="pavlus"><div class="tb-log" id="tb-log"></div></div>
+        <div class="tb-pane" data-pane="store">
+          <div class="tb-tl" id="tb-tl"></div>
+          <div class="tb-tl-cap"><span id="tb-tl-info"></span> · one circle per change — click to jump</div>
+          <div class="tb-commits" id="tb-commits"></div>
+        </div>
+      </div>
+    </div>
+    <div class="srv-link"></div>
+    <div class="srv" id="fv-srv">
+      <span class="srv-led"></span>
+      <span class="srv-txt"><b>server</b><span>API · Postgres — the outside world</span></span>
+    </div>
+    <p class="srv-cap">only the browser talks to the server</p>
+    </div>
+  </div>
+
+  <p class="tiny">Left — your application as one island (app + core) with the plugin column: every plugin touches exactly two neighbours — the core and the browser. The server lives under the toy browser, and only the browser talks to it: requests fly in through the browser and drop down to the server — watch the light flash green. The devbar under the browser shows every message, effect and patch in simple mode. Prefer it static? The fully annotated diagram lives in the <a href="docs.html#core">docs, in "Core"</a>.</p>
+
+  <div class="cta-row">
+    <a class="cta primary" href="docs.html">Read the docs</a>
+    <a class="cta" href="about.html">About the concept</a>
+    <a class="cta" href="https://www.npmjs.com/package/@service-laboratory/pavlus">npm ↗</a>
+  </div>
+</section>
+
+<section class="part" id="why">
+  <span class="part-badge">why pavlus</span>
+  <h2>Why: the dirty work belongs to plugins, not to you</h2>
   <div class="motivation">
     <div class="concept"><b>Handlers stay pure</b> <span class="k">app(message, state) → Effect[]</span><p>Same message + same state ⇒ same effects. No Date.now(), no fetch(), no DOM in application code — so every handler is tested by calling it with data.</p></div>
     <div class="concept"><b>Effects are data, not callbacks</b> <span class="k">{ plugin, type, … }</span><p>A handler returns an array of plain effects. Plugins (dom, store, http, time, ws, logger) interpret them. No promise chains, no event spaghetti, no spies.</p></div>
@@ -151,115 +360,6 @@ footer.site { margin: 64px 0 0; border-top: 1px solid var(--border); padding: 26
         │  effects are plain data
         ▼
   plugins: dom · store · http · ws · time · logger · router · yours</div>
-
-  <div class="cta-row">
-    <a class="cta primary" href="docs.html">Read the docs</a>
-    <a class="cta" href="about.html">About the concept</a>
-    <a class="cta" href="https://www.npmjs.com/package/@service-laboratory/pavlus">npm ↗</a>
-  </div>
-</section>
-
-<section class="part" id="concept">
-  <span class="part-badge">the pure concept</span>
-  <h2>One application, six actors — only the center talks to the app</h2>
-  <p class="intro">One click travels the whole loop: browser → dom → core → app → effects → network → state → patches. Press play and watch the packet carry data from actor to actor, or step through by hand. Blue = messages in, violet = effects out, green = state, amber = DOM work, cyan = network.</p>
-  <div class="flowviz">
-    <svg id="flowviz-svg" xmlns="http://www.w3.org/2000/svg" width="1240" height="700" viewBox="0 0 1240 700" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
-<rect x="0" y="0" width="1240" height="700" fill="#f6f8fa"/>
-<text x="24" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" font-weight="600" xml:space="preserve">One application, six actors — only the center talks to the app</text>
-<text x="1216" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">messages in → pure app → effects out</text>
-<rect x="404" y="52" width="432" height="150" rx="14" fill="#eef2ff" stroke="#6366f1" stroke-dasharray="6 4"/>
-<text x="420" y="76" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#4f46e5" font-weight="600" xml:space="preserve">100% PURE — same message + same state ⇒ same effects</text>
-<rect data-node="app" x="430" y="88" width="380" height="96" rx="10" fill="#ffffff" stroke="#6366f1" stroke-width="1.6"/>
-<text x="620" y="112" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">application</text>
-<text x="620" y="132" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#7c3aed" text-anchor="middle" xml:space="preserve">app(message, state) → Effect[]</text>
-<text x="620" y="152" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">no Date.now(), no Math.random(),</text>
-<text x="620" y="166" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">no fetch(), no DOM — handlers are pure</text>
-<rect data-node="core" x="430" y="288" width="380" height="112" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
-<text x="620" y="312" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">core — createApp()</text>
-<text x="620" y="334" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">queue of messages → app(msg, state)</text>
-<text x="620" y="350" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">effects → plugins, in order</text>
-<text x="620" y="366" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">state changed → onState(next) to all</text>
-<text x="620" y="386" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the only code that calls the app</text>
-<rect data-node="dom" x="90" y="268" width="250" height="150" rx="10" fill="#ffffff" stroke="#d97706" stroke-width="1.4"/>
-<text x="215" y="292" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#d97706" text-anchor="middle" font-weight="600" xml:space="preserve">dom plugin</text>
-<text x="215" y="314" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">build(vnodes) → DOM</text>
-<text x="215" y="330" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">apply(patches) → DOM</text>
-<text x="215" y="346" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">owns every listener</text>
-<text x="215" y="362" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">re-renders on onState</text>
-<text x="215" y="386" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">all DOM mutation lives here</text>
-<rect data-node="http" x="930" y="268" width="250" height="150" rx="10" fill="#ffffff" stroke="#0ea5e9" stroke-width="1.4"/>
-<text x="1055" y="292" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#0ea5e9" text-anchor="middle" font-weight="600" xml:space="preserve">http plugin</text>
-<text x="1055" y="314" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">request(id, url, onSuccess…)</text>
-<text x="1055" y="330" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">same id cancels the previous</text>
-<text x="1055" y="346" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">cancel(id)</text>
-<text x="1055" y="362" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">reply → ctx.dispatch(msg)</text>
-<text x="1055" y="386" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">all network lives here</text>
-<rect data-node="store" x="430" y="500" width="380" height="112" rx="10" fill="#ffffff" stroke="#059669" stroke-width="1.4"/>
-<text x="620" y="524" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#059669" text-anchor="middle" font-weight="600" xml:space="preserve">store plugin — the state</text>
-<text x="620" y="546" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">set · merge · remove · undo · restoreTo</text>
-<text x="620" y="562" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">immutable updates, structural sharing</text>
-<text x="620" y="578" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">history of { effect, restoreEffect }</text>
-<text x="620" y="598" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the first plugin with getState() wins</text>
-<rect data-node="browser" x="90" y="500" width="250" height="112" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
-<text x="215" y="524" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">browser</text>
-<text x="215" y="546" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">DOM tree · user events</text>
-<text x="215" y="562" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">network (fetch)</text>
-<text x="215" y="582" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the outside world</text>
-<line x1="160" y1="500" x2="160" y2="418" stroke="#2563eb" stroke-width="1.6"/>
-<polygon points="160,418 156,427 164,427" fill="#2563eb"/>
-<text x="150" y="470" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">click / input / key</text>
-<line x1="270" y1="418" x2="270" y2="500" stroke="#d97706" stroke-width="1.6"/>
-<polygon points="270,500 274,491 266,491" fill="#d97706"/>
-<text x="280" y="470" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">build / apply(patches)</text>
-<line x1="340" y1="330" x2="430" y2="330" stroke="#2563eb" stroke-width="1.6"/>
-<polygon points="430,330 421,326 421,334" fill="#2563eb"/>
-<text x="385" y="318" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">dispatch({id…})</text>
-<line x1="430" y1="372" x2="340" y2="372" stroke="#059669" stroke-width="1.6"/>
-<polygon points="340,372 349,376 349,368" fill="#059669"/>
-<text x="385" y="392" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">onState(next)</text>
-<line x1="560" y1="288" x2="560" y2="184" stroke="#2563eb" stroke-width="1.6"/>
-<polygon points="560,184 556,193 564,193" fill="#2563eb"/>
-<text x="550" y="244" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">app(msg, state)</text>
-<line x1="690" y1="184" x2="690" y2="288" stroke="#7c3aed" stroke-width="1.6"/>
-<polygon points="690,288 694,279 686,279" fill="#7c3aed"/>
-<text x="700" y="244" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">Effect[] — plain data</text>
-<line x1="520" y1="400" x2="520" y2="500" stroke="#7c3aed" stroke-width="1.6"/>
-<polygon points="520,500 524,491 516,491" fill="#7c3aed"/>
-<text x="510" y="462" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">handle(store.set…)</text>
-<line x1="730" y1="500" x2="730" y2="400" stroke="#059669" stroke-width="1.6"/>
-<polygon points="730,400 726,409 734,409" fill="#059669"/>
-<text x="740" y="462" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">new state (identity changes)</text>
-<line x1="810" y1="330" x2="930" y2="330" stroke="#7c3aed" stroke-width="1.6"/>
-<polygon points="930,330 921,326 921,334" fill="#7c3aed"/>
-<text x="870" y="318" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">handle(request)</text>
-<line x1="930" y1="372" x2="810" y2="372" stroke="#2563eb" stroke-width="1.6"/>
-<polygon points="810,372 819,376 819,368" fill="#2563eb"/>
-<text x="870" y="392" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">dispatch(loaded/failed)</text>
-<path d="M 1055 418 L 1055 646 L 215 646 L 215 612" fill="none" stroke="#0ea5e9" stroke-width="1.4" stroke-dasharray="6 4"/>
-<line x1="215" y1="646" x2="215" y2="612" stroke="#0ea5e9" stroke-width="1.4" stroke-dasharray="6 4"/>
-<polygon points="215,612 211,621 219,621" fill="#0ea5e9"/>
-<text x="635" y="640" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">fetch() — the network also lives in the browser</text>
-<line x1="930" y1="456" x2="954" y2="456" stroke="#2563eb" stroke-width="2"/>
-<text x="960" y="460" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">message (in)</text>
-<line x1="1020" y1="456" x2="1044" y2="456" stroke="#7c3aed" stroke-width="2"/>
-<text x="1050" y="460" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">effect (out)</text>
-<line x1="1110" y1="456" x2="1134" y2="456" stroke="#059669" stroke-width="2"/>
-<text x="1140" y="460" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">state change</text>
-<line x1="930" y1="474" x2="954" y2="474" stroke="#d97706" stroke-width="2"/>
-<text x="960" y="478" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">DOM work</text>
-<line x1="1020" y1="474" x2="1044" y2="474" stroke="#0ea5e9" stroke-width="2"/>
-<text x="1050" y="478" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">network</text>
-<style>rect[data-node]{transition:stroke-width .25s ease}rect[data-node].lit{stroke-width:3.4;filter:drop-shadow(0 0 5px rgba(79,70,229,0.35))}</style><circle id="fv-packet" r="7" fill="#2563eb" stroke="#ffffff" stroke-width="2" opacity="0"/></svg>
-    <div class="fv-bar">
-      <button class="fv-btn" id="fv-prev">‹ prev</button>
-      <button class="fv-btn primary" id="fv-play">▶ play</button>
-      <button class="fv-btn" id="fv-next">next ›</button>
-      <div class="fv-dots"></div>
-    </div>
-    <div class="fv-caption"><span class="fv-counter"></span><code class="fv-label"></code><span class="fv-text"></span></div>
-  </div>
-  <p class="tiny">Prefer it static? The fully annotated diagram lives in the <a href="docs.html#core">docs, in "Core"</a>.</p>
 </section>
 
 </div>
@@ -273,7 +373,7 @@ footer.site { margin: 64px 0 0; border-top: 1px solid var(--border); padding: 26
       <a href="about.html">about</a></p>
   </div>
 </footer>
-<script type="application/json" id="flow-steps">[{"from":"browser","to":"dom","color":"#2563eb","pts":[[160,500],[160,418]],"label":"@click → { id: \"load\" }","caption":"The user clicks. The browser fires a DOM event — and the dom plugin owns every listener."},{"from":"dom","to":"core","color":"#2563eb","pts":[[340,330],[430,330]],"label":"dispatch({ id: \"load\" })","caption":"The dom plugin turns the event into a message. Nobody calls the application directly."},{"from":"core","to":"app","color":"#2563eb","pts":[[560,288],[560,184]],"label":"app({ id: \"load\" }, state)","caption":"The core — the only code that ever calls the app — invokes the pure handler."},{"from":"app","to":"core","color":"#7c3aed","pts":[[690,184],[690,288]],"label":"[ store.merge(…), http.request(…) ]","caption":"Same message + same state ⇒ same effects. The handler returns data, not promises or callbacks."},{"from":"core","to":"store","color":"#7c3aed","pts":[[520,400],[520,500]],"label":"handle(store.merge(\"users.loading\", true))","caption":"Effects go to the plugins in order. The store updates the state immutably — flip to loading."},{"from":"core","to":"http","color":"#7c3aed","pts":[[810,330],[930,330]],"label":"handle(http.request({ id: \"users\", url }))","caption":"The http plugin fetches. A second request with the same id would cancel this one."},{"from":"http","to":"browser","color":"#0ea5e9","pts":[[1055,418],[1055,646],[215,646],[215,612]],"label":"fetch(\"/api/users\")","caption":"The request leaves along the dashed wire — the network itself lives in the browser."},{"from":"browser","to":"http","color":"#0ea5e9","pts":[[215,612],[215,646],[1055,646],[1055,418]],"label":"HTTP 200 · JSON body","caption":"The reply arrives. The http plugin turns it into what the app understands: a message."},{"from":"http","to":"core","color":"#2563eb","pts":[[930,372],[810,372]],"label":"dispatch({ id: \"users.loaded\", payload })","caption":"The reply re-enters the loop as a message. The app never saw a promise."},{"from":"core","to":"app","color":"#2563eb","pts":[[560,288],[560,184]],"label":"app({ id: \"users.loaded\" }, state)","caption":"The core calls the app again — same rule, second lap."},{"from":"app","to":"core","color":"#7c3aed","pts":[[690,184],[690,288]],"label":"[ store.set(\"users\", data) ]","caption":"The handler computes the new state shape and asks the store to set it."},{"from":"core","to":"store","color":"#7c3aed","pts":[[520,400],[520,500]],"label":"handle(store.set(\"users\", data))","caption":"The store replaces the state immutably; untouched branches keep their identity."},{"from":"store","to":"core","color":"#059669","pts":[[730,500],[730,400]],"label":"new state — identity changed","caption":"A new object comes back. Nothing was mutated — diff can trust ===."},{"from":"core","to":"dom","color":"#059669","pts":[[430,372],[340,372]],"label":"onState(next)","caption":"State changed → every plugin is notified. For the dom plugin that means: diff and patch."},{"from":"dom","to":"browser","color":"#d97706","pts":[[270,418],[270,500]],"label":"apply(patches)","caption":"A handful of patch ops touch the DOM. The loop is closed — until the next event."}]</script><script>
+<script type="application/json" id="flow-steps">[{"from":"server","to":"dom","color":"#2563eb","fly":[{"e":"srv"},{"e":"url"}],"flash":true,"label":"open \"/\" — SSR HTML arrives","caption":"First paint needs no loop at all: the server ran the same render(state), and the finished HTML flies over the wire into the toy browser, already painted. The dom plugin mounts it and owns every listener.","phase":"open the start page","browser":{"url":"/","view":"home","dbg":{"t":"ssr","m":"render(state) ran on the server"},"store":"init — overview (SSR)"}},{"from":"dom","to":"core","color":"#2563eb","fly":[{"e":"url"},{"p":[840,136]},{"p":[520,136]},{"p":[365,394]}],"label":"dispatch({ id: \"mounted\" })","caption":"The toy browser hands the event to the dom plugin, and it says hello the only way it can: one message — mounted. Nobody calls the application directly.","phase":"open the start page","browser":{"dbg":{"t":"msg","m":"mounted"}}},{"from":"core","to":"app","color":"#2563eb","pts":[[185,278],[185,218]],"label":"app({ id: \"mounted\" }, state)","caption":"The core — the only code that ever calls the app — invokes the pure handler.","phase":"open the start page","browser":{"dbg":{"t":"app","m":"app(mounted, state)"}}},{"from":"app","to":"core","color":"#7c3aed","pts":[[265,218],[265,278]],"label":"[ ] — no effects","caption":"The overview is already on the page, so the handler returns nothing. Deterministic: same message in, same (empty) answer out.","phase":"open the start page","browser":{"dbg":{"t":"fx","m":"[] — nothing to do"}}},{"from":"dom","to":"core","color":"#2563eb","pts":[[520,160],[470,160],[470,394],[365,394]],"label":"@click \"users\" → dispatch({ id: \"users.load\" })","caption":"The user opens the Users page. The click becomes a message — the only way into the application.","phase":"open the users page","browser":{"url":"/users","dbg":{"t":"msg","m":"users.load"}}},{"from":"core","to":"app","color":"#2563eb","pts":[[185,278],[185,218]],"label":"app({ id: \"users.load\" }, state)","caption":"Same rule as always: the core calls the handler with the message and the state.","phase":"open the users page","browser":{"dbg":{"t":"app","m":"app(users.load, state)"}}},{"from":"app","to":"core","color":"#7c3aed","pts":[[265,218],[265,278]],"label":"[ store.merge(\"users.loading\", true), http.request(…) ]","caption":"Two effects, plain data: flip to loading, then fetch. No promises, no callbacks.","phase":"open the users page","browser":{"dbg":{"t":"fx","m":"store.merge · http.request"}}},{"from":"core","to":"store","color":"#7c3aed","pts":[[365,319],[480,319],[480,258],[520,258]],"label":"handle(store.merge(\"users.loading\", true))","caption":"The store applies the merge immutably — a new state object with loading flipped.","phase":"open the users page","browser":{"view":"users-loading","dbg":{"t":"state","m":"loading = true"},"store":"users.loading ← true"}},{"from":"core","to":"http","color":"#7c3aed","pts":[[365,319],[500,319],[500,370],[520,370]],"label":"handle(http.request({ url: \"/api/users\" }))","caption":"The http plugin owns fetch — application code never touches the network.","phase":"open the users page","browser":{"dbg":{"t":"fx","m":"GET /api/users"}}},{"from":"http","to":"server","color":"#0ea5e9","fly":[{"p":[840,378]},{"e":"url"},{"e":"srv"}],"flash":true,"label":"fetch(\"/api/users\")","caption":"The request hops into the toy browser, which passes it down to the server — watch the light flash green.","phase":"open the users page","browser":{"dbg":{"t":"net","m":"→ GET /api/users"}}},{"from":"server","to":"http","color":"#0ea5e9","fly":[{"e":"srv"},{"e":"url"},{"p":[840,378]}],"flash":true,"label":"HTTP 200 · 3 users · 12 ms","caption":"The reply leaves the server and re-enters through the toy browser — in the real admin-app, Postgres behind an API.","phase":"open the users page","browser":{"dbg":{"t":"net","m":"← 200 · 3 users"}}},{"from":"http","to":"core","color":"#2563eb","pts":[[520,390],[490,390],[490,394],[365,394]],"label":"dispatch({ id: \"users.loaded\", payload })","caption":"The http plugin turns the reply into what the app understands: a message. The app never saw a promise.","phase":"open the users page","browser":{"dbg":{"t":"msg","m":"users.loaded"}}},{"from":"core","to":"app","color":"#2563eb","pts":[[185,278],[185,218]],"label":"app({ id: \"users.loaded\" }, state)","caption":"Second lap — same rule, same purity.","phase":"open the users page","browser":{"dbg":{"t":"app","m":"app(users.loaded, state)"}}},{"from":"app","to":"core","color":"#7c3aed","pts":[[265,218],[265,278]],"label":"[ store.set(\"users\", rows) ]","caption":"The handler computes the new state shape and asks the store to set it.","phase":"open the users page","browser":{"dbg":{"t":"fx","m":"store.set users"}}},{"from":"core","to":"store","color":"#7c3aed","pts":[[365,319],[480,319],[480,258],[520,258]],"label":"handle(store.set(\"users\", rows))","caption":"The store replaces the branch immutably; untouched branches keep their identity.","phase":"open the users page","browser":{"store":"users ← rows (3)","dbg":{"t":"state","m":"users[3] committed"}}},{"from":"store","to":"core","color":"#059669","pts":[[520,276],[440,276],[440,394],[365,394]],"label":"new state — identity changed","caption":"A new object comes back. Nothing was mutated — that is why diff can trust ===.","phase":"open the users page","browser":{"dbg":{"t":"state","m":"state #3"}}},{"from":"core","to":"dom","color":"#059669","pts":[[365,319],[460,319],[460,130],[520,130]],"label":"onState(next) → diff(prev, next)","caption":"State identity changed, so every plugin is notified. For the dom plugin that means: diff.","phase":"open the users page","browser":{"dbg":{"t":"state","m":"onState → diff"}}},{"from":"dom","to":"browser","color":"#d97706","fly":[{"p":[840,136]},{"e":"url"}],"label":"apply(3 patches) — the table paints","caption":"Three patch ops fly out of the diagram into the toy browser and swap the skeleton for the table. The loop is closed — until the next event.","phase":"open the users page","browser":{"view":"users","dbg":{"t":"dom","m":"Δ 3 patches"}}},{"from":"dom","to":"core","color":"#2563eb","pts":[[520,160],[470,160],[470,394],[365,394]],"label":"@click=edit(1) → dispatch({ id: \"users.edit\" })","caption":"Now the user clicks edit on Ada's row. Same door as always: a message.","phase":"edit Ada","browser":{"dbg":{"t":"msg","m":"users.edit"}}},{"from":"core","to":"app","color":"#2563eb","pts":[[185,278],[185,218]],"label":"app({ id: \"users.edit\" }, state)","caption":"The row id rides in the payload; the handler reads it from data.","phase":"edit Ada","browser":{"dbg":{"t":"app","m":"app(users.edit, state)"}}},{"from":"app","to":"core","color":"#7c3aed","pts":[[265,218],[265,278]],"label":"[ store.set(\"users.editing\", 1) ]","caption":"Which row is being edited is just state — nothing else changes.","phase":"edit Ada","browser":{"dbg":{"t":"fx","m":"store.set editing"}}},{"from":"dom","to":"browser","color":"#d97706","fly":[{"p":[840,136]},{"e":"url"}],"label":"the row becomes a form","caption":"The same three hops as the last phase, compressed: handle → new state → onState — two patches turn the row into an input.","phase":"edit Ada","browser":{"view":"users-edit","store":"users.editing ← 1","dbg":{"t":"dom","m":"Δ 2 patches"}}},{"from":"dom","to":"core","color":"#2563eb","pts":[[520,160],[470,160],[470,394],[365,394]],"label":"@click=save → dispatch({ id: \"users.save\", payload })","caption":"Save clicked — the new name rides along in the payload.","phase":"edit Ada","browser":{"dbg":{"t":"msg","m":"users.save"}}},{"from":"core","to":"app","color":"#2563eb","pts":[[185,278],[185,218]],"label":"app({ id: \"users.save\" }, state)","caption":"The handler validates — pure code — and asks for the write.","phase":"edit Ada","browser":{"dbg":{"t":"app","m":"app(users.save, state)"}}},{"from":"app","to":"core","color":"#7c3aed","pts":[[265,218],[265,278]],"label":"[ http.request({ method: \"PATCH\", url: \"/api/users/1\" }) ]","caption":"One effect: persist. Writing is a side effect, so it belongs to a plugin.","phase":"edit Ada","browser":{"dbg":{"t":"fx","m":"PATCH /api/users/1"}}},{"from":"core","to":"http","color":"#7c3aed","pts":[[365,319],[500,319],[500,370],[520,370]],"label":"handle(http.request(…))","caption":"The http plugin sends the PATCH.","phase":"edit Ada","browser":{"dbg":{"t":"fx","m":"→ PATCH /api/users/1"}}},{"from":"http","to":"server","color":"#0ea5e9","fly":[{"p":[840,378]},{"e":"url"},{"e":"srv"}],"flash":true,"label":"PATCH /api/users/1 · { name: \"Ada Lovelace\" }","caption":"The write hops through the toy browser and leaves the island — in the real app it lands in Postgres.","phase":"edit Ada","browser":{"dbg":{"t":"net","m":"→ PATCH · { name }"}}},{"from":"server","to":"http","color":"#0ea5e9","fly":[{"e":"srv"},{"e":"url"},{"p":[840,378]}],"flash":true,"label":"HTTP 200 · saved","caption":"The database confirms the row.","phase":"edit Ada","browser":{"dbg":{"t":"net","m":"← 200 · saved"}}},{"from":"http","to":"core","color":"#2563eb","pts":[[520,390],[490,390],[490,394],[365,394]],"label":"dispatch({ id: \"users.saved\" })","caption":"The confirmation re-enters the loop as a message.","phase":"edit Ada","browser":{"dbg":{"t":"msg","m":"users.saved"}}},{"from":"core","to":"app","color":"#2563eb","pts":[[185,278],[185,218]],"label":"app({ id: \"users.saved\" }, state)","caption":"The handler closes the editor and reshapes the rows.","phase":"edit Ada","browser":{"dbg":{"t":"app","m":"app(users.saved, state)"}}},{"from":"app","to":"core","color":"#7c3aed","pts":[[265,218],[265,278]],"label":"[ store.set(users, rows′), store.set(\"users.editing\", null) ]","caption":"New rows with the new name, editor closed — two store effects.","phase":"edit Ada","browser":{"dbg":{"t":"fx","m":"store.set ×2"}}},{"from":"dom","to":"browser","color":"#d97706","fly":[{"p":[840,136]},{"e":"url"}],"label":"“Ada L.” → “Ada Lovelace”","caption":"Same compressed ending: handle → state → onState — two text patches, no navigation, the form is gone.","phase":"edit Ada","browser":{"view":"users-edited","store":"users ← rows′ · editing ← null","dbg":{"t":"dom","m":"Δ 2 patches"}}},{"from":"dom","to":"core","color":"#2563eb","pts":[[520,160],[470,160],[470,394],[365,394]],"label":"@click=remove(3) → dispatch({ id: \"users.remove\" })","caption":"Last interaction: the user removes Alan. One click, one message.","phase":"remove Alan","browser":{"dbg":{"t":"msg","m":"users.remove"}}},{"from":"core","to":"app","color":"#2563eb","pts":[[185,278],[185,218]],"label":"app({ id: \"users.remove\" }, state)","caption":"The handler asks for the delete — it does not perform it.","phase":"remove Alan","browser":{"dbg":{"t":"app","m":"app(users.remove, state)"}}},{"from":"app","to":"core","color":"#7c3aed","pts":[[265,218],[265,278]],"label":"[ http.request({ method: \"DELETE\", url: \"/api/users/3\" }) ]","caption":"Data out: one DELETE effect, plain data.","phase":"remove Alan","browser":{"dbg":{"t":"fx","m":"DELETE /api/users/3"}}},{"from":"core","to":"http","color":"#7c3aed","pts":[[365,319],[500,319],[500,370],[520,370]],"label":"handle(http.request(…))","caption":"The http plugin sends the DELETE.","phase":"remove Alan","browser":{"dbg":{"t":"fx","m":"→ DELETE /api/users/3"}}},{"from":"http","to":"server","color":"#0ea5e9","fly":[{"p":[840,378]},{"e":"url"},{"e":"srv"}],"flash":true,"label":"DELETE /api/users/3","caption":"The delete hops through the browser down to the server.","phase":"remove Alan","browser":{"dbg":{"t":"net","m":"→ DELETE /api/users/3"}}},{"from":"server","to":"http","color":"#0ea5e9","fly":[{"e":"srv"},{"e":"url"},{"p":[840,378]}],"flash":true,"label":"HTTP 200 · deleted","caption":"Postgres drops the row and confirms.","phase":"remove Alan","browser":{"dbg":{"t":"net","m":"← 200 · deleted"}}},{"from":"http","to":"core","color":"#2563eb","pts":[[520,390],[490,390],[490,394],[365,394]],"label":"dispatch({ id: \"users.removed\" })","caption":"Back into the loop as a message.","phase":"remove Alan","browser":{"dbg":{"t":"msg","m":"users.removed"}}},{"from":"core","to":"app","color":"#2563eb","pts":[[185,278],[185,218]],"label":"app({ id: \"users.removed\" }, state)","caption":"The handler filters the row out of the state — a pure computation.","phase":"remove Alan","browser":{"dbg":{"t":"app","m":"app(users.removed, state)"}}},{"from":"app","to":"core","color":"#7c3aed","pts":[[265,218],[265,278]],"label":"[ store.set(\"users\", rows.filter(…)) ]","caption":"The new users list simply doesn't contain Alan anymore.","phase":"remove Alan","browser":{"dbg":{"t":"fx","m":"store.set users"}}},{"from":"dom","to":"browser","color":"#d97706","fly":[{"p":[840,136]},{"e":"url"}],"label":"the row is gone","caption":"One removeRow patch. Reload later and the server agrees — state, DOM and database tell the same story.","phase":"remove Alan","browser":{"view":"users-after","store":"users − Alan → (2)","dbg":{"t":"dom","m":"Δ 1 patch"}}}]</script><script>
 (function () {
   var data = document.getElementById("flow-steps");
   if (!data) return;
@@ -288,20 +388,130 @@ footer.site { margin: 64px 0 0; border-top: 1px solid var(--border); padding: 26
   var counter = document.querySelector(".fv-counter");
   var label = document.querySelector(".fv-label");
   var text = document.querySelector(".fv-text");
+  var phaseEl = document.querySelector(".fv-phase");
   var dotsBox = document.querySelector(".fv-dots");
   var playBtn = document.getElementById("fv-play");
   var prevBtn = document.getElementById("fv-prev");
   var nextBtn = document.getElementById("fv-next");
+  var tbUrl = document.getElementById("tb-url");
+  var tbView = document.getElementById("tb-view");
+  var tbChip = document.getElementById("tb-chip");
+  var tbDbg = document.getElementById("tb-dbg");
+  var tbStep = document.getElementById("tb-step");
+  var tbNav = document.querySelectorAll(".tb-nav span[data-nav]");
+  var tbLog = document.getElementById("tb-log");
+  var tbCommits = document.getElementById("tb-commits");
+  var tbTl = document.getElementById("tb-tl");
+  var tbTlInfo = document.getElementById("tb-tl-info");
+  var srv = document.getElementById("fv-srv");
+  var fly = document.getElementById("fv-fly");
+  var stageBox = fly ? fly.parentNode : null;
+  var tabs = document.querySelectorAll(".tb-tab");
+  var panes = document.querySelectorAll(".tb-pane");
+  var srvT = null;
+
+  function ROW(id, name) {
+    return '<div class="tb-row"><span class="tb-id">' + id + '</span><b>' + name +
+      '</b><span class="tb-sp"></span><i class="tb-btn">edit</i><i class="tb-btn danger">remove</i></div>';
+  }
+  function ROWEDIT(id, name) {
+    return '<div class="tb-row"><span class="tb-id">' + id + '</span>' +
+      '<input class="tb-in" value="' + name + '"><i class="tb-btn primary">save</i></div>';
+  }
+  function ROWS(rows) { return '<h4>Users</h4>' + rows.join(""); }
+
+  var VIEWS = {
+    home: '<h4>Overview</h4><div class="tb-cards"><div class="tb-card"><b>8</b><span>users</span></div><div class="tb-card"><b>10</b><span>products</span></div><div class="tb-card"><b>10</b><span>payments</span></div></div>',
+    "users-loading": '<h4>Users</h4><div class="tb-sk"></div><div class="tb-sk"></div><div class="tb-sk"></div>',
+    users: ROWS([ROW(1, "Ada L."), ROW(2, "Grace H."), ROW(3, "Alan T.")]),
+    "users-edit": ROWS([ROWEDIT(1, "Ada L."), ROW(2, "Grace H."), ROW(3, "Alan T.")]),
+    "users-edited": ROWS([ROW(1, "Ada Lovelace"), ROW(2, "Grace H."), ROW(3, "Alan T.")]),
+    "users-after": ROWS([ROW(1, "Ada Lovelace"), ROW(2, "Grace H.")])
+  };
+
+  var cur = { url: "/", view: "home" };
+
+  // micro timeline: one circle per step, green where the store commits
+  var ticks = [];
+  STEPS.forEach(function (s, k) {
+    var c = s.browser && s.browser.store;
+    var t = document.createElement("button");
+    t.className = "tb-tick" + (c ? " c" : "");
+    t.title = "step " + (k + 1) + (c ? " — " + c : "");
+    t.addEventListener("click", function () { stop(); go(k); });
+    tbTl.appendChild(t);
+    ticks.push(t);
+  });
+
+  // devtools tabs, chrome-style
+  tabs.forEach(function (b) {
+    b.addEventListener("click", function () {
+      tabs.forEach(function (x) { x.classList.remove("on"); });
+      panes.forEach(function (p) {
+        p.classList.toggle("on", p.getAttribute("data-pane") === b.getAttribute("data-tab"));
+      });
+      b.classList.add("on");
+    });
+  });
+
+  // rebuild both panes from steps 0..i — deterministic on any jump
+  function renderDev() {
+    var n = 0, rows = "", last = "—";
+    for (var k = 0; k <= i; k++) {
+      var b = STEPS[k].browser;
+      if (b && b.store) {
+        n++;
+        last = b.store;
+        rows += '<div class="tb-cm"><span class="tb-n">#' + n + "</span><span>" + b.store + "</span></div>";
+      }
+    }
+    tbCommits.innerHTML = rows || '<div class="tb-cm"><span class="tb-n">—</span><span>no changes yet</span></div>';
+    var log = "";
+    for (var k = Math.max(0, i - 8); k <= i; k++) {
+      var d = STEPS[k].browser && STEPS[k].browser.dbg;
+      if (d) {
+        var nn = (k + 1 < 10 ? "0" : "") + (k + 1);
+        log += '<div class="tb-ev' + (k === i ? " new" : "") + '"><span class="tb-ln">' + nn + '</span><span class="tb-chip t-' + d.t + '">' + d.t + "</span><span>" + d.m + "</span></div>";
+      }
+    }
+    tbLog.innerHTML = log;
+    tbLog.scrollTop = tbLog.scrollHeight;
+    ticks.forEach(function (t) { t.classList.remove("cur"); });
+    ticks[i].classList.add("cur");
+    tbTlInfo.textContent = "state #" + n + " — " + last;
+  }
+
+  function applyBrowser(f) {
+    if (!f) return;
+    if (f.url) {
+      cur.url = f.url;
+      tbUrl.textContent = "localhost:3000" + cur.url;
+    }
+    if (f.view && VIEWS[f.view]) {
+      cur.view = f.view;
+      tbView.innerHTML = VIEWS[f.view];
+      var sec = cur.view === "home" ? "overview" : "users";
+      tbNav.forEach(function (n) {
+        n.className = n.getAttribute("data-nav") === sec ? "on" : "";
+      });
+    }
+    if (f.dbg) {
+      tbChip.textContent = f.dbg.t;
+      tbChip.className = "tb-chip t-" + f.dbg.t;
+      tbDbg.textContent = f.dbg.m;
+    }
+  }
+
   var dots = [];
   STEPS.forEach(function (s, k) {
     var d = document.createElement("button");
-    d.className = "fv-dot";
-    d.title = s.label;
+    d.className = "fv-dot" + (k > 0 && s.phase !== STEPS[k - 1].phase ? " fv-gap" : "");
+    d.title = s.phase + " — " + s.label;
     d.addEventListener("click", function () { stop(); go(k); });
     dotsBox.appendChild(d);
     dots.push(d);
   });
-  var i = -1, playing = false, timer = null, raf = null;
+  var i = -1, playing = false, timer = null, raf = null, flyRaf = null, urlFxT = null;
 
   function segPoint(pts, t) {
     var segs = [], total = 0, k;
@@ -324,19 +534,91 @@ footer.site { margin: 64px 0 0; border-top: 1px solid var(--border); padding: 26
 
   function lit(ids) {
     for (var k in nodes)
-      nodes[k].classList.toggle("lit", ids.indexOf(k) >= 0);
+      if (nodes[k]) nodes[k].classList.toggle("lit", ids.indexOf(k) >= 0);
+  }
+
+  // a fly-leg target: an SVG point, or an HTML anchor ("url" = toy URL bar, "srv" = server box)
+  function anchorPt(a) {
+    var st = stageBox.getBoundingClientRect();
+    var r;
+    if (a.e === "url" && tbUrl) r = tbUrl.getBoundingClientRect();
+    else if (a.e === "srv" && srv) r = srv.getBoundingClientRect();
+    else {
+      var vr = svg.viewBox.baseVal, sr = svg.getBoundingClientRect();
+      return [sr.left - st.left + (a.p[0] / vr.width) * sr.width,
+              sr.top - st.top + (a.p[1] / vr.height) * sr.height];
+    }
+    return [r.left - st.left + r.width / 2, r.top - st.top + r.height / 2];
+  }
+  function pulseUrl() {
+    tbUrl.classList.remove("fx");
+    void tbUrl.offsetWidth;
+    tbUrl.classList.add("fx");
+    clearTimeout(urlFxT);
+    urlFxT = setTimeout(function () { tbUrl.classList.remove("fx"); }, 950);
   }
 
   function go(n, instant) {
     if (raf) cancelAnimationFrame(raf);
+    if (flyRaf) cancelAnimationFrame(flyRaf);
+    flyRaf = null;
     i = ((n % STEPS.length) + STEPS.length) % STEPS.length;
     var s = STEPS[i];
+    if (srv) {
+      if (s.flash) {
+        srv.classList.add("on");
+        clearTimeout(srvT);
+        srvT = setTimeout(function () { srv.classList.remove("on"); }, 1300);
+      } else {
+        srv.classList.remove("on");
+        clearTimeout(srvT);
+      }
+    }
     lit([s.from, s.to]);
+    if (srv) srv.classList.toggle("lit", s.from === "server" || s.to === "server");
     packet.setAttribute("fill", s.color);
     counter.textContent = "step " + (i + 1) + " / " + STEPS.length;
     label.textContent = s.label;
     text.textContent = s.caption;
+    if (phaseEl) phaseEl.textContent = s.phase;
     dots.forEach(function (d, k) { d.classList.toggle("on", k === i); });
+    if (tbStep) tbStep.textContent = (i + 1) + "/" + STEPS.length;
+    var landed = false;
+    function land() {
+      if (landed) return;
+      landed = true;
+      applyBrowser(s.browser);
+      renderDev();
+    }
+    if (s.fly && fly && stageBox) {
+      packet.setAttribute("opacity", "0");
+      if (instant) {
+        var fin = anchorPt(s.fly[s.fly.length - 1]);
+        fly.style.left = fin[0] + "px";
+        fly.style.top = fin[1] + "px";
+        land();
+        return;
+      }
+      var leg = 0, lt0 = null, lfrom = null, LEG = 420;
+      function flyFrame(ts) {
+        if (lt0 === null) { lt0 = ts; lfrom = anchorPt(s.fly[leg]); }
+        var p = Math.min(1, (ts - lt0) / LEG);
+        var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+        var to = anchorPt(s.fly[leg]);
+        fly.style.left = lfrom[0] + (to[0] - lfrom[0]) * e + "px";
+        fly.style.top = lfrom[1] + (to[1] - lfrom[1]) * e + "px";
+        fly.style.opacity = "1";
+        if (p >= 1) {
+          if (s.fly[leg].e === "url") pulseUrl();
+          leg++;
+          lt0 = null;
+          if (leg >= s.fly.length) { fly.style.opacity = "0"; land(); return; }
+        }
+        flyRaf = requestAnimationFrame(flyFrame);
+      }
+      flyRaf = requestAnimationFrame(flyFrame);
+      return;
+    }
     var t0 = null, DUR = instant ? 0 : 650;
     function frame(ts) {
       if (t0 === null) t0 = ts;
@@ -346,8 +628,10 @@ footer.site { margin: 64px 0 0; border-top: 1px solid var(--border); padding: 26
       packet.setAttribute("cx", pt[0]);
       packet.setAttribute("cy", pt[1]);
       packet.setAttribute("opacity", "1");
+      if (p >= 1) land();
       raf = p < 1 ? requestAnimationFrame(frame) : null;
     }
+    if (instant) land();
     raf = requestAnimationFrame(frame);
   }
 
@@ -355,7 +639,7 @@ footer.site { margin: 64px 0 0; border-top: 1px solid var(--border); padding: 26
     playing = true;
     playBtn.textContent = "⏸ pause";
     go(i + 1);
-    timer = setInterval(function () { go(i + 1); }, 1600);
+    timer = setInterval(function () { go(i + 1); }, 1800);
   }
   function stop() {
     if (timer) clearInterval(timer);

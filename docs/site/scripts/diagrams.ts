@@ -1057,225 +1057,865 @@ export function pureConceptSvg(): Svg {
 
 /* ------------------------------------------------------------------ */
 /* ------------------------------------------------------------------ */
-/* The interactive flow: the six actors, one full loop of data.        */
+/* The interactive flow: six actors, one tiny admin session as data.   */
 
 export interface FlowStep {
   from: string;
   to: string;
   /** Waypoints the packet travels through, in SVG coordinates. */
-  pts: [number, number][];
+  pts?: [number, number][];
+  /**
+   * Legs between SVG points (`p`) and HTML anchors (`e`: "url" = the toy
+   * browser's URL bar, "srv" = the server box). Steps with `fly` move a dot
+   * across the whole stage — the packet crosses from the diagram into the
+   * toy browser and back — instead of the in-SVG packet.
+   */
+  fly?: { p?: [number, number]; e?: string }[];
   color: string;
   /** The data on the wire (mono line under the diagram). */
   label: string;
   /** What happens (caption under the diagram). */
   caption: string;
+  /** Walkthrough phase — chip in the controls; dots regroup when it changes. */
+  phase: string;
+  /** Flash the server's green LED: this traffic passes through it. */
+  flash?: boolean;
+  /** Toy-browser sync frame: partial updates for url, view and devbar. */
+  browser?: {
+    url?: string;
+    view?: string;
+    dbg?: { t: string; m: string };
+    /** Store change, shown in the toy devtools store tab. */
+    store?: string;
+  };
 }
 
-/** One real round trip — a click that loads users over http — as data. */
+/** Segment geometries, shared by every step. */
+const E: Record<string, [number, number][]> = {
+  c2a: [
+    [185, 278],
+    [185, 218],
+  ],
+  a2c: [
+    [265, 218],
+    [265, 278],
+  ],
+  c2d: [
+    [365, 319],
+    [460, 319],
+    [460, 130],
+    [520, 130],
+  ],
+  d2c: [
+    [520, 160],
+    [470, 160],
+    [470, 394],
+    [365, 394],
+  ],
+  c2s: [
+    [365, 319],
+    [480, 319],
+    [480, 258],
+    [520, 258],
+  ],
+  s2c: [
+    [520, 276],
+    [440, 276],
+    [440, 394],
+    [365, 394],
+  ],
+  c2h: [
+    [365, 319],
+    [500, 319],
+    [500, 370],
+    [520, 370],
+  ],
+  h2c: [
+    [520, 390],
+    [490, 390],
+    [490, 394],
+    [365, 394],
+  ],
+};
+
+const P1 = "open the start page";
+const P2 = "open the users page";
+const P3 = "edit Ada";
+const P4 = "remove Alan";
+
+/**
+ * The story of a tiny admin session, as data: open the start page, open the
+ * users page, edit one user, remove one user. Phase 2 walks every hop of the
+ * loop; later phases compress repeated hops and say so in the caption — the
+ * model never bends. The toy browser in the hero reads `browser` frames to
+ * stay in sync with the packet.
+ */
 export const FLOW_STEPS: FlowStep[] = [
   {
-    from: "browser",
+    from: "server",
     to: "dom",
     color: C.msg,
-    pts: [
-      [160, 500],
-      [160, 418],
-    ],
-    label: '@click → { id: "load" }',
+    fly: [{ e: "srv" }, { e: "url" }],
+    flash: true,
+    label: 'open "/" — SSR HTML arrives',
     caption:
-      "The user clicks. The browser fires a DOM event — and the dom plugin owns every listener.",
+      "First paint needs no loop at all: the server ran the same render(state), and the finished HTML flies over the wire into the toy browser, already painted. The dom plugin mounts it and owns every listener.",
+    phase: P1,
+    browser: {
+      url: "/",
+      view: "home",
+      dbg: { t: "ssr", m: "render(state) ran on the server" },
+      store: "init — overview (SSR)",
+    },
   },
   {
     from: "dom",
     to: "core",
     color: C.msg,
-    pts: [
-      [340, 330],
-      [430, 330],
+    fly: [
+      { e: "url" },
+      { p: [840, 136] },
+      { p: [520, 136] },
+      { p: [365, 394] },
     ],
-    label: 'dispatch({ id: "load" })',
+    label: 'dispatch({ id: "mounted" })',
     caption:
-      "The dom plugin turns the event into a message. Nobody calls the application directly.",
+      "The toy browser hands the event to the dom plugin, and it says hello the only way it can: one message — mounted. Nobody calls the application directly.",
+    phase: P1,
+    browser: { dbg: { t: "msg", m: "mounted" } },
   },
   {
     from: "core",
     to: "app",
     color: C.msg,
-    pts: [
-      [560, 288],
-      [560, 184],
-    ],
-    label: 'app({ id: "load" }, state)',
+    pts: E.c2a,
+    label: 'app({ id: "mounted" }, state)',
     caption:
       "The core — the only code that ever calls the app — invokes the pure handler.",
+    phase: P1,
+    browser: { dbg: { t: "app", m: "app(mounted, state)" } },
   },
   {
     from: "app",
     to: "core",
     color: C.effect,
-    pts: [
-      [690, 184],
-      [690, 288],
-    ],
-    label: "[ store.merge(…), http.request(…) ]",
+    pts: E.a2c,
+    label: "[ ] — no effects",
     caption:
-      "Same message + same state ⇒ same effects. The handler returns data, not promises or callbacks.",
+      "The overview is already on the page, so the handler returns nothing. Deterministic: same message in, same (empty) answer out.",
+    phase: P1,
+    browser: { dbg: { t: "fx", m: "[] — nothing to do" } },
   },
   {
-    from: "core",
-    to: "store",
-    color: C.effect,
-    pts: [
-      [520, 400],
-      [520, 500],
-    ],
-    label: 'handle(store.merge("users.loading", true))',
-    caption:
-      "Effects go to the plugins in order. The store updates the state immutably — flip to loading.",
-  },
-  {
-    from: "core",
-    to: "http",
-    color: C.effect,
-    pts: [
-      [810, 330],
-      [930, 330],
-    ],
-    label: 'handle(http.request({ id: "users", url }))',
-    caption:
-      "The http plugin fetches. A second request with the same id would cancel this one.",
-  },
-  {
-    from: "http",
-    to: "browser",
-    color: C.net,
-    pts: [
-      [1055, 418],
-      [1055, 646],
-      [215, 646],
-      [215, 612],
-    ],
-    label: 'fetch("/api/users")',
-    caption:
-      "The request leaves along the dashed wire — the network itself lives in the browser.",
-  },
-  {
-    from: "browser",
-    to: "http",
-    color: C.net,
-    pts: [
-      [215, 612],
-      [215, 646],
-      [1055, 646],
-      [1055, 418],
-    ],
-    label: "HTTP 200 · JSON body",
-    caption:
-      "The reply arrives. The http plugin turns it into what the app understands: a message.",
-  },
-  {
-    from: "http",
+    from: "dom",
     to: "core",
     color: C.msg,
-    pts: [
-      [930, 372],
-      [810, 372],
-    ],
-    label: 'dispatch({ id: "users.loaded", payload })',
+    pts: E.d2c,
+    label: '@click "users" → dispatch({ id: "users.load" })',
     caption:
-      "The reply re-enters the loop as a message. The app never saw a promise.",
+      "The user opens the Users page. The click becomes a message — the only way into the application.",
+    phase: P2,
+    browser: { url: "/users", dbg: { t: "msg", m: "users.load" } },
   },
   {
     from: "core",
     to: "app",
     color: C.msg,
-    pts: [
-      [560, 288],
-      [560, 184],
-    ],
-    label: 'app({ id: "users.loaded" }, state)',
-    caption: "The core calls the app again — same rule, second lap.",
+    pts: E.c2a,
+    label: 'app({ id: "users.load" }, state)',
+    caption:
+      "Same rule as always: the core calls the handler with the message and the state.",
+    phase: P2,
+    browser: { dbg: { t: "app", m: "app(users.load, state)" } },
   },
   {
     from: "app",
     to: "core",
     color: C.effect,
-    pts: [
-      [690, 184],
-      [690, 288],
-    ],
-    label: '[ store.set("users", data) ]',
+    pts: E.a2c,
+    label: '[ store.merge("users.loading", true), http.request(…) ]',
     caption:
-      "The handler computes the new state shape and asks the store to set it.",
+      "Two effects, plain data: flip to loading, then fetch. No promises, no callbacks.",
+    phase: P2,
+    browser: { dbg: { t: "fx", m: "store.merge · http.request" } },
   },
   {
     from: "core",
     to: "store",
     color: C.effect,
-    pts: [
-      [520, 400],
-      [520, 500],
-    ],
-    label: 'handle(store.set("users", data))',
+    pts: E.c2s,
+    label: 'handle(store.merge("users.loading", true))',
     caption:
-      "The store replaces the state immutably; untouched branches keep their identity.",
+      "The store applies the merge immutably — a new state object with loading flipped.",
+    phase: P2,
+    browser: {
+      view: "users-loading",
+      dbg: { t: "state", m: "loading = true" },
+      store: "users.loading ← true",
+    },
+  },
+  {
+    from: "core",
+    to: "http",
+    color: C.effect,
+    pts: E.c2h,
+    label: 'handle(http.request({ url: "/api/users" }))',
+    caption:
+      "The http plugin owns fetch — application code never touches the network.",
+    phase: P2,
+    browser: { dbg: { t: "fx", m: "GET /api/users" } },
+  },
+  {
+    from: "http",
+    to: "server",
+    color: C.net,
+    fly: [{ p: [840, 378] }, { e: "url" }, { e: "srv" }],
+    flash: true,
+    label: 'fetch("/api/users")',
+    caption:
+      "The request hops into the toy browser, which passes it down to the server — watch the light flash green.",
+    phase: P2,
+    browser: { dbg: { t: "net", m: "→ GET /api/users" } },
+  },
+  {
+    from: "server",
+    to: "http",
+    color: C.net,
+    fly: [{ e: "srv" }, { e: "url" }, { p: [840, 378] }],
+    flash: true,
+    label: "HTTP 200 · 3 users · 12 ms",
+    caption:
+      "The reply leaves the server and re-enters through the toy browser — in the real admin-app, Postgres behind an API.",
+    phase: P2,
+    browser: { dbg: { t: "net", m: "← 200 · 3 users" } },
+  },
+  {
+    from: "http",
+    to: "core",
+    color: C.msg,
+    pts: E.h2c,
+    label: 'dispatch({ id: "users.loaded", payload })',
+    caption:
+      "The http plugin turns the reply into what the app understands: a message. The app never saw a promise.",
+    phase: P2,
+    browser: { dbg: { t: "msg", m: "users.loaded" } },
+  },
+  {
+    from: "core",
+    to: "app",
+    color: C.msg,
+    pts: E.c2a,
+    label: 'app({ id: "users.loaded" }, state)',
+    caption: "Second lap — same rule, same purity.",
+    phase: P2,
+    browser: { dbg: { t: "app", m: "app(users.loaded, state)" } },
+  },
+  {
+    from: "app",
+    to: "core",
+    color: C.effect,
+    pts: E.a2c,
+    label: '[ store.set("users", rows) ]',
+    caption:
+      "The handler computes the new state shape and asks the store to set it.",
+    phase: P2,
+    browser: { dbg: { t: "fx", m: "store.set users" } },
+  },
+  {
+    from: "core",
+    to: "store",
+    color: C.effect,
+    pts: E.c2s,
+    label: 'handle(store.set("users", rows))',
+    caption:
+      "The store replaces the branch immutably; untouched branches keep their identity.",
+    phase: P2,
+    browser: {
+      store: "users ← rows (3)",
+      dbg: { t: "state", m: "users[3] committed" },
+    },
   },
   {
     from: "store",
     to: "core",
     color: C.state,
-    pts: [
-      [730, 500],
-      [730, 400],
-    ],
+    pts: E.s2c,
     label: "new state — identity changed",
     caption:
-      "A new object comes back. Nothing was mutated — diff can trust ===.",
+      "A new object comes back. Nothing was mutated — that is why diff can trust ===.",
+    phase: P2,
+    browser: { dbg: { t: "state", m: "state #3" } },
   },
   {
     from: "core",
     to: "dom",
     color: C.state,
-    pts: [
-      [430, 372],
-      [340, 372],
-    ],
-    label: "onState(next)",
+    pts: E.c2d,
+    label: "onState(next) → diff(prev, next)",
     caption:
-      "State changed → every plugin is notified. For the dom plugin that means: diff and patch.",
+      "State identity changed, so every plugin is notified. For the dom plugin that means: diff.",
+    phase: P2,
+    browser: { dbg: { t: "state", m: "onState → diff" } },
   },
   {
     from: "dom",
     to: "browser",
     color: C.dom,
-    pts: [
-      [270, 418],
-      [270, 500],
-    ],
-    label: "apply(patches)",
+    fly: [{ p: [840, 136] }, { e: "url" }],
+    label: "apply(3 patches) — the table paints",
     caption:
-      "A handful of patch ops touch the DOM. The loop is closed — until the next event.",
+      "Three patch ops fly out of the diagram into the toy browser and swap the skeleton for the table. The loop is closed — until the next event.",
+    phase: P2,
+    browser: { view: "users", dbg: { t: "dom", m: "Δ 3 patches" } },
+  },
+  {
+    from: "dom",
+    to: "core",
+    color: C.msg,
+    pts: E.d2c,
+    label: '@click=edit(1) → dispatch({ id: "users.edit" })',
+    caption:
+      "Now the user clicks edit on Ada's row. Same door as always: a message.",
+    phase: P3,
+    browser: { dbg: { t: "msg", m: "users.edit" } },
+  },
+  {
+    from: "core",
+    to: "app",
+    color: C.msg,
+    pts: E.c2a,
+    label: 'app({ id: "users.edit" }, state)',
+    caption: "The row id rides in the payload; the handler reads it from data.",
+    phase: P3,
+    browser: { dbg: { t: "app", m: "app(users.edit, state)" } },
+  },
+  {
+    from: "app",
+    to: "core",
+    color: C.effect,
+    pts: E.a2c,
+    label: '[ store.set("users.editing", 1) ]',
+    caption: "Which row is being edited is just state — nothing else changes.",
+    phase: P3,
+    browser: { dbg: { t: "fx", m: "store.set editing" } },
+  },
+  {
+    from: "dom",
+    to: "browser",
+    color: C.dom,
+    fly: [{ p: [840, 136] }, { e: "url" }],
+    label: "the row becomes a form",
+    caption:
+      "The same three hops as the last phase, compressed: handle → new state → onState — two patches turn the row into an input.",
+    phase: P3,
+    browser: {
+      view: "users-edit",
+      store: "users.editing ← 1",
+      dbg: { t: "dom", m: "Δ 2 patches" },
+    },
+  },
+  {
+    from: "dom",
+    to: "core",
+    color: C.msg,
+    pts: E.d2c,
+    label: '@click=save → dispatch({ id: "users.save", payload })',
+    caption: "Save clicked — the new name rides along in the payload.",
+    phase: P3,
+    browser: { dbg: { t: "msg", m: "users.save" } },
+  },
+  {
+    from: "core",
+    to: "app",
+    color: C.msg,
+    pts: E.c2a,
+    label: 'app({ id: "users.save" }, state)',
+    caption: "The handler validates — pure code — and asks for the write.",
+    phase: P3,
+    browser: { dbg: { t: "app", m: "app(users.save, state)" } },
+  },
+  {
+    from: "app",
+    to: "core",
+    color: C.effect,
+    pts: E.a2c,
+    label: '[ http.request({ method: "PATCH", url: "/api/users/1" }) ]',
+    caption:
+      "One effect: persist. Writing is a side effect, so it belongs to a plugin.",
+    phase: P3,
+    browser: { dbg: { t: "fx", m: "PATCH /api/users/1" } },
+  },
+  {
+    from: "core",
+    to: "http",
+    color: C.effect,
+    pts: E.c2h,
+    label: "handle(http.request(…))",
+    caption: "The http plugin sends the PATCH.",
+    phase: P3,
+    browser: { dbg: { t: "fx", m: "→ PATCH /api/users/1" } },
+  },
+  {
+    from: "http",
+    to: "server",
+    color: C.net,
+    fly: [{ p: [840, 378] }, { e: "url" }, { e: "srv" }],
+    flash: true,
+    label: 'PATCH /api/users/1 · { name: "Ada Lovelace" }',
+    caption:
+      "The write hops through the toy browser and leaves the island — in the real app it lands in Postgres.",
+    phase: P3,
+    browser: { dbg: { t: "net", m: "→ PATCH · { name }" } },
+  },
+  {
+    from: "server",
+    to: "http",
+    color: C.net,
+    fly: [{ e: "srv" }, { e: "url" }, { p: [840, 378] }],
+    flash: true,
+    label: "HTTP 200 · saved",
+    caption: "The database confirms the row.",
+    phase: P3,
+    browser: { dbg: { t: "net", m: "← 200 · saved" } },
+  },
+  {
+    from: "http",
+    to: "core",
+    color: C.msg,
+    pts: E.h2c,
+    label: 'dispatch({ id: "users.saved" })',
+    caption: "The confirmation re-enters the loop as a message.",
+    phase: P3,
+    browser: { dbg: { t: "msg", m: "users.saved" } },
+  },
+  {
+    from: "core",
+    to: "app",
+    color: C.msg,
+    pts: E.c2a,
+    label: 'app({ id: "users.saved" }, state)',
+    caption: "The handler closes the editor and reshapes the rows.",
+    phase: P3,
+    browser: { dbg: { t: "app", m: "app(users.saved, state)" } },
+  },
+  {
+    from: "app",
+    to: "core",
+    color: C.effect,
+    pts: E.a2c,
+    label: '[ store.set(users, rows′), store.set("users.editing", null) ]',
+    caption: "New rows with the new name, editor closed — two store effects.",
+    phase: P3,
+    browser: { dbg: { t: "fx", m: "store.set ×2" } },
+  },
+  {
+    from: "dom",
+    to: "browser",
+    color: C.dom,
+    fly: [{ p: [840, 136] }, { e: "url" }],
+    label: "\u201cAda L.\u201d → \u201cAda Lovelace\u201d",
+    caption:
+      "Same compressed ending: handle → state → onState — two text patches, no navigation, the form is gone.",
+    phase: P3,
+    browser: {
+      view: "users-edited",
+      store: "users ← rows′ · editing ← null",
+      dbg: { t: "dom", m: "Δ 2 patches" },
+    },
+  },
+  {
+    from: "dom",
+    to: "core",
+    color: C.msg,
+    pts: E.d2c,
+    label: '@click=remove(3) → dispatch({ id: "users.remove" })',
+    caption: "Last interaction: the user removes Alan. One click, one message.",
+    phase: P4,
+    browser: { dbg: { t: "msg", m: "users.remove" } },
+  },
+  {
+    from: "core",
+    to: "app",
+    color: C.msg,
+    pts: E.c2a,
+    label: 'app({ id: "users.remove" }, state)',
+    caption: "The handler asks for the delete — it does not perform it.",
+    phase: P4,
+    browser: { dbg: { t: "app", m: "app(users.remove, state)" } },
+  },
+  {
+    from: "app",
+    to: "core",
+    color: C.effect,
+    pts: E.a2c,
+    label: '[ http.request({ method: "DELETE", url: "/api/users/3" }) ]',
+    caption: "Data out: one DELETE effect, plain data.",
+    phase: P4,
+    browser: { dbg: { t: "fx", m: "DELETE /api/users/3" } },
+  },
+  {
+    from: "core",
+    to: "http",
+    color: C.effect,
+    pts: E.c2h,
+    label: "handle(http.request(…))",
+    caption: "The http plugin sends the DELETE.",
+    phase: P4,
+    browser: { dbg: { t: "fx", m: "→ DELETE /api/users/3" } },
+  },
+  {
+    from: "http",
+    to: "server",
+    color: C.net,
+    fly: [{ p: [840, 378] }, { e: "url" }, { e: "srv" }],
+    flash: true,
+    label: "DELETE /api/users/3",
+    caption: "The delete hops through the browser down to the server.",
+    phase: P4,
+    browser: { dbg: { t: "net", m: "→ DELETE /api/users/3" } },
+  },
+  {
+    from: "server",
+    to: "http",
+    color: C.net,
+    fly: [{ e: "srv" }, { e: "url" }, { p: [840, 378] }],
+    flash: true,
+    label: "HTTP 200 · deleted",
+    caption: "Postgres drops the row and confirms.",
+    phase: P4,
+    browser: { dbg: { t: "net", m: "← 200 · deleted" } },
+  },
+  {
+    from: "http",
+    to: "core",
+    color: C.msg,
+    pts: E.h2c,
+    label: 'dispatch({ id: "users.removed" })',
+    caption: "Back into the loop as a message.",
+    phase: P4,
+    browser: { dbg: { t: "msg", m: "users.removed" } },
+  },
+  {
+    from: "core",
+    to: "app",
+    color: C.msg,
+    pts: E.c2a,
+    label: 'app({ id: "users.removed" }, state)',
+    caption:
+      "The handler filters the row out of the state — a pure computation.",
+    phase: P4,
+    browser: { dbg: { t: "app", m: "app(users.removed, state)" } },
+  },
+  {
+    from: "app",
+    to: "core",
+    color: C.effect,
+    pts: E.a2c,
+    label: '[ store.set("users", rows.filter(…)) ]',
+    caption: "The new users list simply doesn't contain Alan anymore.",
+    phase: P4,
+    browser: { dbg: { t: "fx", m: "store.set users" } },
+  },
+  {
+    from: "dom",
+    to: "browser",
+    color: C.dom,
+    fly: [{ p: [840, 136] }, { e: "url" }],
+    label: "the row is gone",
+    caption:
+      "One removeRow patch. Reload later and the server agrees — state, DOM and database tell the same story.",
+    phase: P4,
+    browser: {
+      view: "users-after",
+      store: "users − Alan → (2)",
+      dbg: { t: "dom", m: "Δ 1 patch" },
+    },
   },
 ];
 
-const FLOW_NODES: [string, string][] = [
-  ["app", '<rect x="430" y="88"'],
-  ["core", '<rect x="430" y="288"'],
-  ["store", '<rect x="430" y="500"'],
-  ["dom", '<rect x="90" y="268"'],
-  ["http", '<rect x="930" y="268"'],
-  ["browser", '<rect x="90" y="500"'],
+/** Actor rects that get a data-node attribute for the walkthrough player. */
+const FLOW_NODE_MARKERS: [string, string][] = [
+  ["app", '<rect x="85" y="96" width="280" height="118"'],
+  ["core", '<rect x="85" y="282" width="280" height="128"'],
+  ["dom", '<rect x="520" y="92" width="320" height="88"'],
+  ["store", '<rect x="520" y="214" width="320" height="88"'],
+  ["http", '<rect x="520" y="336" width="320" height="88"'],
+  ["logger", '<rect x="520" y="458" width="320" height="88"'],
 ];
 
 /**
- * The pure-concept diagram, instrumented for the interactive walkthrough on
- * the start page: every actor rect gets a data-node attribute (so the player
- * can highlight it), a packet circle is appended, and the root svg gets an id.
- * The static pureConceptSvg stays untouched for the docs page.
+ * The walkthrough diagram for the hero, drawn from scratch (the static
+ * pureConceptSvg keeps the six-actor ring for the docs). Three zones: your
+ * application as one island on the left (app + core), the plugin column in
+ * the middle, and on the right a dashed rail — the browser's edge. Every
+ * plugin touches exactly two neighbours: the core (left) and the browser
+ * (right). The toy browser rendered beside this svg on the page IS the
+ * browser actor, and the server lives under it in the page — only the
+ * browser talks to the server, no plugin ever does.
  */
 export function pureConceptFlowSvg(id = "flowviz-svg"): string {
-  let s = pureConceptSvg().toString();
-  for (const [node, marker] of FLOW_NODES) {
+  const svg = new Svg(W, 700);
+  svg.text(24, 34, "One pure application — plugins do every dirty thing", {
+    size: 16,
+    bold: true,
+  });
+  svg.caption(W - 24, 34, "messages in → effects out", "end");
+
+  // -- your application: app + core in one pure island ------------------
+  svg.rect(60, 56, 330, 372, {
+    fill: C.pure,
+    stroke: "#6366f1",
+    dash: "6 4",
+    rx: 14,
+  });
+  svg.text(76, 80, "YOUR APPLICATION", {
+    size: 10.5,
+    bold: true,
+    fill: "#4f46e5",
+  });
+
+  svg.rect(85, 96, 280, 118, {
+    fill: C.panel,
+    stroke: "#6366f1",
+    rx: 10,
+    sw: 1.6,
+  });
+  svg.text(225, 122, "application", { size: 14, bold: true, anchor: "middle" });
+  svg.text(225, 144, "app(message, state) → Effect[]", {
+    size: 11.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.effect,
+  });
+  svg.text(225, 164, "no Date.now(), no fetch(),", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(225, 180, "no DOM — handlers are pure", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(225, 202, "the only code you write", {
+    size: 10,
+    italic: true,
+    anchor: "middle",
+    fill: C.faint,
+  });
+
+  svg.rect(85, 282, 280, 128, { fill: C.panel, stroke: C.border, rx: 10 });
+  svg.text(225, 308, "core — createApp()", {
+    size: 14,
+    bold: true,
+    anchor: "middle",
+  });
+  svg.text(225, 330, "queue → app(msg, state)", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(225, 346, "effects → plugins, in order", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(225, 362, "state changed → onState(all)", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(225, 390, "the only code that calls the app", {
+    size: 10,
+    italic: true,
+    anchor: "middle",
+    fill: C.faint,
+  });
+
+  // core <-> app
+  svg.arrow(185, 278, 185, 218, { stroke: C.msg, sw: 1.6 });
+  svg.caption(175, 252, "app(msg, state)", "end");
+  svg.arrow(265, 218, 265, 278, { stroke: C.effect, sw: 1.6 });
+  svg.caption(275, 252, "Effect[] — data");
+
+  // -- the plugin column ------------------------------------------------
+  svg.caption(680, 80, "plugins — all the dirty work", "middle");
+
+  svg.rect(520, 92, 320, 88, { fill: C.panel, stroke: C.dom, rx: 10, sw: 1.4 });
+  svg.text(680, 118, "dom plugin", {
+    size: 13.5,
+    bold: true,
+    anchor: "middle",
+    fill: C.dom,
+  });
+  svg.text(680, 140, "build(vnodes) · apply(patches)", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(680, 156, "owns every listener", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(680, 174, "all DOM mutation lives here", {
+    size: 10,
+    italic: true,
+    anchor: "middle",
+    fill: C.faint,
+  });
+
+  svg.rect(520, 214, 320, 88, {
+    fill: C.panel,
+    stroke: C.state,
+    rx: 10,
+    sw: 1.4,
+  });
+  svg.text(680, 240, "store plugin — the state", {
+    size: 13.5,
+    bold: true,
+    anchor: "middle",
+    fill: C.state,
+  });
+  svg.text(680, 262, "set · merge · undo · restoreTo", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(680, 278, "immutable, structural sharing", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(680, 296, "a new object on every commit", {
+    size: 10,
+    italic: true,
+    anchor: "middle",
+    fill: C.faint,
+  });
+
+  svg.rect(520, 336, 320, 88, {
+    fill: C.panel,
+    stroke: C.net,
+    rx: 10,
+    sw: 1.4,
+  });
+  svg.text(680, 362, "http plugin", {
+    size: 13.5,
+    bold: true,
+    anchor: "middle",
+    fill: C.net,
+  });
+  svg.text(680, 384, "request(id, url…) · cancel(id)", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(680, 400, "reply → ctx.dispatch(msg)", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(680, 418, "all network lives here", {
+    size: 10,
+    italic: true,
+    anchor: "middle",
+    fill: C.faint,
+  });
+
+  svg.rect(520, 458, 320, 88, {
+    fill: C.panel,
+    stroke: C.muted,
+    rx: 10,
+    sw: 1.4,
+  });
+  svg.text(680, 484, "logger plugin", {
+    size: 13.5,
+    bold: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(680, 506, "every message · every effect", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(680, 522, "history with undo markers", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(680, 540, "feeds the debug panel", {
+    size: 10,
+    italic: true,
+    anchor: "middle",
+    fill: C.faint,
+  });
+
+  // -- trunks between the island and the column (they land in the gaps
+  // between plugin boxes, so they read as "core ↔ the column", not one box)
+  svg.arrow(365, 319, 520, 319, { stroke: C.effect, sw: 1.6 });
+  svg.caption(442, 307, "handle(effects)", "middle");
+  svg.poly(
+    [
+      [520, 441],
+      [430, 441],
+      [430, 394],
+      [365, 394],
+    ],
+    { stroke: C.msg, sw: 1.6 },
+  );
+  svg.caption(442, 461, "dispatch(msg)", "middle");
+
+  // -- every plugin also touches the browser on the right: four arrows
+  // land on a dashed rail — the browser's edge. The toy browser rendered
+  // beside this svg on the page IS that rail; the server lives under it
+  // (in the page), and only the browser talks to the server.
+  svg.line(1210, 92, 1210, 546, { stroke: C.muted, sw: 1.2, dash: "4 3" });
+  svg.text(1210, 82, "browser", {
+    size: 10.5,
+    bold: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.arrow(840, 136, 1200, 136, { stroke: C.dom, sw: 1.4 });
+  svg.caption(1020, 124, "build · apply(patches)", "middle");
+  svg.arrow(840, 258, 1200, 258, { stroke: C.state, sw: 1.4 });
+  svg.caption(1020, 246, "the store tab", "middle");
+  svg.arrow(840, 378, 1200, 378, { stroke: C.net, sw: 1.4 });
+  svg.caption(1020, 366, "fetch()", "middle");
+  svg.arrow(840, 502, 1200, 502, { stroke: C.muted, sw: 1.4 });
+  svg.caption(1020, 490, "the pavlus tab", "middle");
+
+  // legend
+  const legend: [string, string][] = [
+    [C.msg, "message (in)"],
+    [C.effect, "effect (out)"],
+    [C.state, "state change"],
+    [C.dom, "DOM work"],
+    [C.net, "network"],
+  ];
+  legend.forEach(([color, label], i) => {
+    const x = 70 + i * 115;
+    svg.line(x, 576, x + 24, 576, { stroke: color, sw: 2 });
+    svg.text(x + 30, 580, label, { size: 10, fill: C.muted });
+  });
+
+  let s = svg.toString();
+  for (const [node, marker] of FLOW_NODE_MARKERS) {
     if (!s.includes(marker))
       throw new Error(`pureConceptFlowSvg: marker for ${node} not found`);
     s = s.replace(

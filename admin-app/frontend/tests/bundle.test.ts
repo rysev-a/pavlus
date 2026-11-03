@@ -28,7 +28,13 @@ test("the production bundle has the styles of every page", async () => {
     ".ui-table", // users table, roles
     ".ui-button", // actions
     ".users__item--selected", // app rules
-    ".top-menu__link--active",
+    ".ui-sidebar-button[data-active=true]", // sidebar (the bundler drops the attribute quotes)
+    ".ui-sidebar-sub-button[data-active=true]", // sidebar leaves
+    ".ui-sidebar-collapsible[open]>summary .ui-sidebar-chevron", // categories
+    ".ui-sidebar-chevron:after", // the chevron glyph (lightningcss keeps one colon)
+    ".form__field", // the create/edit forms
+    ".settings__option", // the theme radios
+    "scrollbar-gutter:stable", // the page keeps its width when a scrollbar appears
   ];
   for (const selector of selectors) {
     expect(css, `no style for ${selector}`).toContain(selector);

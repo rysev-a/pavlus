@@ -1,12 +1,7 @@
-// The top bar: the brand and the menu. State = the props passed by the shell
-// (`menu`, `route`). Its clicks reach the shell as `header.navigate`.
+// The top bar: the sidebar triggers. The desktop one collapses the sidebar column, the
+// mobile one opens the off-canvas drawer. Their clicks reach the shell as
+// `header.toggleSidebar` / `header.toggleDrawer`.
 header.top.ui-shell-header
   div.ui-shell-header-start
-    // the brand is a link to the start page, through the router like the menu
-    a.ui-brand(href="/" @click.prevent=navigate("/"))
-      span.ui-brand-mark A
-      span admin-app
-  nav.top-menu.ui-menubar
-    for item in menu key item.path
-      // href keeps the link real (copy, middle-click); the click goes to the router
-      a.top-menu__link(href=item.path class:top-menu__link--active={item.path === "/" ? route.path === "/" : route.path === item.path || route.path.startsWith(item.path + "/")} @click.prevent=navigate(item.path)) {item.title}
+    button.ui-button.ui-button-ghost.ui-button-icon.ui-shell-trigger.ui-shell-trigger--desktop(title="Toggle sidebar" aria-label="Toggle sidebar" @click=toggleSidebar)
+    button.ui-button.ui-button-ghost.ui-button-icon.ui-shell-trigger.ui-shell-trigger--mobile(title="Toggle menu" aria-label="Toggle menu" @click=toggleDrawer)

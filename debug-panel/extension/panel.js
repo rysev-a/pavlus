@@ -48,7 +48,7 @@ const S = {
   chip: "all", // "all" | plugin name
   selectedMsg: null, // message inspected on the right: `${appId}:${seq}`
   selectedFx: null, // effect inspected on the effects tab: uid
-  split: { messages: 0.55, effects: 0.55, store: 0.5 }, // left pane width
+  split: { messages: 0.55, effects: 0.55, store: 0.5, apps: 0.6 }, // left pane width
   tlFrac: 0.38, // store preview height, fraction of the timeline column
   details: new Set(), // effect rows with the detail JSON open: uid
   tlShow: null, // change previewed under the timeline: {appId, idx, entry, redo}
@@ -104,6 +104,19 @@ function sendHello() {
 
 function applyHello(h) {
   sawHello = true;
+  // The hello is authoritative: drop the previous page's recording (kept on
+  // screen across navigations) before replaying. Viewer expansion survives —
+  // its keys are DOM paths, stable across loads.
+  S.apps.clear();
+  S.steps.clear();
+  S.states.clear();
+  S.hist.clear();
+  S.redo.clear();
+  S.waits.clear();
+  S.selectedMsg = null;
+  S.selectedFx = null;
+  S.tlShow = null;
+  S.details.clear();
   for (const app of h.apps ?? []) {
     S.apps.set(app.id, app);
     S.steps.set(app.id, []);
@@ -163,25 +176,18 @@ function onAgentMessage(payload) {
 }
 
 // Poll until an agent answers; after that, hellos are only sent on demand
-// (rescan button, page navigation).
+// (rescan button, page navigation). 500 ms so a reloaded document (an SSR
+// app reloads on every route change) is picked up within a blink.
 setInterval(() => {
   if (!sawHello) sendHello();
-}, 2000);
+}, 500);
 
 chrome.devtools.network.onNavigated.addListener(() => {
+  // The document reloaded, which dropped the page-side agent. Don't blank
+  // the panel: keep the previous recording on screen (amber status) until
+  // the new page's hello replaces it wholesale in applyHello.
   sawHello = false;
-  S.apps.clear();
-  S.steps.clear();
-  S.states.clear();
-  S.hist.clear();
-  S.redo.clear();
-  S.waits.clear();
-  S.selectedMsg = null;
-  S.selectedFx = null;
-  S.tlShow = null;
-  S.viewerOpen.clear();
-  S.viewerShut.clear();
-  S.details.clear();
+  sendHello();
   refresh();
 });
 
@@ -260,6 +266,22 @@ dragDivider(fxBar, (ev) => {
   applyFlex(effectRows, S.split.effects);
 });
 
+const appsTree = el("div", "rows");
+appsTree.id = "apps-tree";
+const appsDetail = el("div", "detail-pane");
+appsDetail.id = "apps-detail";
+const appsBar = el("div", "divider-v");
+const appsCols = el("div", "");
+appsCols.id = "apps-cols";
+$("#tab-apps").append(appsCols);
+appsCols.append(appsTree, appsBar, appsDetail);
+applyFlex(appsTree, S.split.apps);
+dragDivider(appsBar, (ev) => {
+  const r = appsCols.getBoundingClientRect();
+  S.split.apps = clampFrac((ev.clientX - r.left) / r.width, 0.15, 0.85);
+  applyFlex(appsTree, S.split.apps);
+});
+
 let refreshQueued = false;
 function refresh() {
   if (refreshQueued) return;
@@ -267,23 +289,61 @@ function refresh() {
   requestAnimationFrame(() => {
     refreshQueued = false;
     renderStatus();
+    // renderers rebuild the DOM wholesale; carry the scroll offsets over so
+    // a live update doesn't yank the pane back to the top
+    const view = $("#tab-" + active);
+    const kept = keepScroll(view);
     if (active === "messages") renderMessages();
     else if (active === "effects") renderEffects();
     else if (active === "store") renderStore();
     else renderApps();
+    setScroll(view, kept);
   });
+}
+
+// Scrollable descendants in document order → [top, left]; the rebuilt DOM
+// has the same structure, so order is the identity (position-based scroll
+// restoration also survives long lists without per-node keys). The stepper
+// is left out: renderStore re-centers it on the active dot every render.
+function scrollables(tab) {
+  return [...tab.querySelectorAll("*")].filter(
+    (n) =>
+      n.id !== "stepper" &&
+      (n.scrollHeight > n.clientHeight || n.scrollWidth > n.clientWidth),
+  );
+}
+
+function keepScroll(tab) {
+  return scrollables(tab).map((n) => [n.scrollTop, n.scrollLeft]);
+}
+
+function setScroll(tab, kept) {
+  const nodes = scrollables(tab);
+  for (let i = 0; i < Math.min(nodes.length, kept.length); i++) {
+    nodes[i].scrollTop = kept[i][0];
+    nodes[i].scrollLeft = kept[i][1];
+  }
 }
 
 function renderStatus() {
   const apps = [...S.apps.values()];
   const dot = $("#dot");
-  dot.className = apps.length ? "on" : sawHello ? "wait" : "off";
-  $("#status").textContent = apps.length
-    ? apps.map((a) => a.name).join(", ") +
-      ` — ${[...S.steps.values()].reduce((n, l) => n + l.length, 0)} messages`
-    : sawHello
-      ? "no pavlus agent answered (wire one up, then rescan)"
-      : "no pavlus agent on this page yet…";
+  dot.className = sawHello
+    ? apps.length
+      ? "on"
+      : "wait"
+    : apps.length
+      ? "wait"
+      : "off";
+  $("#status").textContent =
+    !sawHello && apps.length
+      ? "page changed — waiting for the pavlus agent…"
+      : apps.length
+        ? apps.map((a) => a.name).join(", ") +
+          ` — ${[...S.steps.values()].reduce((n, l) => n + l.length, 0)} messages`
+        : sawHello
+          ? "no pavlus agent answered (wire one up, then rescan)"
+          : "no pavlus agent on this page yet…";
 }
 
 /* ----------------------------------------------------------- json viewer */
@@ -532,6 +592,10 @@ function renderEffects() {
     chips.append(b);
   }
 
+  effectRows.replaceChildren();
+  const all = appIds().flatMap((id) =>
+    stepsOf(id).flatMap((s) => s.effects.map((e) => [e, s, id])),
+  );
   const list = all.filter(([e]) => S.chip === "all" || e.plugin === S.chip);
   list.sort((a, b) => b[0].time - a[0].time || b[1].seq - a[1].seq);
   if (!list.length) {
@@ -633,11 +697,18 @@ function renderStore() {
     return;
   }
   const cols = el("div", "cols");
+  const vbar = el("div", "divider-v");
+  dragDivider(vbar, (ev) => {
+    const r = cols.getBoundingClientRect();
+    S.split.store = clampFrac((ev.clientX - r.left) / r.width, 0.15, 0.85);
+    applyFlex(stateBox, S.split.store);
+  });
 
   const stateBox = el("div", "", "");
   stateBox.id = "store-state";
   stateBox.append(el("h3", "", `state — ${S.apps.get(id).name}`));
   stateBox.append(viewer("state", S.states.get(id) ?? null));
+  applyFlex(stateBox, S.split.store);
 
   const tlBox = el("div", "", "");
   tlBox.id = "store-timeline";
@@ -710,6 +781,7 @@ function renderStore() {
   // the list as changes and ghosts shift around)
   const detail = el("div", "", "");
   detail.id = "tl-detail";
+  detail.style.height = `${(S.tlFrac * 100).toFixed(2)}%`;
   const renderTlDetail = () => {
     detail.replaceChildren();
     let c = S.tlShow;
@@ -721,12 +793,17 @@ function renderStore() {
         c = { appId: id, idx: hist.length + gi, entry: c.entry, redo: true };
       else c = null;
     } else c = null;
+    // nothing hovered: pin the current change so the pane is never empty
+    if (!c && hist.length) {
+      const cur = hist[act];
+      if (cur) c = { appId: id, idx: act, entry: cur, redo: false };
+    }
     if (!c) {
       detail.append(
         el(
           "div",
           "tl-note",
-          "hover a change to preview it here — click it to travel to that state",
+          "store changes show up here — hover one to pin it, click it to travel to that state",
         ),
       );
       return;
@@ -811,9 +888,15 @@ function renderStore() {
     rowEls[i] = row;
   });
   renderTlDetail();
-  tlBox.append(tlRows, detail);
+  const hbar = el("div", "divider-h");
+  dragDivider(hbar, (ev) => {
+    const r = tlBox.getBoundingClientRect();
+    S.tlFrac = clampFrac((r.bottom - ev.clientY) / r.height, 0.1, 0.75);
+    detail.style.height = `${(S.tlFrac * 100).toFixed(2)}%`;
+  });
+  tlBox.append(tlRows, hbar, detail);
 
-  cols.append(stateBox, tlBox);
+  cols.append(stateBox, vbar, tlBox);
   tab.append(cols);
   // keep the active step in view (the stepper can overflow on long histories)
   const actBtn = wrap.querySelector(".active");
@@ -825,11 +908,13 @@ function renderStore() {
 /* ------------------------------------------------------------------- apps */
 
 function renderApps() {
-  const tab = $("#tab-apps");
-  tab.replaceChildren();
+  appsTree.replaceChildren();
   const apps = [...S.apps.values()];
   if (!apps.length) {
-    tab.append(el("div", "empty-tab", "no pavlus agent on this page yet…"));
+    appsTree.append(
+      el("div", "empty-tab", "no pavlus agent on this page yet…"),
+    );
+    renderAppsDetail();
     return;
   }
 
@@ -902,7 +987,8 @@ function renderApps() {
     return { cx: x + w / 2, bottom: y + h, top: y };
   };
 
-  const rootX = width / 2 - NODE_W / 2;
+  // left-aligned: the root sits at the left edge, app columns follow below it
+  const rootX = GAP;
   const root = node(rootX, 8, NODE_W, NODE_H, "all apps", {
     sel: S.filterApp === "all",
     on: () => {
@@ -963,16 +1049,58 @@ function renderApps() {
     x += c.w + GAP;
   }
 
-  tab.append(svg);
+  appsTree.append(svg);
   const wired = apps.every((a) => (a.components ?? []).length);
   const note = el(
     "div",
     "tl-note",
     wired
-      ? "click an app or one of its components to filter messages and effects"
-      : "click a node to filter messages and effects — an app without components was wired without `app` in createPavlusDebug",
+      ? "click an app or component to filter messages and effects and inspect the app on the right"
+      : "click a node to inspect the app on the right — an app without components was wired without `app` in createPavlusDebug",
   );
-  tab.append(note);
+  appsTree.append(note);
+  renderAppsDetail();
+}
+
+/* ------------------------------------------------------ apps detail pane */
+
+function renderAppsDetail() {
+  appsDetail.replaceChildren();
+  const id = S.filterApp;
+  if (id === "all") {
+    appsDetail.append(
+      el("div", "empty-tab", "click an app on the left to inspect it here"),
+    );
+    return;
+  }
+  const app = S.apps.get(id);
+  if (!app) {
+    appsDetail.append(
+      el("div", "empty-tab", "that app is gone from the page — rescan"),
+    );
+    return;
+  }
+  const head = el("div", "detail-head");
+  head.append(
+    el("span", "id", app.name),
+    el("span", "num", `${stepsOf(id).length} messages`),
+  );
+  appsDetail.append(head);
+
+  const facts = [
+    ["plugins", (app.plugins ?? []).join(", ") || "none"],
+    ["components", String((app.components ?? []).length)],
+    ["effects", String(stepsOf(id).reduce((n, s) => n + s.effects.length, 0))],
+    ["timeline", `${(S.hist.get(id) ?? []).length} changes`],
+  ];
+  for (const [k, v] of facts) {
+    const line = el("div", "detail-line", `${k} `);
+    line.append(el("span", "id", v));
+    appsDetail.append(line);
+  }
+
+  appsDetail.append(el("h4", "", "state"));
+  appsDetail.append(viewer("state", S.states.get(id) ?? null));
 }
 
 /* ------------------------------------------------------------------- boot */

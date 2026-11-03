@@ -1,5 +1,9 @@
 import "./styles.css";
-import { createApp } from "@service-laboratory/pavlus";
+import {
+  type Component,
+  createApp,
+  type Plugin,
+} from "@service-laboratory/pavlus";
 import {
   createDomPlugin,
   createHttpPlugin,
@@ -32,14 +36,30 @@ export const store = createStorePlugin<AppState>(
 // Devtools panel (debug-panel/extension): records messages, effects and the
 // store timeline, and applies the panel's undo/redo/restoreTo through the
 // real core. No-op for the page itself. `app: shell` lets the panel's Apps
-// tab draw the component tree (children / routing).
-const debug = createPavlusDebug({ name: "admin-app", app: shell });
+// tab draw the component tree (children / routing). `flushMs: 0` streams
+// every event as it happens — the store timeline updates in realtime on
+// route changes instead of landing in 60 ms batches.
+const debug = createPavlusDebug({ name: "admin-app", app: shell, flushMs: 0 });
+
+// The theme (`/system/settings`): the application sends a `theme` effect and
+// stays pure; this plugin puts the class on `<html>` (the CSS tokens react).
+const theme: Plugin = {
+  name: "theme",
+  handle(effect) {
+    const t = effect.theme;
+    if (t === "light" || t === "dark") {
+      const root = document.documentElement;
+      root.classList.remove("light", "dark");
+      root.classList.add(t);
+    }
+  },
+};
 
 const dom = createDomPlugin();
 const http = createHttpPlugin();
 const logger = createLoggerPlugin();
 const router = createRouterPlugin();
-const plugins = [store, dom, http, logger, router, debug.plugin];
+const plugins = [store, dom, http, logger, router, theme, debug.plugin];
 debug.watch(plugins);
 
 export const app = createApp<AppState>({

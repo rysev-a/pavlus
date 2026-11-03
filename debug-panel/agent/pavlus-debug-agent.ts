@@ -190,6 +190,7 @@ const MAX_REPLAY = 1500;
 const MAX_STATE_CHARS = 300_000;
 /** Change values bigger than this are not shipped, only a marker. */
 const MAX_VALUE_CHARS = 50_000;
+/** Default event-batching window; `opts.flushMs` overrides. */
 const FLUSH_MS = 60;
 
 const AGENT_VERSION = "pavlus-debug 0.1.0";
@@ -212,7 +213,13 @@ export interface PavlusDebug {
 const usedNames = new Map<string, number>();
 
 export function createPavlusDebug(
-  opts: { name?: string; app?: ComponentLike<any> } = {},
+  opts: {
+    name?: string;
+    app?: ComponentLike<any>;
+    /** Events batch for this long before crossing postMessage; `0` streams
+     * each change as it happens (realtime timeline in the panel). */
+    flushMs?: number;
+  } = {},
   host: DebugHost = globalThis as unknown as DebugHost,
 ): PavlusDebug {
   const base = opts.name ?? "app";
@@ -224,6 +231,7 @@ export function createPavlusDebug(
   const wall = (): number => Date.now();
   const mono = (): number => (host.performance ? host.performance.now() : 0);
   const ms = (v: number): number => Math.round(v * 10) / 10;
+  const flushMs = Math.max(0, opts.flushMs ?? FLUSH_MS);
 
   let ctx: PluginContext<any> | undefined;
   let store: StorePlugin<any> | undefined;
@@ -258,7 +266,7 @@ export function createPavlusDebug(
       host.setTimeout(() => {
         flushScheduled = false;
         flush();
-      }, FLUSH_MS);
+      }, flushMs);
     }
   };
 

@@ -16,6 +16,35 @@
   box-sizing: border-box;
 }
 
+/* scrollbars in panel style; the stepper dials its own thinner below.
+   Firefox has no ::-webkit-scrollbar — @supports keeps the standard
+   properties out of Chromium, where they would disable the webkit ones. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg3);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--dim);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--bg3) transparent;
+  }
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -278,7 +307,6 @@ button:disabled {
 #store-state {
   flex: 1;
   min-width: 0;
-  border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
 }
@@ -385,6 +413,18 @@ button:disabled {
   flex-direction: column;
 }
 
+/* the timeline list and its preview get a thinner scrollbar than the panel
+   default */
+#store-timeline .rows::-webkit-scrollbar,
+#tl-detail::-webkit-scrollbar {
+  width: 6px;
+}
+
+#store-timeline .rows::-webkit-scrollbar-thumb,
+#tl-detail::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+}
+
 .tl-row {
   display: flex;
   gap: 8px;
@@ -430,20 +470,71 @@ button:disabled {
   font-size: 11px;
 }
 
-/* message detail pane -------------------------------------------------*/
+/* detail panes + draggable dividers -------------------------------------*/
 
 #tab-messages {
   flex-direction: row;
 }
 
-#msg-detail {
+.detail-pane {
   flex: 1;
   min-width: 0;
   overflow: auto;
-  border-left: 1px solid var(--line);
+}
+
+#effects-cols {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.divider-v {
+  flex: none;
+  width: 5px;
+  cursor: col-resize;
+  position: relative;
+  z-index: 1;
+}
+
+.divider-v::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 1px;
+  background: var(--line);
+}
+
+.divider-v:hover::before {
+  background: var(--accent);
+}
+
+.divider-h {
+  flex: none;
+  height: 5px;
+  cursor: row-resize;
+  position: relative;
+  z-index: 1;
+}
+
+.divider-h::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2px;
+  height: 1px;
+  background: var(--line);
+}
+
+.divider-h:hover::before {
+  background: var(--accent);
 }
 
 #msg-detail h4,
+#effect-detail h4,
+#apps-detail h4,
 #tl-detail h4 {
   margin: 12px 10px 0;
   font-size: 10px;
@@ -477,10 +568,35 @@ button:disabled {
   font-size: 11px;
 }
 
+.detail-head .plug {
+  color: var(--ok);
+  flex: none;
+}
+
+.detail-head .sum {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .detail-head .num {
   margin-left: auto;
   color: var(--dim);
   font-size: 11px;
+}
+
+.detail-line {
+  padding: 8px 10px 0;
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.detail-line .id {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 #msg-detail .erow {
@@ -501,8 +617,8 @@ button:disabled {
 
 #tl-detail {
   flex: none;
-  max-height: 45%;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   border-top: 1px solid var(--line);
   background: var(--bg2);
 }
@@ -537,6 +653,13 @@ button:disabled {
 
 .tl-card .viewer {
   padding: 4px 10px 0;
+  overflow: hidden;
+}
+
+/* long values wrap instead of forcing a horizontal scrollbar */
+.tl-card .v-row {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .tl-row.ghost {
@@ -623,13 +746,14 @@ button:disabled {
 
 /* apps tree --------------------------------------------------------------- */
 
-#tab-apps {
-  overflow: auto;
+#apps-cols {
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }
 
 #tab-apps svg {
-  flex: none;
-  margin: 0 auto;
+  display: block;
 }
 
 .node rect {

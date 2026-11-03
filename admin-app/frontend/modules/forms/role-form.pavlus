@@ -1,0 +1,25 @@
+// Create or edit a role: a name and what it may do (see role-form.ts).
+section.role-form.form
+  div.ui-page-header
+    div
+      h1.page-title.ui-page-title {route.params.id ? "Edit role" : "New role"}
+      p.page-intro.ui-page-description The role's name and what it may do.
+  div.ui-card
+    div.ui-card-content
+      if status === "loading"
+        p.status.ui-card-description Loading...
+      else if status === "failed"
+        p.status.status--error.ui-card-description Could not load the role
+      else
+        form.form__body(@submit.prevent=save)
+          div.form__field
+            label.form__label.ui-field-label(for="role-name") Name
+            input#role-name.ui-input(value=values.name @input=setName placeholder="moderator" autocomplete="off")
+          div.form__field
+            label.form__label.ui-field-label(for="role-description") Description
+            textarea#role-description.ui-textarea-control(value=values.description @input=setDescription placeholder="Can moderate content")
+          if saveStatus === "failed"
+            p.status.status--error.form__error Could not save: the name must be non-empty and unique.
+          div.form__actions
+            button.ui-button.ui-button-primary(type="submit" disabled=(saveStatus === "saving")) Save
+            a.ui-button.ui-button-outline(href="/auth/roles" @click.prevent=navigate("/auth/roles")) Cancel

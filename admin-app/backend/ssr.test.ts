@@ -49,10 +49,10 @@ describe("renderPage against Postgres", () => {
 
   test("the shop comes with its products, billing with its last payments", async () => {
     const shopPage = await renderPage(frontend, at("/dashboard/shop"), query);
-    expect(shopPage.html).toContain("The catalogue: 10 products.");
+    expect(shopPage.html).toContain("The catalogue: 50 products.");
     expect(shopPage.html).toContain("Mechanical Keyboard");
     const shopState = JSON.parse(shopPage.state);
-    expect(shopState.dashboard.shop.items).toHaveLength(10);
+    expect(shopState.dashboard.shop.items).toHaveLength(50);
     expect(shopState.dashboard.shop.status).toBe("idle");
 
     const billingPage = await renderPage(
@@ -69,6 +69,27 @@ describe("renderPage against Postgres", () => {
       (p: { paid_at: string }) => p.paid_at,
     );
     expect([...dates].sort().reverse()).toEqual(dates);
+  });
+
+  test("the users admin page brings the table and the Edit links", async () => {
+    const page = await renderPage(frontend, at("/auth/users"), query);
+    expect(page.html).toContain("Everybody with an account");
+    expect(page.html).toContain("galina@example.com");
+    expect(page.html).toContain('href="/auth/users/1/edit"');
+    expect(page.html).toContain('href="/auth/users/new"');
+    const state = JSON.parse(page.state);
+    expect(state.usersAdmin.items).toHaveLength(8);
+    expect(state.usersAdmin.status).toBe("idle");
+  });
+
+  test("the settings page has the theme radios and the stored theme", async () => {
+    const page = await renderPage(frontend, at("/system/settings"), query);
+    expect(page.html).toContain('name="theme"');
+    expect(page.html).toContain("Save");
+    expect(page.theme).toBe("light");
+    const state = JSON.parse(page.state);
+    expect(state.systemSettings.theme).toBe("light");
+    expect(state.systemSettings.choice).toBe("light");
   });
 
   test("an unknown path renders the not-found page", async () => {
@@ -106,5 +127,22 @@ describe("renderDocument", () => {
     expect(() =>
       renderDocument("<html></html>", { html: "", state: "{}" }),
     ).toThrow(/#app|<head>/);
+  });
+
+  test("the theme is a class on <html>, before the app runs", () => {
+    const dark = renderDocument(template, {
+      html: "",
+      state: "{}",
+      theme: "dark",
+    });
+    expect(dark).toContain('<html class="dark">');
+    const light = renderDocument(template, {
+      html: "",
+      state: "{}",
+      theme: "light",
+    });
+    expect(light).toContain('<html class="light">');
+    const unthemed = renderDocument(template, { html: "", state: "{}" });
+    expect(unthemed).toContain("<html>");
   });
 });

@@ -1,0 +1,34 @@
+// The left sidebar (shadcn sidebar anatomy): the brand and the main menu. Items with
+// `children` are categories: native `details` disclosures, opened for the active route
+// (`open` = null removes the attribute, so a manually closed category stays closed).
+// State = the props passed by the shell (`menu`, `route`). Its clicks reach the shell as
+// `sidebar.navigate`.
+aside.ui-shell-aside
+  div.ui-sidebar
+    div.ui-sidebar-header
+      // the brand is a link to the start page, through the router like the menu
+      a.ui-brand(href="/" @click.prevent=navigate("/"))
+        span.ui-brand-mark A
+        span admin-app
+    nav.ui-sidebar-content(aria-label="Main")
+      div.ui-sidebar-group
+        p.ui-sidebar-group-label Menu
+        ul.ui-sidebar-menu
+          for item in menu key item.path
+            if item.children
+              li
+                details.ui-sidebar-collapsible(open={route.path === item.path || route.path.startsWith(item.path + "/") ? "open" : null})
+                  summary.ui-sidebar-button
+                    span.ui-sidebar-icon(data-icon=item.icon)
+                    span.ui-sidebar-label {item.title}
+                    span.ui-sidebar-chevron
+                  ul.ui-sidebar-sub
+                    for child in item.children key child.path
+                      li
+                        a.ui-sidebar-sub-button(href=child.path data-active={(route.path === child.path || route.path.startsWith(child.path + "/")) ? "true" : "false"} @click.prevent=navigate(child.path)) {child.title}
+            else
+              li
+                // href keeps the link real (copy, middle-click); the click goes to the router
+                a.ui-sidebar-button(href=item.path data-active={(item.path === "/" ? route.path === "/" : route.path === item.path || route.path.startsWith(item.path + "/")) ? "true" : "false"} @click.prevent=navigate(item.path))
+                  span.ui-sidebar-icon(data-icon=item.icon)
+                  span.ui-sidebar-label {item.title}

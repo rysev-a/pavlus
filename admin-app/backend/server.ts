@@ -58,6 +58,18 @@ function sendHtml(res: ServerResponse, html: string): void {
   res.end(html);
 }
 
+/** The request body as JSON, or undefined without one (or when it is not JSON). */
+async function readBody(req: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(chunk as Buffer);
+  if (!chunks.length) return undefined;
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Serves a file from `dist/`. A path without a file extension is a route of
  * the single-page app and gets the index; a missing file is a 404.
@@ -235,6 +247,7 @@ export function startServer(
             req.method ?? "GET",
             url.pathname,
             query,
+            await readBody(req),
           );
           sendJson(res, reply.status, reply.body);
         } else if (!pages) {
