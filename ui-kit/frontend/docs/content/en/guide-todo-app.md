@@ -181,7 +181,7 @@ createApp({
 });
 ```
 
-Run `npm run dev`. You see the two todos and one of them struck out, if your stylesheet says so.
+Run `npm run dev`. You see the heading and two todos; the second one has the class `done`, so a stylesheet could strike it out.
 
 ## Step 2: add, tick, remove
 
@@ -439,6 +439,7 @@ And the handlers that changed. `add`, `toggle` and `remove` end with `show(...)`
 Add one more test to `todos.test.ts`:
 
 ```ts src/todos.test.ts
+test("the filter decides what is visible and how many are left", () => {
   const next = send(initialTodos, { id: "setFilter", payload: "done" });
   expect(next.visible.map((t) => t.title)).toEqual(["Write the docs"]);
   expect(next.left).toBe(1);
