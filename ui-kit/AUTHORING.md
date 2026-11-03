@@ -166,3 +166,60 @@ Templates and state:
   then `dom.focus("#id")` in `msg`.
 - A `.pavlus` typo (a stray quote after an event) does not always fail the build
   loudly: open the page.
+
+## More pitfalls (the second batch of 24 templates)
+
+Naming and merging (twelve workers built blocks at the same time and collided three times):
+
+- **Check the name first**: `ls frontend/blocks` before creating a block, and grep
+  `\.k-yourprefix` in all CSS before choosing a prefix. A block slug is also a folder,
+  so two blocks with one slug merge as a conflict; `agenda-list`, `pick-list`,
+  `conversation-list` and `filter-bar` each existed twice and had to be renamed. A
+  domain word in the slug (`chat-list`, `pick-route`, `day-agenda`) avoids it.
+- `tests/css-prefixes.test.ts` checks only blocks' bare `.k-…` selectors. Template
+  stylesheets are not checked: give a template a short prefix of its own (`ra__`).
+- `pages.ts` looks for `page` and `initial` only in `<slug>.ts`. Helpers go in files
+  with other names (`tags.ts`, `dates.ts`), and other blocks and templates import the
+  helpers, not the page file. The page logic imports `./<slug>.pavlus`, not
+  `./view.pavlus`, or the demo renders the bare part and the page test says "0 demos".
+- The **Source tab** shows every file of the folder as it is: keep them tidy and
+  commented, they are the documentation of the page.
+
+Template language:
+
+- A `for` variable must not be named like a keyword or a tag: `key`, `option`,
+  `module`. Names like `cat` and `day` are legal but make the events confusing
+  (`pickcat`, `pickday`). An event may share a name with a state key but then it is
+  hard to read: prefix it (`setMode`, `tab`).
+- No path access with numbers (`axis.0`), no bracket access, no HTML in text
+  (`<b>x</b>` is text, `&lt;` is not decoded): build it with `strong` and `|` lines.
+- `Enter` to send needs a single-line `input` (`@keydown` sees `msg.event.key`; the
+  event has no modifiers, and `prevent` is static).
+- A flag with no value in an embed (`+Meter#m(compact)`) did not parse reliably:
+  write `compact=true`. `data-*` values are strings (`data-level="{n}"`).
+- Derived and core state need different key names, or the typing of `Core & Derived`
+  fails. A `derive(core)` with about 25 derived fields scaled fine; on a periodic
+  tick recompute only the fields that change.
+- A `.ui-button-sm` has no fill without `ui-button-default`. The pill variants are
+  default, secondary, success, warning, destructive, info and outline: map a `muted`
+  tone to `secondary`.
+- A page-wide timer (a ticker, a typing indicator) belongs in `enter` / `leave`, not
+  in a shell's `nav.go`, which would restart it on every screen change. Give timers
+  deterministic ids (`typing-<chatId>`) so `leave` can cancel them from the state.
+- A state machine can be tested in plain vitest, without jsdom: call
+  `component[messageId](msg, state)` and apply the `store.set` effects
+  (`tests/it-course.test.ts`, `tests/vm-panel.test.ts`).
+
+CSS:
+
+- `.k-modal .ui-dialog` forces `display: block`: a dialog's own layout needs
+  `.k-modal .k-yourdialog`. `.ui-toast` is the animated stack and stays hidden
+  without its measuring script: do not use it inside a block.
+- A scroller that sticks to the bottom (a chat, a terminal) needs no script:
+  `flex-direction: column-reverse; overflow: auto`, with one inner wrapper that has
+  `margin-bottom: auto`.
+- Use `var(--cat, var(--primary))` at the point of use for a tone that other CSS sets,
+  instead of declaring a default that can win by stylesheet order.
+- A table inside a grid or flex child overflows a 390px screen unless the child (and
+  the template's stack container) has `min-width: 0`; use
+  `minmax(min(150px, 100%), 1fr)` for card grids.
