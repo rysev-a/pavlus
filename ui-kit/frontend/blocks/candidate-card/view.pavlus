@@ -1,0 +1,31 @@
+// The header of a job candidate, to embed. State = the props from
+// candidateView() in candidate.ts: `id`, `name`, `initials`, `role`, `stage`,
+// `tone`, `facts` ([{ label, value }]), `skills`, `note`, `advance` (the label
+// of the move-on button, or empty), `canReject`, `closed`. Events, with the
+// name of the embed in front: `advance`, `reject`, `offer`.
+article.ui-card.k-cand
+  div.k-cand__top
+    span.k-cand__avatar {initials}
+    div.k-cand__who
+      h3.k-cand__name {name}
+      p.k-cand__role {role}
+    span(class="ui-pill ui-pill-{tone}") {stage}
+  dl.k-cand__facts
+    for fact in facts key fact.label
+      div
+        dt {fact.label}
+        dd {fact.value}
+  ul.k-cand__skills
+    for skill in skills key skill
+      li.ui-badge.ui-badge-secondary {skill}
+  if note
+    p.k-cand__note {note}
+  div.k-cand__actions
+    if advance
+      button.ui-button.ui-button-default.ui-button-sm(type="button" @click=advance) {advance}
+    if canReject
+      button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=reject) Reject
+    if !closed
+      button.ui-button.ui-button-secondary.ui-button-sm(type="button" @click=offer)
+        span.k-icon.k-ai-dollar
+        | Make an offer

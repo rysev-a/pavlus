@@ -1,0 +1,8 @@
+import Card from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A candidate in the pipeline
+    div.k-preview.k-preview--block
+      +Card#card(...card)
+    p.k-demo__note {message}

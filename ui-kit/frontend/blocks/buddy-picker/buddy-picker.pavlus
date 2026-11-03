@@ -1,0 +1,8 @@
+import Picker from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Pick a buddy for a newcomer
+    p.k-demo__note A colleague looks after at most two newcomers; one who is away cannot be chosen. Click the chosen one again to clear.
+    div.k-preview.k-preview--block
+      +Picker#pick(rows=rows)
