@@ -1,0 +1,20 @@
+import RangeView from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Two months, with quick ranges
+    p.k-demo__note Click a start, move the pointer to see the range, click an end. A second click before the start swaps them. Today is November 3, 2026 (the demo has no clock).
+    div.k-preview.k-preview--block
+      +RangeView#main(...main)
+  section.k-demo
+    h2.k-demo__title Date range picker
+    p.k-demo__note The same calendar in a popover; it closes when the range is complete.
+    div.k-preview
+      div.k-popover-host
+        button.ui-button.ui-button-outline(type="button" aria-expanded={picker.open ? "true" : "false"} @click=picker.toggle)
+          span.k-icon.k-icon-calendar
+          | {picker.range.end ? picker.summary : "Pick a date range"}
+        if picker.open
+          div.k-dismiss(@click=picker.close)
+          div.ui-navigation-panel.k-above.k-range__pop
+            +RangeView#picker(...picker)

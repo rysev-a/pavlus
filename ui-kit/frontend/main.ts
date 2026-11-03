@@ -7,6 +7,7 @@ import {
   createDomPlugin,
   createRouterPlugin,
   createStorePlugin,
+  createHttpPlugin,
   createTimePlugin,
 } from "@service-laboratory/pavlus/plugins";
 import { app as shell, type AppState, initialState } from "./app.ts";
@@ -36,6 +37,7 @@ export const app = createApp<AppState>({
     createDomPlugin(),
     // the site is served under a base path; the app routes without it
     createRouterPlugin({ window: windowAt(root) }),
+    createHttpPlugin(),
     createTimePlugin(),
     createRandomPlugin(),
     createSourcePlugin(),

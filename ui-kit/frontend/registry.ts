@@ -97,6 +97,12 @@ export const entries: Entry[] = [
   e("Forms", "label", "Label", "Renders an accessible label for a control."),
   e(
     "Forms",
+    "multi-select",
+    "Multi Select",
+    "Pick several options from a list: synchronous or loaded asynchronously, with search, chips and a limit.",
+  ),
+  e(
+    "Forms",
     "native-select",
     "Native Select",
     "A styled select that uses the browser's own menu.",
@@ -135,6 +141,12 @@ export const entries: Entry[] = [
     "A small label for status, counts and categories.",
   ),
   e("Data display", "calendar", "Calendar", "A month grid to pick a date."),
+  e(
+    "Data display",
+    "range-calendar",
+    "Range Calendar",
+    "A calendar for a range of dates: two months, a hover preview, quick ranges, and a date range picker.",
+  ),
   e(
     "Data display",
     "card",
