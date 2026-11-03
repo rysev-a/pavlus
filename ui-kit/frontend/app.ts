@@ -11,6 +11,7 @@ import {
   storeEffector as store,
 } from "@service-laboratory/pavlus/plugins";
 import view from "./app.pavlus";
+import { enginePage, type EngineState, engineState } from "./engine/engine-page.ts";
 import { docsPage, type DocsState, docsState } from "./docs/docs-page.ts";
 import { docPath, docsNav, type Lang, LANGS, PAGES } from "./docs/pages.ts";
 import {
@@ -101,6 +102,8 @@ export interface AppState {
   compact: boolean;
   /** The Docs keep their own state (docs/docs-page.ts), under `docs`. */
   docs: DocsState;
+  /** The Template engine page keeps its own state under `engine`. */
+  engine: EngineState;
   /** The sidebar of the Docs in each language. */
   docsNavs: Record<Lang, NavGroup[]>;
   /** The state of each page that has some, under its key (see pages.ts). */
@@ -144,6 +147,7 @@ export function initialState(env: Environment): AppState {
     sidebar: env.compact ? "closed" : "open",
     compact: env.compact,
     docs: docsState(env.lang ?? "en"),
+    engine: engineState(),
     docsNavs: Object.fromEntries(LANGS.map((l) => [l, docsNav(l)])) as Record<
       Lang,
       NavGroup[]
@@ -217,6 +221,7 @@ export class AppShell extends Component<AppState> {
         shown: s.shown,
       }),
     },
+    "/engine": { component: enginePage, key: "engine" },
     "*": { view: notFoundView, props: (s) => ({ root: s.root }) },
     // every page of the Docs is the same view, with the page loaded into the state
     ...Object.fromEntries(

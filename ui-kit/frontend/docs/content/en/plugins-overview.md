@@ -81,7 +81,7 @@ An effect has two required fields, `plugin` and `type`. Everything else is up to
 Because an effect is data, three good things follow.
 
 1. **Tests need no mocks.** To test a handler, call it and compare the list it returns with the list you expect.
-2. **Effects can be recorded, replayed and shown.** The `onStep` option of `createApp` receives every message with its effects; the logger and the developer tools use it.
+2. **Effects can be recorded, replayed and shown.** The `onStep` option of `createApp` receives every message with its effects; developer tools and your own debugging use it.
 3. **Nothing happens by accident.** Returning an effect is not doing it. A handler that is called ten times in a test performs nothing.
 
 ### Effectors

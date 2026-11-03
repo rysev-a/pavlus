@@ -648,6 +648,77 @@ Look at `loaded`. It receives `null` when nothing is saved, and treats that as a
 2. `toggle` returns the four `store.set` effects of `show(...)` and a `storage.save` effect.
 3. The store plugin changes the state; the DOM plugin patches the page; the storage plugin writes the JSON.
 
+Because the initial state is now empty, the handler tests need a sample state of their own. This is the whole `todos.test.ts` for this step. It adds a test for starting the app and one for `loaded`:
+
+```ts src/todos.test.ts
+import { type Message, toHandler } from "@service-laboratory/pavlus";
+import { createStorePlugin } from "@service-laboratory/pavlus/plugins";
+import { expect, test } from "vitest";
+import { storageEffector as storage } from "./storage.ts";
+import { initialTodos, todos, type TodosState } from "./todos.ts";
+
+/** Runs one message and returns the state after its store effects. */
+function send(state: TodosState, message: Message): TodosState {
+  const store = createStorePlugin(state);
+  const ctx = {
+    dispatch() {},
+    getState: () => store.getState(),
+    dispatchEffect() {},
+  };
+  for (const effect of toHandler(todos)(message, state)) {
+    if (effect.plugin === "store") store.handle(effect as never, ctx);
+  }
+  return store.getState();
+}
+
+const sample: TodosState = {
+  ...initialTodos,
+  items: [
+    { id: 1, title: "Buy milk", done: false },
+    { id: 2, title: "Write the docs", done: true },
+  ],
+  nextId: 3,
+};
+
+test("add turns the draft into a todo and clears the draft", () => {
+  const next = send({ ...sample, draft: " Pay rent " }, { id: "add" });
+  expect(next.items.at(-1)).toEqual({ id: 3, title: "Pay rent", done: false });
+  expect(next.draft).toBe("");
+  expect(next.nextId).toBe(4);
+});
+
+test("an empty draft adds nothing", () => {
+  const next = send({ ...sample, draft: "  " }, { id: "add" });
+  expect(next.items).toEqual(sample.items);
+});
+
+test("toggle flips one todo and remove drops it", () => {
+  const toggled = send(sample, { id: "toggle", payload: 1 });
+  expect(toggled.items.map((t) => t.done)).toEqual([true, true]);
+  const removed = send(sample, { id: "remove", payload: 1 });
+  expect(removed.items.map((t) => t.title)).toEqual(["Write the docs"]);
+});
+
+test("the filter decides what is visible and how many are left", () => {
+  const next = send(sample, { id: "setFilter", payload: "done" });
+  expect(next.visible.map((t) => t.title)).toEqual(["Write the docs"]);
+  expect(next.left).toBe(1);
+});
+
+test("starting the app asks the storage plugin for the saved list", () => {
+  expect(toHandler(todos)({ id: "mounted" }, sample)).toEqual([
+    storage.load("todos", "loaded", "loadFailed"),
+  ]);
+});
+
+test("loaded puts the saved list into the state", () => {
+  const saved = [{ id: 7, title: "Saved", done: false }];
+  const next = send(sample, { id: "loaded", payload: saved });
+  expect(next.items).toEqual(saved);
+  expect(next.nextId).toBe(8);
+});
+```
+
 `main.ts` registers the two new plugins. The logger prints the warnings that `loadFailed` and `saveFailed` return:
 
 ```ts src/main.ts
@@ -835,7 +906,17 @@ createApp<AppState>({
 });
 ```
 
-The tests of the handlers stay as they are, except that `mounted` becomes `enter`. A new test drives the whole application, including the router, and the About link:
+In the tests of the handlers one test changes, because the page now gets `enter` instead of `mounted`:
+
+```ts src/todos.test.ts
+test("entering the page asks the storage plugin for the saved list", () => {
+  expect(toHandler(todos)({ id: "enter" }, sample)).toEqual([
+    storage.load("todos", "loaded", "loadFailed"),
+  ]);
+});
+```
+
+A new test drives the whole application, including the router, and the About link:
 
 ```ts src/app.test.ts
 import { createApp } from "@service-laboratory/pavlus";
@@ -1027,75 +1108,6 @@ export class Todos extends Component<TodosState> {
 }
 
 export const todos = new Todos();
-```
-
-```ts src/todos.test.ts
-import { type Message, toHandler } from "@service-laboratory/pavlus";
-import { createStorePlugin } from "@service-laboratory/pavlus/plugins";
-import { expect, test } from "vitest";
-import { storageEffector as storage } from "./storage.ts";
-import { initialTodos, todos, type TodosState } from "./todos.ts";
-
-/** Runs one message and returns the state after its store effects. */
-function send(state: TodosState, message: Message): TodosState {
-  const store = createStorePlugin(state);
-  const ctx = {
-    dispatch() {},
-    getState: () => store.getState(),
-    dispatchEffect() {},
-  };
-  for (const effect of toHandler(todos)(message, state)) {
-    if (effect.plugin === "store") store.handle(effect as never, ctx);
-  }
-  return store.getState();
-}
-
-const sample: TodosState = {
-  ...initialTodos,
-  items: [
-    { id: 1, title: "Buy milk", done: false },
-    { id: 2, title: "Write the docs", done: true },
-  ],
-  nextId: 3,
-};
-
-test("add turns the draft into a todo and clears the draft", () => {
-  const next = send({ ...sample, draft: " Pay rent " }, { id: "add" });
-  expect(next.items.at(-1)).toEqual({ id: 3, title: "Pay rent", done: false });
-  expect(next.draft).toBe("");
-  expect(next.nextId).toBe(4);
-});
-
-test("an empty draft adds nothing", () => {
-  const next = send({ ...sample, draft: "  " }, { id: "add" });
-  expect(next.items).toEqual(sample.items);
-});
-
-test("toggle flips one todo and remove drops it", () => {
-  const toggled = send(sample, { id: "toggle", payload: 1 });
-  expect(toggled.items.map((t) => t.done)).toEqual([true, true]);
-  const removed = send(sample, { id: "remove", payload: 1 });
-  expect(removed.items.map((t) => t.title)).toEqual(["Write the docs"]);
-});
-
-test("the filter decides what is visible and how many are left", () => {
-  const next = send(sample, { id: "setFilter", payload: "done" });
-  expect(next.visible.map((t) => t.title)).toEqual(["Write the docs"]);
-  expect(next.left).toBe(1);
-});
-
-test("entering the page asks the storage plugin for the saved list", () => {
-  expect(toHandler(todos)({ id: "enter" }, sample)).toEqual([
-    storage.load("todos", "loaded", "loadFailed"),
-  ]);
-});
-
-test("loaded puts the saved list into the state", () => {
-  const saved = [{ id: 7, title: "Saved", done: false }];
-  const next = send(sample, { id: "loaded", payload: saved });
-  expect(next.items).toEqual(saved);
-  expect(next.nextId).toBe(8);
-});
 ```
 
 > [!NOTE] Deploying

@@ -1,0 +1,11 @@
+// Lines of generated code. A line that came from a template line (`src`) lights
+// up when that line is picked, and a click on it picks the template line.
+// State = the props: `lines` (with `src`) and `focus`. Sends `pick(src)`.
+pre.k-source__code.k-docs__code.k-eng__code
+  for line in lines key line.n
+    div.k-source__line.k-eng__line(class:is-hit={line.src > 0 && line.src === focus} class:has-src={line.src > 0} @click=pick(line.src))
+      span.k-source__n {line.n}
+      span.k-eng__src {line.src > 0 ? "T" + line.src : ""}
+      span.k-source__text
+        for tok in line.tokens key tok.i
+          span(class={"k-tok k-tok-" + tok.c}) {tok.t}

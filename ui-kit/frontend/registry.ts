@@ -6,7 +6,8 @@ export type Section =
   | "blocks"
   | "templates"
   | "theming"
-  | "docs";
+  | "docs"
+  | "engine";
 
 /** One page of the kit: a component, a block or a template. */
 export interface Entry {
@@ -451,6 +452,7 @@ export const MENU: { path: string; title: string; section: Section }[] = [
   { path: "/templates", title: "Templates", section: "templates" },
   { path: "/theming", title: "Theming", section: "theming" },
   { path: "/docs/overview", title: "Docs", section: "docs" },
+  { path: "/engine", title: "Template engine", section: "engine" },
 ];
 
 /** Which section a route belongs to. */
@@ -459,6 +461,7 @@ export function sectionOf(path: string): Section {
   if (path === "/templates" || path.startsWith("/templates/"))
     return "templates";
   if (path === "/theming") return "theming";
+  if (path === "/engine") return "engine";
   if (path === "/docs" || path.startsWith("/docs/")) return "docs";
   return "components";
 }

@@ -67,7 +67,7 @@ test("ui: every language has every word", () => {
 
 test("markdown: blocks of the subset", () => {
   const doc = parseMarkdown(
-    "---\nsummary: Hi.\n---\n## One\n\ntext with `code`\n\n- a\n- b\n\n```pavlus x.pavlus\np hi\n```\n\n::demo d open=ast\n\n> [!TIP] T\n> body\n\n| a | b |\n| - | - |\n| 1 | 2 |\n",
+    "---\nsummary: Hi.\n---\n## One\n\ntext with `code`\n\n- a\n- b\n\n```pavlus x.pavlus\np hi\n```\n\n::demo d open=ast\n\n> [!TIP] T\n> body\n\n| a | b |\n| --- | --- |\n| 1 | 2 |\n",
   );
   expect(doc.summary).toBe("Hi.");
   expect(shape(doc.blocks)).toEqual([

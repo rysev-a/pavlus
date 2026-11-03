@@ -53,6 +53,7 @@ export type DocsEffect = Effect & { plugin: "docs" } & (
     | { type: "load"; slug: string; lang: Lang; onSuccess: string; onError: string }
     | { type: "run"; template: string; state: string; onSuccess: string }
     | { type: "remember"; lang: Lang }
+    | { type: "trace"; template: string; prev: string; next: string; onSuccess: string; onError: string }
   );
 
 export const docsEffector = {
@@ -72,6 +73,14 @@ export const docsEffector = {
     state,
     onSuccess,
   }),
+  /** Run every stage of the template engine on a template (the Template engine page). */
+  trace: (
+    template: string,
+    prev: string,
+    next: string,
+    onSuccess: string,
+    onError: string,
+  ): DocsEffect => ({ plugin: "docs", type: "trace", template, prev, next, onSuccess, onError }),
   remember: (lang: Lang): DocsEffect => ({ plugin: "docs", type: "remember", lang }),
 };
 
@@ -95,6 +104,17 @@ export function createDocsPlugin(
         } catch {
           // storage blocked: the language is just not remembered
         }
+        return;
+      }
+      if (effect.type === "trace") {
+        import("../engine/trace.ts").then(
+          ({ traceTemplate }) =>
+            ctx.dispatch({
+              id: effect.onSuccess,
+              payload: traceTemplate(effect.template, effect.prev, effect.next),
+            }),
+          () => ctx.dispatch({ id: effect.onError, payload: null }),
+        );
         return;
       }
       if (effect.type === "run") {

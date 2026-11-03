@@ -30,7 +30,7 @@ main.page
 A name that starts with a lowercase letter is a built-in (`outlet`); a name that starts with a capital letter is an imported component (`+Sidebar`). That is why the two never clash.
 
 > [!NOTE] Where does the current path come from?
-> From the **router plugin**. It reads the address of the browser and reports it to your application as a message. Section "Wiring the router" below shows the three lines that connect it. Until the plugin has reported, the state field `route` is `null` and the outlet is empty.
+> From the **router plugin**. It reads the address of the browser and reports it to your application as a message. The section "Wiring the router" below shows how it is connected. Until the plugin has reported, the state field `route` is `null` and the outlet is empty.
 
 ## What the compiler does with +outlet
 
@@ -88,7 +88,7 @@ Look at the `route.path` and `route.base` columns. A page does not see the whole
 
 ## A routing entry
 
-The value in the table is a *route spec*. It has the shape of a child entry (see the [components page](page:concepts-messages)) plus two fields:
+The value in the table is a *route spec*. It has the shape of a child entry (see the [components page](page:concepts-messages)), plus `view` and `name`. All the fields:
 
 | Field | Meaning |
 | --- | --- |
@@ -199,7 +199,7 @@ a(href="/about" @click.prevent=navigate("/about")) About
 The second step of the demo shows the active link. The class `active` is a condition on `route.path`. When the route goes from `null` to `/`, only the first link is patched.
 
 > [!NOTE] Plain hrefs are not rewritten
-> The framework rewrites the url of the effect `router.navigate`. It does not touch the `href` attribute, because it is only text in your template. When a page sits below a base, write the base yourself: `href={route.base + "/users"}`. The next section has the full picture.
+> The framework rewrites the url of the effect `router.navigate`. It does not touch the `href` attribute, because it is only text in your template. When a page sits below a base, write the base yourself: `href={route.base + "/users"}`. The sections on nested routes and on base paths have the full picture.
 
 ## enter and leave
 
