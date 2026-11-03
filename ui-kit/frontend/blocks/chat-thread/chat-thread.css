@@ -1,0 +1,15 @@
+.ui-card.k-chat { gap: 0; padding: 0; min-width: 0; overflow: hidden; }
+.k-chat__head { display: flex; align-items: center; gap: 10px; padding: calc(12px * var(--k-block, 1)) calc(16px * var(--k-block, 1)); border-bottom: 1px solid var(--border); }
+.k-chat__av { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 999px; background: linear-gradient(135deg, var(--t), color-mix(in srgb, var(--t) 60%, var(--foreground))); color: var(--background); font-size: 14px; font-weight: 700; }
+.k-chat__who { display: grid; min-width: 0; line-height: 1.3; }
+.k-chat__sub { font-size: 12px; color: var(--muted-foreground); }
+.k-chat__sub.is-typing { color: var(--primary); }
+.k-chat__log { display: flex; flex-direction: column-reverse; height: 340px; overflow-y: auto; padding: calc(14px * var(--k-block, 1)) calc(16px * var(--k-block, 1)); background: color-mix(in srgb, var(--muted) 45%, var(--card)); }
+.k-chat__inner { display: grid; gap: 10px; }
+.k-chat__row { display: grid; justify-items: start; gap: 2px; }
+.k-chat__row.is-mine { justify-items: end; }
+.k-chat__bubble { max-width: min(80%, 420px); margin: 0; padding: 8px 14px; border-radius: 18px 18px 18px 4px; background: var(--card); color: var(--card-foreground); border: 1px solid var(--border); line-height: 1.45; overflow-wrap: anywhere; }
+.k-chat__row.is-mine .k-chat__bubble { border-radius: 18px 18px 4px 18px; border-color: transparent; background: var(--primary); color: var(--primary-foreground); }
+.k-chat__time { font-size: 11px; color: var(--muted-foreground); }
+.k-chat__form { display: flex; gap: 8px; padding: calc(12px * var(--k-block, 1)) calc(16px * var(--k-block, 1)); border-top: 1px solid var(--border); }
+.k-chat__form .ui-input { flex: 1; min-width: 0; }

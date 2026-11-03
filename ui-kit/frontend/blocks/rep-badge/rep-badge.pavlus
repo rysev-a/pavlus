@@ -1,0 +1,9 @@
+import Rep from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Tiers
+    p.k-demo__note The tier follows the points: newcomer, regular, trusted, expert and legend. A moderator gets a filled badge.
+    div.k-preview
+      for b in badges key b.label
+        +Rep#rep(...b)

@@ -1,0 +1,10 @@
+.ui-card.k-endorse { gap: calc(12px * var(--k-block, 1)); padding: calc(18px * var(--k-block, 1)); min-width: 0; }
+.k-endorse__title { margin: 0; font-size: 16px; }
+.k-endorse__list { display: grid; gap: calc(14px * var(--k-block, 1)); margin: 0; padding: 0; list-style: none; }
+.k-endorse__item { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.k-endorse__text { display: grid; flex: 1; gap: 3px; min-width: 0; }
+.k-endorse__who { font-size: 12px; color: var(--muted-foreground); }
+.k-endorse__bar { height: 6px; border-radius: 999px; background: var(--muted); overflow: hidden; }
+.k-endorse__bar span { display: block; height: 100%; border-radius: 999px; background: var(--primary); transition: width .25s; }
+.k-endorse__side { display: flex; align-items: center; gap: 10px; flex: none; }
+.k-endorse__count { min-width: 2ch; font-size: 15px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }

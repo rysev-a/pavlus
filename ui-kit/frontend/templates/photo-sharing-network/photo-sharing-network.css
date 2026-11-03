@@ -1,0 +1,16 @@
+.psn { display: grid; gap: calc(20px * var(--k-block, 1)); align-content: start; padding: 0 16px calc(32px * var(--k-block, 1)); }
+.psn__section { display: grid; gap: calc(16px * var(--k-block, 1)); min-width: 0; align-content: start; }
+.psn__title { margin: 0; font-size: 26px; letter-spacing: -.02em; }
+.psn__h { margin: 0; font-size: 16px; }
+.psn__back { justify-self: start; }
+.psn__detail { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: calc(20px * var(--k-block, 1)); align-items: start; }
+.psn .psn__comments { padding: calc(16px * var(--k-block, 1)); gap: calc(12px * var(--k-block, 1)); }
+.psn__albums { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: calc(20px * var(--k-block, 1)); align-items: start; }
+.psn__upload { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 360px); gap: calc(20px * var(--k-block, 1)); justify-content: center; align-items: start; }
+.psn__preview { display: grid; gap: 10px; position: sticky; top: 84px; }
+.psn .psn__form { min-width: 0; }
+@media (max-width: 860px) {
+  .psn__detail, .psn__albums, .psn__upload { grid-template-columns: minmax(0, 1fr); }
+  .psn__preview { position: static; }
+}
+@media (max-width: 720px) { .psn { padding-bottom: 88px; } }

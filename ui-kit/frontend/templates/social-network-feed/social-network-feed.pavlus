@@ -1,0 +1,65 @@
+// A social network app: a feed with stories and a composer, comment threads,
+// people to follow, trends, alerts, profiles and direct messages. Every piece is
+// a block (social-nav, story-row, post-composer, feed-post, comment-thread,
+// people-list, trend-list, notification-list, profile-header, conversation-list,
+// chat-thread); this page only places them.
+import Nav from "../../blocks/social-nav/view.pavlus"
+import Stories from "../../blocks/story-row/view.pavlus"
+import Composer from "../../blocks/post-composer/view.pavlus"
+import Post from "../../blocks/feed-post/view.pavlus"
+import Comments from "../../blocks/comment-thread/view.pavlus"
+import People from "../../blocks/people-list/view.pavlus"
+import Trends from "../../blocks/trend-list/view.pavlus"
+import Notes from "../../blocks/notification-list/view.pavlus"
+import Head from "../../blocks/profile-header/view.pavlus"
+import Inbox from "../../blocks/conversation-list/view.pavlus"
+import Chat from "../../blocks/chat-thread/view.pavlus"
+import Picks from "../../blocks/pick-list/view.pavlus"
+
+div.k-template.snf
+  +Nav#nav(...nav)
+  if view === "home"
+    div.snf__home
+      div.snf__main
+        +Stories#stories(...storyRow)
+        +Composer#composer(...composer)
+        div.snf__bar
+          +Picks#tabs(...tabs)
+          if topicLabel
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=clearTopic)
+              | Showing {topicLabel}
+              span.k-icon.k-icon-x
+        if feedEmpty
+          div.ui-empty-state
+            h3 Nothing here yet
+            p.k-muted Follow a few people, or clear the topic, to fill your feed.
+        for item in feed key item.post.id
+          div.snf__item
+            +Post#post(...item.post)
+            if item.open
+              div.ui-card.snf__comments
+                +Comments#cm(...item.thread)
+      aside.snf__aside
+        +People#suggest(...suggest)
+        +Trends#trends(...trends)
+  else if view === "profile"
+    div.snf__profile
+      +Head#head(...head)
+      h2.snf__h {isMe ? "Your posts" : "Posts"}
+      if feedEmpty
+        div.ui-empty-state
+          h3 No posts yet
+          p.k-muted When they post, it will show up here.
+      for item in feed key item.post.id
+        div.snf__item
+          +Post#post(...item.post)
+          if item.open
+            div.ui-card.snf__comments
+              +Comments#cm(...item.thread)
+  else if view === "messages"
+    div.snf__messages
+      +Inbox#inbox(...inbox)
+      +Chat#chat(...chat)
+  else if view === "alerts"
+    div.snf__alerts
+      +Notes#notes(...alertList)
