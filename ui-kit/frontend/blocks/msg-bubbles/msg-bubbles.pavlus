@@ -1,0 +1,14 @@
+import Bubbles from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Bubbles grouped by day and sender
+    p.k-demo__note Hover a bubble for react, reply and pin. Click a reaction to add or remove yours. "Send a message" shows the states sending, sent and read.
+    div.k-preview.k-preview--block
+      div.k-bub-demo
+        +Bubbles#bub(rows=rows typing=typing quick=quick emptyText="No messages yet. Say hello!")
+      div.k-row
+        button.ui-button.ui-button-default.ui-button-sm(type="button" @click=sendOne) Send a message
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=toggleTyping) {typing ? "Stop typing" : "Show typing"}
+        if note
+          span.k-hint {note}

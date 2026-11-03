@@ -1,0 +1,45 @@
+// A webmail client in three panes (folders, list, reader) and a compose window.
+// Everything inside is a block: the folders (mail-folders), the toolbar and
+// the list (mail-toolbar, mail-list), the reading pane (mail-reader), the
+// compose window (mail-composer) and the contacts popover (contact-pop).
+// On small screens `data-pane` shows one pane at a time.
+import Nav from "../../blocks/mail-folders/view.pavlus"
+import Bar from "../../blocks/mail-toolbar/view.pavlus"
+import List from "../../blocks/mail-list/view.pavlus"
+import Reader from "../../blocks/mail-reader/view.pavlus"
+import Composer from "../../blocks/mail-composer/view.pavlus"
+import Pop from "../../blocks/contact-pop/view.pavlus"
+
+div.k-template.wm(data-pane={pane})
+  header.wm__top
+    button.ui-button.ui-button-ghost.ui-button-sm.wm__menu(type="button" aria-label="Show the folders" @click=showFolders)
+      span.k-icon.k-icon-menu
+    span.ui-brand-mark H
+    strong.wm__brand Halcyon Mail
+    span.wm__spacer
+    span.wm__unread
+      span.k-icon.k-mi-inbox
+      | {inboxUnread} unread
+    span.k-mavatar.k-mavatar--sm(style="--k-hue: {meHue}" title="Maya Chen") MC
+  div.wm__frame
+    aside.wm__folders
+      +Nav#nav(folders=folders labels=labels shortcuts=shortcuts)
+    section.wm__list(aria-label="Messages")
+      +Bar#bar(query=query filters=filters selectedCount=selectedCount label=barLabel allSelected=allSelected buttons=buttons targets=targets moveOpen=moveOpen)
+      div.wm__rows
+        +List#list(rows=rows emptyTitle=emptyTitle emptyText=emptyText)
+    section.wm__read(aria-label="Reading pane")
+      +Reader#read(thread=reader actions=actions)
+    if compose
+      div.wm__compose
+        +Composer#comp(draft=compose ui=composeUi files=composeFiles)
+        if contactsOpen
+          div.wm__pop
+            +Pop#pop(open=contactsOpen field=contactsLabel query=contactsQuery rows=contactList)
+    if toast
+      div.wm__toast(role="status")
+        span.wm__toast-text {toast}
+        if undo
+          button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=undoLast) Undo
+        button.wm__toast-x(type="button" aria-label="Dismiss" @click=dismissToast)
+          span.k-icon.k-icon-x

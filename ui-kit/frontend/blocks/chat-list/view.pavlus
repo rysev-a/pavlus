@@ -1,0 +1,44 @@
+// The list of chats of a messenger, to embed. State = the props: `title`,
+// `query`, `tabs` ([{ id, name, active, count }]), `rows` (from `rowsOf` in
+// chat.ts) and `emptyText`. Events, with the name of the embed in front:
+// `open` (the chat id), `setQuery` (the input event), `tab` (a tab id) and
+// `newChat`.
+div.k-chatlist
+  div.k-chatlist__head
+    h2.k-chatlist__title {title}
+    button.ui-button.ui-button-ghost.ui-button-sm.k-chatlist__new(type="button" aria-label="New chat" @click=newChat)
+      span.k-icon.k-mi-edit
+  div.k-input-group.k-chatlist__search
+    span.k-input-group__addon.k-input-group__addon--start
+      span.k-icon.k-icon-search
+    input.ui-input(type="search" placeholder="Search chats and messages" aria-label="Search chats" autocomplete="off" value=query @input=setQuery)
+  div.k-chatlist__tabs(role="tablist")
+    for t in tabs key t.id
+      button.k-chatlist__tab(type="button" role="tab" aria-selected={t.active ? "true" : "false"} @click=tab(t.id))
+        | {t.name}
+        if t.count > 0
+          span.k-mbadge {t.count}
+  if rows.length === 0
+    p.k-chatlist__empty {emptyText}
+  else
+    ul.k-chatlist__rows
+      for r in rows key r.id
+        li
+          button.k-chatlist__row(type="button" class:is-active={r.active} aria-current={r.active ? "true" : null} @click=open(r.id))
+            if r.emoji
+              span.k-mavatar.k-mavatar--emoji(style="--k-hue: {r.hue}") {r.emoji}
+            else
+              span.k-mavatar(style="--k-hue: {r.hue}" data-online={r.online ? "true" : null}) {r.initials}
+            span.k-chatlist__text
+              span.k-chatlist__top
+                span.k-chatlist__name {r.name}
+                span.k-chatlist__time {r.time}
+              span.k-chatlist__bottom
+                span.k-chatlist__preview(class:is-typing={r.typing}) {r.preview}
+                span.k-chatlist__marks
+                  if r.muted
+                    span.k-icon.k-mi-bell-off(title="Muted")
+                  if r.pinned
+                    span.k-icon.k-mi-pin(title="Pinned")
+                  if r.unread > 0
+                    span.k-mbadge(class:k-mbadge--quiet={r.muted}) {r.unread}

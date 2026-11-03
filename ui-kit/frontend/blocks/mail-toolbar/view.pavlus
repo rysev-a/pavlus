@@ -1,0 +1,38 @@
+// The search, filters and bulk actions above a message list, to embed. State
+// = the props: `query`, `filters` ([{ id, name, active }]), `selectedCount`,
+// `label`, `allSelected`, `buttons` (bulkButtons), `targets` (moveTargets),
+// `moveOpen`. Events, with the name of the embed in front: `setQuery` (the input
+// event), `clear`, `filter` (the id), `selectAll`, `bulk` (the action id),
+// `toggleMove`, `moveTo` (the folder id).
+div.k-mtool
+  div.k-input-group.k-mtool__search
+    span.k-input-group__addon.k-input-group__addon--start
+      span.k-icon.k-icon-search
+    input.ui-input#k-mtool-search(type="search" placeholder="Search mail" aria-label="Search mail" autocomplete="off" value=query @input=setQuery)
+    if query
+      button.k-mtool__clear(type="button" aria-label="Clear the search" @click=clear)
+        span.k-icon.k-icon-x
+  div.k-mtool__filters(role="group" aria-label="Filter")
+    for f in filters key f.id
+      button.k-mtool__chip(type="button" class:is-active={f.active} aria-pressed={f.active ? "true" : "false"} @click=filter(f.id))
+        | {f.name}
+  div.k-mtool__bar
+    input.ui-checkbox-input(type="checkbox" aria-label="Select all conversations" checked={allSelected} @change=selectAll)
+    span.k-mtool__label {label}
+    if selectedCount > 0
+      div.k-mtool__actions
+        for b in buttons key b.id
+          button.ui-button.ui-button-ghost.ui-button-sm.k-mtool__btn(type="button" aria-label={b.name} title={b.name} @click=bulk(b.id))
+            span.k-icon(class="{b.icon}")
+            span.k-mtool__btn-text {b.name}
+        if targets.length > 0
+          div.k-mtool__move
+            button.ui-button.ui-button-ghost.ui-button-sm.k-mtool__btn(type="button" aria-expanded={moveOpen ? "true" : "false"} @click=toggleMove)
+              span.k-icon.k-icon-folder
+              span.k-mtool__btn-text Move to
+              span.k-icon.k-icon-chevron-down
+            if moveOpen
+              ul.k-mtool__menu(role="menu")
+                for t in targets key t.id
+                  li
+                    button.k-mtool__menu-item(type="button" role="menuitem" @click=moveTo(t.id)) {t.name}

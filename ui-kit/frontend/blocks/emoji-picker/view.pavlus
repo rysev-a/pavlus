@@ -1,0 +1,22 @@
+// An emoji picker, to embed. State = the props: `tabs`, `emojis`, `title`,
+// `recent` and `query` (from `pickerView` in emoji.ts; `recent` is a list of
+// { e, n }). Events, with the name of the embed in front: `pick` (the emoji),
+// `tab` (a tab id) and `setQuery` (the input event).
+div.k-ep(role="dialog" aria-label="Emoji")
+  div.k-ep__search
+    input.ui-input(type="search" placeholder="Search emoji" aria-label="Search emoji" autocomplete="off" value=query @input=setQuery)
+  div.k-ep__tabs(role="tablist")
+    for t in tabs key t.id
+      button.k-ep__tab(type="button" role="tab" aria-selected={t.active ? "true" : "false"} title={t.name} aria-label={t.name} @click=tab(t.id)) {t.icon}
+  if recent.length > 0
+    p.k-ep__title Recent
+    div.k-ep__grid
+      for x in recent key x.e
+        button.k-ep__emoji(type="button" title={x.n} @click=pick(x.e)) {x.e}
+  p.k-ep__title {title}
+  if emojis.length === 0
+    p.k-ep__none No emoji match "{query}".
+  else
+    div.k-ep__grid
+      for x in emojis key x.e
+        button.k-ep__emoji(type="button" title={x.n} @click=pick(x.e)) {x.e}

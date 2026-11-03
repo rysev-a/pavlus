@@ -1,0 +1,13 @@
+import Dialog from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title New chat dialog
+    p.k-demo__note A direct chat takes one person; a group needs a name and at least two people. Try to create it empty to see the message.
+    div.k-preview
+      button.ui-button.ui-button-default(type="button" @click=show)
+        span.k-icon.k-icon-plus
+        | New chat
+      if result
+        span.k-hint {result}
+  +Dialog#ncd(open=open mode=mode name=name query=query showError=showError dialog=dialog)
