@@ -1,0 +1,10 @@
+.k-fbar { display: flex; flex-wrap: wrap; align-items: center; gap: calc(10px * var(--k-block, 1)) calc(14px * var(--k-block, 1)); }
+.k-fbar .k-fbar__tabs { height: auto; max-width: 100%; flex-wrap: wrap; }
+.k-fbar__tab { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.k-fbar__count { min-width: 18px; padding: 0 5px; border-radius: 999px; background: color-mix(in srgb, var(--foreground) 10%, transparent); font-size: 11px; line-height: 17px; text-align: center; font-variant-numeric: tabular-nums; }
+.k-fbar__tab[aria-selected="true"] .k-fbar__count { background: var(--primary); color: var(--primary-foreground); }
+.k-fbar__search { position: relative; flex: 1; min-width: 160px; max-width: 300px; }
+.k-fbar__search .k-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted-foreground); pointer-events: none; }
+.k-fbar .k-fbar__search .ui-input { height: 32px; padding-left: 32px; }
+.k-fbar__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+@media (max-width: 800px) { .k-fbar__actions { margin-left: 0; } .k-fbar__search { max-width: none; } }
