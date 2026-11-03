@@ -1,0 +1,9 @@
+import TaskMock from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A task list that works
+    p.k-demo__note Add a task (a #word becomes its tag), tick and remove tasks, filter the list.
+    div.k-preview.k-preview--block
+      div.k-tm-wrap
+        +TaskMock#mock(...mock)

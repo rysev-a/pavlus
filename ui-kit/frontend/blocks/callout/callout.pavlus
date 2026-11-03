@@ -1,0 +1,11 @@
+import Callout from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Four tones
+    div.k-preview.k-preview--block
+      div.k-callout-stack
+        +Callout#note(tone="note" title="Note" text="Schemas are plain values: you can pass them around and compose them.")
+        +Callout#tip(tone="tip" title="Tip" text="Parse once at the edge of your program and keep the typed result.")
+        +Callout#warning(tone="warning" title="Warning" text="Transforms run after validation, so they never see invalid input.")
+        +Callout#danger(tone="danger" title="Breaking change" text="parseSync was removed in 2.0. Use parse, which is synchronous unless a rule is async.")

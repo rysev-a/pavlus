@@ -1,0 +1,10 @@
+import ProfileCard from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Cards with a match score
+    p.k-demo__note Compared with the skills TypeScript and React. Invite one: the button keeps the state.
+    div.k-preview.k-preview--block
+      div.k-pc-demo
+        for card in cards key card.id
+          +ProfileCard#card(...card)

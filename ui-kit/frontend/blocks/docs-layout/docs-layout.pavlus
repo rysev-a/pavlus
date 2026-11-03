@@ -1,0 +1,8 @@
+import Docs from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Menu, search, page and contents
+    p.k-demo__note Fold a group, search for "schema", follow a link inside the text, use Previous and Next.
+    div.k-preview.k-preview--block
+      +Docs#docs(...docs)

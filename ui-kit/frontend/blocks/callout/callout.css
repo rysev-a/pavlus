@@ -1,0 +1,3 @@
+.k-callout { margin: 0; }
+.k-callout .ui-alert-description { line-height: 1.55; }
+.k-callout-stack { display: grid; gap: calc(12px * var(--k-block, 1)); max-width: 640px; }

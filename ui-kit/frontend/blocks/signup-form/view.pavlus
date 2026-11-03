@@ -1,0 +1,52 @@
+// A sign-up form with a password meter and a success state. A part with its
+// own state (signup-form.ts): embed it as a child, `+Signup#signup(...signup)`.
+div.ui-card.k-signup
+  div.ui-card-header
+    h3.ui-card-title {title}
+    p.ui-card-description {intro}
+  if done
+    div.ui-card-content.k-signup__done
+      span.k-signup__check
+        span.k-icon.k-icon-lg.k-icon-check
+      h4.k-signup__thanks Welcome aboard, {name}
+      p.k-signup__text We sent a confirmation link to {email}. Your {plan} plan is ready as soon as you confirm.
+  else
+    form.ui-card-content(novalidate @submit.prevent=submit)
+      div.ui-form
+        div.ui-field(data-invalid={errors.name ? "true" : null})
+          label.ui-label(for="su-name") Full name
+          input.ui-input#su-name(type="text" placeholder="Ann Lee" value=name @input=setField("name"))
+          if errors.name
+            p.ui-field-error {errors.name}
+        div.ui-field(data-invalid={errors.email ? "true" : null})
+          label.ui-label(for="su-email") Work email
+          input.ui-input#su-email(type="email" placeholder="ann@company.com" value=email @input=setField("email"))
+          if errors.email
+            p.ui-field-error {errors.email}
+        div.ui-field(data-invalid={errors.password ? "true" : null})
+          label.ui-label(for="su-password") Password
+          input.ui-input#su-password(type="password" value=password @input=setField("password"))
+          div.k-signup__meter(data-level={strength.level})
+            span
+            span
+            span
+            span
+            em {strength.label}
+          if errors.password
+            p.ui-field-error {errors.password}
+          else
+            p.ui-field-description At least 8 characters. A longer phrase is stronger.
+        div.ui-field(data-invalid={errors.plan ? "true" : null})
+          label.ui-label(for="su-plan") Plan
+          select.ui-select-control#su-plan(@change=setField("plan"))
+            for choice in plans key choice.id
+              option(value=choice.id selected={choice.id === plan}) {choice.label}
+          if errors.plan
+            p.ui-field-error {errors.plan}
+        div.ui-field(data-invalid={errors.terms ? "true" : null})
+          div.ui-checkbox
+            input.ui-checkbox-input#su-terms(type="checkbox" checked={terms} @change=setField("terms"))
+            label.ui-checkbox-label(for="su-terms") I accept the terms and the privacy policy
+          if errors.terms
+            p.ui-field-error {errors.terms}
+        button.ui-button.ui-button-default.ui-button-lg(type="submit") {button}

@@ -1,0 +1,12 @@
+// Customer quotes, to embed. State = the props: `items`, a list of
+// { quote, name, role, stars (1-5), tone (1-5, the colour of the avatar) }.
+ul.k-quotes
+  for item in items key item.name
+    li.k-quotes__item
+      p.k-quotes__stars(aria-label="{item.stars} out of 5") {"★★★★★".slice(0, item.stars)}
+      blockquote.k-quotes__quote {item.quote}
+      div.k-quotes__who
+        span.k-quotes__avatar(data-tone=item.tone) {item.name.slice(0, 1)}
+        div.k-quotes__name
+          strong {item.name}
+          span {item.role}

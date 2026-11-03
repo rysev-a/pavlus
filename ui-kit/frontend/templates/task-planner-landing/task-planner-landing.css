@@ -1,0 +1,35 @@
+.tp { background: var(--background); color: var(--foreground); }
+.tp__wrap { width: min(100%, 1120px); margin-inline: auto; padding-inline: 20px; }
+.tp .k-sitenav { padding-block: 16px; }
+.tp__hero { padding-bottom: calc(24px * var(--k-block, 1)); background: radial-gradient(60% 70% at 50% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 70%); }
+.tp__hero .k-hero { padding-top: calc(48px * var(--k-block, 1)); }
+.tp__hero .k-hero__title { max-width: 16ch; }
+.tp__strip { margin-top: calc(24px * var(--k-block, 1)); }
+.tp__section { padding-block: calc(72px * var(--k-block, 1)); scroll-margin-top: 16px; }
+.tp__section--tint { background: color-mix(in srgb, var(--primary) 6%, var(--background)); }
+.tp__head { display: grid; justify-items: center; gap: 12px; margin-bottom: calc(40px * var(--k-block, 1)); text-align: center; }
+.tp__title { margin: 0; max-width: 22ch; font-size: clamp(26px, 4vw, 38px); font-weight: 700; letter-spacing: -.025em; line-height: 1.15; }
+.tp__lead { margin: 0; max-width: 56ch; font-size: 17px; line-height: 1.6; color: var(--muted-foreground); }
+.tp__split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: calc(48px * var(--k-block, 1)); align-items: center; }
+.tp__copy { display: grid; justify-items: start; gap: 14px; }
+.tp__copy .tp__title { max-width: 18ch; }
+.tp__bullets { display: grid; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
+.tp__bullets li { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.tp__bullets .k-icon { padding: 3px; width: 22px; height: 22px; border-radius: 50%; background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+.tp__mock { display: grid; justify-items: center; }
+.tp__mock > * { width: 100%; max-width: 480px; }
+.tp__faq { display: grid; justify-items: center; }
+.tp__cta { background: var(--primary); color: var(--primary-foreground); }
+.tp__cta .tp__lead, .tp__cta .tp__bullets { color: var(--primary-foreground); }
+.tp__cta .tp__lead { opacity: .88; }
+.tp__cta .tp__bullets .k-icon { background: color-mix(in srgb, var(--primary-foreground) 22%, transparent); color: var(--primary-foreground); }
+.tp__cta .ui-card { color: var(--card-foreground); }
+.tp__footer { padding-block: 28px; border-top: 1px solid var(--border); font-size: 14px; }
+.tp__footer-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.tp__footer-brand { display: inline-flex; align-items: center; gap: 10px; }
+@media (max-width: 800px) {
+  .tp__split { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .tp__section { padding-block: calc(48px * var(--k-block, 1)); }
+  .tp .k-sitenav { flex-wrap: wrap; }
+  .tp .k-sitenav__links { order: 3; flex-basis: 100%; justify-content: flex-start; }
+}
