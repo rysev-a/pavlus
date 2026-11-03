@@ -1,0 +1,17 @@
+// A support conversation, to embed. State = the props: `messages` (bubbles():
+// { id, side ("customer" | "agent" | "note"), who, initials, text, when,
+// label }, oldest first) and `empty`. No events.
+div.k-tthread
+  for m in messages key m.id
+    article.k-tthread__msg(data-side={m.side})
+      span.ui-avatar.ui-avatar-sm
+        span.ui-avatar-fallback {m.initials}
+      div.k-tthread__bubble
+        header.k-tthread__head
+          strong {m.who}
+          if m.label
+            span.ui-pill.ui-pill-warning {m.label}
+          small {m.when}
+        p.k-tthread__text {m.text}
+  if messages.length === 0
+    p.k-tthread__empty {empty}

@@ -1,0 +1,8 @@
+.k-rbox { display: grid; gap: calc(10px * var(--k-block, 1)); min-width: 0; padding: calc(14px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); color: var(--card-foreground); }
+.k-rbox__canned { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.k-rbox__canned small { margin-right: 4px; color: var(--muted-foreground); font-size: 12px; }
+.k-rbox__text { width: 100%; min-height: 96px; resize: vertical; }
+.k-rbox__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.k-rbox__switch, .k-rbox__status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+.k-rbox__status .ui-select-control { width: auto; min-width: 8.5rem; }
+.k-rbox__send { margin-left: auto; }

@@ -1,0 +1,8 @@
+import Picker from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Pick a layout
+    div.k-preview.k-preview--block
+      +Picker#picker(options=options)
+    p.k-demo__note {message}

@@ -1,0 +1,60 @@
+// A real estate CRM: listings (cards and table), buyers with a match score,
+// a pipeline, a viewings schedule and the commission summary.
+import Nav from "../../blocks/admin-shell/view.pavlus"
+import Top from "../../blocks/admin-shell/topbar.pavlus"
+import Stats from "../../blocks/stat-cards/view.pavlus"
+import FilterBar from "../../blocks/list-filter/view.pavlus"
+import DataGrid from "../../blocks/data-grid/view.pavlus"
+import Props from "../../blocks/property-card/view.pavlus"
+import Progress from "../../blocks/progress-list/view.pavlus"
+import Kanban from "../../blocks/kanban-board/view.pavlus"
+import Agenda from "../../blocks/agenda-list/view.pavlus"
+import Sheet from "../../blocks/record-sheet/view.pavlus"
+
+div.k-template.k-ashell.estate(data-nav={navOpen ? "open" : "closed"})
+  aside.k-ashell__side
+    +Nav#nav(brand="Hearth & Key" tagline="Real estate CRM" groups=groups active=screen user=user)
+  div.k-ashell__scrim(@click=closeNav)
+  div.k-ashell__main
+    +Top#top(title=title subtitle="Tuesday, 3 November 2026" notice=notice actions=actions user=user)
+    main.k-ashell__content
+      if screen === "listings"
+        +Stats#stats(cards=listStats)
+        +FilterBar#listfilter(filters=listFilters query=listQuery placeholder="Search address, town or type" actions=none)
+        div.estate__bar
+          div.estate__toggle
+            button.ui-button.ui-button-sm(type="button" class:ui-button-default={layout === "cards"} class:ui-button-outline={layout !== "cards"} @click=showCards) Cards
+            button.ui-button.ui-button-sm(type="button" class:ui-button-default={layout === "table"} class:ui-button-outline={layout !== "table"} @click=showTable) Table
+          select.ui-select-control(aria-label="Match against a buyer" @change=matchFor)
+            for o in leadOptions key o.value
+              option(value=o.value selected={o.selected}) {o.label}
+        if layout === "cards"
+          +Props#cards(properties=cards empty="No property matches.")
+        else
+          +DataGrid#listtable(columns=listCols rows=listRows empty="No property matches." footer=listFooter pickable=true)
+        if buyersTitle
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title {buyersTitle}
+              p.ui-card-description Match score from budget, bedrooms, type and town. Click a buyer to see their best homes.
+            div.ui-card-content
+              +Progress#buyers(items=buyers pickable=true)
+      else if screen === "leads"
+        +DataGrid#leadtable(columns=leadCols rows=leadList empty="No buyers." footer="" pickable=true)
+        if matchesTitle
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title {matchesTitle}
+              p.ui-card-description Sold and draft homes are left out.
+            div.ui-card-content
+              +Progress#matches(items=matches pickable=true)
+      else if screen === "pipeline"
+        p.estate__hint Move a buyer with the arrows, from inquiry to closing.
+        +Kanban#board(columns=boardCols)
+      else if screen === "viewings"
+        p.estate__hint Click a row to cancel a viewing, or mark it done.
+        +Agenda#agenda(days=days empty="No viewings booked.")
+      else if screen === "commission"
+        +Stats#comstats(cards=comStats)
+        +DataGrid#commission(columns=comCols rows=comRows empty="No offers yet." footer="" pickable=false)
+  +Sheet#sheet(open=sheet.open title="Book a viewing" description="Pick the home, the buyer and a time." details=none fields=sheet.fields buttons=sheet.buttons)
