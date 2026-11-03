@@ -1,0 +1,15 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Confirmation
+    div.k-preview
+      button.ui-button.ui-button-destructive(type="button" @click=show) Delete account
+  if open
+    div.k-modal
+      div.k-modal__scrim
+      div.ui-dialog.ui-alert-dialog(role="alertdialog" aria-modal="true" aria-labelledby="ad-title")
+        div.ui-dialog-header
+          h2.ui-dialog-title#ad-title Are you absolutely sure?
+          p.ui-dialog-description This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+        div.ui-dialog-footer
+          button.ui-dialog-close(type="button" @click=hide) Cancel
+          button.ui-button.ui-button-destructive(type="button" @click=hide) Continue

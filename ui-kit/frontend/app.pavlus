@@ -1,0 +1,21 @@
+// The shell: the sidebar with every component, the top bar, the page the
+// route selects, and the footer.
+import Sidebar from "./components/sidebar/sidebar.pavlus"
+import Header from "./components/header/header.pavlus"
+import Footer from "./components/footer/footer.pavlus"
+
+div.app.ui-shell(data-sidebar=sidebar)
+  aside.ui-shell-aside
+    +Sidebar#sidebar(nav=nav route=route root=root)
+  div.ui-shell-scrim(@click=closeSidebar)
+  div.ui-shell-body
+    +Header#header(theme=theme)
+    main.ui-shell-content
+      // the title of a component page comes from the registry, the pages hold only demos
+      if current
+        div.ui-page-header
+          div
+            h1.ui-page-title {current.title}
+            p.ui-page-description {current.description}
+      +outlet
+    +Footer#footer(current=current source=source)

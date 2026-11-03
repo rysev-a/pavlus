@@ -1,0 +1,31 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Variants
+    div.k-preview
+      span.ui-badge.ui-badge-default Default
+      span.ui-badge.ui-badge-secondary Secondary
+      span.ui-badge.ui-badge-destructive Destructive
+      span.ui-badge.ui-badge-outline Outline
+      span.ui-badge.ui-badge-ghost Ghost
+  section.k-demo
+    h2.k-demo__title Status
+    div.k-preview
+      span.ui-badge.ui-badge-success Success
+      span.ui-badge.ui-badge-warning Warning
+      span.ui-badge.ui-badge-info Info
+  section.k-demo
+    h2.k-demo__title With an icon and a count
+    div.k-preview
+      span.ui-badge.ui-badge-success
+        span.k-icon.k-icon-check
+        | Verified
+      span.ui-badge.ui-badge-default 8
+      span.ui-badge.ui-badge-outline 99+
+  section.k-demo
+    h2.k-demo__title Status pills
+    div.k-preview
+      span.ui-pill.ui-pill-success Paid
+      span.ui-pill.ui-pill-warning Pending
+      span.ui-pill.ui-pill-destructive Failed
+      span.ui-pill.ui-pill-info Refunded
+      span.ui-pill.ui-pill-outline Draft

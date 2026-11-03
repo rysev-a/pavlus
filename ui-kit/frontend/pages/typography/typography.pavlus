@@ -1,0 +1,28 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Headings and text
+    div.k-preview.k-preview--block
+      div.k-prose
+        h1 The Joke Tax Chronicles
+        p.lead Once upon a time, in a far-off land, there was a very lazy king who spent all day lounging on his throne.
+        h2 The King's Plan
+        p The king thought long and hard, and finally came up with a brilliant plan: he would tax the jokes in the kingdom.
+        h3 The Joke Tax
+        blockquote "After all," he said, "everyone enjoys a good joke, so it is only fair that they pay for the privilege."
+        h4 People stopped telling jokes
+        ul
+          li 1st level of puns: 5 gold coins
+          li 2nd level of jokes: 10 gold coins
+          li 3rd level of one-liners: 20 gold coins
+        p Use
+          code  npm run dev
+          |  to start, and read
+          code  README.md
+          |  for the rest.
+  section.k-demo
+    h2.k-demo__title Sizes
+    div.k-preview.k-preview--block
+      div.k-prose
+        p.large Are you absolutely sure?
+        p.small Email address
+        p.muted Enter your email address.

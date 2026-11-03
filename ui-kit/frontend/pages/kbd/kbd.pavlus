@@ -1,0 +1,28 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Keys
+    div.k-preview
+      kbd.k-kbd Ctrl
+      kbd.k-kbd Shift
+      kbd.k-kbd Alt
+      kbd.k-kbd Esc
+      kbd.k-kbd Enter
+  section.k-demo
+    h2.k-demo__title Combination
+    div.k-preview
+      span.k-kbd-group
+        kbd.k-kbd Ctrl
+        | +
+        kbd.k-kbd B
+      span.k-kbd-group
+        kbd.k-kbd ⌘
+        kbd.k-kbd K
+  section.k-demo
+    h2.k-demo__title In a button and in a tooltip
+    div.k-preview
+      button.ui-button.ui-button-outline.ui-button-sm(type="button")
+        | Accept
+        kbd.k-kbd ⏎
+      button.ui-button.ui-button-outline.ui-button-sm(type="button")
+        | Cancel
+        kbd.k-kbd Esc

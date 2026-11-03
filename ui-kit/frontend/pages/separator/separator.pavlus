@@ -1,0 +1,14 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Horizontal
+    div.k-preview.k-preview--block
+      div.k-narrow
+        strong pavlus ui-kit
+        p.k-hint An open-source UI kit.
+        div.ui-separator.ui-separator-horizontal(role="separator" style="margin: 16px 0")
+        div.k-row(style="gap: 12px; height: 20px; font-size: 14px")
+          span Blog
+          div.ui-separator.ui-separator-vertical(role="separator")
+          span Docs
+          div.ui-separator.ui-separator-vertical(role="separator")
+          span Source

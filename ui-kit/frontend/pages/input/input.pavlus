@@ -1,0 +1,32 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default
+    div.k-preview
+      div.k-narrow
+        input.ui-input(type="email" placeholder="Email")
+  section.k-demo
+    h2.k-demo__title With a label and a hint
+    div.k-preview
+      div.ui-field.k-narrow
+        label.ui-label(for="in-email") Email
+        input.ui-input#in-email(type="email" placeholder="you@example.com")
+        p.ui-field-description Enter your email address.
+  section.k-demo
+    h2.k-demo__title File
+    div.k-preview
+      div.ui-field.k-narrow
+        label.ui-label(for="in-file") Picture
+        input.ui-input#in-file(type="file")
+  section.k-demo
+    h2.k-demo__title Disabled and invalid
+    div.k-preview
+      div.k-narrow
+        input.ui-input(type="text" placeholder="Disabled" disabled)
+      div.k-narrow
+        input.ui-input(type="text" value="Invalid value" aria-invalid="true")
+  section.k-demo
+    h2.k-demo__title With a button
+    div.k-preview
+      div.k-field-row.k-narrow
+        input.ui-input(type="email" placeholder="Email")
+        button.ui-button.ui-button-default(type="button") Subscribe

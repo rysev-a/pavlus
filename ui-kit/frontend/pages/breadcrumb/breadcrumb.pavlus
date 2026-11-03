@@ -1,0 +1,54 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default
+    div.k-preview
+      nav.ui-breadcrumb(aria-label="Breadcrumb")
+        ol.ui-breadcrumb-list
+          li.ui-breadcrumb-item
+            a.ui-breadcrumb-link(href="/") Home
+          li.ui-breadcrumb-separator
+            span.k-icon.k-icon-chevron-right
+          li.ui-breadcrumb-item
+            a.ui-breadcrumb-link(href="/") Components
+          li.ui-breadcrumb-separator
+            span.k-icon.k-icon-chevron-right
+          li.ui-breadcrumb-item
+            span.ui-breadcrumb-page(aria-current="page") Breadcrumb
+  section.k-demo
+    h2.k-demo__title Collapsed
+    div.k-preview
+      nav.ui-breadcrumb(aria-label="Breadcrumb")
+        ol.ui-breadcrumb-list
+          li.ui-breadcrumb-item
+            a.ui-breadcrumb-link(href="/") Home
+          li.ui-breadcrumb-separator
+            span.k-icon.k-icon-chevron-right
+          li.ui-breadcrumb-item
+            details.ui-breadcrumb-more
+              summary.ui-breadcrumb-more-trigger(aria-label="More pages")
+                span.k-icon.k-icon-more
+              div.ui-breadcrumb-more-panel
+                a(href="/") Documentation
+                a(href="/") Themes
+                a(href="/") GitHub
+          li.ui-breadcrumb-separator
+            span.k-icon.k-icon-chevron-right
+          li.ui-breadcrumb-item
+            a.ui-breadcrumb-link(href="/") Components
+          li.ui-breadcrumb-separator
+            span.k-icon.k-icon-chevron-right
+          li.ui-breadcrumb-item
+            span.ui-breadcrumb-page(aria-current="page") Breadcrumb
+  section.k-demo
+    h2.k-demo__title Slash separator
+    div.k-preview
+      nav.ui-breadcrumb(aria-label="Breadcrumb")
+        ol.ui-breadcrumb-list
+          li.ui-breadcrumb-item
+            a.ui-breadcrumb-link(href="/") Home
+          li.ui-breadcrumb-separator /
+          li.ui-breadcrumb-item
+            a.ui-breadcrumb-link(href="/") Settings
+          li.ui-breadcrumb-separator /
+          li.ui-breadcrumb-item
+            span.ui-breadcrumb-page(aria-current="page") Profile

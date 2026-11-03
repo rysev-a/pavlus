@@ -1,0 +1,20 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default
+    div.k-preview
+      div.k-narrow
+        textarea.ui-textarea-control(placeholder="Type your message here." rows="4")
+  section.k-demo
+    h2.k-demo__title With a label and a hint
+    div.k-preview
+      div.ui-textarea.k-narrow
+        label.ui-textarea-label(for="ta-bio") Your message
+        textarea.ui-textarea-control#ta-bio(placeholder="Tell us a little bit about yourself" rows="4")
+        p.ui-field-description Your message will be copied to the support team.
+  section.k-demo
+    h2.k-demo__title Disabled and invalid
+    div.k-preview
+      div.k-narrow
+        textarea.ui-textarea-control(placeholder="Disabled" disabled)
+      div.k-narrow
+        textarea.ui-textarea-control(aria-invalid="true") This text is too short.

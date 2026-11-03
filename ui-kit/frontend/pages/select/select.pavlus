@@ -1,0 +1,21 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default
+    div.k-preview
+      div.k-popover-host
+        button.ui-button.ui-button-outline(type="button" role="combobox" aria-expanded={open ? "true" : "false"} style="width: 220px; justify-content: space-between" @click=toggle)
+          | {value ? value : "Select a fruit"}
+          span.k-icon.k-icon-chevron-down
+        if open
+          div.k-dismiss(@click=close)
+          div.ui-navigation-panel.k-above(role="listbox" style="width: 220px")
+            div.k-menu-label Fruits
+            for option in options key option
+              button(type="button" role="option" aria-selected={option === value ? "true" : "false"} @click=choose(option))
+                | {option}
+                if option === value
+                  span.k-icon.k-icon-check.k-menu-shortcut
+    p.k-hint
+      | Value:
+      |
+      span.k-state {value ? value : "nothing"}

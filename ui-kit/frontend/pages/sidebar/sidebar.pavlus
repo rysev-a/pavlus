@@ -1,0 +1,63 @@
+// The sidebar of an application shell, shown in a frame. This site's own
+// navigation (on the left) is the same markup.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Groups, nested menu and account
+    div.k-sidebar-frame
+      nav.ui-sidebar(aria-label="Example sidebar")
+        div.ui-sidebar-header
+          div.ui-brand
+            span.ui-brand-mark A
+            span
+              | Acme Inc
+              small Enterprise
+        div.ui-sidebar-content
+          div.ui-sidebar-group
+            p.ui-sidebar-group-label Platform
+            ul.ui-sidebar-menu
+              li
+                a.ui-sidebar-button(href="/" data-active="true")
+                  span.ui-sidebar-icon
+                    span.k-icon.k-icon-folder
+                  span.ui-sidebar-label Projects
+              li
+                details.ui-sidebar-collapsible(open)
+                  summary.ui-sidebar-button
+                    span.ui-sidebar-icon
+                      span.k-icon.k-icon-settings
+                    span.ui-sidebar-label Settings
+                    span.ui-sidebar-chevron
+                      span.k-icon.k-icon-chevron-right
+                  ul.ui-sidebar-sub
+                    li
+                      a.ui-sidebar-sub-button(href="/") General
+                    li
+                      a.ui-sidebar-sub-button(href="/") Team
+                    li
+                      a.ui-sidebar-sub-button(href="/") Billing
+          div.ui-sidebar-group
+            p.ui-sidebar-group-label Support
+            ul.ui-sidebar-menu
+              li
+                a.ui-sidebar-button(href="/")
+                  span.ui-sidebar-icon
+                    span.k-icon.k-icon-mail
+                  span.ui-sidebar-label Feedback
+              li
+                a.ui-sidebar-button(href="/")
+                  span.ui-sidebar-icon
+                    span.k-icon.k-icon-bell
+                  span.ui-sidebar-label Notifications
+        div.ui-sidebar-footer
+          details.ui-sidebar-account
+            summary.ui-sidebar-account-trigger
+              span.ui-sidebar-avatar AL
+              span.ui-sidebar-account-text
+                strong Ann Lee
+                small ann@example.com
+              span.k-icon.k-icon-chevrons-up-down
+            div.ui-sidebar-account-panel
+              button(type="button") Account
+              button(type="button") Billing
+              button(type="button") Log out
+      div.k-sidebar-frame__main The page goes here.

@@ -1,0 +1,41 @@
+// Native <details> menus in a bar: the browser opens and closes them.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Application menu
+    div.k-preview
+      div.ui-menubar(role="menubar")
+        details.ui-dropdown-menu
+          summary.ui-navigation-trigger File
+          div.ui-navigation-panel
+            button(type="button")
+              | New Tab
+              span.k-menu-shortcut ⌘T
+            button(type="button")
+              | New Window
+              span.k-menu-shortcut ⌘N
+            div.k-menu-separator
+            button(type="button")
+              | Print...
+              span.k-menu-shortcut ⌘P
+        details.ui-dropdown-menu
+          summary.ui-navigation-trigger Edit
+          div.ui-navigation-panel
+            button(type="button")
+              | Undo
+              span.k-menu-shortcut ⌘Z
+            button(type="button")
+              | Redo
+              span.k-menu-shortcut ⇧⌘Z
+            div.k-menu-separator
+            button(type="button") Cut
+            button(type="button") Copy
+            button(type="button") Paste
+        details.ui-dropdown-menu
+          summary.ui-navigation-trigger View
+          div.ui-navigation-panel
+            button(type="button") Always Show Bookmarks Bar
+            button(type="button") Always Show Full URLs
+            div.k-menu-separator
+            button(type="button")
+              | Reload
+              span.k-menu-shortcut ⌘R

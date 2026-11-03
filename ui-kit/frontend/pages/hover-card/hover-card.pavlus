@@ -1,0 +1,15 @@
+// Shown by CSS on hover and focus: no logic.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Hover a link
+    div.k-preview(style="padding-top: 120px")
+      span.ui-hover-card(tabindex="0")
+        a.ui-button.ui-button-link(href="https://github.com/rysev-a/pavlus" target="_blank" rel="noreferrer") @pavlus
+        div.ui-hover-card-content
+          div.k-row(style="align-items: flex-start; gap: 12px; flex-wrap: nowrap")
+            span.ui-avatar
+              span.ui-avatar-fallback PV
+            div(style="display: grid; gap: 4px")
+              strong @pavlus
+              span The framework where application code is pure functions and the dirty work lives in plugins.
+              span.k-hint Joined November 2026

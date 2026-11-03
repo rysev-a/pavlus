@@ -1,0 +1,50 @@
+// Native radios and checkboxes: the browser keeps their state, so no logic.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Single
+    div.k-preview
+      fieldset.ui-toggle-group
+        legend.ui-toggle-group-label.ui-sr-only Alignment
+        div.ui-toggle-group-options
+          div.ui-toggle-option
+            input.ui-toggle-option-input#tg-left(type="radio" name="align" checked)
+            label.ui-toggle-option-label(for="tg-left") Left
+          div.ui-toggle-option
+            input.ui-toggle-option-input#tg-center(type="radio" name="align")
+            label.ui-toggle-option-label(for="tg-center") Center
+          div.ui-toggle-option
+            input.ui-toggle-option-input#tg-right(type="radio" name="align")
+            label.ui-toggle-option-label(for="tg-right") Right
+  section.k-demo
+    h2.k-demo__title Multiple
+    div.k-preview
+      fieldset.ui-toggle-group
+        legend.ui-toggle-group-label.ui-sr-only Text style
+        div.ui-toggle-group-options
+          div.ui-toggle-option
+            input.ui-toggle-option-input#tg-bold(type="checkbox" checked)
+            label.ui-toggle-option-label(for="tg-bold")
+              span.k-icon.k-icon-bold
+              | Bold
+          div.ui-toggle-option
+            input.ui-toggle-option-input#tg-italic(type="checkbox")
+            label.ui-toggle-option-label(for="tg-italic")
+              span.k-icon.k-icon-italic
+              | Italic
+          div.ui-toggle-option
+            input.ui-toggle-option-input#tg-underline(type="checkbox")
+            label.ui-toggle-option-label(for="tg-underline")
+              span.k-icon.k-icon-underline
+              | Underline
+  section.k-demo
+    h2.k-demo__title Disabled
+    div.k-preview
+      fieldset.ui-toggle-group
+        legend.ui-toggle-group-label.ui-sr-only Disabled
+        div.ui-toggle-group-options
+          div.ui-toggle-option
+            input.ui-toggle-option-input#tg-d1(type="radio" name="dis" disabled)
+            label.ui-toggle-option-label(for="tg-d1") One
+          div.ui-toggle-option
+            input.ui-toggle-option-input#tg-d2(type="radio" name="dis" disabled)
+            label.ui-toggle-option-label(for="tg-d2") Two

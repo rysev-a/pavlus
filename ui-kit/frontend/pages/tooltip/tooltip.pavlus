@@ -1,0 +1,12 @@
+// Shown by CSS on hover and focus: no logic.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Hover or focus a button
+    div.k-preview(style="padding-top: 56px")
+      span.ui-tooltip
+        button.ui-button.ui-button-outline(type="button") Hover
+        span.ui-tooltip-content(role="tooltip") Add to library
+      span.ui-tooltip
+        button.ui-button.ui-button-outline.ui-button-icon(type="button" aria-label="Add")
+          span.k-icon.k-icon-plus
+        span.ui-tooltip-content(role="tooltip") Add an item

@@ -1,0 +1,54 @@
+// A page without logic: only a template. Its title comes from the registry.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Variants
+    div.k-preview
+      button.ui-button.ui-button-default(type="button") Default
+      button.ui-button.ui-button-secondary(type="button") Secondary
+      button.ui-button.ui-button-outline(type="button") Outline
+      button.ui-button.ui-button-ghost(type="button") Ghost
+      button.ui-button.ui-button-destructive(type="button") Destructive
+      button.ui-button.ui-button-link(type="button") Link
+    p.k-hint Classes: ui-button + ui-button-default | secondary | outline | ghost | destructive | link
+  section.k-demo
+    h2.k-demo__title Status colors
+    div.k-preview
+      button.ui-button.ui-button-success(type="button") Success
+      button.ui-button.ui-button-warning(type="button") Warning
+      button.ui-button.ui-button-info(type="button") Info
+  section.k-demo
+    h2.k-demo__title Sizes
+    div.k-preview
+      button.ui-button.ui-button-default.ui-button-xs(type="button") Extra small
+      button.ui-button.ui-button-default.ui-button-sm(type="button") Small
+      button.ui-button.ui-button-default(type="button") Default
+      button.ui-button.ui-button-default.ui-button-lg(type="button") Large
+    div.k-preview
+      button.ui-button.ui-button-outline.ui-button-icon-xs(type="button" aria-label="Add")
+        span.k-icon.k-icon-plus
+      button.ui-button.ui-button-outline.ui-button-icon-sm(type="button" aria-label="Add")
+        span.k-icon.k-icon-plus
+      button.ui-button.ui-button-outline.ui-button-icon(type="button" aria-label="Add")
+        span.k-icon.k-icon-plus
+      button.ui-button.ui-button-outline.ui-button-icon-lg(type="button" aria-label="Add")
+        span.k-icon.k-icon-plus
+  section.k-demo
+    h2.k-demo__title With an icon
+    div.k-preview
+      button.ui-button.ui-button-outline.ui-button-sm(type="button")
+        span.k-icon.k-icon-mail
+        | Login with email
+      button.ui-button.ui-button-default(type="button")
+        span.k-icon.k-icon-plus
+        | New project
+  section.k-demo
+    h2.k-demo__title Loading and disabled
+    div.k-preview
+      button.ui-button.ui-button-default.ui-button-loading(type="button" disabled aria-busy="true")
+        span.k-icon.k-icon-loader.ui-button-spinner
+        | Please wait
+      button.ui-button.ui-button-outline(type="button" disabled) Disabled
+  section.k-demo
+    h2.k-demo__title As a link
+    div.k-preview
+      a.ui-button.ui-button-outline(href="https://github.com/rysev-a/pavlus" target="_blank" rel="noreferrer") Open the repository

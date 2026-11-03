@@ -1,0 +1,19 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default
+    div.k-preview.k-preview--block
+      div.ui-empty-state
+        span.ui-dashboard-stat-icon
+          span.k-icon.k-icon-folder.k-icon-lg
+        strong No projects yet
+        p You have not created any projects yet. Get started by creating your first one.
+        div.k-row(style="margin-top: 12px")
+          button.ui-button.ui-button-default(type="button") Create project
+          button.ui-button.ui-button-outline(type="button") Import project
+  section.k-demo
+    h2.k-demo__title Search without results
+    div.k-preview.k-preview--block
+      div.ui-empty-state
+        strong No results found
+        p Try adjusting your search or filter to find what you are looking for.
+        button.ui-button.ui-button-link.ui-button-sm(type="button") Clear filters

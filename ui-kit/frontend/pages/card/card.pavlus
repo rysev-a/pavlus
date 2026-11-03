@@ -1,0 +1,67 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Login
+    div.k-preview.k-preview--center
+      div.ui-card.k-narrow
+        div.ui-card-header
+          h3.ui-card-title Login to your account
+          p.ui-card-description Enter your email below to login.
+          div.ui-card-action
+            button.ui-button.ui-button-link.ui-button-sm(type="button") Sign Up
+        div.ui-card-content
+          div.ui-form
+            div.ui-field
+              label.ui-label(for="cd-email") Email
+              input.ui-input#cd-email(type="email" placeholder="m@example.com")
+            div.ui-field
+              label.ui-label(for="cd-password") Password
+              input.ui-input#cd-password(type="password")
+        div.ui-card-footer
+          button.ui-button.ui-button-default(type="button" style="flex: 1") Login
+          button.ui-button.ui-button-outline(type="button" style="flex: 1") Login with Google
+  section.k-demo
+    h2.k-demo__title Notifications
+    div.k-preview.k-preview--center
+      div.ui-card.k-narrow
+        div.ui-card-header
+          h3.ui-card-title Notifications
+          p.ui-card-description You have 3 unread messages.
+        div.ui-card-content
+          ul.ui-dashboard-activity
+            li
+              span New comment on your post
+              span.ui-dashboard-activity-when 1 hour ago
+            li
+              span Your export is ready
+              span.ui-dashboard-activity-when 2 hours ago
+            li
+              span Payment received
+              span.ui-dashboard-activity-when Yesterday
+        div.ui-card-footer
+          button.ui-button.ui-button-outline.ui-button-sm(type="button")
+            span.k-icon.k-icon-check
+            | Mark all as read
+  section.k-demo
+    h2.k-demo__title Stat cards
+    div.ui-stat-grid
+      div.ui-stat-card
+        div.ui-stat-card-top
+          span.ui-stat-card-icon.ui-tone-success
+            span.k-icon.k-icon-user
+        div.ui-stat-card-value 2,350
+        div.ui-stat-card-label New customers
+        span.ui-stat-card-hint +180 since last hour
+      div.ui-stat-card
+        div.ui-stat-card-top
+          span.ui-stat-card-icon.ui-tone-info
+            span.k-icon.k-icon-mail
+        div.ui-stat-card-value 12,234
+        div.ui-stat-card-label Messages
+        span.ui-stat-card-hint +19% from last month
+      div.ui-stat-card
+        div.ui-stat-card-top
+          span.ui-stat-card-icon.ui-tone-warning
+            span.k-icon.k-icon-bell
+        div.ui-stat-card-value 573
+        div.ui-stat-card-label Active now
+        span.ui-stat-card-hint +201 since last hour

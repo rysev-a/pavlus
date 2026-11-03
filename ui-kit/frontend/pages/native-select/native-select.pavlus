@@ -1,0 +1,22 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default
+    div.k-preview
+      div.ui-select.k-narrow
+        label.ui-select-label(for="ns-fruit") Fruit
+        select.ui-select-control#ns-fruit
+          option(value="") Select a fruit
+          option(value="apple") Apple
+          option(value="banana") Banana
+          option(value="blueberry") Blueberry
+          option(value="grapes") Grapes
+          option(value="pineapple") Pineapple
+  section.k-demo
+    h2.k-demo__title Disabled and invalid
+    div.k-preview
+      div.k-narrow
+        select.ui-select-control(disabled)
+          option Disabled
+      div.k-narrow
+        select.ui-select-control(aria-invalid="true")
+          option Invalid

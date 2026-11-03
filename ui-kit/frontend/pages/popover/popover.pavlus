@@ -1,0 +1,18 @@
+// A native <details>: the browser opens and closes it, so no logic.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Dimensions
+    div.k-preview
+      details.ui-popover
+        summary.ui-navigation-trigger Open popover
+        div.ui-navigation-panel
+          div.ui-form(style="gap: 12px")
+            div
+              strong Dimensions
+              p.k-hint Set the dimensions for the layer.
+            div.ui-field
+              label.ui-label(for="po-width") Width
+              input.ui-input#po-width(type="text" value="100%")
+            div.ui-field
+              label.ui-label(for="po-height") Height
+              input.ui-input#po-height(type="text" value="25px")

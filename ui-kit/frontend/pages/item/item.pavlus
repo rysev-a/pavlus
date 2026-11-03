@@ -1,0 +1,42 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default, outline and muted
+    div.k-preview.k-preview--column
+      div.k-item
+        div.k-item__content
+          span.k-item__title Basic item
+          span.k-item__description A simple item with a title and a description.
+        div.k-item__actions
+          button.ui-button.ui-button-outline.ui-button-sm(type="button") Action
+      div.k-item.k-item--outline
+        div.k-item__content
+          span.k-item__title Outline item
+          span.k-item__description Same item, transparent background.
+        div.k-item__actions
+          button.ui-button.ui-button-outline.ui-button-sm(type="button") Action
+      div.k-item.k-item--muted
+        div.k-item__content
+          span.k-item__title Muted item
+          span.k-item__description Same item, muted background.
+        div.k-item__actions
+          button.ui-button.ui-button-outline.ui-button-sm(type="button") Action
+  section.k-demo
+    h2.k-demo__title With media
+    div.k-preview.k-preview--column
+      div.k-item
+        div.k-item__media
+          span.k-icon.k-icon-bell
+        div.k-item__content
+          span.k-item__title Security alert
+          span.k-item__description New login from a new device.
+        div.k-item__actions
+          span.ui-badge.ui-badge-warning Review
+      div.k-item
+        span.ui-avatar
+          span.ui-avatar-fallback AL
+        div.k-item__content
+          span.k-item__title Ann Lee
+          span.k-item__description Last seen 2 hours ago
+        div.k-item__actions
+          button.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" aria-label="More")
+            span.k-icon.k-icon-more

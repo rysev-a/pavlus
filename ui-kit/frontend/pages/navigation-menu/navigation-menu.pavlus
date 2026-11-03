@@ -1,0 +1,19 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Site navigation
+    div.k-preview
+      nav.ui-navigation-menu
+        details.ui-dropdown-menu
+          summary.ui-navigation-trigger Getting started
+          div.ui-navigation-panel(style="min-width: 260px")
+            a(href="/") Introduction
+            a(href="/") Installation
+            a(href="/") Typography
+        details.ui-dropdown-menu
+          summary.ui-navigation-trigger Components
+          div.ui-navigation-panel(style="min-width: 260px")
+            a(href="/") Alert Dialog
+            a(href="/") Hover Card
+            a(href="/") Progress
+            a(href="/") Tabs
+        a(href="/") Documentation

@@ -1,0 +1,24 @@
+// A modal on state: `open` decides if it is in the DOM. The scrim and the
+// panel are plain elements (no <dialog>.showModal(), which is an imperative call).
+section.k-page
+  section.k-demo
+    h2.k-demo__title Edit profile
+    div.k-preview
+      button.ui-button.ui-button-outline(type="button" @click=show) Edit Profile
+  if open
+    div.k-modal
+      div.k-modal__scrim(@click=hide)
+      div.ui-dialog(role="dialog" aria-modal="true" aria-labelledby="dlg-title")
+        div.ui-dialog-header
+          h2.ui-dialog-title#dlg-title Edit profile
+          p.ui-dialog-description Make changes to your profile here. Click save when you are done.
+        div.ui-form(style="margin-top: 16px")
+          div.ui-field
+            label.ui-label(for="dlg-name") Name
+            input.ui-input#dlg-name(type="text" value="Pedro Duarte")
+          div.ui-field
+            label.ui-label(for="dlg-username") Username
+            input.ui-input#dlg-username(type="text" value="@peduarte")
+        div.ui-dialog-footer
+          button.ui-dialog-close(type="button" @click=hide) Cancel
+          button.ui-button.ui-button-default(type="button" @click=hide) Save changes

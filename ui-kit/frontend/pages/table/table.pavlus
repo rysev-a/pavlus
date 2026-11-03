@@ -1,0 +1,25 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Invoices
+    div.k-preview.k-preview--block
+      div.ui-table-container
+        table.ui-table
+          caption.ui-table-caption A list of your recent invoices.
+          thead.ui-table-header
+            tr.ui-table-row
+              th.ui-table-head Invoice
+              th.ui-table-head Status
+              th.ui-table-head Method
+              th.ui-table-head(style="text-align: right") Amount
+          tbody.ui-table-body
+            for invoice in invoices key invoice.id
+              tr.ui-table-row
+                td.ui-table-cell.ui-cell-mono {invoice.id}
+                td.ui-table-cell
+                  span.ui-pill(class:ui-pill-success={invoice.status === "Paid"} class:ui-pill-warning={invoice.status === "Pending"} class:ui-pill-destructive={invoice.status === "Unpaid"}) {invoice.status}
+                td.ui-table-cell {invoice.method}
+                td.ui-table-cell.ui-cell-number(style="text-align: right") {invoice.amount}
+          tfoot.ui-table-footer
+            tr.ui-table-row
+              td.ui-table-cell(colspan="3") Total
+              td.ui-table-cell.ui-cell-number(style="text-align: right") {total}
