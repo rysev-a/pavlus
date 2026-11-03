@@ -1,0 +1,24 @@
+// A reply composer, to embed. State = the props: `draft` (the text, seeds
+// the box), `canned` ([{ id, label }]), `statuses` (statusOptions(): the status
+// to set when sending), `internal` (true: it is a note), `error`. Events, with
+// the name of the embed in front: `type` (the input), `insert` (the canned id),
+// `setstatus` (the select), `note` (the switch), `send`.
+div.k-rbox
+  div.k-rbox__canned
+    small Canned replies
+    for item in canned key item.id
+      button.ui-button.ui-button-outline.ui-button-xs(type="button" @click=insert(item.id)) {item.label}
+  div.ui-field(data-invalid={error ? "true" : null})
+    textarea.ui-textarea-control.k-rbox__text(rows="4" aria-label="Reply" placeholder={internal ? "Write an internal note, only the team sees it" : "Write a reply to the customer"} value=draft @input=type)
+    if error
+      p.ui-field-error {error}
+  div.k-rbox__foot
+    label.k-rbox__switch
+      input(type="checkbox" checked={internal} @change=note)
+      span Internal note
+    label.k-rbox__status
+      span Then set
+      select.ui-select-control(aria-label="Status after sending" @change=setstatus)
+        for option in statuses key option.value
+          option(value=option.value selected={option.selected}) {option.label}
+    button.ui-button.ui-button-default.k-rbox__send(type="button" @click=send) {internal ? "Add note" : "Send reply"}

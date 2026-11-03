@@ -1,0 +1,14 @@
+// A choice of layouts, to embed. State = the props: `options`
+// (templateOptions(): { id, name, description, selected }). The `id` also
+// picks the wireframe (`newsletter`, `promo`, `announcement`). Events, with the
+// name of the embed in front: `pick` (the id).
+div.k-tpick(role="radiogroup" aria-label="Layout")
+  for option in options key option.id
+    button.k-tpick__card(type="button" role="radio" aria-checked={option.selected ? "true" : "false"} class:k-tpick__card--sel={option.selected} @click=pick(option.id))
+      div.k-tpick__wire(data-layout={option.id})
+        span.k-tpick__w1
+        span.k-tpick__w2
+        span.k-tpick__w3
+        span.k-tpick__w4
+      strong {option.name}
+      small {option.description}

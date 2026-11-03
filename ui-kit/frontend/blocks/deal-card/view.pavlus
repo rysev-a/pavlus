@@ -1,0 +1,37 @@
+// A sales pipeline of deal cards, to embed. State = the props: `columns`
+// (dealBoard(): { id, title, tone, count, total, weighted, deals: [{ id,
+// title, company, amount, prob, owner, close, late, canLeft, canRight }] }).
+// Events, with the name of the embed in front: `move` (deal id, "left" or
+// "right") and `open` (deal id).
+div.k-deal
+  for col in columns key col.id
+    section(class="k-deal__col k-adm-t-{col.tone}")
+      header.k-deal__head
+        div.k-deal__headtop
+          h3.k-deal__stage
+            span.k-deal__dot
+            | {col.title}
+          span.ui-badge.ui-badge-secondary {col.count}
+        strong.k-deal__total {col.total}
+        small.k-deal__weighted {col.weighted}
+      div.k-deal__cards
+        for deal in col.deals key deal.id
+          article.k-deal__card(@click=open(deal.id))
+            strong.k-deal__name {deal.title}
+            p.k-deal__company {deal.company}
+            div.k-deal__money
+              span.k-deal__amount {deal.amount}
+              span.k-deal__prob {deal.prob}%
+            div.ui-progress.ui-progress-sm.k-deal__bar
+              div.ui-progress-indicator(style="width: {deal.prob}%")
+            footer.k-deal__foot
+              span.ui-avatar.ui-avatar-sm
+                span.ui-avatar-fallback {deal.owner}
+              small.k-deal__close(class:k-deal__close--late={deal.late}) {deal.close}
+              div.k-deal__moves
+                button.ui-button.ui-button-outline.ui-button-icon-xs(type="button" aria-label="Move back" disabled={!deal.canLeft} @click.stop=move(deal.id, "left"))
+                  span.k-icon.k-ai-arrow-left
+                button.ui-button.ui-button-outline.ui-button-icon-xs(type="button" aria-label="Move forward" disabled={!deal.canRight} @click.stop=move(deal.id, "right"))
+                  span.k-icon.k-ai-arrow-right
+        if col.deals.length === 0
+          p.k-deal__empty No deals
