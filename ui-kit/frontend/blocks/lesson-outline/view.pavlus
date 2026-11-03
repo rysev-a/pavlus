@@ -1,0 +1,34 @@
+// A course outline, to embed. State = the props: `modules` (from
+// `buildOutline` in outline.ts): { id, title, summary, open, done, total, pct,
+// complete, lessons: [{ id, title, meta, status: done | current | open |
+// locked, pct }] }. Events, with the name of the embed in front: `toggle`
+// (the module id) and `open` (the lesson id).
+div.k-lout
+  for mod, m in modules key mod.id
+    section(class="k-lout__module" class:is-complete={mod.complete})
+      button.k-lout__head(type="button" aria-expanded={mod.open ? "true" : "false"} @click=toggle(mod.id))
+        span.k-lout__num {m + 1}
+        span.k-lout__titles
+          strong {mod.title}
+          small {mod.summary}
+        span.k-lout__count {mod.done}/{mod.total}
+        span(class="k-icon k-icon-chevron-down k-lout__chev" class:is-open={mod.open})
+      div.ui-progress.ui-progress-sm.k-lout__bar
+        div.ui-progress-indicator(style="width: {mod.pct}%")
+      if mod.open
+        ul.k-lout__lessons
+          for lesson in mod.lessons key lesson.id
+            li
+              button.k-lout__lesson(type="button" data-status={lesson.status} disabled={lesson.status === "locked"} @click=open(lesson.id))
+                span.k-lout__state
+                  if lesson.status === "done"
+                    span.k-icon.k-icon-check
+                  else if lesson.status === "locked"
+                    span.k-icon.k-ai-key
+                  else if lesson.status === "current"
+                    span.k-icon.k-ai-play
+                span.k-lout__lname
+                  strong {lesson.title}
+                  small {lesson.meta}
+                if lesson.status === "current"
+                  span.ui-badge.ui-badge-default Up next

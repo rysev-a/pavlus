@@ -1,0 +1,21 @@
+import Gaps from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Gaps in a sentence
+    div.k-preview.k-preview--column
+      +Gaps#words(...words)
+      div.k-row
+        button.ui-button.ui-button-default.ui-button-sm(type="button" @click=checkWords) Check
+        button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=showWords) Show the answers
+        if resultWords
+          span(class="ui-pill ui-pill-{resultWordsTone}") {resultWords}
+  section.k-demo
+    h2.k-demo__title Gaps in code
+    p.k-demo__note Several spellings can be accepted for one gap.
+    div.k-preview.k-preview--column
+      +Gaps#code(...code)
+      div.k-row
+        button.ui-button.ui-button-default.ui-button-sm(type="button" @click=checkCode) Check
+        if resultCode
+          span(class="ui-pill ui-pill-{resultCodeTone}") {resultCode}
