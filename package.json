@@ -1,0 +1,20 @@
+{
+  "name": "pavlus-workspace",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "framework",
+    "admin-app"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "format": "prettier --write \"**/*.ts\"",
+    "format:check": "prettier --check \"**/*.ts\"",
+    "docs:build": "node docs/site/scripts/build.ts",
+    "debug:sync-firefox": "node debug-panel/sync-firefox.mjs"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10"
+  }
+}

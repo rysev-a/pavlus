@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="1373" viewBox="0 0 1240 1373" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1240" height="1373" fill="#f6f8fa"/>
+<rect x="14" y="162" width="1212" height="52" rx="12" fill="rgba(124,58,237,0.05)"/>
+<text x="22" y="158" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" font-weight="600" xml:space="preserve">tick 1 — `mounted` (from createApp mount)</text>
+<rect x="14" y="538" width="1212" height="58" rx="12" fill="rgba(37,99,235,0.05)"/>
+<text x="22" y="534" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" font-weight="600" xml:space="preserve">tick 2 — outside the app: the network answers</text>
+<rect x="14" y="662" width="1212" height="52" rx="12" fill="rgba(124,58,237,0.05)"/>
+<text x="22" y="658" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" font-weight="600" xml:space="preserve">tick 3 — the reply is just another message</text>
+<rect x="14" y="974" width="1212" height="52" rx="12" fill="rgba(37,99,235,0.05)"/>
+<text x="22" y="970" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" font-weight="600" xml:space="preserve">tick 4 — the loop closes: a click becomes a message</text>
+<line x1="110" y1="104" x2="110" y2="1353" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<line x1="314" y1="104" x2="314" y2="1353" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<line x1="518" y1="104" x2="518" y2="1353" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<line x1="722" y1="104" x2="722" y2="1353" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<line x1="926" y1="104" x2="926" y2="1353" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<line x1="1130" y1="104" x2="1130" y2="1353" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<rect x="32" y="52" width="156" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="110" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">browser</text>
+<text x="110" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">DOM · events · fetch</text>
+<rect x="245.9" y="52" width="136.2" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="314" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">dom plugin</text>
+<text x="314" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">the only DOM code</text>
+<rect x="463" y="52" width="110" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="518" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">core</text>
+<text x="518" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">createApp()</text>
+<rect x="667" y="52" width="110" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="722" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">application</text>
+<text x="722" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">100% pure</text>
+<rect x="864.5" y="52" width="123" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="926" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">store plugin</text>
+<text x="926" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">state + history</text>
+<rect x="1075" y="52" width="110" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1130" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">http plugin</text>
+<text x="1130" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">requests</text>
+<text x="620" y="180" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#2563eb" text-anchor="middle" xml:space="preserve">app({ id: &quot;mounted&quot; }, { status:&quot;boot&quot;, users:[] })</text>
+<line x1="518" y1="188" x2="722" y2="188" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="722,188 713,184 713,192" fill="#2563eb"/>
+<rect x="736" y="210" width="379.09999999999997" height="68" rx="6" fill="#ffffff" stroke="#7c3aed"/>
+<text x="746" y="226" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">return [</text>
+<text x="746" y="239" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">  store.set(&quot;status&quot;, &quot;loading&quot;),</text>
+<text x="746" y="252" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">  http.request({ id:&quot;users&quot;, url:&quot;/api/users&quot;,</text>
+<text x="746" y="265" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">                 onSuccess:&quot;loaded&quot;, onError:&quot;failed&quot;}) ]</text>
+<line x1="722" y1="242" x2="736" y2="242" stroke="#7c3aed" stroke-dasharray="2 3"/>
+<text x="722" y="300" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7c3aed" text-anchor="middle" xml:space="preserve">handle(store.set &quot;status&quot; → &quot;loading&quot;)</text>
+<line x1="518" y1="308" x2="926" y2="308" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="926,308 917,304 917,312" fill="#7c3aed"/>
+<text x="824" y="338" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7c3aed" text-anchor="middle" xml:space="preserve">handle(http.request id:&quot;users&quot;) — fetch starts</text>
+<line x1="518" y1="346" x2="1130" y2="346" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="1130,346 1121,342 1121,350" fill="#7c3aed"/>
+<rect x="532" y="368" width="202.7" height="29" rx="6" fill="#ffffff" stroke="#059669"/>
+<text x="542" y="384" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">state changed → onState(next)</text>
+<line x1="518" y1="380.5" x2="532" y2="380.5" stroke="#059669" stroke-dasharray="2 3"/>
+<rect x="328" y="411" width="322.4" height="55" rx="6" fill="#ffffff" stroke="#d97706"/>
+<text x="338" y="427" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">diff → branch flip (else → if):</text>
+<text x="338" y="440" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">{&quot;op&quot;:&quot;clear&quot;,&quot;from&quot;:&quot;1s&quot;,&quot;to&quot;:&quot;1e&quot;}</text>
+<text x="338" y="453" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">{ op: &quot;insert&quot;, before: &quot;1e&quot;, nodes: [1 vnode] }</text>
+<line x1="314" y1="436.5" x2="328" y2="436.5" stroke="#d97706" stroke-dasharray="2 3"/>
+<text x="212" y="488" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#d97706" text-anchor="middle" xml:space="preserve">apply → “Loading…” appears</text>
+<line x1="314" y1="496" x2="110" y2="496" stroke="#d97706" stroke-width="1.6"/>
+<polygon points="110,496 119,500 119,492" fill="#d97706"/>
+<rect x="1042.5" y="548" width="177.5" height="42" rx="6" fill="#ffffff" stroke="#0ea5e9"/>
+<text x="1052.5" y="564" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">GET /api/users → 200 JSON</text>
+<text x="1052.5" y="577" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">[Ann, Bob, Clara]</text>
+<line x1="1130" y1="567" x2="1042.5" y2="567" stroke="#0ea5e9" stroke-dasharray="2 3"/>
+<text x="824" y="612" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#2563eb" text-anchor="middle" xml:space="preserve">ctx.dispatch { id:&quot;loaded&quot;, payload:{status:200, data:[…</text>
+<line x1="1130" y1="620" x2="518" y2="620" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="518,620 527,624 527,616" fill="#2563eb"/>
+<text x="620" y="680" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#2563eb" text-anchor="middle" xml:space="preserve">app({ id:&quot;loaded&quot;, payload }, state)</text>
+<line x1="518" y1="688" x2="722" y2="688" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="722,688 713,684 713,692" fill="#2563eb"/>
+<rect x="736" y="710" width="309.8" height="42" rx="6" fill="#ffffff" stroke="#7c3aed"/>
+<text x="746" y="726" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">return [ store.set(&quot;users&quot;, msg.payload.data),</text>
+<text x="746" y="739" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">         store.set(&quot;status&quot;, &quot;ready&quot;) ]</text>
+<line x1="722" y1="729" x2="736" y2="729" stroke="#7c3aed" stroke-dasharray="2 3"/>
+<text x="722" y="774" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7c3aed" text-anchor="middle" xml:space="preserve">handle(set users, set status) × 2</text>
+<line x1="518" y1="782" x2="926" y2="782" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="926,782 917,778 917,786" fill="#7c3aed"/>
+<rect x="532" y="804" width="202.7" height="29" rx="6" fill="#ffffff" stroke="#059669"/>
+<text x="542" y="820" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">state changed → onState(next)</text>
+<line x1="518" y1="816.5" x2="532" y2="816.5" stroke="#059669" stroke-dasharray="2 3"/>
+<rect x="328" y="847" width="341.3" height="55" rx="6" fill="#ffffff" stroke="#d97706"/>
+<text x="338" y="863" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">diff → branch flip (if → else), keyed list inserts:</text>
+<text x="338" y="876" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">{&quot;op&quot;:&quot;clear&quot;,&quot;from&quot;:&quot;1s&quot;,&quot;to&quot;:&quot;1e&quot;}</text>
+<text x="338" y="889" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">{ op: &quot;insert&quot;, before: &quot;1e&quot;, nodes: [11 vnodes] }</text>
+<line x1="314" y1="872.5" x2="328" y2="872.5" stroke="#d97706" stroke-dasharray="2 3"/>
+<text x="212" y="924" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#d97706" text-anchor="middle" xml:space="preserve">apply → three &lt;li&gt; rows rendered</text>
+<line x1="314" y1="932" x2="110" y2="932" stroke="#d97706" stroke-width="1.6"/>
+<polygon points="110,932 119,936 119,928" fill="#d97706"/>
+<text x="212" y="992" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#2563eb" text-anchor="middle" xml:space="preserve">user clicks a row's ×</text>
+<line x1="110" y1="1000" x2="314" y2="1000" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="314,1000 305,996 305,1004" fill="#2563eb"/>
+<text x="416" y="1030" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#2563eb" text-anchor="middle" xml:space="preserve">dispatch { id:&quot;remove&quot;, payload: 3, event:{type:&quot;click&quot;…</text>
+<line x1="314" y1="1038" x2="518" y2="1038" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="518,1038 509,1034 509,1042" fill="#2563eb"/>
+<text x="620" y="1068" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#2563eb" text-anchor="middle" xml:space="preserve">app({ id:&quot;remove&quot;, payload:3 }, state)</text>
+<line x1="518" y1="1076" x2="722" y2="1076" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="722,1076 713,1072 713,1080" fill="#2563eb"/>
+<rect x="736" y="1098" width="328.7" height="42" rx="6" fill="#ffffff" stroke="#7c3aed"/>
+<text x="746" y="1114" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">return [ store.set(&quot;users&quot;,</text>
+<text x="746" y="1127" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">           state.users.filter(u =&gt; u.id !== 3)) ]</text>
+<line x1="722" y1="1117" x2="736" y2="1117" stroke="#7c3aed" stroke-dasharray="2 3"/>
+<text x="722" y="1162" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7c3aed" text-anchor="middle" xml:space="preserve">handle(set users → two rows)</text>
+<line x1="518" y1="1170" x2="926" y2="1170" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="926,1170 917,1166 917,1174" fill="#7c3aed"/>
+<rect x="532" y="1192" width="202.7" height="29" rx="6" fill="#ffffff" stroke="#059669"/>
+<text x="542" y="1208" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">state changed → onState(next)</text>
+<line x1="518" y1="1204.5" x2="532" y2="1204.5" stroke="#059669" stroke-dasharray="2 3"/>
+<rect x="328" y="1235" width="278.3" height="42" rx="6" fill="#ffffff" stroke="#d97706"/>
+<text x="338" y="1251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">diff (keyed list):</text>
+<text x="338" y="1264" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">{&quot;op&quot;:&quot;remove&quot;,&quot;from&quot;:&quot;4[#3&quot;,&quot;to&quot;:&quot;4]#3&quot;}</text>
+<line x1="314" y1="1254" x2="328" y2="1254" stroke="#d97706" stroke-dasharray="2 3"/>
+<text x="212" y="1299" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#d97706" text-anchor="middle" xml:space="preserve">apply → Clara's row removed</text>
+<line x1="314" y1="1307" x2="110" y2="1307" stroke="#d97706" stroke-width="1.6"/>
+<polygon points="110,1307 119,1311 119,1303" fill="#d97706"/>
+<text x="20" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" font-weight="600" xml:space="preserve">Complex: mounted → HTTP → store → diff → browser</text>
+<text x="1220" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">users app — every patch below is the real compiler output</text>
+</svg>

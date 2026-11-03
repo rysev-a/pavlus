@@ -1,0 +1,120 @@
+================
+attribute forms
+================
+input(type="text" disabled value='v {x}' name=field.name)
+---
+
+(source_file
+  (element_line
+    (tag_name)
+    (attributes
+      (attribute
+        (attribute_name)
+        (attribute_string
+          (string_content)))
+      (attribute
+        (attribute_name))
+      (attribute
+        (attribute_name)
+        (attribute_string
+          (string_content)
+          (interpolation
+            (identifier))))
+      (attribute
+        (attribute_name)
+        (member_expression
+          (identifier)
+          (property_identifier))))))
+
+================
+events, modifiers and class toggles
+================
+button(@click=save @click.prevent.stop=remove(user.id, 2) @input={go(x)} class:on=a.b class:off={!c})
+---
+
+(source_file
+  (element_line
+    (tag_name)
+    (attributes
+      (event_attribute
+        (event_name)
+        (handler
+          (message_id)))
+      (event_attribute
+        (event_name)
+        (handler
+          (message_id)
+          (handler_arguments
+            (member_expression
+              (identifier)
+              (property_identifier))
+            (number))))
+      (event_attribute
+        (event_name)
+        (interpolation
+          (handler
+            (message_id)
+            (handler_arguments
+              (identifier)))))
+      (class_toggle
+        (class_toggle_name)
+        (member_expression
+          (identifier)
+          (property_identifier)))
+      (class_toggle
+        (class_toggle_name)
+        (interpolation
+          (unary_expression
+            (identifier)))))))
+
+================
+commas between attributes are allowed
+================
+a(href=x, title="t", id=y)
+---
+
+(source_file
+  (element_line
+    (tag_name)
+    (attributes
+      (attribute
+        (attribute_name)
+        (identifier))
+      (attribute
+        (attribute_name)
+        (attribute_string
+          (string_content)))
+      (attribute
+        (attribute_name)
+        (identifier)))))
+
+================
+bare values end at the next attribute
+================
+a(x=a.b y=f(1, 2) z=[1, 2] @e=go)
+---
+
+(source_file
+  (element_line
+    (tag_name)
+    (attributes
+      (attribute
+        (attribute_name)
+        (member_expression
+          (identifier)
+          (property_identifier)))
+      (attribute
+        (attribute_name)
+        (call_expression
+          (identifier)
+          (number)
+          (number)))
+      (attribute
+        (attribute_name)
+        (array
+          (number)
+          (number)))
+      (event_attribute
+        (event_name)
+        (handler
+          (message_id))))))

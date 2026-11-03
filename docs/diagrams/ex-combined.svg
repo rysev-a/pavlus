@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="1594" viewBox="0 0 1240 1594" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1240" height="1594" fill="#f6f8fa"/>
+<text x="24" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" font-weight="600" xml:space="preserve">8. A condition and attributes together</text>
+<text x="1216" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">combined.pavlus — compiled and run by the build with the real compiler</text>
+<rect x="24" y="60" width="330" height="636" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="38" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#1f2430" font-weight="600" xml:space="preserve">1 · the pavlus template</text>
+<text x="340" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" fill="#667085" text-anchor="end" xml:space="preserve">what you write</text>
+<text x="38" y="106" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 1  </tspan><tspan fill="#1d4ed8">form</tspan><tspan fill="#64748b">(</tspan><tspan fill="#7c3aed">@submit.prevent</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">save</tspan><tspan fill="#64748b">)</tspan></text>
+<text x="38" y="123" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 2  </tspan>  <tspan fill="#1d4ed8">input</tspan><tspan fill="#64748b">(</tspan><tspan fill="#b45309">value</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">name</tspan> <tspan fill="#b45309">disabled</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">{busy}</tspan> <tspan fill="#7c3aed">@inp…</tspan></text>
+<text x="38" y="140" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 3  </tspan>  <tspan fill="#1d4ed8">button</tspan><tspan fill="#64748b">(</tspan><tspan fill="#b45309">class:busy</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">busy</tspan> <tspan fill="#b45309">disabled</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">{busy}</tspan></text>
+<text x="38" y="157" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 4  </tspan>  <tspan fill="#7c3aed">if</tspan> error</text>
+<text x="38" y="174" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 5  </tspan>    <tspan fill="#1d4ed8">p</tspan>.<tspan fill="#b45309">error</tspan> <tspan fill="#dc2626">{error}</tspan></text>
+<rect x="400" y="60" width="816" height="636" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="414" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#1f2430" font-weight="600" xml:space="preserve">2 · middle data — AST + dependencies</text>
+<text x="1202" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" fill="#667085" text-anchor="end" xml:space="preserve">parser.parse() → analyze.nodeDeps()</text>
+<g transform="translate(408 98) scale(1)"><path d="M 387.59999999999997 264 C 387.59999999999997 288, 387.59999999999997 288, 387.59999999999997 312" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 582.6999999999999 472 C 582.6999999999999 496, 582.6999999999999 496, 582.6999999999999 520" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 602.5 342 C 602.5 379, 582.6999999999999 379, 582.6999999999999 416" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 602.5 264 C 602.5 288, 602.5 288, 602.5 312" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 338.09999999999997 160 C 338.09999999999997 184, 123.19999999999999 184, 123.19999999999999 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 338.09999999999997 160 C 338.09999999999997 184, 387.59999999999997 184, 387.59999999999997 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 338.09999999999997 160 C 338.09999999999997 184, 602.5 184, 602.5 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 338.09999999999997 30 C 338.09999999999997 67, 338.09999999999997 67, 338.09999999999997 104" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<rect x="0" y="208" width="246.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="123.19999999999999" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  input(value=name disabled…</text>
+<text x="123.19999999999999" y="238" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 1</text>
+<text x="123.19999999999999" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: busy, name</text>
+<rect x="264.4" y="312" width="246.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="387.59999999999997" y="329" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">text  {busy ? &quot;Saving...&quot; : &quot;…</text>
+<text x="387.59999999999997" y="342" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 3</text>
+<text x="387.59999999999997" y="355" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: busy</text>
+<rect x="264.4" y="208" width="246.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="387.59999999999997" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  button(class:busy=busy di…</text>
+<text x="387.59999999999997" y="238" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 2</text>
+<text x="387.59999999999997" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: busy</text>
+<rect x="528.8" y="520" width="107.8" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="582.6999999999999" y="537" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">text  {error}</text>
+<text x="582.6999999999999" y="550" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 6</text>
+<text x="582.6999999999999" y="563" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: error</text>
+<rect x="508.99999999999994" y="416" width="147.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="582.6999999999999" y="433" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  p.error {error}</text>
+<text x="582.6999999999999" y="446" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 5</text>
+<text x="582.6999999999999" y="459" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: error</text>
+<rect x="551.9" y="312" width="101.19999999999999" height="30" rx="6" fill="none" stroke="#98a2b3" stroke-dasharray="4 3"/>
+<text x="602.5" y="329" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">then — error</text>
+<rect x="551.9" y="208" width="101.19999999999999" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="602.5" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">if  if error</text>
+<text x="602.5" y="238" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 4</text>
+<text x="602.5" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: error</text>
+<rect x="228.09999999999997" y="104" width="220" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="338.09999999999997" y="121" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  form(@submit.prevent=save)</text>
+<text x="338.09999999999997" y="134" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 0</text>
+<text x="338.09999999999997" y="147" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: busy, error, name</text>
+<rect x="300.09999999999997" y="0" width="76" height="30" rx="6" fill="none" stroke="#98a2b3" stroke-dasharray="4 3"/>
+<text x="338.09999999999997" y="17" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">template</text>
+</g>
+<rect x="24" y="754" width="1192" height="525" rx="10" fill="#0f172a" stroke="#1e293b"/>
+<text x="38" y="777" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">3 · target functions</text>
+<text x="1202" y="777" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">codegen.generate()</text>
+<text x="38" y="798" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">const meta = { embeds: [], outlet: false };</text>
+<text x="38" y="813" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function render(state, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
+<text x="38" y="828" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;form&gt;</text>
+<text x="38" y="843" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 2: &lt;input&gt;</text>
+<text x="38" y="858" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  setAttr(inputAttrs, &quot;value&quot;, toAttr(state.name));</text>
+<text x="38" y="873" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  setAttr(inputAttrs, &quot;disabled&quot;, toAttr(state.busy));</text>
+<text x="38" y="888" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    t: &quot;el&quot;,</text>
+<text x="38" y="903" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 3: &lt;button&gt;</text>
+<text x="38" y="918" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  buttonChildren.push({ t: &quot;text&quot;, id: &quot;3&quot; + idSuffix, text: &quot;&quot; + toText((state.busy ? &quot;Saving...&quot; : &quot;Save&quot;)) });</text>
+<text x="38" y="933" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  setAttr(buttonAttrs, &quot;disabled&quot;, toAttr(state.busy));</text>
+<text x="38" y="948" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  setAttr(buttonAttrs, &quot;class&quot;, joinClasses([(state.busy ? &quot;busy&quot; : &quot;&quot;)]));</text>
+<text x="38" y="963" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    t: &quot;el&quot;,</text>
+<text x="38" y="978" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    events: {},</text>
+<text x="38" y="993" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 4: if</text>
+<text x="38" y="1008" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  formChildren.push({ t: &quot;marker&quot;, id: &quot;4s&quot; + idSuffix });</text>
+<text x="38" y="1023" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve"> </text>
+<text x="38" y="1038" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function diff(prev, next, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
+<text x="38" y="1053" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev === next) return patches;</text>
+<text x="38" y="1068" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;form&gt; (reads: name, busy, error)</text>
+<text x="38" y="1083" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev.name !== next.name || prev.busy !== next.busy || prev.error !== next.error) {</text>
+<text x="38" y="1098" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 2: &lt;input&gt; (reads: name, busy)</text>
+<text x="38" y="1113" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push(nextValue === null</text>
+<text x="38" y="1128" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push(nextDisabled === null</text>
+<text x="38" y="1143" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 3: &lt;button&gt; (reads: busy)</text>
+<text x="38" y="1158" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push(nextDisabled === null</text>
+<text x="38" y="1173" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push(nextClass === null</text>
+<text x="38" y="1188" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">      // line 3: text</text>
+<text x="38" y="1203" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      const prevText = &quot;&quot; + toText((prev.busy ? &quot;Saving...&quot; : &quot;Save&quot;));</text>
+<text x="38" y="1218" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      const nextText = &quot;&quot; + toText((next.busy ? &quot;Saving...&quot; : &quot;Save&quot;));</text>
+<text x="38" y="1233" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      if (prevText !== nextText) patches.push({ op: &quot;text&quot;, id: &quot;3&quot; + idSuffix, text: nextText });</text>
+<text x="38" y="1248" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 4: if (reads: error)</text>
+<text x="38" y="1271" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">full module below — this is the code the browser runs</text>
+<line x1="360" y1="378" x2="394" y2="378" stroke="#98a2b3" stroke-width="1.5"/>
+<polygon points="394,378 385,374 385,382" fill="#98a2b3"/>
+<text x="377" y="368" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">parse()</text>
+<line x1="808" y1="700" x2="808" y2="750" stroke="#98a2b3" stroke-width="1.5"/>
+<polygon points="808,750 812,741 804,741" fill="#98a2b3"/>
+<text x="822" y="730" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">analyze + codegen</text>
+<rect x="24" y="1337" width="560" height="233" rx="10" fill="#0f172a" stroke="#1e293b"/>
+<text x="38" y="1360" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">render(state) → VNodes</text>
+<text x="570" y="1360" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">real output</text>
+<text x="38" y="1379" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">el &lt;form&gt;</text>
+<text x="38" y="1394" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    events submit → save()</text>
+<text x="38" y="1409" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  el &lt;input&gt;  · #1</text>
+<text x="38" y="1424" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">      attrs  value=&quot;Ann&quot;</text>
+<text x="38" y="1439" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">      events input → changed()</text>
+<text x="38" y="1454" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  el &lt;button&gt;  · #2</text>
+<text x="38" y="1469" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    text &quot;Save&quot;  · #3</text>
+<text x="38" y="1484" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 4s</text>
+<text x="38" y="1499" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 4e</text>
+<text x="38" y="1524" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#d97706" font-weight="600" xml:space="preserve">→ DOM plugin build(vnodes) creates the nodes:</text>
+<text x="38" y="1540" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">&lt;form&gt;&lt;input value=&quot;Ann&quot;&gt;&lt;button&gt;Save&lt;/button&gt;&lt;/form&gt;</text>
+<rect x="640" y="1337" width="576" height="233" rx="10" fill="#0f172a" stroke="#1e293b"/>
+<text x="654" y="1360" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">diff(prev, next) → patches</text>
+<text x="1202" y="1360" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">step: busy false → true</text>
+<text x="654" y="1379" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">{&quot;op&quot;:&quot;attr&quot;,&quot;id&quot;:&quot;1&quot;,&quot;name&quot;:&quot;disabled&quot;,&quot;value&quot;:&quot;&quot;}</text>
+<text x="654" y="1394" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">{&quot;op&quot;:&quot;attr&quot;,&quot;id&quot;:&quot;2&quot;,&quot;name&quot;:&quot;disabled&quot;,&quot;value&quot;:&quot;&quot;}</text>
+<text x="654" y="1409" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">{&quot;op&quot;:&quot;attr&quot;,&quot;id&quot;:&quot;2&quot;,&quot;name&quot;:&quot;class&quot;,&quot;value&quot;:&quot;busy&quot;}</text>
+<text x="654" y="1424" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">{&quot;op&quot;:&quot;text&quot;,&quot;id&quot;:&quot;3&quot;,&quot;text&quot;:&quot;Saving...&quot;}</text>
+<text x="654" y="1560" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">→ DOM plugin apply(patches) touches only these nodes — the DOM effects</text>
+<line x1="284" y1="1283" x2="144" y2="1333" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="5 3"/>
+<polygon points="144,1333 153.8,1333.7 151.1,1326.2" fill="#2563eb"/>
+<text x="298" y="1313" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">view.render(state)</text>
+<line x1="900" y1="1283" x2="780" y2="1333" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5 3"/>
+<polygon points="780,1333 789.8,1333.2 786.8,1325.8" fill="#7c3aed"/>
+<text x="914" y="1313" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">view.diff(prev, next)</text>
+</svg>

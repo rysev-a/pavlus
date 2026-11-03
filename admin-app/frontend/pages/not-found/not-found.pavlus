@@ -1,0 +1,7 @@
+// The `*` route of the shell and of the dashboard: a template without logic.
+// Its link is `fallback.navigate("/")`, relative to whoever shows the page:
+// the site's home, or the dashboard's overview.
+section.not-found.ui-empty-state
+  h1.page-title Page not found
+  p.page-intro There is no page at {route.path}.
+  a.ui-button.ui-button-outline.ui-button-sm(href={route.base || "/"} @click.prevent=navigate("/")) Back to the start

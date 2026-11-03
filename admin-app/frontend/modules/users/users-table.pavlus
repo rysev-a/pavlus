@@ -1,0 +1,26 @@
+// Same state and messages as the list, different markup.
+section.users
+  div.ui-card-header
+    h2.ui-card-title Users ({items.length})
+    if status === "loading"
+      p.status.ui-card-description Loading...
+    else if status === "failed"
+      p.status.status--error.ui-card-description Could not load users
+  div.ui-table-container
+    table.users-table.ui-table
+      thead.ui-table-header
+        tr.ui-table-row
+          th.ui-table-head Name
+          th.ui-table-head Email
+          th.ui-table-head Role
+          th.ui-table-head
+      tbody.ui-table-body
+        for user in items key user.id
+          if !filter || user.name.toLowerCase().includes(filter.toLowerCase())
+            tr.users-table__row.ui-table-row(class:users-table__row--selected={user.id === selectedId} @click=select(user.id))
+              td.ui-table-cell {user.name}
+              td.users-table__email.ui-table-cell.ui-cell-muted {user.email}
+              td.ui-table-cell
+                span.ui-badge.ui-badge-secondary {user.role}
+              td.ui-table-cell
+                button.users-table__remove.ui-button.ui-button-ghost.ui-button-xs(@click.stop=remove(user.id)) Remove

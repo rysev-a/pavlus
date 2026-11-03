@@ -1,0 +1,11 @@
+// The `/dashboard` page: a title, a tab bar and the sub-page the route selects.
+section.dashboard
+  div.ui-page-header
+    div
+      h1.page-title.ui-page-title Dashboard
+      p.page-intro.ui-page-description Users, shop and billing.
+    nav.tabs.ui-tabs-list(role="tablist")
+      for tab in tabs key tab.path
+        // the href is absolute (route.base); the click navigates relative to the dashboard
+        a.tabs__link.ui-tabs-trigger(role="tab" href={route.base + (tab.path === "/" ? "" : tab.path)} class:tabs__link--active={tab.path === "/" ? route.path === "/" : route.path === tab.path || route.path.startsWith(tab.path + "/")} @click.prevent=navigate(tab.path)) {tab.title}
+  +outlet

@@ -1,0 +1,21 @@
+// State = the props the parent passes: items, status, selectedId, filter.
+section.users
+  div.ui-card-header
+    h2.ui-card-title Users ({items.length})
+    if status === "loading"
+      p.status.ui-card-description Loading...
+    else if status === "failed"
+      p.status.status--error.ui-card-description Could not load users
+  div.ui-card-content
+    ul.users__list
+      for user in items key user.id
+        if !filter || user.name.toLowerCase().includes(filter.toLowerCase())
+          li.users__item(class:users__item--selected={user.id === selectedId} @click=select(user.id))
+            span.ui-person
+              span.ui-avatar
+                span.ui-avatar-fallback {user.name.slice(0, 1)}
+              span.ui-person-text
+                span.users__name.ui-person-name {user.name}
+                span.ui-person-sub {user.email}
+            span.users__role.ui-badge.ui-badge-secondary {user.role}
+            button.users__remove.ui-button.ui-button-ghost.ui-button-xs(@click.stop=remove(user.id)) Remove

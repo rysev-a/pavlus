@@ -1,0 +1,1 @@
+../../zed/languages/pavlus/highlights.scm

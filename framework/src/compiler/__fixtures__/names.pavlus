@@ -1,0 +1,10 @@
+// Template names that collide with JS keywords, helpers and generated names.
+ul
+  for class in classes key class
+    li {class}
+  for toText in texts key toText
+    li {toText}
+  for state in states key state
+    li {state}
+  for nodes in groups key nodes
+    li {nodes}

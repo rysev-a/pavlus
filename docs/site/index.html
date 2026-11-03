@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pavlus — the framework where your code is a pure function</title>
+<meta name="description" content="pavlus is a TypeScript framework where the application is a pure function: app(message, state) → Effect[]. Plugins do the dirty work.">
+<style>
+:root {
+  --ink: #1f2430; --muted: #667085; --faint: #98a2b3;
+  --border: #d4d9e0; --bg: #fbfcfe; --panel: #ffffff;
+  --msg: #2563eb; --effect: #7c3aed; --state: #059669; --dom: #d97706; --net: #0ea5e9;
+  --code-bg: #0f172a; --code-text: #e2e8f0; --accent: #4f46e5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.65 -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--ink); background: var(--bg); }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 40px; line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.02em; }
+h2 { font-size: 27px; margin: 0 0 8px; letter-spacing: -0.01em; }
+h3 { font-size: 16px; margin: 28px 0 10px; color: var(--ink); }
+p { margin: 8px 0 14px; }
+header.site { position: sticky; top: 0; z-index: 10; background: rgba(251,252,254,0.92); backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); }
+header.site .wrap { display: flex; gap: 18px; align-items: center; height: 52px; }
+header.site .brand { font-weight: 700; letter-spacing: -0.01em; }
+header.site nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13.5px; }
+.hero { padding: 56px 0 36px; }
+.hero .lead { font-size: 18px; color: var(--muted); max-width: 860px; }
+.hero .flow { background: var(--code-bg); color: var(--code-text); font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; line-height: 1.5; padding: 18px 22px; border-radius: 12px; margin: 22px 0 0; overflow-x: auto; }
+.layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 36px; align-items: start; }
+aside.menu { position: sticky; top: 64px; max-height: calc(100vh - 76px); overflow: auto; font-size: 13.5px; padding: 4px 0 30px; }
+.menu .group { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin: 18px 0 4px; }
+.menu .group:first-child { margin-top: 0; }
+.menu .group a { color: var(--accent); }
+.menu a.item { display: block; padding: 3px 0 3px 14px; margin-left: 2px; border-left: 2px solid var(--border); color: var(--ink); }
+.menu a.item:hover { color: var(--accent); border-left-color: var(--accent); text-decoration: none; }
+@media (max-width: 1080px) {
+  .layout { grid-template-columns: 1fr; gap: 0; }
+  aside.menu { position: sticky; top: 52px; z-index: 9; display: flex; align-items: baseline; gap: 4px 16px; max-height: none; white-space: nowrap; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); padding: 10px 16px; margin: 0 0 10px; box-shadow: 0 6px 18px rgba(31,36,48,0.06); }
+  .menu .group, .menu a.item { white-space: nowrap; }
+  .menu .group { margin: 0 2px 0 0; }
+  .menu a.item { display: inline-block; padding: 0; margin: 0; border-left: 0; }
+  section[id], h3[id] { scroll-margin-top: 116px; }
+}
+section[id], h3[id] { scroll-margin-top: 64px; }
+.part { margin: 56px 0 0; padding: 34px 0 6px; border-top: 2px solid var(--border); }
+.part-badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); background: #eef2ff; border: 1px solid #dfe3ff; padding: 3px 10px; border-radius: 999px; margin-bottom: 10px; }
+.sec-head { margin-bottom: 6px; }
+section.example { margin: 48px 0; padding-top: 8px; }
+figure.diagram { margin: 18px 0 8px; }
+figure.diagram svg { width: 100%; height: auto; display: block; background: #f6f8fa; border: 1px solid var(--border); border-radius: 14px; }
+figcaption { font-size: 12.5px; color: var(--muted); padding: 8px 4px 0; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start; }
+.stack { display: grid; gap: 16px; align-content: start; }
+@media (max-width: 980px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+.codecard { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--panel); }
+.codecard-title { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; font-weight: 700; color: var(--muted); padding: 9px 14px; border-bottom: 1px solid var(--border); background: #f2f5f9; }
+.codecard pre { margin: 0; padding: 13px 14px; background: var(--code-bg); color: var(--code-text); font: 12px/1.55 ui-monospace, Menlo, Consolas, monospace; overflow: auto; max-height: 420px; }
+.codecard pre.scroll { max-height: 560px; }
+.codecard .tiny { font-size: 11.5px; color: var(--muted); margin: 8px 12px; }
+.tk-kw { color: #c792ea; }
+.tk-str { color: #9ece6a; }
+.tk-num { color: #f78c6c; }
+.tk-com { color: #64748b; font-style: italic; }
+.tk-fn { color: #82aaff; }
+.tk-type { color: #e5c07b; }
+.tk-tag { color: #82aaff; font-weight: 600; }
+.tk-attr { color: #e5c07b; }
+.tk-evt { color: #c792ea; }
+.tk-expr { color: #f07178; }
+.tk-key { color: #82aaff; }
+.tk-punc { color: #8b9bb4; }
+pre code.hl { display: block; }
+pre code.hl .line { display: block; min-height: 1.55em; counter-increment: ln; }
+pre code.hl .line::before { content: counter(ln); display: inline-block; width: 3ch; margin-right: 14px; text-align: right; color: #52607a; user-select: none; }
+pre.patches { margin: 10px 0 0; padding: 14px 16px; background: var(--code-bg); color: var(--code-text); font: 12px/1.6 ui-monospace, Menlo, monospace; border-radius: 12px; overflow: auto; max-height: 380px; }
+.steps-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.step-btn { font: 12.5px -apple-system, 'Segoe UI', sans-serif; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); color: var(--ink); cursor: pointer; }
+.step-btn:hover { border-color: var(--accent); }
+.step-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.steps-note { font-size: 12.5px; color: var(--muted); }
+.steps-note code { color: var(--accent); }
+ul.notes { margin: 14px 0 0; padding-left: 20px; font-size: 13.5px; color: var(--muted); }
+ul.notes li { margin: 4px 0; }
+ul.notes code, p code, .tiny code, td code, li code { font-family: ui-monospace, Menlo, monospace; font-size: 0.92em; background: #eef1f6; border: 1px solid #e2e6ee; border-radius: 5px; padding: 1px 5px; color: var(--ink); }
+table.t { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13.5px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+table.t th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); background: #f2f5f9; }
+table.t th, table.t td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.t tr:last-child td { border-bottom: none; }
+.pure-list { padding-left: 20px; }
+.concept-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0 0; }
+@media (max-width: 980px) { .concept-grid { grid-template-columns: 1fr; } }
+.concept { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); padding: 14px 16px; }
+.concept b { font-size: 14px; }
+.concept p { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.concept .k { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--accent); }
+footer.site { margin: 64px 0 0; border-top: 1px solid var(--border); padding: 26px 0 46px; font-size: 13px; color: var(--muted); }
+.site a.brand { color: var(--ink); }
+.site nav a.on { color: var(--accent); font-weight: 600; }
+.page-head { padding: 44px 0 4px; }
+.page-head .lead { color: var(--muted); font-size: 15.5px; max-width: 900px; margin: 10px 0 0; }
+.motivation { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 22px 0 0; }
+@media (max-width: 980px) { .motivation { grid-template-columns: 1fr; } }
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+.cta { display: inline-block; padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); font-weight: 600; font-size: 14px; }
+.cta.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cta:hover { text-decoration: none; border-color: var(--accent); }
+.flowviz { border: 1px solid var(--border); border-radius: 14px; background: #f6f8fa; overflow: hidden; }
+.flowviz > svg { width: 100%; height: auto; display: block; }
+.fv-bar { display: flex; gap: 8px; align-items: center; padding: 10px 14px; background: var(--panel); border-top: 1px solid var(--border); flex-wrap: wrap; }
+.fv-btn { font: 12.5px -apple-system, 'Segoe UI', sans-serif; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); color: var(--ink); cursor: pointer; }
+.fv-btn:hover { border-color: var(--accent); }
+.fv-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.fv-dots { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.fv-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--border); background: #e2e6ee; cursor: pointer; padding: 0; }
+.fv-dot.on { background: var(--accent); border-color: var(--accent); }
+.fv-caption { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 10px 16px 14px; background: var(--panel); border-top: 1px solid var(--border); font-size: 13.5px; color: var(--muted); }
+.fv-counter { font-weight: 700; color: var(--ink); font-size: 12px; white-space: nowrap; }
+.fv-label { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--accent); }
+</style>
+</head>
+<body>
+<header class="site"><div class="wrap">
+  <a class="brand" href="index.html">pavlus</a>
+  <nav>
+    <a href="about.html">about</a>
+    <a href="docs.html">docs</a>
+  </nav>
+</div></header>
+<div class="wrap">
+
+<section class="hero">
+  <span class="part-badge">a TypeScript framework · plugins do the dirty work</span>
+  <h1>The framework where your code is a pure function</h1>
+  <p class="lead">pavlus applications are 100% pure functions: a handler takes a message and the state, and returns effects — plain data. Plugins do every dirty thing (DOM, HTTP, time, storage). Templates compile to two pure functions, <code>render(state)</code> and <code>diff(prev,&nbsp;next)</code> — one click becomes a handful of patches, not a re-render.</p>
+
+  <h3>Why</h3>
+  <div class="motivation">
+    <div class="concept"><b>Handlers stay pure</b> <span class="k">app(message, state) → Effect[]</span><p>Same message + same state ⇒ same effects. No Date.now(), no fetch(), no DOM in application code — so every handler is tested by calling it with data.</p></div>
+    <div class="concept"><b>Effects are data, not callbacks</b> <span class="k">{ plugin, type, … }</span><p>A handler returns an array of plain effects. Plugins (dom, store, http, time, ws, logger) interpret them. No promise chains, no event spaghetti, no spies.</p></div>
+    <div class="concept"><b>Templates compile to pure functions</b> <span class="k">render · diff</span><p>The compiler records which state roots every subtree reads; diff skips everything whose inputs did not change (=== checks), so a click patches one text node.</p></div>
+    <div class="concept"><b>SSR falls out for free</b> <span class="k">same render on the server</span><p>The same pure render(state) produces HTML on the server; the http plugin answers settled() once data has loaded. One mental model everywhere.</p></div>
+  </div>
+
+  <div class="flow">DOM event / HTTP reply / timer / WS frame
+        │  plugins turn the outside world into messages
+        ▼
+  core:  app(message, state) → effects[]      ← pure, deterministic
+        │  effects are plain data
+        ▼
+  plugins: dom · store · http · ws · time · logger · router · yours</div>
+
+  <div class="cta-row">
+    <a class="cta primary" href="docs.html">Read the docs</a>
+    <a class="cta" href="about.html">About the concept</a>
+    <a class="cta" href="https://www.npmjs.com/package/@service-laboratory/pavlus">npm ↗</a>
+  </div>
+</section>
+
+<section class="part" id="concept">
+  <span class="part-badge">the pure concept</span>
+  <h2>One application, six actors — only the center talks to the app</h2>
+  <p class="intro">One click travels the whole loop: browser → dom → core → app → effects → network → state → patches. Press play and watch the packet carry data from actor to actor, or step through by hand. Blue = messages in, violet = effects out, green = state, amber = DOM work, cyan = network.</p>
+  <div class="flowviz">
+    <svg id="flowviz-svg" xmlns="http://www.w3.org/2000/svg" width="1240" height="700" viewBox="0 0 1240 700" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1240" height="700" fill="#f6f8fa"/>
+<text x="24" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" font-weight="600" xml:space="preserve">One application, six actors — only the center talks to the app</text>
+<text x="1216" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">messages in → pure app → effects out</text>
+<rect x="404" y="52" width="432" height="150" rx="14" fill="#eef2ff" stroke="#6366f1" stroke-dasharray="6 4"/>
+<text x="420" y="76" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#4f46e5" font-weight="600" xml:space="preserve">100% PURE — same message + same state ⇒ same effects</text>
+<rect data-node="app" x="430" y="88" width="380" height="96" rx="10" fill="#ffffff" stroke="#6366f1" stroke-width="1.6"/>
+<text x="620" y="112" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">application</text>
+<text x="620" y="132" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#7c3aed" text-anchor="middle" xml:space="preserve">app(message, state) → Effect[]</text>
+<text x="620" y="152" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">no Date.now(), no Math.random(),</text>
+<text x="620" y="166" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">no fetch(), no DOM — handlers are pure</text>
+<rect data-node="core" x="430" y="288" width="380" height="112" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="620" y="312" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">core — createApp()</text>
+<text x="620" y="334" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">queue of messages → app(msg, state)</text>
+<text x="620" y="350" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">effects → plugins, in order</text>
+<text x="620" y="366" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">state changed → onState(next) to all</text>
+<text x="620" y="386" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the only code that calls the app</text>
+<rect data-node="dom" x="90" y="268" width="250" height="150" rx="10" fill="#ffffff" stroke="#d97706" stroke-width="1.4"/>
+<text x="215" y="292" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#d97706" text-anchor="middle" font-weight="600" xml:space="preserve">dom plugin</text>
+<text x="215" y="314" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">build(vnodes) → DOM</text>
+<text x="215" y="330" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">apply(patches) → DOM</text>
+<text x="215" y="346" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">owns every listener</text>
+<text x="215" y="362" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">re-renders on onState</text>
+<text x="215" y="386" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">all DOM mutation lives here</text>
+<rect data-node="http" x="930" y="268" width="250" height="150" rx="10" fill="#ffffff" stroke="#0ea5e9" stroke-width="1.4"/>
+<text x="1055" y="292" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#0ea5e9" text-anchor="middle" font-weight="600" xml:space="preserve">http plugin</text>
+<text x="1055" y="314" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">request(id, url, onSuccess…)</text>
+<text x="1055" y="330" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">same id cancels the previous</text>
+<text x="1055" y="346" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">cancel(id)</text>
+<text x="1055" y="362" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">reply → ctx.dispatch(msg)</text>
+<text x="1055" y="386" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">all network lives here</text>
+<rect data-node="store" x="430" y="500" width="380" height="112" rx="10" fill="#ffffff" stroke="#059669" stroke-width="1.4"/>
+<text x="620" y="524" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#059669" text-anchor="middle" font-weight="600" xml:space="preserve">store plugin — the state</text>
+<text x="620" y="546" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">set · merge · remove · undo · restoreTo</text>
+<text x="620" y="562" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">immutable updates, structural sharing</text>
+<text x="620" y="578" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">history of { effect, restoreEffect }</text>
+<text x="620" y="598" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the first plugin with getState() wins</text>
+<rect data-node="browser" x="90" y="500" width="250" height="112" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="215" y="524" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">browser</text>
+<text x="215" y="546" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">DOM tree · user events</text>
+<text x="215" y="562" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">network (fetch)</text>
+<text x="215" y="582" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the outside world</text>
+<line x1="160" y1="500" x2="160" y2="418" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="160,418 156,427 164,427" fill="#2563eb"/>
+<text x="150" y="470" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">click / input / key</text>
+<line x1="270" y1="418" x2="270" y2="500" stroke="#d97706" stroke-width="1.6"/>
+<polygon points="270,500 274,491 266,491" fill="#d97706"/>
+<text x="280" y="470" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">build / apply(patches)</text>
+<line x1="340" y1="330" x2="430" y2="330" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="430,330 421,326 421,334" fill="#2563eb"/>
+<text x="385" y="318" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">dispatch({id…})</text>
+<line x1="430" y1="372" x2="340" y2="372" stroke="#059669" stroke-width="1.6"/>
+<polygon points="340,372 349,376 349,368" fill="#059669"/>
+<text x="385" y="392" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">onState(next)</text>
+<line x1="560" y1="288" x2="560" y2="184" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="560,184 556,193 564,193" fill="#2563eb"/>
+<text x="550" y="244" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">app(msg, state)</text>
+<line x1="690" y1="184" x2="690" y2="288" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="690,288 694,279 686,279" fill="#7c3aed"/>
+<text x="700" y="244" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">Effect[] — plain data</text>
+<line x1="520" y1="400" x2="520" y2="500" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="520,500 524,491 516,491" fill="#7c3aed"/>
+<text x="510" y="462" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">handle(store.set…)</text>
+<line x1="730" y1="500" x2="730" y2="400" stroke="#059669" stroke-width="1.6"/>
+<polygon points="730,400 726,409 734,409" fill="#059669"/>
+<text x="740" y="462" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">new state (identity changes)</text>
+<line x1="810" y1="330" x2="930" y2="330" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="930,330 921,326 921,334" fill="#7c3aed"/>
+<text x="870" y="318" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">handle(request)</text>
+<line x1="930" y1="372" x2="810" y2="372" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="810,372 819,376 819,368" fill="#2563eb"/>
+<text x="870" y="392" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">dispatch(loaded/failed)</text>
+<path d="M 1055 418 L 1055 646 L 215 646 L 215 612" fill="none" stroke="#0ea5e9" stroke-width="1.4" stroke-dasharray="6 4"/>
+<line x1="215" y1="646" x2="215" y2="612" stroke="#0ea5e9" stroke-width="1.4" stroke-dasharray="6 4"/>
+<polygon points="215,612 211,621 219,621" fill="#0ea5e9"/>
+<text x="635" y="640" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">fetch() — the network also lives in the browser</text>
+<line x1="930" y1="456" x2="954" y2="456" stroke="#2563eb" stroke-width="2"/>
+<text x="960" y="460" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">message (in)</text>
+<line x1="1020" y1="456" x2="1044" y2="456" stroke="#7c3aed" stroke-width="2"/>
+<text x="1050" y="460" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">effect (out)</text>
+<line x1="1110" y1="456" x2="1134" y2="456" stroke="#059669" stroke-width="2"/>
+<text x="1140" y="460" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">state change</text>
+<line x1="930" y1="474" x2="954" y2="474" stroke="#d97706" stroke-width="2"/>
+<text x="960" y="478" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">DOM work</text>
+<line x1="1020" y1="474" x2="1044" y2="474" stroke="#0ea5e9" stroke-width="2"/>
+<text x="1050" y="478" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">network</text>
+<style>rect[data-node]{transition:stroke-width .25s ease}rect[data-node].lit{stroke-width:3.4;filter:drop-shadow(0 0 5px rgba(79,70,229,0.35))}</style><circle id="fv-packet" r="7" fill="#2563eb" stroke="#ffffff" stroke-width="2" opacity="0"/></svg>
+    <div class="fv-bar">
+      <button class="fv-btn" id="fv-prev">‹ prev</button>
+      <button class="fv-btn primary" id="fv-play">▶ play</button>
+      <button class="fv-btn" id="fv-next">next ›</button>
+      <div class="fv-dots"></div>
+    </div>
+    <div class="fv-caption"><span class="fv-counter"></span><code class="fv-label"></code><span class="fv-text"></span></div>
+  </div>
+  <p class="tiny">Prefer it static? The fully annotated diagram lives in the <a href="docs.html#core">docs, in "Core"</a>.</p>
+</section>
+
+</div>
+<footer class="site">
+  <div class="wrap">
+    <p>Generated by <code>docs/site/scripts/build.ts</code> — it compiles every example with the real
+      pavlus compiler and runs the real runtime. Regenerate with <code>npm run docs:build</code>.</p>
+    <p>More: <a href="../../framework/README.md">framework/README.md</a> ·
+      <a href="../../framework/docs/architecture.md">framework/docs/architecture.md</a> ·
+      <a href="../../admin-app/">admin-app/</a> (a complete application) ·
+      <a href="about.html">about</a></p>
+  </div>
+</footer>
+<script type="application/json" id="flow-steps">[{"from":"browser","to":"dom","color":"#2563eb","pts":[[160,500],[160,418]],"label":"@click → { id: \"load\" }","caption":"The user clicks. The browser fires a DOM event — and the dom plugin owns every listener."},{"from":"dom","to":"core","color":"#2563eb","pts":[[340,330],[430,330]],"label":"dispatch({ id: \"load\" })","caption":"The dom plugin turns the event into a message. Nobody calls the application directly."},{"from":"core","to":"app","color":"#2563eb","pts":[[560,288],[560,184]],"label":"app({ id: \"load\" }, state)","caption":"The core — the only code that ever calls the app — invokes the pure handler."},{"from":"app","to":"core","color":"#7c3aed","pts":[[690,184],[690,288]],"label":"[ store.merge(…), http.request(…) ]","caption":"Same message + same state ⇒ same effects. The handler returns data, not promises or callbacks."},{"from":"core","to":"store","color":"#7c3aed","pts":[[520,400],[520,500]],"label":"handle(store.merge(\"users.loading\", true))","caption":"Effects go to the plugins in order. The store updates the state immutably — flip to loading."},{"from":"core","to":"http","color":"#7c3aed","pts":[[810,330],[930,330]],"label":"handle(http.request({ id: \"users\", url }))","caption":"The http plugin fetches. A second request with the same id would cancel this one."},{"from":"http","to":"browser","color":"#0ea5e9","pts":[[1055,418],[1055,646],[215,646],[215,612]],"label":"fetch(\"/api/users\")","caption":"The request leaves along the dashed wire — the network itself lives in the browser."},{"from":"browser","to":"http","color":"#0ea5e9","pts":[[215,612],[215,646],[1055,646],[1055,418]],"label":"HTTP 200 · JSON body","caption":"The reply arrives. The http plugin turns it into what the app understands: a message."},{"from":"http","to":"core","color":"#2563eb","pts":[[930,372],[810,372]],"label":"dispatch({ id: \"users.loaded\", payload })","caption":"The reply re-enters the loop as a message. The app never saw a promise."},{"from":"core","to":"app","color":"#2563eb","pts":[[560,288],[560,184]],"label":"app({ id: \"users.loaded\" }, state)","caption":"The core calls the app again — same rule, second lap."},{"from":"app","to":"core","color":"#7c3aed","pts":[[690,184],[690,288]],"label":"[ store.set(\"users\", data) ]","caption":"The handler computes the new state shape and asks the store to set it."},{"from":"core","to":"store","color":"#7c3aed","pts":[[520,400],[520,500]],"label":"handle(store.set(\"users\", data))","caption":"The store replaces the state immutably; untouched branches keep their identity."},{"from":"store","to":"core","color":"#059669","pts":[[730,500],[730,400]],"label":"new state — identity changed","caption":"A new object comes back. Nothing was mutated — diff can trust ===."},{"from":"core","to":"dom","color":"#059669","pts":[[430,372],[340,372]],"label":"onState(next)","caption":"State changed → every plugin is notified. For the dom plugin that means: diff and patch."},{"from":"dom","to":"browser","color":"#d97706","pts":[[270,418],[270,500]],"label":"apply(patches)","caption":"A handful of patch ops touch the DOM. The loop is closed — until the next event."}]</script><script>
+(function () {
+  var data = document.getElementById("flow-steps");
+  if (!data) return;
+  var STEPS = JSON.parse(data.textContent);
+  var svg = document.getElementById("flowviz-svg");
+  var packet = document.getElementById("fv-packet");
+  if (!svg || !packet) return;
+  var nodes = {};
+  svg.querySelectorAll("rect[data-node]").forEach(function (r) {
+    nodes[r.getAttribute("data-node")] = r;
+  });
+  var counter = document.querySelector(".fv-counter");
+  var label = document.querySelector(".fv-label");
+  var text = document.querySelector(".fv-text");
+  var dotsBox = document.querySelector(".fv-dots");
+  var playBtn = document.getElementById("fv-play");
+  var prevBtn = document.getElementById("fv-prev");
+  var nextBtn = document.getElementById("fv-next");
+  var dots = [];
+  STEPS.forEach(function (s, k) {
+    var d = document.createElement("button");
+    d.className = "fv-dot";
+    d.title = s.label;
+    d.addEventListener("click", function () { stop(); go(k); });
+    dotsBox.appendChild(d);
+    dots.push(d);
+  });
+  var i = -1, playing = false, timer = null, raf = null;
+
+  function segPoint(pts, t) {
+    var segs = [], total = 0, k;
+    for (k = 1; k < pts.length; k++) {
+      var dx = pts[k][0] - pts[k - 1][0], dy = pts[k][1] - pts[k - 1][1];
+      var L = Math.sqrt(dx * dx + dy * dy);
+      segs.push(L); total += L;
+    }
+    var d = t * total;
+    for (k = 0; k < segs.length; k++) {
+      if (d <= segs[k] || k === segs.length - 1) {
+        var f = segs[k] === 0 ? 1 : d / segs[k];
+        return [pts[k][0] + (pts[k + 1][0] - pts[k][0]) * f,
+                pts[k][1] + (pts[k + 1][1] - pts[k][1]) * f];
+      }
+      d -= segs[k];
+    }
+    return pts[pts.length - 1];
+  }
+
+  function lit(ids) {
+    for (var k in nodes)
+      nodes[k].classList.toggle("lit", ids.indexOf(k) >= 0);
+  }
+
+  function go(n, instant) {
+    if (raf) cancelAnimationFrame(raf);
+    i = ((n % STEPS.length) + STEPS.length) % STEPS.length;
+    var s = STEPS[i];
+    lit([s.from, s.to]);
+    packet.setAttribute("fill", s.color);
+    counter.textContent = "step " + (i + 1) + " / " + STEPS.length;
+    label.textContent = s.label;
+    text.textContent = s.caption;
+    dots.forEach(function (d, k) { d.classList.toggle("on", k === i); });
+    var t0 = null, DUR = instant ? 0 : 650;
+    function frame(ts) {
+      if (t0 === null) t0 = ts;
+      var p = DUR === 0 ? 1 : Math.min(1, (ts - t0) / DUR);
+      var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      var pt = segPoint(s.pts, e);
+      packet.setAttribute("cx", pt[0]);
+      packet.setAttribute("cy", pt[1]);
+      packet.setAttribute("opacity", "1");
+      raf = p < 1 ? requestAnimationFrame(frame) : null;
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  function play() {
+    playing = true;
+    playBtn.textContent = "⏸ pause";
+    go(i + 1);
+    timer = setInterval(function () { go(i + 1); }, 1600);
+  }
+  function stop() {
+    if (timer) clearInterval(timer);
+    timer = null;
+    playing = false;
+    playBtn.textContent = "▶ play";
+  }
+  playBtn.addEventListener("click", function () { playing ? stop() : play(); });
+  prevBtn.addEventListener("click", function () { stop(); go(i - 1); });
+  nextBtn.addEventListener("click", function () { stop(); go(i + 1); });
+  go(0, true);
+})();
+</script>
+</body>
+</html>

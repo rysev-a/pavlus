@@ -1,0 +1,9 @@
+// The shell: the header, whichever page the route selects, and the footer.
+import Header from "./components/header/header.pavlus"
+import Footer from "./components/footer/footer.pavlus"
+
+div.app.ui-shell-body
+  +Header#header(menu=menu route=route)
+  main.page.ui-shell-content
+    +outlet
+  +Footer#footer

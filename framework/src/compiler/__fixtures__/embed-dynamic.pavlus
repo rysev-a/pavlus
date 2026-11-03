@@ -1,0 +1,5 @@
+// A child that is a value in the state, also under an if.
+div.panel
+  +{panel}#panel(...data title=title)
+  if extra
+    +{extra}#extra

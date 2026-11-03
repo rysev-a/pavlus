@@ -1,0 +1,5 @@
+// Text lines are joined with a newline; interpolation and escapes.
+p
+  | the application code is pure
+  | functions, and {what} is a plugin \{ not interpolated \}
+{count} items

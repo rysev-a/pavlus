@@ -1,0 +1,24 @@
+{
+  "name": "@service-laboratory/pavlus",
+  "version": "0.1.0",
+  "license": "MIT",
+  "exports": {
+    ".": "./main.ts",
+    "./vite": "./src/vite/mod.ts",
+    "./compiler": "./src/compiler/mod.ts",
+    "./runtime": "./src/runtime/helpers.ts",
+    "./testing": "./src/testing/mod.ts",
+    "./plugins": "./src/plugins/mod.ts",
+    "./plugins/dom": "./src/plugins/dom/mod.ts",
+    "./plugins/store": "./src/plugins/store/mod.ts",
+    "./plugins/http": "./src/plugins/http/mod.ts",
+    "./plugins/ws": "./src/plugins/ws/mod.ts",
+    "./plugins/time": "./src/plugins/time/mod.ts",
+    "./plugins/logger": "./src/plugins/logger/mod.ts",
+    "./plugins/router": "./src/plugins/router/mod.ts"
+  },
+  "publish": {
+    "include": ["main.ts", "src/**/*.ts", "README.md", "jsr.json"],
+    "exclude": ["src/**/*.test.ts"]
+  }
+}

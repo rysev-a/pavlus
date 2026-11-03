@@ -1,0 +1,7 @@
+// A real page: a dynamic child (list or table) and spread props.
+section.dashboard
+  h1.page-title Dashboard
+  input.filter(value=filter placeholder="Filter" @input=filterInput)
+  button.switch(@click=switchView) Switch view
+  button.reload(@click=reload) Reload
+  +{usersComponent}#users(...users filter=filter)

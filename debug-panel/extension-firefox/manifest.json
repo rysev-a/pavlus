@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+  "name": "Pavlus Debug Panel",
+  "version": "0.1.0",
+  "description": "Messages, effects and store time travel for pavlus apps.",
+  "browser_specific_settings": {
+    "gecko": { "id": "pavlus-debug@service-laboratory" }
+  },
+  "devtools_page": "devtools.html",
+  "background": { "scripts": ["background.js"] },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

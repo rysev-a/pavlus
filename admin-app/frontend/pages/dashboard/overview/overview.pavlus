@@ -1,0 +1,7 @@
+// The users component is a value in the state: +{...} instead of an import.
+section.overview.ui-card
+  div.ui-data-toolbar
+    input.filter.ui-input(type="search" value=filter placeholder="Filter users" @input=filterInput)
+    button.switch.ui-button.ui-button-outline.ui-button-sm(@click=switchView) Switch view
+    button.reload.ui-button.ui-button-secondary.ui-button-sm(@click=reload) Reload
+  +{usersComponent}#users(...users filter=filter)

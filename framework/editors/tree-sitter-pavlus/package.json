@@ -1,0 +1,15 @@
+{
+  "name": "tree-sitter-pavlus",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for pavlus templates (.pavlus)",
+  "license": "MIT",
+  "private": true,
+  "main": "bindings/node",
+  "scripts": {
+    "generate": "tree-sitter generate --abi 14",
+    "test": "tree-sitter generate --abi 14 && tree-sitter test"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.25.0"
+  }
+}

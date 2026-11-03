@@ -1,0 +1,13 @@
+# Template for publishing. For local use run ./dev-extension.sh, which writes a
+# working copy of this extension with a file:// grammar and a real revision.
+id = "pavlus"
+name = "Pavlus"
+description = "Syntax highlighting for pavlus templates (.pavlus)"
+version = "0.1.0"
+schema_version = 1
+authors = ["rysev-a"]
+repository = "https://github.com/OWNER/zed-pavlus" # TODO: where this extension lives
+
+[grammars.pavlus]
+repository = "https://github.com/OWNER/tree-sitter-pavlus" # TODO: where editors/tree-sitter-pavlus is published
+rev = "TODO" # a commit SHA of that repository

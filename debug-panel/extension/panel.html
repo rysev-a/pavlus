@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="panel.css" />
+    <script src="panel.js" defer></script>
+  </head>
+  <body>
+    <header id="bar">
+      <span id="dot" class="off"></span>
+      <span id="status">connecting…</span>
+      <span class="spacer"></span>
+      <button id="rescan" title="Ask the page for pavlus agents again">
+        rescan
+      </button>
+    </header>
+
+    <nav id="tabs">
+      <button data-tab="messages" class="active">Messages</button>
+      <button data-tab="effects">Effects</button>
+      <button data-tab="store">Store</button>
+      <button data-tab="apps">Apps</button>
+    </nav>
+
+    <main id="view">
+      <section id="tab-messages" class="tab active"></section>
+      <section id="tab-effects" class="tab">
+        <div id="chips"></div>
+      </section>
+      <section id="tab-store" class="tab"></section>
+      <section id="tab-apps" class="tab"></section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,157 @@
+================
+comments: full line, trailing, and literal in pipe text
+================
+// a comment
+p hi // trailing
+| keep // this
+p http://x.com
+---
+
+(source_file
+  (comment)
+  (element_line
+    (tag_name)
+    (text))
+  (comment)
+  (pipe_line
+    (pipe)
+    (pipe_text))
+  (element_line
+    (tag_name)
+    (text)))
+
+================
+selectors are adjacent, otherwise text
+================
+a.b#c
+.box
+p .not-a-class #nor-id
+---
+
+(source_file
+  (element_line
+    (tag_name)
+    (class_name)
+    (id_name))
+  (element_line
+    (class_name))
+  (element_line
+    (tag_name)
+    (text)
+    (text)))
+
+================
+attributes only directly after the tag
+================
+a(href=x)
+a (href=x)
+---
+
+(source_file
+  (element_line
+    (tag_name)
+    (attributes
+      (attribute
+        (attribute_name)
+        (identifier))))
+  (element_line
+    (tag_name)
+    (text)))
+
+================
+control lines with optional trailing colon
+================
+if a
+if a:
+else if b
+else:
+else
+for x in xs
+for x, i in xs key x.id:
+---
+
+(source_file
+  (if_line
+    (identifier))
+  (if_line
+    (identifier))
+  (else_if_line
+    (identifier))
+  (else_line)
+  (else_line)
+  (for_line
+    (loop_variable)
+    (identifier))
+  (for_line
+    (loop_variable)
+    (loop_variable)
+    (identifier)
+    (member_expression
+      (identifier)
+      (property_identifier))))
+
+================
+keywords are only keywords where they start a line
+================
+form
+iffy
+format
+import Row from "./row.pavlus"
+---
+
+(source_file
+  (element_line
+    (tag_name))
+  (element_line
+    (tag_name))
+  (element_line
+    (tag_name))
+  (import_line
+    (component_name)
+    (import_path)))
+
+================
+no trailing newline, blank lines, CRLF
+================
+p a
+
+  
+p b
+---
+
+(source_file
+  (element_line
+    (tag_name)
+    (text))
+  (element_line
+    (tag_name)
+    (text)))
+
+================
+interpolation and escapes in text
+================
+p a {b} c \{ d \}
+{count} items
+| x {y} z
+---
+
+(source_file
+  (element_line
+    (tag_name)
+    (text)
+    (interpolation
+      (identifier))
+    (text)
+    (escape)
+    (text)
+    (escape))
+  (text_line
+    (interpolation
+      (identifier))
+    (text))
+  (pipe_line
+    (pipe)
+    (pipe_text)
+    (interpolation
+      (identifier))
+    (pipe_text)))

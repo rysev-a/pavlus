@@ -1,0 +1,3 @@
+// The bottom bar: a template without logic or state.
+footer.bottom.ui-shell-footer
+  p.bottom__text.muted admin-app, built with pavlus

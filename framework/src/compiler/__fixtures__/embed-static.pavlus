@@ -1,0 +1,8 @@
+// Imported children: props, spread, and one inside a loop.
+import Row from "./row.pavlus"
+import Badge from "./badge.pavlus"
+
+ul.rows
+  for item in items key item.id
+    +Row#row(...item selected={selected === item.id} label="Item {item.id}")
+  +Badge#badge(count=items.length)

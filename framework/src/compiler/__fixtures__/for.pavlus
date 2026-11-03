@@ -1,0 +1,10 @@
+// Keyed loops with an index, nested loops, and an if inside a loop.
+table
+  for row, r in rows key row.id
+    tr(class:odd={r % 2 === 1})
+      for cell, c in row.cells key cell.id
+        td
+          if cell.link
+            a(href=cell.link) {cell.text}
+          else
+            | {cell.text}

@@ -1,0 +1,23 @@
+// The `/dashboard/shop` page: the catalogue, loaded from the API on enter.
+section.shop.ui-card
+  div.ui-card-header
+    h2.page-subtitle.ui-card-title Shop
+    p.page-intro.ui-card-description The catalogue: {items.length} products.
+    if status === "loading"
+      p.status.ui-card-description Loading...
+    else if status === "failed"
+      p.status.status--error.ui-card-description Could not load products
+  div.ui-table-container
+    table.ui-table
+      thead.ui-table-header
+        tr.ui-table-row
+          th.ui-table-head Product
+          th.ui-table-head Price
+          th.ui-table-head In stock
+      tbody.ui-table-body
+        for product in items key product.id
+          tr.shop__product.ui-table-row
+            td.shop__name.ui-table-cell {product.name}
+            td.shop__price.ui-table-cell {product.price}
+            td.ui-table-cell
+              span.shop__stock.ui-badge.ui-badge-outline {product.stock}

@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="1610" viewBox="0 0 1240 1610" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1240" height="1610" fill="#f6f8fa"/>
+<text x="24" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" font-weight="600" xml:space="preserve">7. A keyed list</text>
+<text x="1216" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">list.pavlus — compiled and run by the build with the real compiler</text>
+<rect x="24" y="60" width="330" height="532" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="38" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#1f2430" font-weight="600" xml:space="preserve">1 · the pavlus template</text>
+<text x="340" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" fill="#667085" text-anchor="end" xml:space="preserve">what you write</text>
+<text x="38" y="106" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 1  </tspan><tspan fill="#1d4ed8">ul</tspan>.<tspan fill="#b45309">users</tspan></text>
+<text x="38" y="123" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 2  </tspan>  <tspan fill="#7c3aed">for</tspan> user <tspan fill="#7c3aed">in</tspan> users <tspan fill="#7c3aed">key</tspan> user.id</text>
+<text x="38" y="140" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 3  </tspan>    <tspan fill="#1d4ed8">li</tspan><tspan fill="#64748b">(</tspan><tspan fill="#b45309">class:on</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">user.on</tspan> <tspan fill="#7c3aed">@click</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">pick</tspan>(<tspan fill="#dc2626">use…</tspan></text>
+<rect x="400" y="60" width="816" height="532" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="414" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#1f2430" font-weight="600" xml:space="preserve">2 · middle data — AST + dependencies</text>
+<text x="1202" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" fill="#667085" text-anchor="end" xml:space="preserve">parser.parse() → analyze.nodeDeps()</text>
+<g transform="translate(408 98) scale(1)"><path d="M 123.19999999999999 368 C 123.19999999999999 392, 123.19999999999999 392, 123.19999999999999 416" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 179.29999999999998 264 C 179.29999999999998 288, 123.19999999999999 288, 123.19999999999999 312" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 179.29999999999998 160 C 179.29999999999998 184, 179.29999999999998 184, 179.29999999999998 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 179.29999999999998 30 C 179.29999999999998 67, 179.29999999999998 67, 179.29999999999998 104" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<rect x="56.099999999999994" y="416" width="134.2" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="123.19999999999999" y="433" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">text  {user.name}</text>
+<text x="123.19999999999999" y="446" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 3</text>
+<text x="123.19999999999999" y="459" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: user</text>
+<rect x="0" y="312" width="246.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="123.19999999999999" y="329" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  li(class:on=user.on @clic…</text>
+<text x="123.19999999999999" y="342" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 2</text>
+<text x="123.19999999999999" y="355" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: user</text>
+<rect x="56.099999999999994" y="208" width="246.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="179.29999999999998" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">for  for user in users key us…</text>
+<text x="179.29999999999998" y="238" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 1</text>
+<text x="179.29999999999998" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: users</text>
+<rect x="128.7" y="104" width="101.19999999999999" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="179.29999999999998" y="121" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  ul.users</text>
+<text x="179.29999999999998" y="134" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 0</text>
+<text x="179.29999999999998" y="147" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: users</text>
+<rect x="141.29999999999998" y="0" width="76" height="30" rx="6" fill="none" stroke="#98a2b3" stroke-dasharray="4 3"/>
+<text x="179.29999999999998" y="17" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">template</text>
+</g>
+<rect x="24" y="650" width="1192" height="525" rx="10" fill="#0f172a" stroke="#1e293b"/>
+<text x="38" y="673" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">3 · target functions</text>
+<text x="1202" y="673" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">codegen.generate()</text>
+<text x="38" y="694" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">import { diffKeyedList, joinClasses, setAttr, toText } from &quot;@service-laboratory/pavlus/runtime&quot;;</text>
+<text x="38" y="709" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">const meta = { embeds: [], outlet: false };</text>
+<text x="38" y="724" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function render(state, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
+<text x="38" y="739" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;ul.users&gt;</text>
+<text x="38" y="754" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 2: for user</text>
+<text x="38" y="769" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  ulChildren.push({ t: &quot;marker&quot;, id: &quot;1s&quot; + idSuffix });</text>
+<text x="38" y="784" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    ulChildren.push({ t: &quot;marker&quot;, id: &quot;1[&quot; + userSuffix });</text>
+<text x="38" y="799" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 3: &lt;li&gt;</text>
+<text x="38" y="814" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    liChildren.push({ t: &quot;text&quot;, id: &quot;3&quot; + userSuffix, text: &quot;&quot; + toText((user)?.name) });</text>
+<text x="38" y="829" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    setAttr(liAttrs, &quot;class&quot;, joinClasses([((user)?.on ? &quot;on&quot; : &quot;&quot;)]));</text>
+<text x="38" y="844" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      t: &quot;el&quot;,</text>
+<text x="38" y="859" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    ulChildren.push({ t: &quot;marker&quot;, id: &quot;1]&quot; + userSuffix });</text>
+<text x="38" y="874" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  ulChildren.push({ t: &quot;marker&quot;, id: &quot;1e&quot; + idSuffix });</text>
+<text x="38" y="889" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    t: &quot;el&quot;,</text>
+<text x="38" y="904" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    events: {},</text>
+<text x="38" y="919" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve"> </text>
+<text x="38" y="934" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function diff(prev, next, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
+<text x="38" y="949" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev === next) return patches;</text>
+<text x="38" y="964" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;ul.users&gt; (reads: users)</text>
+<text x="38" y="979" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev.users !== next.users) {</text>
+<text x="38" y="994" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 2: for user</text>
+<text x="38" y="1009" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    diffKeyedList(prevUserKeys, nextUserKeys, userStartId, &quot;1e&quot; + idSuffix, {</text>
+<text x="38" y="1024" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      remove(key) { patches.push({ op: &quot;remove&quot;, from: userStartId(key), to: userEndId(key) }); },</text>
+<text x="38" y="1039" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        userNodes.push({ t: &quot;marker&quot;, id: userStartId(userKey) });</text>
+<text x="38" y="1054" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">        // line 3: &lt;li&gt;</text>
+<text x="38" y="1069" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        liChildren.push({ t: &quot;text&quot;, id: &quot;3&quot; + userSuffix, text: &quot;&quot; + toText((user)?.name) });</text>
+<text x="38" y="1084" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        setAttr(liAttrs, &quot;class&quot;, joinClasses([((user)?.on ? &quot;on&quot; : &quot;&quot;)]));</text>
+<text x="38" y="1099" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">          t: &quot;el&quot;,</text>
+<text x="38" y="1114" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        userNodes.push({ t: &quot;marker&quot;, id: userEndId(userKey) });</text>
+<text x="38" y="1129" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push({ op: &quot;insert&quot;, before: beforeId, nodes: userNodes });</text>
+<text x="38" y="1144" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      move(key, beforeId) { patches.push({ op: &quot;move&quot;, from: userStartId(key), to: userEndId(key), before: beforeId }); },</text>
+<text x="38" y="1167" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">full module below — this is the code the browser runs</text>
+<line x1="360" y1="326" x2="394" y2="326" stroke="#98a2b3" stroke-width="1.5"/>
+<polygon points="394,326 385,322 385,330" fill="#98a2b3"/>
+<text x="377" y="316" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">parse()</text>
+<line x1="808" y1="596" x2="808" y2="646" stroke="#98a2b3" stroke-width="1.5"/>
+<polygon points="808,646 812,637 804,637" fill="#98a2b3"/>
+<text x="822" y="626" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">analyze + codegen</text>
+<rect x="24" y="1233" width="560" height="353" rx="10" fill="#0f172a" stroke="#1e293b"/>
+<text x="38" y="1256" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">render(state) → VNodes</text>
+<text x="570" y="1256" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">real output</text>
+<text x="38" y="1275" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">el &lt;ul&gt;</text>
+<text x="38" y="1290" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    attrs  class=&quot;users&quot;</text>
+<text x="38" y="1305" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1s</text>
+<text x="38" y="1320" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1[#1</text>
+<text x="38" y="1335" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  el &lt;li&gt;  · #2#1</text>
+<text x="38" y="1350" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">      events click → pick(1)</text>
+<text x="38" y="1365" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    text &quot;Ann&quot;  · #3#1</text>
+<text x="38" y="1380" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1]#1</text>
+<text x="38" y="1395" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1[#2</text>
+<text x="38" y="1410" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  el &lt;li&gt;  · #2#2</text>
+<text x="38" y="1425" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">      events click → pick(2)</text>
+<text x="38" y="1440" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    text &quot;Bob&quot;  · #3#2</text>
+<text x="38" y="1455" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1]#2</text>
+<text x="38" y="1470" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1[#3</text>
+<text x="38" y="1485" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  el &lt;li&gt;  · #2#3</text>
+<text x="38" y="1500" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">      events click → pick(3)</text>
+<text x="38" y="1515" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">… 3 more lines</text>
+<text x="38" y="1540" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#d97706" font-weight="600" xml:space="preserve">→ DOM plugin build(vnodes) creates the nodes:</text>
+<text x="38" y="1556" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">&lt;ul class=&quot;users&quot;&gt;&lt;li&gt;Ann&lt;/li&gt;&lt;li&gt;Bob&lt;/li&gt;&lt;li&gt;Anton&lt;/li&gt;&lt;/ul&gt;</text>
+<rect x="640" y="1233" width="576" height="353" rx="10" fill="#0f172a" stroke="#1e293b"/>
+<text x="654" y="1256" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">diff(prev, next) → patches</text>
+<text x="1202" y="1256" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">step: Bob removed, Anton moved first and switched…</text>
+<text x="654" y="1275" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">{&quot;op&quot;:&quot;remove&quot;,&quot;from&quot;:&quot;1[#2&quot;,&quot;to&quot;:&quot;1]#2&quot;}</text>
+<text x="654" y="1290" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">{ op: &quot;insert&quot;, before: &quot;1e&quot;, nodes: [3 vnodes] }</text>
+<text x="654" y="1305" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">{&quot;op&quot;:&quot;move&quot;,&quot;from&quot;:&quot;1[#1&quot;,&quot;to&quot;:&quot;1]#1&quot;,&quot;before&quot;:&quot;1[#4&quot;}</text>
+<text x="654" y="1320" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">{&quot;op&quot;:&quot;attr&quot;,&quot;id&quot;:&quot;2#3&quot;,&quot;name&quot;:&quot;class&quot;,&quot;value&quot;:&quot;on&quot;}</text>
+<text x="654" y="1576" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">→ DOM plugin apply(patches) touches only these nodes — the DOM effects</text>
+<line x1="284" y1="1179" x2="144" y2="1229" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="5 3"/>
+<polygon points="144,1229 153.8,1229.7 151.1,1222.2" fill="#2563eb"/>
+<text x="298" y="1209" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">view.render(state)</text>
+<line x1="900" y1="1179" x2="780" y2="1229" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5 3"/>
+<polygon points="780,1229 789.8,1229.2 786.8,1221.8" fill="#7c3aed"/>
+<text x="914" y="1209" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">view.diff(prev, next)</text>
+</svg>

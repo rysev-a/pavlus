@@ -1,0 +1,5 @@
+// The routed page.
+header.top
+  a(href="/" @click.prevent=go("/")) Home
+main
+  +outlet

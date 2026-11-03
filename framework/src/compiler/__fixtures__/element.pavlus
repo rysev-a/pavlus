@@ -1,0 +1,6 @@
+// Dynamic attributes, class toggles, events with arguments and modifiers.
+form.login#f(action=url method="post" @submit.prevent=save)
+  label(for=inputId class="lbl {extra}") {label}
+  input.field(type="text" value=name placeholder="Name" class:invalid=error disabled={busy} @input=changed @keydown.stop=key(name, 13))
+  button.go(class:busy=busy type="submit") {busy ? "Saving..." : "Save"}
+  a(href="/u/{user.id}" @click.prevent=open(user.id, "profile")) {user.name}

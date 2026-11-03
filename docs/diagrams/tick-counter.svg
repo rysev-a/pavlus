@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="727" viewBox="0 0 1240 727" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1240" height="727" fill="#f6f8fa"/>
+<rect x="14" y="196" width="1212" height="52" rx="12" fill="rgba(124,58,237,0.05)"/>
+<text x="22" y="192" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" font-weight="600" xml:space="preserve">tick 1 — one message, processed to the end</text>
+<line x1="110" y1="104" x2="110" y2="707" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<line x1="314" y1="104" x2="314" y2="707" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<line x1="518" y1="104" x2="518" y2="707" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<line x1="722" y1="104" x2="722" y2="707" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<line x1="926" y1="104" x2="926" y2="707" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<line x1="1130" y1="104" x2="1130" y2="707" stroke="#d4d9e0" stroke-dasharray="3 4"/>
+<rect x="32" y="52" width="156" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="110" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">browser</text>
+<text x="110" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">DOM · events · fetch</text>
+<rect x="245.9" y="52" width="136.2" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="314" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">dom plugin</text>
+<text x="314" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">the only DOM code</text>
+<rect x="463" y="52" width="110" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="518" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">core</text>
+<text x="518" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">createApp()</text>
+<rect x="667" y="52" width="110" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="722" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">application</text>
+<text x="722" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">100% pure</text>
+<rect x="864.5" y="52" width="123" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="926" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">store plugin</text>
+<text x="926" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">state + history</text>
+<rect x="1075" y="52" width="110" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1130" y="70" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">http plugin</text>
+<text x="1130" y="86" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#667085" text-anchor="middle" xml:space="preserve">requests</text>
+<text x="620" y="156" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">before this: createApp() mounted the view (render → DOM) and dispatched `mounted`</text>
+<text x="212" y="214" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#2563eb" text-anchor="middle" xml:space="preserve">user clicks Increment</text>
+<line x1="110" y1="222" x2="314" y2="222" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="314,222 305,218 305,226" fill="#2563eb"/>
+<text x="416" y="252" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#2563eb" text-anchor="middle" xml:space="preserve">dispatch { id: &quot;inc&quot;, event: {type:&quot;click&quot;} }</text>
+<line x1="314" y1="260" x2="518" y2="260" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="518,260 509,256 509,264" fill="#2563eb"/>
+<text x="620" y="290" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#2563eb" text-anchor="middle" xml:space="preserve">app({ id: &quot;inc&quot; }, { count: 0 })</text>
+<line x1="518" y1="298" x2="722" y2="298" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="722,298 713,294 713,302" fill="#2563eb"/>
+<rect x="736" y="320" width="246.79999999999998" height="42" rx="6" fill="#ffffff" stroke="#7c3aed"/>
+<text x="746" y="336" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">pure computation — no side effects:</text>
+<text x="746" y="349" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">return [ store.set(&quot;count&quot;, 0 + 1) ]</text>
+<line x1="722" y1="339" x2="736" y2="339" stroke="#7c3aed" stroke-dasharray="2 3"/>
+<text x="620" y="384" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7c3aed" text-anchor="middle" xml:space="preserve">Effect[] — plain data</text>
+<line x1="722" y1="392" x2="518" y2="392" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="518,392 527,396 527,388" fill="#7c3aed"/>
+<text x="722" y="422" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7c3aed" text-anchor="middle" xml:space="preserve">handle({ plugin:&quot;store&quot;, type:&quot;set&quot;, path:&quot;count&quot;, valu…</text>
+<line x1="518" y1="430" x2="926" y2="430" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="926,430 917,426 917,434" fill="#7c3aed"/>
+<rect x="916.5" y="452" width="303.5" height="42" rx="6" fill="#ffffff" stroke="#059669"/>
+<text x="926.5" y="468" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">state = { ...prev, count: 1 } — a new object,</text>
+<text x="926.5" y="481" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">untouched branches keep their identity</text>
+<line x1="926" y1="471" x2="916.5" y2="471" stroke="#059669" stroke-dasharray="2 3"/>
+<rect x="532" y="508" width="347.59999999999997" height="29" rx="6" fill="#ffffff" stroke="#059669"/>
+<text x="542" y="524" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">getState() !== state → onState(next) to every plugin</text>
+<line x1="518" y1="520.5" x2="532" y2="520.5" stroke="#059669" stroke-dasharray="2 3"/>
+<text x="416" y="559" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#059669" text-anchor="middle" xml:space="preserve">onState({ count: 1 })</text>
+<line x1="518" y1="567" x2="314" y2="567" stroke="#059669" stroke-width="1.6"/>
+<polygon points="314,567 323,571 323,563" fill="#059669"/>
+<rect x="328" y="589" width="272" height="42" rx="6" fill="#ffffff" stroke="#d97706"/>
+<text x="338" y="605" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">view.diff(prev, next) →</text>
+<text x="338" y="618" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">{&quot;op&quot;:&quot;text&quot;,&quot;id&quot;:&quot;1&quot;,&quot;text&quot;:&quot;Count: 1&quot;}</text>
+<line x1="314" y1="608" x2="328" y2="608" stroke="#d97706" stroke-dasharray="2 3"/>
+<text x="212" y="653" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#d97706" text-anchor="middle" xml:space="preserve">apply(patches) → text node now reads “Count: 1”</text>
+<line x1="314" y1="661" x2="110" y2="661" stroke="#d97706" stroke-width="1.6"/>
+<polygon points="110,661 119,665 119,657" fill="#d97706"/>
+<text x="20" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" font-weight="600" xml:space="preserve">Simple: one click, one tick</text>
+<text x="1220" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">counter app — the patches in the labels are the real diff output</text>
+</svg>

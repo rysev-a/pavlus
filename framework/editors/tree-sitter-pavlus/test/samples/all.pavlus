@@ -1,0 +1,17 @@
+import Row from "./row.pavlus"
+// full line comment
+nav.top-menu#main
+  for item, i in items key item.id:
+    li.top-menu__item(class:active=item.active href=item.url @click.prevent=open(item.id, 2)) {item.title} // trailing
+  if a && !b
+    | text // not a comment {x} \{ literal
+  else if n >= 1
+    p one {n} http://x.com
+  else
+    p.status.status--error none
++Row#row(...users filter=filter label="a {b}" flag)
++{Comp}#c(x={y.z})
+.box hi
+p (not attrs) .not-class
+input(type="text" disabled value='v {x}' @input=changed)
+{count} items

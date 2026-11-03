@@ -1,0 +1,53 @@
+================
+static and dynamic embeds
+================
++Row
++Row#row
++Row#row(a=1 b="s {x}" flag ...rest)
++{Comp}#c(x={y})
++{tab.view}#content
+---
+
+(source_file
+  (embed_line
+    (embed_marker)
+    (component_name))
+  (embed_line
+    (embed_marker)
+    (component_name)
+    (instance_name))
+  (embed_line
+    (embed_marker)
+    (component_name)
+    (instance_name)
+    (props
+      (prop
+        (prop_name)
+        (number))
+      (prop
+        (prop_name)
+        (attribute_string
+          (string_content)
+          (interpolation
+            (identifier))))
+      (prop
+        (prop_name))
+      (spread
+        (identifier))))
+  (embed_line
+    (embed_marker)
+    (interpolation
+      (identifier))
+    (instance_name)
+    (props
+      (prop
+        (prop_name)
+        (interpolation
+          (identifier)))))
+  (embed_line
+    (embed_marker)
+    (interpolation
+      (member_expression
+        (identifier)
+        (property_identifier)))
+    (instance_name)))

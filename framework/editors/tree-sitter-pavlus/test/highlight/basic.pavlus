@@ -1,0 +1,54 @@
+import Row from "./row.pavlus"
+// <- keyword
+//     ^ constructor
+//         ^ keyword
+//              ^ string
+nav.menu#main(href=item.url @click.prevent=open(item.id) class:on=a)
+// <- tag
+// ^ type
+//      ^ constant
+//            ^ attribute
+//                 ^ variable
+//                      ^ property
+//                          ^ label
+//                                         ^ function
+//                                                       ^ attribute
+for user, i in users key user.id:
+// <- keyword
+//  ^ variable.parameter
+//          ^ keyword
+//             ^ variable
+//                   ^ keyword
++Row#row(...users label="a {b}")
+// <- punctuation.special
+//^ constructor
+//  ^ variable.special
+//       ^ operator
+//                ^ property
+//                      ^ string
+//                         ^ punctuation.special
+//                          ^ variable
+if !a && b?.c(1, "s") // note
+// <- keyword
+// ^ operator
+//    ^ operator
+//          ^ function
+//            ^ number
+//               ^ string
+//                    ^ comment
+if ok ? null : true
+//      ^ constant.builtin
+//             ^ boolean
+//    ^ operator
+| text {x} \{
+// <- punctuation.special
+//     ^ punctuation.special
+//      ^ variable
+//         ^ string.escape
+p hello
+// <- tag
+p hello
+//^ !tag
++outlet
+// <- punctuation.special
+// ^ keyword

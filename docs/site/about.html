@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pavlus — about</title>
+<meta name="description" content="What pavlus is, how it is built, and where to read next.">
+<style>
+:root {
+  --ink: #1f2430; --muted: #667085; --faint: #98a2b3;
+  --border: #d4d9e0; --bg: #fbfcfe; --panel: #ffffff;
+  --msg: #2563eb; --effect: #7c3aed; --state: #059669; --dom: #d97706; --net: #0ea5e9;
+  --code-bg: #0f172a; --code-text: #e2e8f0; --accent: #4f46e5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.65 -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--ink); background: var(--bg); }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 40px; line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.02em; }
+h2 { font-size: 27px; margin: 0 0 8px; letter-spacing: -0.01em; }
+h3 { font-size: 16px; margin: 28px 0 10px; color: var(--ink); }
+p { margin: 8px 0 14px; }
+header.site { position: sticky; top: 0; z-index: 10; background: rgba(251,252,254,0.92); backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); }
+header.site .wrap { display: flex; gap: 18px; align-items: center; height: 52px; }
+header.site .brand { font-weight: 700; letter-spacing: -0.01em; }
+header.site nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13.5px; }
+.hero { padding: 56px 0 36px; }
+.hero .lead { font-size: 18px; color: var(--muted); max-width: 860px; }
+.hero .flow { background: var(--code-bg); color: var(--code-text); font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; line-height: 1.5; padding: 18px 22px; border-radius: 12px; margin: 22px 0 0; overflow-x: auto; }
+.layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 36px; align-items: start; }
+aside.menu { position: sticky; top: 64px; max-height: calc(100vh - 76px); overflow: auto; font-size: 13.5px; padding: 4px 0 30px; }
+.menu .group { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin: 18px 0 4px; }
+.menu .group:first-child { margin-top: 0; }
+.menu .group a { color: var(--accent); }
+.menu a.item { display: block; padding: 3px 0 3px 14px; margin-left: 2px; border-left: 2px solid var(--border); color: var(--ink); }
+.menu a.item:hover { color: var(--accent); border-left-color: var(--accent); text-decoration: none; }
+@media (max-width: 1080px) {
+  .layout { grid-template-columns: 1fr; gap: 0; }
+  aside.menu { position: sticky; top: 52px; z-index: 9; display: flex; align-items: baseline; gap: 4px 16px; max-height: none; white-space: nowrap; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); padding: 10px 16px; margin: 0 0 10px; box-shadow: 0 6px 18px rgba(31,36,48,0.06); }
+  .menu .group, .menu a.item { white-space: nowrap; }
+  .menu .group { margin: 0 2px 0 0; }
+  .menu a.item { display: inline-block; padding: 0; margin: 0; border-left: 0; }
+  section[id], h3[id] { scroll-margin-top: 116px; }
+}
+section[id], h3[id] { scroll-margin-top: 64px; }
+.part { margin: 56px 0 0; padding: 34px 0 6px; border-top: 2px solid var(--border); }
+.part-badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); background: #eef2ff; border: 1px solid #dfe3ff; padding: 3px 10px; border-radius: 999px; margin-bottom: 10px; }
+.sec-head { margin-bottom: 6px; }
+section.example { margin: 48px 0; padding-top: 8px; }
+figure.diagram { margin: 18px 0 8px; }
+figure.diagram svg { width: 100%; height: auto; display: block; background: #f6f8fa; border: 1px solid var(--border); border-radius: 14px; }
+figcaption { font-size: 12.5px; color: var(--muted); padding: 8px 4px 0; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start; }
+.stack { display: grid; gap: 16px; align-content: start; }
+@media (max-width: 980px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+.codecard { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--panel); }
+.codecard-title { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; font-weight: 700; color: var(--muted); padding: 9px 14px; border-bottom: 1px solid var(--border); background: #f2f5f9; }
+.codecard pre { margin: 0; padding: 13px 14px; background: var(--code-bg); color: var(--code-text); font: 12px/1.55 ui-monospace, Menlo, Consolas, monospace; overflow: auto; max-height: 420px; }
+.codecard pre.scroll { max-height: 560px; }
+.codecard .tiny { font-size: 11.5px; color: var(--muted); margin: 8px 12px; }
+.tk-kw { color: #c792ea; }
+.tk-str { color: #9ece6a; }
+.tk-num { color: #f78c6c; }
+.tk-com { color: #64748b; font-style: italic; }
+.tk-fn { color: #82aaff; }
+.tk-type { color: #e5c07b; }
+.tk-tag { color: #82aaff; font-weight: 600; }
+.tk-attr { color: #e5c07b; }
+.tk-evt { color: #c792ea; }
+.tk-expr { color: #f07178; }
+.tk-key { color: #82aaff; }
+.tk-punc { color: #8b9bb4; }
+pre code.hl { display: block; }
+pre code.hl .line { display: block; min-height: 1.55em; counter-increment: ln; }
+pre code.hl .line::before { content: counter(ln); display: inline-block; width: 3ch; margin-right: 14px; text-align: right; color: #52607a; user-select: none; }
+pre.patches { margin: 10px 0 0; padding: 14px 16px; background: var(--code-bg); color: var(--code-text); font: 12px/1.6 ui-monospace, Menlo, monospace; border-radius: 12px; overflow: auto; max-height: 380px; }
+.steps-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.step-btn { font: 12.5px -apple-system, 'Segoe UI', sans-serif; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); color: var(--ink); cursor: pointer; }
+.step-btn:hover { border-color: var(--accent); }
+.step-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.steps-note { font-size: 12.5px; color: var(--muted); }
+.steps-note code { color: var(--accent); }
+ul.notes { margin: 14px 0 0; padding-left: 20px; font-size: 13.5px; color: var(--muted); }
+ul.notes li { margin: 4px 0; }
+ul.notes code, p code, .tiny code, td code, li code { font-family: ui-monospace, Menlo, monospace; font-size: 0.92em; background: #eef1f6; border: 1px solid #e2e6ee; border-radius: 5px; padding: 1px 5px; color: var(--ink); }
+table.t { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13.5px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+table.t th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); background: #f2f5f9; }
+table.t th, table.t td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.t tr:last-child td { border-bottom: none; }
+.pure-list { padding-left: 20px; }
+.concept-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0 0; }
+@media (max-width: 980px) { .concept-grid { grid-template-columns: 1fr; } }
+.concept { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); padding: 14px 16px; }
+.concept b { font-size: 14px; }
+.concept p { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.concept .k { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--accent); }
+footer.site { margin: 64px 0 0; border-top: 1px solid var(--border); padding: 26px 0 46px; font-size: 13px; color: var(--muted); }
+.site a.brand { color: var(--ink); }
+.site nav a.on { color: var(--accent); font-weight: 600; }
+.page-head { padding: 44px 0 4px; }
+.page-head .lead { color: var(--muted); font-size: 15.5px; max-width: 900px; margin: 10px 0 0; }
+.motivation { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 22px 0 0; }
+@media (max-width: 980px) { .motivation { grid-template-columns: 1fr; } }
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+.cta { display: inline-block; padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); font-weight: 600; font-size: 14px; }
+.cta.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cta:hover { text-decoration: none; border-color: var(--accent); }
+.flowviz { border: 1px solid var(--border); border-radius: 14px; background: #f6f8fa; overflow: hidden; }
+.flowviz > svg { width: 100%; height: auto; display: block; }
+.fv-bar { display: flex; gap: 8px; align-items: center; padding: 10px 14px; background: var(--panel); border-top: 1px solid var(--border); flex-wrap: wrap; }
+.fv-btn { font: 12.5px -apple-system, 'Segoe UI', sans-serif; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); color: var(--ink); cursor: pointer; }
+.fv-btn:hover { border-color: var(--accent); }
+.fv-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.fv-dots { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.fv-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--border); background: #e2e6ee; cursor: pointer; padding: 0; }
+.fv-dot.on { background: var(--accent); border-color: var(--accent); }
+.fv-caption { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 10px 16px 14px; background: var(--panel); border-top: 1px solid var(--border); font-size: 13.5px; color: var(--muted); }
+.fv-counter { font-weight: 700; color: var(--ink); font-size: 12px; white-space: nowrap; }
+.fv-label { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--accent); }
+</style>
+</head>
+<body>
+<header class="site"><div class="wrap">
+  <a class="brand" href="index.html">pavlus</a>
+  <nav>
+    <a href="about.html" class="on">about</a>
+    <a href="docs.html">docs</a>
+  </nav>
+</div></header>
+<div class="wrap">
+
+<section class="page-head">
+  <span class="part-badge">about</span>
+  <h1>pavlus — an application that is a function</h1>
+  <p class="lead">pavlus (npm: <code>@service-laboratory/pavlus</code>) is a TypeScript framework where the whole application is a pure function: <code>app(message, state) → Effect[]</code>. The framework's job is to make that practical — a compiler, a tiny core, and plugins that do the dirty work.</p>
+</section>
+
+<section>
+  <h2>The pieces</h2>
+  <p>The <strong>compiler</strong> turns <code>.pavlus</code> templates (an indented tree, pug-style) into two pure functions, <code>render(state)</code> and <code>diff(prev, next)</code>. Because it records which state roots every subtree reads, <code>diff</code> skips unchanged subtrees with a <code>===</code> check — updates are eight kinds of small patch ops, never a re-render of the world.</p>
+  <p>The <strong>core</strong> is a message loop: it calls the app with each message, hands the returned effects to the plugins in order, and notifies every plugin when the state identity changed. That is the entire engine — the six actors around it (browser, dom, store, http, the app island, the core) only talk through data: messages in, effects out.</p>
+  <p>The <strong>plugins</strong> own everything impure: DOM, state, network, logs, timers, sockets — and <code>admin-app/</code> in the repo is a complete real application built this way (dashboard, users CRUD, shop, billing, backed by Postgres). This site is generated: the build compiles every documented example with the real compiler and runs the real runtime.</p>
+</section>
+
+<section>
+  <h2>The six concepts</h2>
+  <div class="concept-grid">
+    <div class="concept"><b>Message</b> <span class="k">{ id, payload?, event? }</span><p>The input of the app. Everything that happens outside — a click, an HTTP reply, a timer — arrives as one.</p></div>
+    <div class="concept"><b>Effect</b> <span class="k">{ plugin, type, … }</span><p>The output of the app. A request for a plugin to do something. Not a callback — data.</p></div>
+    <div class="concept"><b>Handler</b> <span class="k">load(msg, state, ctx)</span><p>A component method named after the message id it handles. No switch, no registry.</p></div>
+    <div class="concept"><b>Plugin</b> <span class="k">{ name, handle, … }</span><p>Owns every side effect and its own state, and turns the outside world into messages.</p></div>
+    <div class="concept"><b>View</b> <span class="k">{ render, diff, meta }</span><p>A compiled template. Both functions are pure — the DOM plugin is their only interpreter.</p></div>
+    <div class="concept"><b>Patch</b> <span class="k">{ op: "text", … }</span><p>What <code>diff</code> returns: one of eight DOM operations, as data. The DOM effect of a state change.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Where to go</h2>
+  <table class="t">
+    <tr><th>What</th><th>Where</th></tr>
+    <tr><td>docs on this site</td><td><a href="docs.html">docs.html</a> — the template engine, the core, the plugins</td></tr>
+    <tr><td>the pure concept</td><td><a href="docs.html#core">docs.html#core</a> — the six actors and the whole core source</td></tr>
+    <tr><td>framework README</td><td><a href="../../framework/README.md">framework/README.md</a></td></tr>
+    <tr><td>architecture</td><td><a href="../../framework/docs/architecture.md">framework/docs/architecture.md</a></td></tr>
+    <tr><td>reference application</td><td><a href="../../admin-app/">admin-app/</a></td></tr>
+    <tr><td>the package</td><td><a href="https://www.npmjs.com/package/@service-laboratory/pavlus">@service-laboratory/pavlus</a></td></tr>
+  </table>
+  <p class="tiny">Generated by <code>docs/site/scripts/build.ts</code> — <code>npm run docs:build</code> regenerates all three pages.</p>
+</section>
+
+</div>
+<footer class="site">
+  <div class="wrap">
+    <p>Generated by <code>docs/site/scripts/build.ts</code> — it compiles every example with the real
+      pavlus compiler and runs the real runtime. Regenerate with <code>npm run docs:build</code>.</p>
+    <p>More: <a href="../../framework/README.md">framework/README.md</a> ·
+      <a href="../../framework/docs/architecture.md">framework/docs/architecture.md</a> ·
+      <a href="../../admin-app/">admin-app/</a> (a complete application) ·
+      <a href="about.html">about</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

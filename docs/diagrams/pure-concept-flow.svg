@@ -1,0 +1,87 @@
+<svg id="flowviz-svg" xmlns="http://www.w3.org/2000/svg" width="1240" height="700" viewBox="0 0 1240 700" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1240" height="700" fill="#f6f8fa"/>
+<text x="24" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" font-weight="600" xml:space="preserve">One application, six actors — only the center talks to the app</text>
+<text x="1216" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">messages in → pure app → effects out</text>
+<rect x="404" y="52" width="432" height="150" rx="14" fill="#eef2ff" stroke="#6366f1" stroke-dasharray="6 4"/>
+<text x="420" y="76" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#4f46e5" font-weight="600" xml:space="preserve">100% PURE — same message + same state ⇒ same effects</text>
+<rect data-node="app" x="430" y="88" width="380" height="96" rx="10" fill="#ffffff" stroke="#6366f1" stroke-width="1.6"/>
+<text x="620" y="112" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">application</text>
+<text x="620" y="132" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#7c3aed" text-anchor="middle" xml:space="preserve">app(message, state) → Effect[]</text>
+<text x="620" y="152" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">no Date.now(), no Math.random(),</text>
+<text x="620" y="166" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">no fetch(), no DOM — handlers are pure</text>
+<rect data-node="core" x="430" y="288" width="380" height="112" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="620" y="312" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">core — createApp()</text>
+<text x="620" y="334" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">queue of messages → app(msg, state)</text>
+<text x="620" y="350" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">effects → plugins, in order</text>
+<text x="620" y="366" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">state changed → onState(next) to all</text>
+<text x="620" y="386" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the only code that calls the app</text>
+<rect data-node="dom" x="90" y="268" width="250" height="150" rx="10" fill="#ffffff" stroke="#d97706" stroke-width="1.4"/>
+<text x="215" y="292" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#d97706" text-anchor="middle" font-weight="600" xml:space="preserve">dom plugin</text>
+<text x="215" y="314" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">build(vnodes) → DOM</text>
+<text x="215" y="330" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">apply(patches) → DOM</text>
+<text x="215" y="346" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">owns every listener</text>
+<text x="215" y="362" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">re-renders on onState</text>
+<text x="215" y="386" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">all DOM mutation lives here</text>
+<rect data-node="http" x="930" y="268" width="250" height="150" rx="10" fill="#ffffff" stroke="#0ea5e9" stroke-width="1.4"/>
+<text x="1055" y="292" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#0ea5e9" text-anchor="middle" font-weight="600" xml:space="preserve">http plugin</text>
+<text x="1055" y="314" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">request(id, url, onSuccess…)</text>
+<text x="1055" y="330" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">same id cancels the previous</text>
+<text x="1055" y="346" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">cancel(id)</text>
+<text x="1055" y="362" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">reply → ctx.dispatch(msg)</text>
+<text x="1055" y="386" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">all network lives here</text>
+<rect data-node="store" x="430" y="500" width="380" height="112" rx="10" fill="#ffffff" stroke="#059669" stroke-width="1.4"/>
+<text x="620" y="524" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#059669" text-anchor="middle" font-weight="600" xml:space="preserve">store plugin — the state</text>
+<text x="620" y="546" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">set · merge · remove · undo · restoreTo</text>
+<text x="620" y="562" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">immutable updates, structural sharing</text>
+<text x="620" y="578" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">history of { effect, restoreEffect }</text>
+<text x="620" y="598" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the first plugin with getState() wins</text>
+<rect data-node="browser" x="90" y="500" width="250" height="112" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="215" y="524" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">browser</text>
+<text x="215" y="546" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">DOM tree · user events</text>
+<text x="215" y="562" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">network (fetch)</text>
+<text x="215" y="582" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the outside world</text>
+<line x1="160" y1="500" x2="160" y2="418" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="160,418 156,427 164,427" fill="#2563eb"/>
+<text x="150" y="470" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">click / input / key</text>
+<line x1="270" y1="418" x2="270" y2="500" stroke="#d97706" stroke-width="1.6"/>
+<polygon points="270,500 274,491 266,491" fill="#d97706"/>
+<text x="280" y="470" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">build / apply(patches)</text>
+<line x1="340" y1="330" x2="430" y2="330" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="430,330 421,326 421,334" fill="#2563eb"/>
+<text x="385" y="318" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">dispatch({id…})</text>
+<line x1="430" y1="372" x2="340" y2="372" stroke="#059669" stroke-width="1.6"/>
+<polygon points="340,372 349,376 349,368" fill="#059669"/>
+<text x="385" y="392" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">onState(next)</text>
+<line x1="560" y1="288" x2="560" y2="184" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="560,184 556,193 564,193" fill="#2563eb"/>
+<text x="550" y="244" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">app(msg, state)</text>
+<line x1="690" y1="184" x2="690" y2="288" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="690,288 694,279 686,279" fill="#7c3aed"/>
+<text x="700" y="244" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">Effect[] — plain data</text>
+<line x1="520" y1="400" x2="520" y2="500" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="520,500 524,491 516,491" fill="#7c3aed"/>
+<text x="510" y="462" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">handle(store.set…)</text>
+<line x1="730" y1="500" x2="730" y2="400" stroke="#059669" stroke-width="1.6"/>
+<polygon points="730,400 726,409 734,409" fill="#059669"/>
+<text x="740" y="462" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">new state (identity changes)</text>
+<line x1="810" y1="330" x2="930" y2="330" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="930,330 921,326 921,334" fill="#7c3aed"/>
+<text x="870" y="318" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">handle(request)</text>
+<line x1="930" y1="372" x2="810" y2="372" stroke="#2563eb" stroke-width="1.6"/>
+<polygon points="810,372 819,376 819,368" fill="#2563eb"/>
+<text x="870" y="392" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">dispatch(loaded/failed)</text>
+<path d="M 1055 418 L 1055 646 L 215 646 L 215 612" fill="none" stroke="#0ea5e9" stroke-width="1.4" stroke-dasharray="6 4"/>
+<line x1="215" y1="646" x2="215" y2="612" stroke="#0ea5e9" stroke-width="1.4" stroke-dasharray="6 4"/>
+<polygon points="215,612 211,621 219,621" fill="#0ea5e9"/>
+<text x="635" y="640" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">fetch() — the network also lives in the browser</text>
+<line x1="930" y1="456" x2="954" y2="456" stroke="#2563eb" stroke-width="2"/>
+<text x="960" y="460" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">message (in)</text>
+<line x1="1020" y1="456" x2="1044" y2="456" stroke="#7c3aed" stroke-width="2"/>
+<text x="1050" y="460" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">effect (out)</text>
+<line x1="1110" y1="456" x2="1134" y2="456" stroke="#059669" stroke-width="2"/>
+<text x="1140" y="460" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">state change</text>
+<line x1="930" y1="474" x2="954" y2="474" stroke="#d97706" stroke-width="2"/>
+<text x="960" y="478" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">DOM work</text>
+<line x1="1020" y1="474" x2="1044" y2="474" stroke="#0ea5e9" stroke-width="2"/>
+<text x="1050" y="478" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">network</text>
+<style>rect[data-node]{transition:stroke-width .25s ease}rect[data-node].lit{stroke-width:3.4;filter:drop-shadow(0 0 5px rgba(79,70,229,0.35))}</style><circle id="fv-packet" r="7" fill="#2563eb" stroke="#ffffff" stroke-width="2" opacity="0"/></svg>

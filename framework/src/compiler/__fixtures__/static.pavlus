@@ -1,0 +1,6 @@
+// Nothing here depends on the state: diff emits nothing.
+header#top.bar(role="banner" data-x="1")
+  h1.title Hello
+  img(src="/logo.png" alt="")
+  p.note Some static text
+  input(type="checkbox" disabled)

@@ -1,0 +1,60 @@
+================
+operators, precedence and optional chaining
+================
+if a ?? b || c && !d === e < f + g * h
+if a?.b[0].c(1, 2) ? x : y
+if (a + b) * c
+if [1, 2.5, .5, 1e3, "s", 's', true, false, null, undefined]
+---
+
+(source_file
+  (if_line
+    (binary_expression
+      (identifier)
+      (binary_expression
+        (identifier)
+        (binary_expression
+          (identifier)
+          (binary_expression
+            (unary_expression
+              (identifier))
+            (binary_expression
+              (identifier)
+              (binary_expression
+                (identifier)
+                (binary_expression
+                  (identifier)
+                  (identifier)))))))))
+  (if_line
+    (ternary_expression
+      (call_expression
+        (member_expression
+          (index_expression
+            (member_expression
+              (identifier)
+              (property_identifier))
+            (number))
+          (property_identifier))
+        (number)
+        (number))
+      (identifier)
+      (identifier)))
+  (if_line
+    (binary_expression
+      (parenthesized_expression
+        (binary_expression
+          (identifier)
+          (identifier)))
+      (identifier)))
+  (if_line
+    (array
+      (number)
+      (number)
+      (number)
+      (number)
+      (string)
+      (string)
+      (boolean)
+      (boolean)
+      (null)
+      (undefined))))

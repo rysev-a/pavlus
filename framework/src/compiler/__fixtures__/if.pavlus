@@ -1,0 +1,13 @@
+// if / else if / else with nested content, a loop without a key, and a second if.
+section
+  if status === "loading"
+    p.status Loading...
+  else if status === "failed"
+    p.status.status--error {error}
+    button(@click=retry) Retry
+  else
+    ul
+      for item in items
+        li {item}
+  if footer
+    footer {footer}
