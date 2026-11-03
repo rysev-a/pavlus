@@ -280,7 +280,7 @@ if visible.length === 0
       for mail in mails key mail.id
         li(class:unread={!mail.read})
           strong {mail.from}
-          span  {mail.subject}
+          span {mail.subject}
           if !mail.read
             button(@click=markRead(mail.id)) Mark as read
     if mails.length === 0
