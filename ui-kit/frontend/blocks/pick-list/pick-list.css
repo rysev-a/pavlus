@@ -1,0 +1,23 @@
+.k-plk { display: grid; gap: calc(10px * var(--k-block, 1)); min-width: 0; }
+.k-plk__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.k-plk__titles { display: grid; line-height: 1.3; min-width: 0; }
+.k-plk__titles small { color: var(--muted-foreground); font-size: 12px; }
+.k-plk .k-plk__bar { --progress: var(--t); }
+.k-plk__text { margin: 0; color: var(--muted-foreground); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.k-plk__lines { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.k-plk__line { display: grid; grid-template-columns: 22px 78px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; padding: calc(10px * var(--k-block, 1)) calc(12px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); color: var(--card-foreground); font: inherit; text-align: left; cursor: pointer; transition: background-color .12s, opacity .12s; }
+.k-plk__line:hover { background: color-mix(in srgb, var(--muted) 55%, var(--card)); }
+.k-plk__line:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.k-plk__line--next { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.k-plk__line--done { opacity: .6; }
+.k-plk__line--done .k-plk__what strong { text-decoration: line-through; }
+.k-plk__box { display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 6px; background: var(--background); }
+.k-plk__line--done .k-plk__box { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+.k-plk__box .k-icon { width: 13px; height: 13px; }
+.k-plk__loc { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.k-plk__what { display: grid; min-width: 0; line-height: 1.25; }
+.k-plk__what strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.k-plk__what small { color: var(--muted-foreground); font-size: 11.5px; }
+.k-plk__qty { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.k-plk__empty { margin: 0; padding: 24px 0; color: var(--muted-foreground); text-align: center; }
+@media (max-width: 600px) { .k-plk__line { grid-template-columns: 22px minmax(0, 1fr) auto; } .k-plk__loc { grid-column: 2 / -1; grid-row: 1; } .k-plk__what { grid-column: 2; } }

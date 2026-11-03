@@ -1,0 +1,8 @@
+import Editor from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A short menu
+    div.k-preview.k-preview--block
+      +Editor#menu(rows=rows empty="Nothing on the menu." symbol="$")
+    p.k-demo__note {message}

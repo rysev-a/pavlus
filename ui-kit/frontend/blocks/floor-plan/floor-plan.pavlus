@@ -1,0 +1,10 @@
+import Plan from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A dining room of ten tables
+    div.k-preview.k-preview--block
+      +Plan#plan(tables=tables legend=legend cols=cols rows=rows)
+    div.k-row
+      button.ui-button.ui-button-default.ui-button-sm(type="button" @click=advance) Move the selected table to the next step
+    p.k-demo__note {message}

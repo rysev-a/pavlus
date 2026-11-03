@@ -1,0 +1,10 @@
+import Pick from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Order OUT-2214, five lines
+    div.k-preview.k-preview--block
+      div(style="width: min(100%, 38rem)")
+        +Pick#pick(title="Pick list OUT-2214" sub="Eurotrans, door 3 at 12:00" progress=progress lines=lines next=next)
+        div.k-row(style="margin-top: 12px")
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=all) Tick all

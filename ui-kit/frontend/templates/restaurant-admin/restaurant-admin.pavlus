@@ -1,0 +1,70 @@
+// A restaurant back office: the shell, and one view at a time (`screen`):
+// the floor plan, the kitchen board, reservations, the menu and the day's
+// sales. All made of blocks; the data and the views worked out from it are in
+// the state.
+import Nav from "../../blocks/admin-shell/view.pavlus"
+import Top from "../../blocks/admin-shell/topbar.pavlus"
+import Stats from "../../blocks/stat-cards/view.pavlus"
+import BarChart from "../../blocks/bar-chart/view.pavlus"
+import Meters from "../../blocks/progress-list/view.pavlus"
+import StatusList from "../../blocks/status-list/view.pavlus"
+import DataGrid from "../../blocks/data-grid/view.pavlus"
+import FilterBar from "../../blocks/list-filter/view.pavlus"
+import Sheet from "../../blocks/record-sheet/view.pavlus"
+import FloorPlan from "../../blocks/floor-plan/view.pavlus"
+import OrderBoard from "../../blocks/order-board/view.pavlus"
+import Capacity from "../../blocks/capacity-meter/view.pavlus"
+import Catalog from "../../blocks/catalog-editor/view.pavlus"
+
+div.k-template.k-ashell.ra(data-nav={navOpen ? "open" : "closed"})
+  aside.k-ashell__side
+    +Nav#nav(brand="Trattoria Sole" tagline="Restaurant admin" groups=groups active=screen user=user)
+  div.k-ashell__scrim(@click=closeNav)
+  div.k-ashell__main
+    +Top#top(title=title subtitle=subtitle notice=notice actions=actions user=user)
+    main.k-ashell__content
+      if screen === "floor"
+        +Stats#fstats(cards=floorStats)
+        div.ra__cols
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title Dining room
+              p.ui-card-description Click a table to see it and move it on
+            div.ui-card-content
+              +FloorPlan#plan(tables=tables legend=legend cols=6 rows=3)
+          div.ra__side
+            div.ui-card
+              div.ui-card-content
+                +Capacity#seats(...seatMeter compact=true)
+            div.ui-card
+              div.ui-card-header
+                h3.ui-card-title Selected table
+              div.ui-card-content.ra__flush
+                +StatusList#sel(rows=tableRows empty="Pick a table on the plan.")
+      else if screen === "orders"
+        +Stats#bstats(cards=boardStats)
+        +OrderBoard#board(columns=board)
+      else if screen === "reservations"
+        +FilterBar#resfilter(filters=resFilters query="" placeholder="" actions=resActions)
+        +StatusList#res(rows=resRows empty="No reservation here.")
+      else if screen === "menu"
+        +FilterBar#menufilter(filters=menuFilters query=menuQuery placeholder="Search a dish" actions=none)
+        +Catalog#menu(rows=menuRows empty="No dish matches." symbol="$")
+        p.k-muted.ra__foot {menuFooter}
+      else if screen === "sales"
+        +Stats#sstats(cards=salesStats)
+        div.ra__cols
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title Sales by hour
+              p.ui-card-description The current hour grows as tables pay
+            div.ui-card-content
+              +BarChart#hours(columns=bars height="170px")
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title Best sellers
+              p.ui-card-description Dishes sold today
+            div.ui-card-content
+              +Meters#top(items=top)
+        +DataGrid#cats(columns=catCols rows=catRows empty="Nothing sold yet." footer="" pickable=false)
+  +Sheet#sheet(open=sheet.open title=sheet.title description=sheet.description details=sheet.details fields=sheet.fields buttons=sheet.buttons)

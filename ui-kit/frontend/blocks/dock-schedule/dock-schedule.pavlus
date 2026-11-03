@@ -1,0 +1,8 @@
+import Schedule from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Four doors, 06:00 to 17:00
+    div.k-preview.k-preview--block
+      +Schedule#docks(hours=hours rows=rows)
+    p.k-demo__note {message}

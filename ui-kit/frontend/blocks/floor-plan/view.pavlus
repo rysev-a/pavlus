@@ -1,0 +1,18 @@
+// A restaurant floor plan, to embed. State = the props: `tables` (tablesOf
+// from floor.ts: { id, label, seats, col, row, w, h, shape, status, tone,
+// statusLabel, sub, selected }), `cols` (how many grid columns the plan has),
+// `rows` and `legend` (legendOf). A click on a table is sent as `<name>.pick`
+// with its id.
+div.k-fplan
+  div.k-fplan__legend
+    for item in legend key item.status
+      span(class="k-fplan__key k-adm-t-{item.tone}")
+        span.k-fplan__swatch
+        | {item.label}
+        strong {item.count}
+  div.k-fplan__floor(style="--cols: {cols}; --rows: {rows}")
+    for table in tables key table.id
+      button(type="button" class="k-fplan__table k-adm-t-{table.tone}" data-shape=table.shape data-status=table.status data-selected={table.selected ? "true" : null} style="grid-column: {table.col} / span {table.w}; grid-row: {table.row} / span {table.h}" aria-label="Table {table.label}, {table.statusLabel}" @click=pick(table.id))
+        strong.k-fplan__label {table.label}
+        small.k-fplan__sub {table.sub}
+        small.k-fplan__time {table.time}
