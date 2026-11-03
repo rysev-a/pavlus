@@ -1,0 +1,13 @@
+// Labelled meters, one under another, to embed. State = the props: `items`
+// (item() from items.ts: { id, label, text, pct, tone, sub }). Optional
+// `pickable`: a click on a row is sent as `<name>.pick` with its id.
+ul.k-plist
+  for entry in items key entry.id
+    li.k-plist__item(class:k-plist__item--pick={pickable} @click=pick(entry.id))
+      div.k-plist__head
+        span.k-plist__label {entry.label}
+        span.k-plist__text {entry.text}
+      div(class="ui-progress k-plist__bar k-adm-t-{entry.tone}")
+        div.ui-progress-indicator(style="width: {entry.pct}%")
+      if entry.sub
+        small.k-plist__sub {entry.sub}

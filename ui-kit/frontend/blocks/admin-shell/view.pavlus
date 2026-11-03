@@ -1,0 +1,29 @@
+// The sidebar of an app inside a page, to embed. State = the props: brand,
+// tagline, `active` (the id of the open view), `user` ({ name, role,
+// initials }) and `groups`: [{ title, items: [{ id, label, icon, badge }] }]
+// (`icon` is a class: `k-ai-bed`, `k-icon-settings`...). A click on an item
+// is sent as `<name>.go` with the id of the item.
+nav.k-snav(aria-label="Application")
+  div.k-snav__brand
+    span.ui-brand-mark {brand.slice(0, 1)}
+    span.k-snav__brandtext
+      strong {brand}
+      small {tagline}
+  div.k-snav__groups
+    for group in groups key group.title
+      div.ui-sidebar-group
+        p.ui-sidebar-group-label {group.title}
+        ul.ui-sidebar-menu
+          for item in group.items key item.id
+            li
+              a.ui-sidebar-button(href={"#" + item.id} data-active={item.id === active ? "true" : null} @click.prevent=go(item.id))
+                span.ui-sidebar-icon
+                  span(class="k-icon {item.icon}")
+                span.ui-sidebar-label {item.label}
+                if item.badge
+                  span.k-snav__badge {item.badge}
+  div.k-snav__user
+    span.ui-sidebar-avatar {user.initials}
+    span.k-snav__usertext
+      strong {user.name}
+      small {user.role}

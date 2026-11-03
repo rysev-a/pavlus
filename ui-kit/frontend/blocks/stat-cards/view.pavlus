@@ -1,0 +1,20 @@
+// KPI cards, to embed. State = the props: `cards`, a list of { id, label,
+// value, delta ("+12%"), trend ("up" | "down" | "flat"), hint, icon (a class),
+// tone, bars: [{ h, last }] }. Build them with `card()` from cards.ts.
+div.k-stats
+  for item in cards key item.id
+    div.ui-stat-card.k-stat
+      div.ui-stat-card-top
+        span.ui-stat-card-label {item.label}
+        span(class="ui-stat-card-icon ui-tone-{item.tone}")
+          span(class="k-icon {item.icon}")
+      div.ui-stat-card-value {item.value}
+      div.k-stat__foot
+        if item.delta
+          span(class="k-stat__delta k-stat__delta--{item.trend}") {item.delta}
+        if item.hint
+          span.k-stat__hint {item.hint}
+      if item.bars.length > 0
+        div.k-stat__bars
+          for bar in item.bars
+            span.k-stat__bar(class:k-stat__bar--last={bar.last} style="height: {bar.h}%")

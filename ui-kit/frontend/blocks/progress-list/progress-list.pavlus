@@ -1,0 +1,8 @@
+import List from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Database pool
+    div.k-preview.k-preview--block
+      div.k-narrow(style="width: min(100%, 32rem)")
+        +List#pool(items=items)

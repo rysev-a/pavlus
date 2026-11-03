@@ -1,0 +1,43 @@
+// A log pane with level filters, a text filter, pause and follow, to embed.
+// State = the props: `view` (deriveLogs: rows, chips, shown, total, hidden),
+// `query`, `paused`, `following`. Events, with the name of the embed in
+// front: `level` (the level id), `search` (the input), `pause`, `follow`,
+// `clear`. The pane draws the newest line at the bottom, and keeps to the
+// bottom by itself (the lines come newest first, in a reversed column).
+div.k-logs
+  div.k-logs__bar
+    div.k-logs__levels
+      for chip in view.chips key chip.id
+        button(type="button" class="k-logs__level k-adm-t-{chip.tone} {chip.cls}" aria-pressed={chip.cls === "is-on" ? "true" : "false"} @click=level(chip.id))
+          span {chip.label}
+          small {chip.count}
+    input.ui-input.k-logs__search(type="search" placeholder="Filter by text or source" aria-label="Filter lines" value=query @input=search)
+    div.k-logs__ctl
+      button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=pause)
+        if paused
+          span.k-icon.k-ai-play
+          | Resume
+        else
+          span.k-icon.k-ai-pause
+          | Pause
+      button.ui-button.ui-button-sm(type="button" class:ui-button-default={following} class:ui-button-outline={!following} @click=follow)
+        span.k-icon.k-ai-arrow-down
+        | Follow
+      button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=clear) Clear
+  div.k-logs__pane(role="log" aria-live="off" tabindex="0")
+    for line in view.rows key line.id
+      div.k-logs__line
+        span.k-logs__time {line.time}
+        span(class="k-logs__lvl k-adm-t-{line.tone}") {line.level}
+        span.k-logs__src {line.source}
+        span.k-logs__msg {line.text}
+    if view.rows.length === 0
+      p.k-logs__empty No lines match the filters.
+  div.k-logs__foot
+    span {view.shown} of {view.total} lines
+    if paused
+      span.ui-pill.ui-pill-warning paused
+    else
+      span.ui-pill.ui-pill-success live
+    if view.hidden > 0
+      button.ui-button.ui-button-link.ui-button-xs(type="button" @click=follow) {view.hidden} new lines, jump to the latest

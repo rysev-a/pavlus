@@ -1,0 +1,4 @@
+.si__cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: calc(20px * var(--k-block, 1)); align-items: start; }
+.si .ui-card-content.si__flush { padding: calc(12px * var(--k-block, 1)) 0 0; }
+.si .si__flush .k-slist, .si .si__flush .ui-data-table { border: 0; border-top: 1px solid var(--border); border-radius: 0 0 var(--radius-xl) var(--radius-xl); box-shadow: none; }
+@media (max-width: 1000px) { .si__cols { grid-template-columns: minmax(0, 1fr); } }
