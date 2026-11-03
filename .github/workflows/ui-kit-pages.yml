@@ -48,7 +48,6 @@ jobs:
         run: npm run build --workspace ui-kit
         env:
           UI_KIT_BASE: /${{ github.event.repository.name }}/
-      - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ui-kit/dist
