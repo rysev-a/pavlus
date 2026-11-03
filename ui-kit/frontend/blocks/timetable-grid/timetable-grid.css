@@ -1,0 +1,22 @@
+.k-ttg { min-width: 0; }
+.k-ttg__scroll { overflow-x: auto; padding-bottom: 2px; }
+.k-ttg__grid { display: grid; gap: 4px; min-width: calc(70px + var(--cols) * 104px); }
+.k-ttg__row { display: grid; grid-template-columns: 62px repeat(var(--cols), minmax(0, 1fr)); gap: 4px; }
+.k-ttg__corner { align-self: end; font-size: 11px; color: var(--muted-foreground); }
+.k-ttg__colhead { display: grid; padding: 6px 4px; text-align: center; line-height: 1.25; border-bottom: 2px solid var(--border); font-size: 13px; min-width: 0; }
+.k-ttg__colhead small { color: var(--muted-foreground); font-size: 11px; }
+.k-ttg__colhead--today { border-bottom-color: var(--primary); color: var(--primary); }
+.k-ttg__time { display: grid; align-content: center; line-height: 1.25; font-size: 12px; }
+.k-ttg__time strong { font-variant-numeric: tabular-nums; font-weight: 600; }
+.k-ttg__time small { color: var(--muted-foreground); font-size: 10.5px; }
+.k-ttg__break { grid-column: 2 / -1; display: grid; place-items: center; min-height: 26px; border-radius: var(--radius-sm); background: repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in srgb, var(--muted) 70%, transparent) 8px 16px); color: var(--muted-foreground); font-size: 12px; letter-spacing: .04em; }
+.k-ttg__empty { display: grid; place-items: center; min-height: 52px; border: 1px dashed var(--border); border-radius: var(--radius-sm); background: transparent; color: transparent; cursor: pointer; }
+.k-ttg__empty:hover, .k-ttg__empty:focus-visible { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.k-ttg__empty--today { background: color-mix(in srgb, var(--primary) 4%, transparent); }
+.k-ttg__empty .k-icon { width: 14px; height: 14px; }
+.k-ttg__entry { display: grid; align-content: center; gap: 1px; min-width: 0; min-height: 52px; padding: 6px 8px; border: 0; border-left: 3px solid var(--t); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--t) 15%, var(--card)); color: var(--foreground); font: inherit; text-align: left; cursor: pointer; overflow: hidden; }
+.k-ttg__entry:hover { background: color-mix(in srgb, var(--t) 26%, var(--card)); }
+.k-ttg__entry strong { font-size: 13px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-ttg__entry small { color: var(--muted-foreground); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-ttg__entry--cont { border-top-left-radius: 0; border-top-right-radius: 0; }
+.k-ttg__entry:not(.k-ttg__entry--last) { margin-bottom: -4px; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }

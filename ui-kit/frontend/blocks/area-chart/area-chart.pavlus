@@ -1,0 +1,12 @@
+import Chart from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Monthly recurring revenue
+    div.k-preview.k-preview--block
+      +Chart#mrr(chart=mrr)
+    p.k-demo__note Last month changed by {change}%.
+  section.k-demo
+    h2.k-demo__title New sign-ups per week, short
+    div.k-preview.k-preview--block
+      +Chart#signups(chart=signups height="170px")

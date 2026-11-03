@@ -1,0 +1,16 @@
+.cl__cols { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: calc(20px * var(--k-block, 1)); align-items: start; }
+.cl__cols--even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.cl .ui-card-content.cl__flush { padding: calc(12px * var(--k-block, 1)) 0 0; }
+.cl .cl__flush .k-slist, .cl .cl__flush .k-grid { border: 0; border-top: 1px solid var(--border); border-radius: 0 0 var(--radius-xl) var(--radius-xl); box-shadow: none; }
+.cl__record { display: grid; gap: calc(20px * var(--k-block, 1)); min-width: 0; }
+.cl__bar { display: flex; }
+.cl__bar .k-icon { width: 14px; height: 14px; }
+.cl__who { display: flex; flex-wrap: wrap; align-items: center; gap: calc(14px * var(--k-block, 1)) calc(20px * var(--k-block, 1)); }
+.cl__avatar { width: 56px; height: 56px; }
+.cl__id { flex: 1 1 200px; min-width: 0; }
+.cl__name { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -.015em; line-height: 1.2; }
+.cl__line { margin: 3px 0 0; font-size: 13px; color: var(--muted-foreground); }
+.cl__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.cl__notes { display: grid; gap: calc(12px * var(--k-block, 1)); }
+.cl__notes .ui-button { justify-self: start; }
+@media (max-width: 1000px) { .cl__cols, .cl__cols--even { grid-template-columns: minmax(0, 1fr); } }
