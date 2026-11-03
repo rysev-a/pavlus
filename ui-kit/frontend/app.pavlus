@@ -3,13 +3,14 @@
 import Sidebar from "./components/sidebar/sidebar.pavlus"
 import Header from "./components/header/header.pavlus"
 import Footer from "./components/footer/footer.pavlus"
+import ThemePanel from "./components/theme-panel/theme-panel.pavlus"
 
-div.app.ui-shell(data-sidebar={hasNav ? sidebar : "closed"})
+div.app.ui-shell(data-sidebar={hasNav ? sidebar : "closed"} class:k-with-panel={panelOpen})
   aside.ui-shell-aside
     +Sidebar#sidebar(nav=nav route=route root=root section=section)
   div.ui-shell-scrim(@click=closeSidebar)
   div.ui-shell-body
-    +Header#header(menu=menu section=section mode=active.mode hasNav=hasNav root=root)
+    +Header#header(menu=menu section=section mode=active.mode hasNav=hasNav root=root panelOpen=panelOpen)
     main.ui-shell-content(class:k-wide={section === "templates" && current})
       if current
         if section === "templates"
@@ -25,5 +26,32 @@ div.app.ui-shell(data-sidebar={hasNav ? sidebar : "closed"})
             div
               h1.ui-page-title {current.title}
               p.ui-page-description {current.description}
-      +outlet
+      if current
+        div.k-viewtabs
+          div.ui-tabs-list(role="tablist")
+            button.ui-tabs-trigger(type="button" role="tab" aria-selected={tab === "preview" ? "true" : "false"} @click=setTab("preview")) Preview
+            button.ui-tabs-trigger(type="button" role="tab" aria-selected={tab === "source" ? "true" : "false"} @click=setTab("source")) Source
+      // the page stays mounted under the Source tab, so its state is kept
+      div.k-pane(class:k-pane--hidden={tab === "source"})
+        +outlet
+      if tab === "source"
+        section.k-source
+          div.k-source__files
+            for f in srcFiles key f.name
+              button.ui-button.ui-button-sm(type="button" class:ui-button-secondary={f.active} class:ui-button-outline={!f.active} @click=openFile(f.name)) {f.name}
+            a.ui-button.ui-button-ghost.ui-button-sm(href=srcUrl target="_blank" rel="noreferrer") Open on GitHub
+          if srcStatus === "loading"
+            p.k-hint Loading the source...
+          if srcStatus === "failed"
+            p.ui-field-error The source of this file could not be loaded.
+          pre.k-source__code
+            for line in srcLines key line.n
+              div.k-source__line
+                span.k-source__n {line.n}
+                span.k-source__text
+                  for tok in line.tokens key tok.i
+                    span(class={"k-tok k-tok-" + tok.c}) {tok.t}
+          if srcCut
+            p.k-hint Only the first lines are shown: the whole file is on GitHub.
     +Footer#footer(current=current source=source)
+  +ThemePanel#themepanel(look=look catalog=catalog family=family shown=shown open=panelOpen)

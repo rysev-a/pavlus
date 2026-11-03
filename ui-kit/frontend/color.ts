@@ -62,3 +62,37 @@ export const onColor = (bg: string): string =>
   contrastOf("#ffffff", bg) >= contrastOf("#111111", bg)
     ? "#ffffff"
     : "#111111";
+
+/** `#rrggbb` to hue (0-360), saturation and lightness (0-100). */
+export function hexToHsl(hex: string): [number, number, number] {
+  const [r, g, b] = hexToRgb(hex).map((c) => c / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  if (d === 0) return [0, 0, l * 100];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h =
+    max === r
+      ? ((g - b) / d) % 6
+      : max === g
+        ? (b - r) / d + 2
+        : (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, s * 100, l * 100];
+}
+
+export function hslToHex(h: number, s: number, l: number): string {
+  const sat = s / 100;
+  const light = l / 100;
+  const a = sat * Math.min(light, 1 - light);
+  const k = (n: number) => (n + h / 30) % 12;
+  const f = (n: number) =>
+    light - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return rgbToHex([f(0) * 255, f(8) * 255, f(4) * 255]);
+}
+
+/** The colour with its hue turned by `deg` degrees. */
+export function rotate(hex: string, deg: number): string {
+  const [h, s, l] = hexToHsl(hex);
+  return hslToHex((h + deg + 360) % 360, s, l);
+}

@@ -32,11 +32,19 @@ import {
   templates,
 } from "./registry.ts";
 import { randomEffector } from "./random.ts";
+import {
+  filesOf,
+  highlight,
+  type Line,
+  MAX_LINES,
+  sourceEffector,
+} from "./source.ts";
 import { presetLook, themeEffector } from "./theme.ts";
 import {
   allThemes,
   catalog,
   type Catalog,
+  type ThemeFamily,
   cssOf,
   defaultLook,
   flipMode,
@@ -71,6 +79,21 @@ export interface AppState {
   /** The configurator's catalogs, and the CSS of the visitor's look. */
   catalog: Catalog;
   css: string;
+  /** The fixed theming panel on the right. */
+  panelOpen: boolean;
+  /** The Preview / Source tabs of a component, block or template page. */
+  tab: "preview" | "source";
+  /** The files of the page's folder (its template, logic, stylesheet) and the one shown. */
+  srcFiles: { name: string; active: boolean }[];
+  srcName: string;
+  srcLines: Line[];
+  srcStatus: "idle" | "loading" | "ready" | "failed";
+  /** The file on GitHub, and a note when only the first lines are shown. */
+  srcUrl: string;
+  srcCut: boolean;
+  /** The tab of the colour picker (a theme source) and its themes. */
+  family: string;
+  shown: ThemeFamily;
   sidebar: SidebarState;
   /** A narrow screen: the sidebar is a drawer that closes after a click. */
   compact: boolean;
@@ -86,6 +109,7 @@ export interface Environment {
 
 /** Everything the page knows about the outside world comes in as data. */
 export function initialState(env: Environment): AppState {
+  const cat = catalog();
   return {
     route: null,
     current: null,
@@ -98,8 +122,18 @@ export function initialState(env: Environment): AppState {
     source: "https://github.com/rysev-a/pavlus/blob/main/ui-kit/frontend",
     look: env.look,
     active: env.look,
-    catalog: catalog(),
+    catalog: cat,
     css: cssOf(env.look),
+    panelOpen: false,
+    tab: "preview",
+    srcFiles: [],
+    srcName: "",
+    srcLines: [],
+    srcStatus: "idle",
+    srcUrl: "",
+    srcCut: false,
+    family: cat.families[0].id,
+    shown: cat.families[0],
     sidebar: env.compact ? "closed" : "open",
     compact: env.compact,
     ...pageStates(),
@@ -115,6 +149,26 @@ const sameLook = (a: Look, b: Look): boolean =>
  * `routeChanged`) is the default of `Component`; both are replaced here to
  * also set the look.
  */
+/** A page was opened: back to Preview, with the file list of its folder ready. */
+function sourceReset(current: Entry | null, base: string): Effect[] {
+  const names = current ? filesOf(current.dir, current.slug) : [];
+  return [
+    store.set("tab", "preview"),
+    store.set(
+      "srcFiles",
+      names.map((name, i) => ({ name, active: i === 0 })),
+    ),
+    store.set("srcName", names[0] ?? ""),
+    store.set("srcLines", []),
+    store.set("srcStatus", "idle"),
+    store.set("srcCut", false),
+    store.set(
+      "srcUrl",
+      current && names[0] ? `${base}/${current.dir}/${names[0]}` : "",
+    ),
+  ];
+}
+
 export class AppShell extends Component<AppState> {
   view = view;
 
@@ -143,7 +197,13 @@ export class AppShell extends Component<AppState> {
     },
     "/theming": {
       view: themingView,
-      props: (s) => ({ look: s.look, catalog: s.catalog, css: s.css }),
+      props: (s) => ({
+        look: s.look,
+        catalog: s.catalog,
+        css: s.css,
+        family: s.family,
+        shown: s.shown,
+      }),
     },
     "*": { view: notFoundView, props: (s) => ({ root: s.root }) },
   });
@@ -168,6 +228,7 @@ export class AppShell extends Component<AppState> {
       store.set("section", section),
       store.set("nav", nav),
       store.set("hasNav", nav.length > 0),
+      ...sourceReset(current, state.source),
       ...(sameLook(active, state.active)
         ? []
         : [store.set("active", active), themeEffector.apply(active, false)]),
@@ -192,6 +253,96 @@ export class AppShell extends Component<AppState> {
       return [store.set("active", active), themeEffector.apply(active, false)];
     }
     return this._choose(flipMode(state.look));
+  }
+
+  /** Preview or Source: Source loads the file when it is first shown. */
+  setTab(msg: Message, state: AppState): Effect[] {
+    const tab = msg.payload === "source" ? "source" : "preview";
+    return [
+      store.set("tab", tab),
+      ...(tab === "source" && state.srcStatus === "idle" && state.srcName
+        ? this._load(state, state.srcName)
+        : []),
+    ];
+  }
+
+  /** A file chip of the Source tab. */
+  openFile(msg: Message, state: AppState): Effect[] {
+    const name = String(msg.payload);
+    return [
+      store.set(
+        "srcFiles",
+        state.srcFiles.map((f) => ({ ...f, active: f.name === name })),
+      ),
+      ...this._load(state, name),
+    ];
+  }
+
+  sourceLoaded(msg: Message, state: AppState): Effect[] {
+    const { path, text } = msg.payload as { path: string; text: string };
+    if (!state.current || !path.endsWith(`/${state.srcName}`)) return [];
+    const lines = highlight(state.srcName, text);
+    return [
+      store.set("srcLines", lines.slice(0, MAX_LINES)),
+      store.set("srcCut", lines.length > MAX_LINES),
+      store.set("srcStatus", "ready"),
+    ];
+  }
+
+  sourceFailed(): Effect[] {
+    return [store.set("srcStatus", "failed")];
+  }
+
+  _load(state: AppState, name: string): Effect[] {
+    const dir = state.current?.dir;
+    if (!dir) return [];
+    return [
+      store.set("srcName", name),
+      store.set("srcStatus", "loading"),
+      store.set("srcUrl", `${state.source}/${dir}/${name}`),
+      sourceEffector.load(`./${dir}/${name}`, "sourceLoaded", "sourceFailed"),
+    ];
+  }
+
+  "header.togglePanel"(_msg: Message, state: AppState): Effect[] {
+    return [store.set("panelOpen", !state.panelOpen)];
+  }
+
+  /**
+   * The panel's messages are the configurator's, plus two that read a `<select>`:
+   * `pick(row)` (font, style, sizes) and `family` (the colour tab).
+   */
+  "themepanel.close"(): Effect[] {
+    return [store.set("panelOpen", false)];
+  }
+
+  "themepanel.pick"(msg: Message, state: AppState): Effect[] {
+    return this._choose(
+      withChoice(state.look, String(msg.payload), msg.event?.value ?? ""),
+    );
+  }
+
+  "themepanel.family"(msg: Message, state: AppState): Effect[] {
+    return this["theming.pickFamily"](
+      { id: "theming.pickFamily", payload: msg.event?.value },
+      state,
+    );
+  }
+
+  "themepanel.palette"(msg: Message, state: AppState): Effect[] {
+    return this["theming.palette"](msg, state);
+  }
+
+  "themepanel.bundle"(msg: Message, state: AppState): Effect[] {
+    return this["theming.bundle"](msg, state);
+  }
+
+  "themepanel.random"(): Effect[] {
+    return this["theming.random"]();
+  }
+
+  "themepanel.reset"(msg: Message, state: AppState): Effect[] {
+    return this["theming.reset"](msg, state);
   }
 
   closeSidebar(): Effect[] {
@@ -219,6 +370,14 @@ export class AppShell extends Component<AppState> {
   "theming.palette"(msg: Message, state: AppState): Effect[] {
     const [palette, mode] = msg.payload as [string, Look["mode"]];
     return this._choose(withTheme(state.look, palette, mode));
+  }
+
+  /** A tab of the colour picker. */
+  "theming.pickFamily"(msg: Message, state: AppState): Effect[] {
+    const shown =
+      state.catalog.families.find((f) => f.id === msg.payload) ??
+      state.catalog.families[0];
+    return [store.set("family", shown.id), store.set("shown", shown)];
   }
 
   /** The "themes set font, sizes and style too" switch. */

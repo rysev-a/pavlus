@@ -116,6 +116,12 @@ test("choices change one row; a style also suggests its font", () => {
     "funny",
     "cs",
     "biology",
+    "radix",
+    "bulma",
+    "flowbite",
+    "material",
+    "ant",
+    "mdn",
   ]);
   expect(flipMode(look).mode).toBe("dark");
   expect(flipMode(flipMode(look))).toEqual(look);
@@ -255,8 +261,12 @@ test("the random button covers every theme and the plugin answers with a message
   const { allThemes } = await import("../theming.ts");
   const { createRandomPlugin, randomEffector } = await import("../random.ts");
   const all = allThemes();
-  expect(all).toHaveLength(100); // 30 palettes x 2 modes + 40 editor themes
-  expect(new Set(all.map((t) => `${t.palette}/${t.mode}`)).size).toBe(100);
+  const { HEX_THEMES } = await import("../vscode-themes.ts");
+  // 30 palettes x 2 modes, 40 editor themes, and the design systems' themes
+  expect(all).toHaveLength(60 + HEX_THEMES.length);
+  expect(new Set(all.map((t) => `${t.palette}/${t.mode}`)).size).toBe(
+    all.length,
+  );
 
   const sent: unknown[] = [];
   const ctx = { dispatch: (m: unknown) => sent.push(m) } as never;
@@ -270,4 +280,69 @@ test("the random button covers every theme and the plugin answers with a message
     { id: "randomPicked", payload: 99 },
     { id: "randomPicked", payload: 0 },
   ]);
+});
+
+test("the design systems bring readable light and dark themes, a font and a style", async () => {
+  const { BRAND_THEMES, FAMILIES } = await import("../brand-themes.ts");
+  const { HEX_THEMES, vsVars } = await import("../vscode-themes.ts");
+  const { contrastOf } = await import("../color.ts");
+  const { FONTS, STYLES, catalog } = await import("../theming.ts");
+
+  const per = Object.fromEntries(
+    FAMILIES.map((f) => [
+      f.id,
+      BRAND_THEMES.filter((t) => t.family === f.id).length,
+    ]),
+  );
+  expect(per).toEqual({
+    shadcn: 24,
+    radix: 34,
+    bulma: 12,
+    flowbite: 16,
+    mdn: 2,
+    material: 20,
+    ant: 16,
+  });
+  expect(new Set(HEX_THEMES.map((t) => t.id)).size).toBe(HEX_THEMES.length);
+
+  for (const th of BRAND_THEMES) {
+    const v = vsVars(th);
+    const on = (a: string, b: string) => contrastOf(v[a], v[b]);
+    expect(
+      on("--foreground", "--background"),
+      `${th.id} text`,
+    ).toBeGreaterThanOrEqual(7);
+    expect(
+      on("--primary-foreground", "--primary"),
+      `${th.id} primary`,
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      on("--muted-foreground", "--background"),
+      `${th.id} muted`,
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      on("--card-foreground", "--card"),
+      `${th.id} card`,
+    ).toBeGreaterThanOrEqual(7);
+    // a theme has its partner in the other mode, and a font and a style that exist
+    const pair = HEX_THEMES.find((x) => x.id === th.pair);
+    expect(pair?.mode, `${th.id} pair`).toBe(
+      th.mode === "dark" ? "light" : "dark",
+    );
+    expect(
+      FONTS.some((f) => f.id === th.preset.font),
+      `${th.id} font`,
+    ).toBe(true);
+    expect(
+      STYLES.some((s) => s.id === th.preset.style),
+      `${th.id} style`,
+    ).toBe(true);
+  }
+  // the colour picker has a tab for each source
+  expect(catalog().families.map((f) => f.id)).toEqual([
+    "generated",
+    "vscode",
+    ...FAMILIES.map((f) => f.id),
+  ]);
+  expect(catalog().families[1].dark).toHaveLength(20);
 });

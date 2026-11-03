@@ -1,6 +1,6 @@
 // The configurator. State = the props passed by the shell: `look` (the
 // visitor's choices), `catalog` (what there is to choose from) and `css`
-// (the look as CSS). A click is `theming.choose(row, id)` or
+// (the look as CSS), `family` and `shown` (the tab of the colour picker). A click is `theming.choose(row, id)` or
 // `theming.palette(id, mode)`: the shell stores the look and the theme plugin
 // applies it to the whole site, so everything on this page changes at once.
 section.theming
@@ -35,38 +35,25 @@ section.theming
 
   section.k-demo
     h2.k-demo__title Colors
-    p.k-demo__note 30 light and 30 dark themes, and 20 + 20 inspired by Visual Studio Code. A theme is a name in a mode; the light and dark switch in the top bar picks the other mode of the same theme (Dracula goes to Alucard).
+    p.k-demo__note Themes from three kinds of sources: 30 generated palettes, editor themes in the spirit of Visual Studio Code, and the colors of design systems (shadcn/ui, Radix, Bulma, Flowbite, MDN, Material Design, Ant Design). A theme is a name in a mode; the light and dark switch picks the other mode of the same theme (Dracula goes to Alucard). Every theme is checked for contrast.
     div.ui-switch.ui-switch-with-description
       input.ui-switch-input#th-bundle(type="checkbox" role="switch" checked={look.bundle} @change=bundle)
       div.ui-switch-text
         label.ui-switch-label(for="th-bundle") A theme sets font, sizes and style too
-        p.ui-switch-description Each theme comes with a font, sizes and a style that suit it. Turn this off to change only the colors and keep your own choices.
-    h3.k-demo__sub Light
+        p.ui-switch-description Each theme comes with a font, sizes and a style that suit it (Material brings Roboto and pill buttons, Ant Design a compact look). Turn this off to change only the colors and keep your own choices.
+    div.k-family-tabs(role="tablist" aria-label="Theme sources")
+      for f in catalog.families key f.id
+        button.ui-button.ui-button-sm(type="button" role="tab" class:ui-button-secondary={family === f.id} class:ui-button-outline={family !== f.id} aria-selected={family === f.id ? "true" : "false"} @click=pickFamily(f.id)) {f.name}
+    h3.k-demo__sub Light ({shown.light.length})
     div.k-swatches
-      for sw in catalog.light key sw.id
+      for sw in shown.light key sw.id
         button.k-swatch(type="button" class:is-active={look.palette === sw.id && look.mode === "light"} aria-pressed={look.palette === sw.id && look.mode === "light" ? "true" : "false"} style="background: {sw.bg}; color: {sw.fg}" @click=palette(sw.id, "light"))
           span.k-swatch__dot(style="background: {sw.primary}")
           span {sw.name}
-    h3.k-demo__sub Dark
+    h3.k-demo__sub Dark ({shown.dark.length})
     div.k-swatches
-      for sw in catalog.dark key sw.id
+      for sw in shown.dark key sw.id
         button.k-swatch(type="button" class:is-active={look.palette === sw.id && look.mode === "dark"} aria-pressed={look.palette === sw.id && look.mode === "dark" ? "true" : "false"} style="background: {sw.bg}; color: {sw.fg}" @click=palette(sw.id, "dark"))
-          span.k-swatch__dot(style="background: {sw.primary}")
-          span {sw.name}
-
-  section.k-demo
-    h2.k-demo__title Visual Studio Code themes
-    p.k-demo__note Colors in the spirit of well-known editor themes. Each one is checked for contrast, so text stays readable even where the original was faint.
-    h3.k-demo__sub Dark
-    div.k-swatches
-      for sw in catalog.vsDark key sw.id
-        button.k-swatch(type="button" class:is-active={look.palette === sw.id} aria-pressed={look.palette === sw.id ? "true" : "false"} style="background: {sw.bg}; color: {sw.fg}" @click=palette(sw.id, "dark"))
-          span.k-swatch__dot(style="background: {sw.primary}")
-          span {sw.name}
-    h3.k-demo__sub Light
-    div.k-swatches
-      for sw in catalog.vsLight key sw.id
-        button.k-swatch(type="button" class:is-active={look.palette === sw.id} aria-pressed={look.palette === sw.id ? "true" : "false"} style="background: {sw.bg}; color: {sw.fg}" @click=palette(sw.id, "light"))
           span.k-swatch__dot(style="background: {sw.primary}")
           span {sw.name}
 

@@ -12,6 +12,8 @@ header.ui-shell-header
   div.ui-shell-header-start
   div.ui-shell-header-actions
     a.ui-button.ui-button-ghost.ui-button-sm.k-github(href="https://github.com/rysev-a/pavlus/tree/main/ui-kit" target="_blank" rel="noreferrer") GitHub
+    button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Theming panel" aria-pressed={panelOpen ? "true" : "false"} class:k-header-on={panelOpen} @click=togglePanel)
+      span.k-icon.k-icon-palette
     button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Toggle light and dark" @click=toggleTheme)
       if mode === "dark"
         span.k-icon.k-icon-sun

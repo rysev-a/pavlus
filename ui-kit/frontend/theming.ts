@@ -4,9 +4,10 @@
  * applies what `varsOf` returns, and the configurator page (Theming) shows
  * the catalogs below.
  */
+import { FAMILIES } from "./brand-themes.ts";
 import {
+  HEX_THEMES,
   type Preset,
-  VSCODE_THEMES,
   type VsTheme,
   vsThemeById,
   vsVars,
@@ -127,6 +128,39 @@ export const FONTS: Font[] = [
     stack:
       "'Segoe Print', 'Bradley Hand', Chilanka, TSCu_Comic, casual, cursive",
   },
+  {
+    id: "roboto",
+    name: "Roboto",
+    note: "Material Design's face",
+    stack: '"Roboto", "Helvetica Neue", Arial, sans-serif',
+  },
+  {
+    id: "inter",
+    name: "Inter",
+    note: "Flowbite and Radix: a tall, even screen face",
+    stack:
+      '"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+  },
+  {
+    id: "segoe",
+    name: "Segoe UI",
+    note: "Ant Design's system stack",
+    stack:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+  {
+    id: "sourcesans",
+    name: "Source Sans",
+    note: "Bulma's open humanist sans",
+    stack:
+      '"Source Sans 3", "Source Sans Pro", BlinkMacSystemFont, -apple-system, "Segoe UI", sans-serif',
+  },
+  {
+    id: "helvetica",
+    name: "Helvetica / Arial",
+    note: "The plain neutral grotesque",
+    stack: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+  },
 ];
 
 // ---- sizes ----
@@ -223,6 +257,48 @@ export const STYLES: Style[] = [
     note: "Organic leaf-like corners, nothing symmetric",
     radius: "1.5rem",
     font: "humanist",
+  },
+  {
+    id: "radix",
+    name: "Radix",
+    note: "Soft tinted surfaces, medium corners, a two-ring focus",
+    radius: "0.5rem",
+    font: "inter",
+  },
+  {
+    id: "bulma",
+    name: "Bulma",
+    note: "Friendly boxes with a soft drop shadow and semibold type",
+    radius: "0.375rem",
+    font: "sourcesans",
+  },
+  {
+    id: "flowbite",
+    name: "Flowbite",
+    note: "Tailwind-like: rounded-lg, a thin shadow, a wide 4px focus ring",
+    radius: "0.5rem",
+    font: "inter",
+  },
+  {
+    id: "material",
+    name: "Material",
+    note: "Pill buttons, elevated cards without borders, regular-weight headings",
+    radius: "0.75rem",
+    font: "roboto",
+  },
+  {
+    id: "ant",
+    name: "Ant Design",
+    note: "Compact, 6px corners, light shadows, regular weight",
+    radius: "0.375rem",
+    font: "segoe",
+  },
+  {
+    id: "mdn",
+    name: "MDN",
+    note: "Plain documentation: small corners, underlined links, bold headings",
+    radius: "0.25rem",
+    font: "helvetica",
   },
 ];
 
@@ -447,7 +523,7 @@ export function swatchOf(palette: Palette, mode: Mode): Swatch {
   };
 }
 
-/** What a Visual Studio Code theme looks like, for the configurator. */
+/** What a theme that comes as hex colours looks like, for the configurator. */
 export function vsSwatchOf(theme: VsTheme): Swatch {
   const v = vsVars(theme);
   return {
@@ -459,25 +535,54 @@ export function vsSwatchOf(theme: VsTheme): Swatch {
   };
 }
 
+/** One tab of the colour picker: a source of themes, in a light and a dark list. */
+export interface ThemeFamily {
+  id: string;
+  name: string;
+  light: Swatch[];
+  dark: Swatch[];
+}
+
 /** The catalogs as the configurator page shows them. */
 export interface Catalog {
   fonts: Font[];
-  light: Swatch[];
-  dark: Swatch[];
-  vsDark: Swatch[];
-  vsLight: Swatch[];
+  /** Generated palettes, the editor themes and the design systems', as tabs. */
+  families: ThemeFamily[];
   ui: Size[];
   text: Size[];
   block: Size[];
   styles: Style[];
 }
 
+const familyOf = (id: string, name: string, list: VsTheme[]): ThemeFamily => ({
+  id,
+  name,
+  light: list.filter((x) => x.mode === "light").map(vsSwatchOf),
+  dark: list.filter((x) => x.mode === "dark").map(vsSwatchOf),
+});
+
 export const catalog = (): Catalog => ({
   fonts: FONTS,
-  light: PALETTES.map((x) => swatchOf(x, "light")),
-  dark: PALETTES.map((x) => swatchOf(x, "dark")),
-  vsDark: VSCODE_THEMES.filter((x) => x.mode === "dark").map(vsSwatchOf),
-  vsLight: VSCODE_THEMES.filter((x) => x.mode === "light").map(vsSwatchOf),
+  families: [
+    {
+      id: "generated",
+      name: "Generated",
+      light: PALETTES.map((x) => swatchOf(x, "light")),
+      dark: PALETTES.map((x) => swatchOf(x, "dark")),
+    },
+    familyOf(
+      "vscode",
+      "VS Code",
+      HEX_THEMES.filter((x) => !x.family),
+    ),
+    ...FAMILIES.map((f) =>
+      familyOf(
+        f.id,
+        f.name,
+        HEX_THEMES.filter((x) => x.family === f.id),
+      ),
+    ),
+  ],
   ui: UI_SIZES,
   text: TEXT_SIZES,
   block: BLOCK_SIZES,
@@ -559,7 +664,7 @@ export function allThemes(): { palette: string; mode: Mode }[] {
     ...PALETTES.flatMap((p) =>
       (["light", "dark"] as const).map((mode) => ({ palette: p.id, mode })),
     ),
-    ...VSCODE_THEMES.map((t) => ({ palette: t.id, mode: t.mode })),
+    ...HEX_THEMES.map((t) => ({ palette: t.id, mode: t.mode })),
   ];
 }
 

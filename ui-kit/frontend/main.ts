@@ -12,6 +12,7 @@ import {
 import { app as shell, type AppState, initialState } from "./app.ts";
 import { rootOf, windowAt } from "./base-window.ts";
 import { createRandomPlugin } from "./random.ts";
+import { createSourcePlugin } from "./source.ts";
 import { createThemePlugin, initialLook } from "./theme.ts";
 
 // The application code (`shell` and its pages) is pure. Everything that
@@ -37,6 +38,7 @@ export const app = createApp<AppState>({
     createRouterPlugin({ window: windowAt(root) }),
     createTimePlugin(),
     createRandomPlugin(),
+    createSourcePlugin(),
     createThemePlugin(),
   ],
   mount: "#app",

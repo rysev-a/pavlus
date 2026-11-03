@@ -1,3 +1,4 @@
+import { BRAND_THEMES } from "./brand-themes.ts";
 import { ensureContrast, mix, onColor } from "./color.ts";
 import type { Mode } from "./theming.ts";
 
@@ -34,6 +35,12 @@ export interface VsTheme {
   /** The same theme family in the other mode, for the light / dark switch. */
   pair?: string;
   preset: Preset;
+  /** The family it is shown under: `vscode` (default), `shadcn`, `radix`... */
+  family?: string;
+  /** The error colour, when the first of `colors` is not a red. */
+  red?: string;
+  /** Chart colours, when they are not `colors`. */
+  charts?: string[];
 }
 
 const t = (
@@ -414,9 +421,11 @@ export const VSCODE_THEMES: VsTheme[] = [
   ),
 ];
 
-export const isVsId = (id: string): boolean => id.startsWith("vs-");
-export const vsThemeById = (id: string): VsTheme | undefined =>
-  VSCODE_THEMES.find((x) => x.id === id);
+/** Every theme that comes as a handful of hex colours: the editor ones and the design systems'. */
+export const HEX_THEMES: VsTheme[] = [...VSCODE_THEMES, ...BRAND_THEMES];
+
+const byId = new Map(HEX_THEMES.map((x) => [x.id, x]));
+export const vsThemeById = (id: string): VsTheme | undefined => byId.get(id);
 
 /** The kit's colour tokens for a theme. Every pair that carries text reads at 4.5:1 or better. */
 export function vsVars(th: VsTheme): Record<string, string> {
@@ -427,7 +436,7 @@ export function vsVars(th: VsTheme): Record<string, string> {
   const primary = ensureContrast(th.accent, onColor(th.accent), 4.5);
   const primaryFg = onColor(primary);
   const muted = ensureContrast(mix(fg, bg, 0.4), hover, 4.5);
-  const red = ensureContrast(th.colors[0], bg, 3);
+  const red = ensureContrast(th.red ?? th.colors[0], bg, 3);
   const panel = th.panel;
   const v: Record<string, string> = {
     "--background": bg,
@@ -458,6 +467,6 @@ export function vsVars(th: VsTheme): Record<string, string> {
     "--sidebar-border": th.border,
     "--sidebar-ring": th.accent,
   };
-  th.colors.forEach((c, i) => (v[`--chart-${i + 1}`] = c));
+  (th.charts ?? th.colors).forEach((c, i) => (v[`--chart-${i + 1}`] = c));
   return v;
 }
