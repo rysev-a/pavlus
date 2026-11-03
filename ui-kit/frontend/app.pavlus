@@ -10,7 +10,7 @@ div.app.ui-shell(data-sidebar={hasNav ? sidebar : "closed"} class:k-with-panel={
     +Sidebar#sidebar(nav={section === "docs" ? docsNavs[docs.lang] : nav} route=route root=root section=section)
   div.ui-shell-scrim(@click=closeSidebar)
   div.ui-shell-body
-    +Header#header(menu=menu section=section mode=active.mode hasNav=hasNav root=root panelOpen=panelOpen)
+    +Header#header(menu=menu section=section mode=active.mode hasNav=hasNav root=root panelOpen=panelOpen menuOpen=menuOpen)
     main.ui-shell-content(class:k-wide={section === "templates" && current})
       if current
         if section === "templates"

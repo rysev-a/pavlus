@@ -82,6 +82,8 @@ export interface AppState {
   /** The configurator's catalogs, and the CSS of the visitor's look. */
   catalog: Catalog;
   css: string;
+  /** The sections menu on a narrow screen (the burger). */
+  menuOpen: boolean;
   /** The fixed theming panel on the right. */
   panelOpen: boolean;
   /** The Preview / Source tabs of a component, block or template page. */
@@ -135,6 +137,7 @@ export function initialState(env: Environment): AppState {
     catalog: cat,
     css: cssOf(env.look),
     panelOpen: false,
+    menuOpen: false,
     tab: "preview",
     srcFiles: [],
     srcName: "",
@@ -252,6 +255,7 @@ export class AppShell extends Component<AppState> {
       : state.look;
     return [
       ...setRoute(msg.payload),
+      store.set("menuOpen", false),
       store.set("current", current),
       store.set("section", section),
       store.set("nav", nav),
@@ -268,6 +272,20 @@ export class AppShell extends Component<AppState> {
       router.listen("routeChanged"),
       themeEffector.apply(state.look, false),
     ];
+  }
+
+  "header.toggleMenu"(_msg: Message, state: AppState): Effect[] {
+    return [store.set("menuOpen", !state.menuOpen)];
+  }
+
+  /** A section of the top menu: go there and fold the menu. */
+  "header.navigate"(msg: Message): Effect[] {
+    return [router.navigate(msg.payload as string), store.set("menuOpen", false)];
+  }
+
+  /** "Pages of this section": the sidebar drawer, and the menu folds. */
+  "header.openPages"(): Effect[] {
+    return [store.set("sidebar", "open"), store.set("menuOpen", false)];
   }
 
   "header.toggleSidebar"(_msg: Message, state: AppState): Effect[] {

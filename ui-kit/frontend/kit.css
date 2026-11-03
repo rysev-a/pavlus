@@ -189,6 +189,21 @@
 .k-topmenu__link.is-active { background: var(--accent); color: var(--foreground); }
 .k-topmenu__link:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
 .ui-shell-header-start { padding-left: 0; }
+/* the burger, the logo and the dropdown are for a narrow screen only */
+.k-burger, .k-header-logo, .k-mobilemenu { display: none; }
+.k-header-logo { align-items: center; gap: 8px; font-weight: 700; color: var(--foreground); }
+.k-header-logo__name { font-size: 15px; letter-spacing: -.01em; }
+.k-mobilemenu__link { display: block; width: 100%; padding: 12px 14px; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--foreground); font: inherit; font-size: 15px; font-weight: 500; text-align: left; cursor: pointer; }
+.k-mobilemenu__link:hover, .k-mobilemenu__link.is-active { background: var(--accent); }
+.k-mobilemenu__pages { color: var(--muted-foreground); }
+@media (max-width: 800px) {
+  .ui-shell-header { position: sticky; }
+  .k-burger { display: inline-flex; }
+  .k-header-logo { display: inline-flex; }
+  .k-topmenu, .k-github, .k-sidebar-toggle { display: none; }
+  .ui-shell-header-start { flex: 1; }
+  .k-mobilemenu { display: grid; gap: 2px; position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 30; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--popover, var(--card)); box-shadow: 0 10px 30px color-mix(in srgb, var(--foreground) 18%, transparent); }
+}
 @media (max-width: 640px) {
   .k-topmenu__link { padding: 6px 8px; font-size: 13px; }
   .k-github { display: none; }
