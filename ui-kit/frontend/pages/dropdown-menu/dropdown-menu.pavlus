@@ -1,0 +1,26 @@
+// A native <details>: the browser opens and closes it, so no logic.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Account menu
+    div.k-preview
+      details.ui-dropdown-menu
+        summary.ui-navigation-trigger
+          | Open
+          span.k-icon.k-icon-chevron-down.ui-navigation-chevron
+        div.ui-navigation-panel(style="min-width: 220px")
+          div.k-menu-label My Account
+          button(type="button")
+            span.k-icon.k-icon-user
+            | Profile
+            span.k-menu-shortcut ⇧⌘P
+          button(type="button")
+            span.k-icon.k-icon-settings
+            | Settings
+            span.k-menu-shortcut ⌘S
+          div.k-menu-separator
+          button(type="button")
+            span.k-icon.k-icon-mail
+            | Invite users
+          button(type="button" disabled) New team (soon)
+          div.k-menu-separator
+          button(type="button") Log out

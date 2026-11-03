@@ -1,0 +1,18 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default and outline
+    div.k-preview
+      for item in items key item.id
+        button.ui-toggle(type="button" aria-pressed={item.on ? "true" : "false"} aria-label={item.label} @click=flip(item.id))
+          span.k-icon(class={"k-icon-" + item.id})
+    p.k-hint Pressed: {pressed}
+  section.k-demo
+    h2.k-demo__title With text
+    div.k-preview
+      button.ui-toggle(type="button" aria-pressed={on ? "true" : "false"} @click=flipText)
+        span.k-icon.k-icon-bell
+        | Notifications: {on ? "on" : "off"}
+  section.k-demo
+    h2.k-demo__title Disabled
+    div.k-preview
+      button.ui-toggle(type="button" disabled) Disabled

@@ -1,0 +1,24 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Sizes
+    div.k-preview
+      span.k-icon.k-icon-loader.k-spin
+      span.k-icon.k-icon-loader.k-icon-lg.k-spin
+      span.k-icon.k-icon-loader.k-spin(style="width: 32px; height: 32px")
+  section.k-demo
+    h2.k-demo__title In a button and a badge
+    div.k-preview
+      button.ui-button.ui-button-default(type="button" disabled)
+        span.k-icon.k-icon-loader.k-spin
+        | Loading...
+      span.ui-badge.ui-badge-secondary
+        span.k-icon.k-icon-loader.k-spin
+        | Syncing
+  section.k-demo
+    h2.k-demo__title With text
+    div.k-preview
+      div.k-item
+        span.k-icon.k-icon-loader.k-icon-lg.k-spin
+        div.k-item__content
+          span.k-item__title Processing payment
+          span.k-item__description Please do not close this window.

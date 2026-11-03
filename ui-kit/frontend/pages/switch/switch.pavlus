@@ -1,0 +1,36 @@
+// Native switches: the browser keeps their state, so no logic.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default
+    div.k-preview
+      div.ui-switch
+        input.ui-switch-input#sw-airplane(type="checkbox" role="switch")
+        label.ui-switch-label(for="sw-airplane") Airplane mode
+  section.k-demo
+    h2.k-demo__title With a description
+    div.k-preview
+      div.ui-switch.ui-switch-with-description
+        input.ui-switch-input#sw-marketing(type="checkbox" role="switch" checked)
+        div.ui-switch-text
+          label.ui-switch-label(for="sw-marketing") Marketing emails
+          p.ui-switch-description Receive emails about new products and features.
+  section.k-demo
+    h2.k-demo__title Choice card
+    div.k-preview
+      div.ui-switch.ui-switch-card.k-narrow
+        div.ui-switch-text
+          label.ui-switch-label(for="sw-share") Share across devices
+          p.ui-switch-description Focus is shared across devices and turns off when you leave the app.
+        input.ui-switch-input#sw-share(type="checkbox" role="switch")
+  section.k-demo
+    h2.k-demo__title Small, disabled and invalid
+    div.k-preview
+      div.ui-switch.ui-switch-sm
+        input.ui-switch-input#sw-small(type="checkbox" role="switch" checked)
+        label.ui-switch-label(for="sw-small") Small
+      div.ui-switch(data-disabled="true")
+        input.ui-switch-input#sw-disabled(type="checkbox" role="switch" disabled)
+        label.ui-switch-label(for="sw-disabled") Disabled
+      div.ui-switch
+        input.ui-switch-input#sw-invalid(type="checkbox" role="switch" aria-invalid="true")
+        label.ui-switch-label(for="sw-invalid") Invalid

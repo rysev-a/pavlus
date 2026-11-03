@@ -4,7 +4,8 @@
   "type": "module",
   "workspaces": [
     "framework",
-    "admin-app"
+    "admin-app",
+    "ui-kit"
   ],
   "scripts": {
     "test": "npm test --workspaces",

@@ -1,0 +1,17 @@
+// The `/` page: a template without logic. State = the props passed by the
+// shell (`nav`, `root`, `count`).
+section.home
+  div.ui-page-header
+    div
+      h1.ui-page-title Components
+      p.ui-page-description
+        | {count} shadcn components written as pavlus templates, in the style of the admin-app.
+        | Each page is a live demo; pick one:
+  for group in nav key group.title
+    div.home__group
+      h2.home__heading {group.title}
+      div.home__grid
+        for item in group.items key item.path
+          a.ui-card.home__card(href={root + item.path} @click.prevent=navigate(item.path))
+            div.ui-card-header
+              h3.ui-card-title {item.title}

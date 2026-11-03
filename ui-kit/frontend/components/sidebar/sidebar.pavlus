@@ -1,0 +1,19 @@
+// The side navigation: every component, by group. State = the props passed by
+// the shell (`nav`, `route`, `root`). A link is a real href (copy, middle
+// click) whose click goes through the router: `sidebar.navigate`.
+nav.ui-sidebar(aria-label="Components")
+  div.ui-sidebar-header
+    a.ui-brand(href={root + "/"} @click.prevent=navigate("/"))
+      span.ui-brand-mark P
+      span
+        | pavlus ui-kit
+        small shadcn components
+  div.ui-sidebar-content
+    for group in nav key group.title
+      div.ui-sidebar-group
+        p.ui-sidebar-group-label {group.title}
+        ul.ui-sidebar-menu
+          for item in group.items key item.path
+            li
+              a.ui-sidebar-button(href={root + item.path} data-active={route.path === item.path ? "true" : null} @click.prevent=navigate(item.path))
+                span.ui-sidebar-label {item.title}

@@ -1,0 +1,15 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Vertical
+    div.k-preview.k-preview--block
+      div.ui-card.k-narrow
+        div.ui-card-content(style="padding: 16px")
+          div.ui-scroll-area.k-scroll-box(tabindex="0")
+            for tag in tags key tag
+              div.k-scroll-row {tag}
+  section.k-demo
+    h2.k-demo__title Horizontal
+    div.k-preview.k-preview--block
+      div.ui-scroll-area.ui-scroll-area-horizontal(tabindex="0")
+        for tag in tags key tag
+          span.ui-badge.ui-badge-outline(style="margin-right: 8px") {tag}

@@ -1,0 +1,23 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Bottom drawer
+    div.k-preview
+      button.ui-button.ui-button-outline(type="button" @click=show) Open drawer
+  if open
+    div.k-modal.k-modal--sheet
+      div.k-modal__scrim(@click=hide)
+      div.ui-drawer(role="dialog" aria-modal="true" style="max-width: 480px; margin: 0 auto; height: auto")
+        div.ui-dialog-header
+          h2.ui-dialog-title Move goal
+          p.ui-dialog-description Set your daily activity goal.
+        div.k-row(style="justify-content: center; margin: 24px 0; gap: 24px")
+          button.ui-button.ui-button-outline.ui-button-icon(type="button" aria-label="Decrease" @click=less)
+            span.k-icon.k-icon-chevron-left
+          div(style="text-align: center")
+            div(style="font-size: 56px; font-weight: 700; letter-spacing: -.04em; line-height: 1") {goal}
+            div.k-hint calories/day
+          button.ui-button.ui-button-outline.ui-button-icon(type="button" aria-label="Increase" @click=more)
+            span.k-icon.k-icon-chevron-right
+        div.ui-dialog-footer
+          button.ui-dialog-close(type="button" @click=hide) Cancel
+          button.ui-button.ui-button-default(type="button" @click=hide) Submit

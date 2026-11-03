@@ -1,0 +1,25 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Icon at the start
+    div.k-preview
+      div.k-input-group.k-narrow
+        span.k-input-group__addon.k-input-group__addon--start
+          span.k-icon.k-icon-search
+        input.ui-input(type="search" placeholder="Search...")
+  section.k-demo
+    h2.k-demo__title Text at the start and at the end
+    div.k-preview.k-preview--column
+      div.k-input-group.k-narrow
+        span.k-input-group__addon.k-input-group__addon--start $
+        input.ui-input(type="number" placeholder="0.00")
+        span.k-input-group__addon.k-input-group__addon--end USD
+      div.k-input-group.k-narrow
+        span.k-input-group__addon.k-input-group__addon--start https://
+        input.ui-input(type="text" placeholder="example.com")
+  section.k-demo
+    h2.k-demo__title Button at the end
+    div.k-preview
+      div.k-input-group.k-narrow
+        input.ui-input(type="text" value="https://pavlus.dev/ui-kit" readonly)
+        button.ui-button.ui-button-secondary.k-input-group__button(type="button" aria-label="Copy")
+          span.k-icon.k-icon-copy

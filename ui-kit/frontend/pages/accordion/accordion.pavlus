@@ -1,0 +1,25 @@
+// Native <details name="faq">: the browser keeps one open at a time, so no logic.
+section.k-page
+  section.k-demo
+    h2.k-demo__title One at a time
+    div.k-preview.k-preview--block
+      div.ui-accordion.k-narrow
+        details.ui-accordion-item(name="faq" open)
+          summary.ui-accordion-trigger Is it accessible?
+          div.ui-accordion-content Yes. It uses native details elements, with their keyboard handling.
+        details.ui-accordion-item(name="faq")
+          summary.ui-accordion-trigger Is it styled?
+          div.ui-accordion-content Yes. It comes with the admin-app look, from the same tokens as everything else.
+        details.ui-accordion-item(name="faq")
+          summary.ui-accordion-trigger Is it animated?
+          div.ui-accordion-content The chevron turns; the content shows at once.
+  section.k-demo
+    h2.k-demo__title Several at a time
+    div.k-preview.k-preview--block
+      div.ui-accordion.k-narrow
+        details.ui-accordion-item
+          summary.ui-accordion-trigger Shipping
+          div.ui-accordion-content Free shipping on orders over $50.
+        details.ui-accordion-item
+          summary.ui-accordion-trigger Returns
+          div.ui-accordion-content Thirty days, no questions asked.

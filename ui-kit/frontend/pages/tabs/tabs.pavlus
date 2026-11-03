@@ -1,0 +1,33 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Account and password
+    div.k-preview.k-preview--block
+      div.ui-tabs.k-narrow
+        div.ui-tabs-list(role="tablist")
+          for tab in tabs key tab.id
+            button.ui-tabs-trigger(type="button" role="tab" aria-selected={tab.id === active ? "true" : "false"} @click=select(tab.id)) {tab.title}
+        div.ui-tabs-content(role="tabpanel")
+          if active === "account"
+            div.ui-card
+              div.ui-card-header
+                h3.ui-card-title Account
+                p.ui-card-description Make changes to your account here.
+              div.ui-card-content
+                div.ui-field
+                  label.ui-label(for="tb-name") Name
+                  input.ui-input#tb-name(type="text" value="Pedro Duarte")
+          else if active === "password"
+            div.ui-card
+              div.ui-card-header
+                h3.ui-card-title Password
+                p.ui-card-description Change your password here.
+              div.ui-card-content
+                div.ui-field
+                  label.ui-label(for="tb-current") Current password
+                  input.ui-input#tb-current(type="password")
+          else
+            div.ui-card
+              div.ui-card-header
+                h3.ui-card-title Billing
+                p.ui-card-description You are on the free plan.
+    p.k-hint Active tab: {active}

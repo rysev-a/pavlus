@@ -1,0 +1,28 @@
+// Native checkboxes: the browser keeps their state, so no logic.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default
+    div.k-preview
+      div.ui-checkbox
+        input.ui-checkbox-input#cb-terms(type="checkbox")
+        label.ui-checkbox-label(for="cb-terms") Accept terms and conditions
+  section.k-demo
+    h2.k-demo__title Checked and disabled
+    div.k-preview.k-preview--column
+      div.ui-checkbox
+        input.ui-checkbox-input#cb-checked(type="checkbox" checked)
+        label.ui-checkbox-label(for="cb-checked") Checked
+      div.ui-checkbox
+        input.ui-checkbox-input#cb-disabled(type="checkbox" disabled)
+        label.ui-checkbox-label(for="cb-disabled") Disabled
+      div.ui-checkbox
+        input.ui-checkbox-input#cb-disabled-on(type="checkbox" checked disabled)
+        label.ui-checkbox-label(for="cb-disabled-on") Disabled and checked
+  section.k-demo
+    h2.k-demo__title With a description
+    div.k-preview
+      div.ui-checkbox
+        input.ui-checkbox-input#cb-marketing(type="checkbox" checked)
+        div.ui-switch-text
+          label.ui-checkbox-label(for="cb-marketing") Marketing emails
+          p.ui-switch-description Receive news about new releases.

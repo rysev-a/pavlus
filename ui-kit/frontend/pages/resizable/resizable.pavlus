@@ -1,0 +1,13 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Two panels
+    div.k-preview.k-preview--block
+      div.ui-resizable-panels(style="--ui-panel-first: {first}fr; --ui-panel-second: {second}fr")
+        div.ui-resizable-panel
+          strong One
+          p.k-hint {first}%
+        input.ui-resizable-divider(type="range" min="20" max="80" step="1" value=first aria-label="Resize the panels" @input=resize)
+        div.ui-resizable-panel
+          strong Two
+          p.k-hint {second}%
+    p.k-hint Drag the handle between the panels (or use the arrow keys).

@@ -1,0 +1,36 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Field group
+    div.k-preview.k-preview--block
+      form.ui-form
+        fieldset.ui-fieldset
+          legend.ui-field-legend Profile
+          div.ui-field-group
+            div.ui-field
+              label.ui-field-label(for="f-name") Full name
+              input.ui-input#f-name(type="text" placeholder="Evil Rabbit")
+              p.ui-field-description This appears on your public profile.
+            div.ui-field
+              label.ui-field-label(for="f-bio") Bio
+              textarea#f-bio(placeholder="Tell us a little about yourself" rows="3")
+            div.ui-field
+              label.ui-field-label(for="f-role") Role
+              select#f-role
+                option Developer
+                option Designer
+                option Manager
+        div.ui-form-actions
+          button.ui-button.ui-button-default(type="button") Save
+          button.ui-button.ui-button-outline(type="button") Cancel
+  section.k-demo
+    h2.k-demo__title Validation
+    div.k-preview.k-preview--block
+      div.ui-form
+        div.ui-field(data-invalid="true")
+          label.ui-field-label(for="f-email") Email
+          input.ui-input#f-email(type="email" value="not-an-email" aria-invalid="true")
+          p.ui-field-error Enter a valid email address.
+        div.ui-field(data-valid="true")
+          label.ui-field-label(for="f-user") Username
+          input.ui-input#f-user(type="text" value="pavlus")
+          p.ui-field-success Username is available.

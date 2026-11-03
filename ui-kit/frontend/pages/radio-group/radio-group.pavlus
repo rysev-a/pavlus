@@ -1,0 +1,29 @@
+// Native radios: the browser keeps the choice, so no logic.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default
+    div.k-preview
+      fieldset.ui-radio-group
+        legend.ui-radio-group-label Spacing
+        div.ui-radio-group-options
+          div.ui-radio-option
+            input.ui-radio-input#rg-default(type="radio" name="spacing" checked)
+            label.ui-radio-label(for="rg-default") Default
+          div.ui-radio-option
+            input.ui-radio-input#rg-comfortable(type="radio" name="spacing")
+            label.ui-radio-label(for="rg-comfortable") Comfortable
+          div.ui-radio-option
+            input.ui-radio-input#rg-compact(type="radio" name="spacing")
+            label.ui-radio-label(for="rg-compact") Compact
+  section.k-demo
+    h2.k-demo__title Disabled
+    div.k-preview
+      fieldset.ui-radio-group
+        legend.ui-radio-group-label Plan
+        div.ui-radio-group-options
+          div.ui-radio-option
+            input.ui-radio-input#rg-free(type="radio" name="plan" checked disabled)
+            label.ui-radio-label(for="rg-free") Free
+          div.ui-radio-option
+            input.ui-radio-input#rg-pro(type="radio" name="plan" disabled)
+            label.ui-radio-label(for="rg-pro") Pro

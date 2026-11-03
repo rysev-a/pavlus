@@ -1,0 +1,15 @@
+// The top bar: the sidebar switch, a link to the code and the theme switch.
+// State = the props passed by the shell (`theme`). Its clicks reach the shell
+// as `header.toggleSidebar` / `header.toggleTheme`.
+header.ui-shell-header
+  button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Toggle the sidebar" @click=toggleSidebar)
+    span.k-icon.k-icon-menu
+  div.ui-shell-header-start
+    span.k-header-title shadcn components, as pavlus templates
+  div.ui-shell-header-actions
+    a.ui-button.ui-button-ghost.ui-button-sm(href="https://github.com/rysev-a/pavlus/tree/main/ui-kit" target="_blank" rel="noreferrer") GitHub
+    button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Toggle the theme" @click=toggleTheme)
+      if theme === "dark"
+        span.k-icon.k-icon-sun
+      else
+        span.k-icon.k-icon-moon

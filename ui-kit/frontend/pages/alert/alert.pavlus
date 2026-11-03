@@ -1,0 +1,37 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default
+    div.k-preview.k-preview--block
+      div.ui-alert
+        span.ui-alert-icon
+          span.k-icon.k-icon-info
+        div.ui-alert-body
+          p.ui-alert-title Heads up!
+          div.ui-alert-description You can add components to your app using the cli.
+  section.k-demo
+    h2.k-demo__title Status
+    div.k-preview.k-preview--block
+      div.ui-alert.ui-alert-info
+        span.ui-alert-icon
+          span.k-icon.k-icon-info
+        div.ui-alert-body
+          p.ui-alert-title Information
+          div.ui-alert-description A new version is available.
+      div.ui-alert.ui-alert-success
+        span.ui-alert-icon
+          span.k-icon.k-icon-check
+        div.ui-alert-body
+          p.ui-alert-title Payment successful
+          div.ui-alert-description Your payment of $29.99 has been processed.
+      div.ui-alert.ui-alert-warning
+        span.ui-alert-icon
+          span.k-icon.k-icon-alert
+        div.ui-alert-body
+          p.ui-alert-title Your trial ends soon
+          div.ui-alert-description Add a payment method to keep your projects.
+      div.ui-alert.ui-alert-danger
+        span.ui-alert-icon
+          span.k-icon.k-icon-alert
+        div.ui-alert-body
+          p.ui-alert-title Unable to process your payment
+          div.ui-alert-description Verify your card details and try again.

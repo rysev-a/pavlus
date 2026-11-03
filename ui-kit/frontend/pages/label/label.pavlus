@@ -1,0 +1,13 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title With a checkbox
+    div.k-preview
+      div.ui-checkbox
+        input.ui-checkbox-input#lb-terms(type="checkbox")
+        label.ui-label(for="lb-terms") Accept terms and conditions
+  section.k-demo
+    h2.k-demo__title With an input
+    div.k-preview
+      div.ui-field.k-narrow
+        label.ui-label(for="lb-name") Your name
+        input.ui-input#lb-name(type="text" placeholder="Ann")

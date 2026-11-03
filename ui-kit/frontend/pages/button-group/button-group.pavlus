@@ -1,0 +1,31 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Horizontal
+    div.k-preview
+      div.ui-button-group.ui-button-group-horizontal(role="group")
+        button.ui-button.ui-button-outline(type="button") Archive
+        button.ui-button.ui-button-outline(type="button") Report
+        button.ui-button.ui-button-outline(type="button") Snooze
+  section.k-demo
+    h2.k-demo__title Vertical
+    div.k-preview
+      div.ui-button-group.ui-button-group-vertical(role="group")
+        button.ui-button.ui-button-outline(type="button") Top
+        button.ui-button.ui-button-outline(type="button") Middle
+        button.ui-button.ui-button-outline(type="button") Bottom
+  section.k-demo
+    h2.k-demo__title With a separator and a label
+    div.k-preview
+      div.ui-button-group.ui-button-group-horizontal(role="group")
+        span.ui-button-group-text Page 2
+        button.ui-button.ui-button-secondary(type="button") Previous
+        div.ui-button-group-separator
+        button.ui-button.ui-button-secondary(type="button") Next
+  section.k-demo
+    h2.k-demo__title Split button
+    div.k-preview
+      div.ui-button-group.ui-button-group-horizontal(role="group")
+        button.ui-button.ui-button-default(type="button") Save
+        div.ui-button-group-separator
+        button.ui-button.ui-button-default.ui-button-icon(type="button" aria-label="More options")
+          span.k-icon.k-icon-chevron-down

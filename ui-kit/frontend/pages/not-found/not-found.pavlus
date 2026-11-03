@@ -1,0 +1,5 @@
+// The `*` route: a template without logic.
+section.not-found.ui-empty-state
+  strong Page not found
+  p There is no component at {route.path}.
+  a.ui-button.ui-button-outline.ui-button-sm(href={root + "/"} @click.prevent=navigate("/")) Back to all components

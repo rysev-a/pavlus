@@ -1,0 +1,42 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Fallback
+    div.k-preview
+      span.ui-avatar
+        span.ui-avatar-fallback CN
+      span.ui-avatar
+        span.ui-avatar-fallback AR
+      span.ui-avatar
+        span.ui-avatar-fallback PV
+  section.k-demo
+    h2.k-demo__title Sizes
+    div.k-preview
+      span.ui-avatar.ui-avatar-sm
+        span.ui-avatar-fallback S
+      span.ui-avatar.ui-avatar-md
+        span.ui-avatar-fallback M
+      span.ui-avatar.ui-avatar-lg
+        span.ui-avatar-fallback L
+  section.k-demo
+    h2.k-demo__title Stacked
+    div.k-preview
+      div.k-avatar-stack
+        span.ui-avatar
+          span.ui-avatar-fallback AB
+        span.ui-avatar
+          span.ui-avatar-fallback CD
+        span.ui-avatar
+          span.ui-avatar-fallback EF
+  section.k-demo
+    h2.k-demo__title With a name
+    div.k-preview
+      div.ui-person
+        span.ui-person-avatar(style="--hue: 220") AN
+        span.ui-person-text
+          span.ui-person-name Ann Lee
+          span.ui-person-sub ann@example.com
+      div.ui-person
+        span.ui-person-avatar(style="--hue: 150") BO
+        span.ui-person-text
+          span.ui-person-name Bob Stone
+          span.ui-person-sub bob@example.com

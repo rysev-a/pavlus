@@ -1,0 +1,14 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Default
+    div.k-preview
+      div.ui-slider.k-narrow
+        label.ui-slider-label(for="sl-volume") Volume: {value}
+        input.ui-slider-input#sl-volume(type="range" min="0" max="100" step="1" value=value @input=change)
+  section.k-demo
+    h2.k-demo__title Linked to a progress bar
+    div.k-preview
+      div.k-stack.k-narrow
+        div.ui-progress(role="progressbar")
+          div.ui-progress-indicator(style="width: {value}%")
+        p.k-hint The same state drives both: {value}%
