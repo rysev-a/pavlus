@@ -1,0 +1,11 @@
+import Bar from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Search, filters and bulk actions
+    p.k-demo__note Tick "select all" to see the bulk buttons; Move to opens a menu.
+    div.k-preview.k-preview--block
+      div.k-mtool-demo
+        +Bar#bar(query=query filters=filters selectedCount=selectedCount label=label allSelected=allSelected buttons=buttons targets=targets moveOpen=moveOpen)
+      if last
+        p.k-hint {last}

@@ -1,0 +1,84 @@
+// The compose window of a mail client, to embed. State = the props: `draft`
+// (a Compose from compose.ts: to, cc, subject, body, showCc, minimized,
+// attachOpen, errors), `ui` (from `composeView`: toChips, ccChips,
+// savedLabel, attachments, totalLabel, title) and `files` ([{ id, name,
+// sizeLabel, added }] for the attach menu). Events, with the name of the embed
+// in front: `field` (payload: the field name; the value is in the event),
+// `toggleCc`, `contacts` (the field name), `attachMenu`, `attach` and
+// `removeAttach` (a file id), `send`, `discard`, `close`, `minimize`.
+div.k-mcomp(class:is-min={draft.minimized} role="dialog" aria-label="Compose")
+  header.k-mcomp__head
+    strong.k-mcomp__title {ui.title}
+    div.k-mcomp__head-tools
+      button.k-mcomp__icon(type="button" aria-label={draft.minimized ? "Expand" : "Minimize"} @click=minimize)
+        span.k-icon.k-mi-minus
+      button.k-mcomp__icon(type="button" aria-label="Save and close" @click=close)
+        span.k-icon.k-icon-x
+  if !draft.minimized
+    form.k-mcomp__form(novalidate @submit.prevent=send)
+      div.k-mcomp__field(data-invalid={draft.errors.to ? "true" : null})
+        label.k-mcomp__label(for="k-mcomp-to") To
+        input.k-mcomp__input#k-mcomp-to(type="text" autocomplete="off" placeholder="name@example.com, another@example.com" value=draft.to @input=field("to"))
+        div.k-mcomp__tools
+          if !draft.showCc
+            button.k-mcomp__link(type="button" @click=toggleCc) Cc
+          button.k-mcomp__icon(type="button" aria-label="Choose from contacts" @click=contacts("to"))
+            span.k-icon.k-mi-users
+      if ui.toChips.length > 0
+        ul.k-mcomp__chips(aria-label="Recipients")
+          for c, i in ui.toChips key i
+            li.k-mcomp__chip(data-ok={c.ok ? "true" : "false"}) {c.text}
+      if draft.errors.to
+        p.k-mcomp__error(role="alert") {draft.errors.to}
+      if draft.showCc
+        div.k-mcomp__field(data-invalid={draft.errors.cc ? "true" : null})
+          label.k-mcomp__label(for="k-mcomp-cc") Cc
+          input.k-mcomp__input#k-mcomp-cc(type="text" autocomplete="off" placeholder="Copy to..." value=draft.cc @input=field("cc"))
+          div.k-mcomp__tools
+            button.k-mcomp__icon(type="button" aria-label="Choose cc from contacts" @click=contacts("cc"))
+              span.k-icon.k-mi-users
+        if ui.ccChips.length > 0
+          ul.k-mcomp__chips(aria-label="Copied")
+            for c, i in ui.ccChips key i
+              li.k-mcomp__chip(data-ok={c.ok ? "true" : "false"}) {c.text}
+        if draft.errors.cc
+          p.k-mcomp__error(role="alert") {draft.errors.cc}
+      div.k-mcomp__field
+        label.k-mcomp__label(for="k-mcomp-subject") Subject
+        input.k-mcomp__input#k-mcomp-subject(type="text" placeholder="What is this about?" value=draft.subject @input=field("subject"))
+      textarea.k-mcomp__body(aria-label="Message" rows="9" placeholder="Write your message..." value=draft.body @input=field("body"))
+      if draft.errors.body
+        p.k-mcomp__error(role="alert") {draft.errors.body}
+      if ui.attachments.length > 0
+        ul.k-mcomp__files(aria-label="Attachments")
+          for a in ui.attachments key a.id
+            li.k-mcomp__file
+              span.k-icon.k-mi-clip
+              span.k-mcomp__file-name {a.name}
+              span.k-muted {a.sizeLabel}
+              button.k-mcomp__icon(type="button" aria-label={"Remove " + a.name} @click=removeAttach(a.id))
+                span.k-icon.k-icon-x
+        p.k-mcomp__total {ui.totalLabel}
+      if draft.errors.attach
+        p.k-mcomp__error(role="alert") {draft.errors.attach}
+      footer.k-mcomp__foot
+        button.ui-button.ui-button-default(type="submit")
+          span.k-icon.k-mi-send
+          | Send
+        div.k-mcomp__attach
+          button.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-expanded={draft.attachOpen ? "true" : "false"} @click=attachMenu)
+            span.k-icon.k-mi-clip
+            | Attach
+          if draft.attachOpen
+            ul.k-mcomp__menu(role="menu")
+              for f in files key f.id
+                li
+                  button.k-mcomp__menu-item(type="button" role="menuitemcheckbox" aria-checked={f.added ? "true" : "false"} @click=attach(f.id))
+                    span.k-mcomp__menu-name {f.name}
+                    span.k-muted {f.sizeLabel}
+                    if f.added
+                      span.k-icon.k-icon-check
+        span.k-mcomp__saved(role="status") {ui.savedLabel}
+        button.ui-button.ui-button-ghost.ui-button-sm.k-mcomp__discard(type="button" aria-label="Discard draft" @click=discard)
+          span.k-icon.k-mi-trash
+          | Discard

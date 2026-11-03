@@ -1,0 +1,55 @@
+// A messenger in three panes (chats, conversation, info) with a new-chat
+// dialog. Everything inside is a block: the chat list (conversation-list), the
+// header (chat-header), the bubbles (msg-bubbles), the input (msg-composer),
+// the emoji picker (emoji-picker), the side panel (chat-info-panel) and the
+// dialog (new-chat-dialog). On small screens `data-pane` shows one at a time.
+import List from "../../blocks/conversation-list/view.pavlus"
+import Head from "../../blocks/chat-header/view.pavlus"
+import Bubbles from "../../blocks/msg-bubbles/view.pavlus"
+import Composer from "../../blocks/msg-composer/view.pavlus"
+import Picker from "../../blocks/emoji-picker/view.pavlus"
+import Info from "../../blocks/chat-info-panel/view.pavlus"
+import Dialog from "../../blocks/new-chat-dialog/view.pavlus"
+
+div.k-template.cm(data-pane={pane} data-info={infoOpen ? "true" : "false"})
+  header.cm__top
+    span.ui-brand-mark H
+    strong.cm__brand Hearth Chat
+    span.cm__spacer
+    if unreadAll > 0
+      span.cm__unread
+        span.k-icon.k-icon-bell
+        | {unreadAll} new
+    span.k-mavatar.k-mavatar--sm(style="--k-hue: 190" title="Maya Chen") MC
+  div.cm__frame
+    aside.cm__list
+      +List#cl(title="Messages" query=query tabs=tabs rows=rows emptyText=emptyText)
+    section.cm__chat(aria-label="Conversation")
+      if hasChat
+        div.cm__conversation
+          +Head#head(header=header)
+          div.cm__stream
+            +Bubbles#bub(rows=messageRows typing=typingLine quick=quick emptyText="No messages yet. Say hello!")
+          div.cm__input
+            if emojiOpen
+              div.cm__emoji
+                +Picker#ep(tabs=picker.tabs emojis=picker.emojis title=picker.title recent=picker.recent query=emojiQuery)
+            +Composer#mc(draft=draft placeholder=placeholder replyTo=replyBanner files=chips menu=attachItems menuOpen=menuOpen emojiOpen=emojiOpen canSend=sendable)
+      else
+        div.cm__none
+          span.k-icon.k-icon-lg.k-mi-send
+          strong Pick a conversation
+          p Choose a chat on the left, or start a new one with the pencil button.
+          button.ui-button.ui-button-default.ui-button-sm(type="button" @click=cl.newChat)
+            span.k-icon.k-icon-plus
+            | New chat
+    if infoOpen
+      aside.cm__info
+        if info
+          +Info#info(info=info)
+    if toast
+      div.cm__toast(role="status")
+        span {toast}
+        button.cm__toast-x(type="button" aria-label="Dismiss" @click=dismissToast)
+          span.k-icon.k-icon-x
+  +Dialog#ncd(open=dialog.open mode=dialog.mode name=dialog.name query=dialog.query showError=dialog.showError dialog=dialogUi)
