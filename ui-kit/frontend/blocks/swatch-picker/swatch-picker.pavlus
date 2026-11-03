@@ -1,0 +1,9 @@
+import Picker from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Colors and sizes with stock
+    p.k-demo__note The sizes in stock change with the color. A sold out size is crossed out and cannot be chosen; Sky is sold out in every size.
+    div.k-preview.k-preview--block
+      div.k-narrow
+        +Picker#picker(...picker)

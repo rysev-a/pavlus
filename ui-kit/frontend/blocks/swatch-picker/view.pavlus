@@ -1,0 +1,16 @@
+// Color swatches and size buttons, to embed as `+Picker#picker(...picker)`.
+// State = the props (see `pickerOf` in swatch-picker.ts): colorTitle, colors
+// ({ id, label, h, s, l, active, soldOut }), sizeTitle, sizes ({ id, active,
+// soldOut }), note, low. Messages: color(id), size(id).
+section.k-swatch-picker
+  div.k-swatch-picker__row
+    p.k-swatch-picker__title {colorTitle}
+    div.k-swatch-picker__swatches(role="radiogroup" aria-label="Color")
+      for c in colors key c.id
+        button.k-swatch-picker__swatch(type="button" role="radio" aria-checked={c.active ? "true" : "false"} aria-label="{c.label}{c.soldOut ? ', sold out' : ''}" title=c.label disabled={c.soldOut} class:is-active={c.active} class:is-sold={c.soldOut} style="--sw-h: {c.h}; --sw-s: {c.s}%; --sw-l: {c.l}%" @click=color(c.id))
+  div.k-swatch-picker__row
+    p.k-swatch-picker__title {sizeTitle}
+    div.k-swatch-picker__sizes(role="radiogroup" aria-label="Size")
+      for s in sizes key s.id
+        button.ui-button.ui-button-outline.k-swatch-picker__size(type="button" role="radio" aria-checked={s.active ? "true" : "false"} aria-label="{s.id}{s.soldOut ? ', sold out' : ''}" disabled={s.soldOut} class:is-active={s.active} class:is-sold={s.soldOut} @click=size(s.id)) {s.id}
+  p.k-swatch-picker__note(class:is-low={low}) {note}

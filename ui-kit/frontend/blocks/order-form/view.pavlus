@@ -1,0 +1,66 @@
+// An order form for a small shop, to embed as a child (`orderBlock` in
+// order-form.ts): pickup, courier with a distance fee, or a table; times to
+// pick from; name and phone. The shop sends `setClock` and, through its props,
+// `itemCount`; it listens to `submit`.
+form.k-order(novalidate @submit.prevent=submit)
+  div.k-order__modes(role="radiogroup" aria-label="How do you want it?")
+    for m in modes key m.id
+      button.k-order__mode(type="button" role="radio" aria-checked={m.active ? "true" : "false"} class:is-active={m.active} @click=setMode(m.id))
+        strong {m.label}
+        span {m.note}
+  div.k-order__block
+    div.k-order__when
+      span.k-order__label When
+      div.k-order__days
+        for d in days key d.id
+          button.ui-button.ui-button-outline.ui-button-sm.k-order__day(type="button" aria-pressed={d.active ? "true" : "false"} disabled={d.disabled} @click=setDay(d.id)) {d.label}
+    if slotsNote
+      p.k-order__muted {slotsNote}
+    div.k-order__slots(role="radiogroup" aria-label="Time")
+      for s in slots key s.id
+        button.k-order__slot(type="button" role="radio" aria-checked={s.active ? "true" : "false"} class:is-active={s.active} disabled={s.taken} title={s.taken ? "Taken" : null} @click=setSlot(s.id)) {s.label}
+    if errors.slot
+      p.ui-field-error {errors.slot}
+  if mode === "courier"
+    div.k-order__block
+      div.ui-slider
+        label.ui-slider-label(for="ord-km") Distance from the bakery: {kmLabel}
+        input.ui-slider-input#ord-km(type="range" min="1" max="14" step="1" value=km @input=setKm)
+      p.k-order__fee {feeLabel}
+      div.ui-field(data-invalid={errors.address ? "true" : null})
+        label.ui-label(for="ord-address") Delivery address
+        input.ui-input#ord-address(type="text" placeholder="Street, house, flat" autocomplete="street-address" value=address @input=field("address"))
+        if errors.address
+          p.ui-field-error {errors.address}
+  if mode === "table"
+    div.k-order__block
+      div.k-order__guests
+        span.k-order__label Guests
+        div.k-order__stepper
+          button.ui-button.ui-button-outline.ui-button-icon-xs(type="button" aria-label="One guest less" @click=guests(-1)) −
+          strong {guests}
+          button.ui-button.ui-button-outline.ui-button-icon-xs(type="button" aria-label="One guest more" @click=guests(1))
+            span.k-icon.k-icon-plus
+      p.k-order__muted We keep the table for 90 minutes. Groups over 8: call us.
+  div.k-order__fields
+    div.ui-field(data-invalid={errors.name ? "true" : null})
+      label.ui-label(for="ord-name") Name
+      input.ui-input#ord-name(type="text" placeholder="Anna" autocomplete="name" value=name @input=field("name"))
+      if errors.name
+        p.ui-field-error {errors.name}
+    div.ui-field(data-invalid={errors.phone ? "true" : null})
+      label.ui-label(for="ord-phone") Phone
+      input.ui-input#ord-phone(type="tel" placeholder="+1 503 555 0100" autocomplete="tel" value=phone @input=field("phone"))
+      if errors.phone
+        p.ui-field-error {errors.phone}
+  div.ui-field
+    label.ui-label(for="ord-notes") Notes (optional)
+    textarea.ui-textarea-control#ord-notes(rows="2" placeholder="Allergies, a candle for the cake, a ring on the door..." @input=field("notes")) {notes}
+  p.k-order__summary {summary}
+  if errors.items
+    div.ui-alert.ui-alert-danger
+      span.ui-alert-icon
+        span.k-icon.k-icon-alert
+      div.ui-alert-body
+        div.ui-alert-description {errors.items}
+  button.ui-button.ui-button-default.ui-button-lg.k-order__submit(type="submit") Place order

@@ -1,0 +1,9 @@
+import Place from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Address, contacts and opening hours
+    p.k-demo__note Today is marked and the status follows the clock; this demo pretends it is Wednesday, 10:20.
+    div.k-preview.k-preview--block
+      div.k-narrow(style="width: min(100%, 32rem)")
+        +Place#place(...place)

@@ -1,0 +1,36 @@
+/* The layout of the Local Bakery page; its parts are the kit's blocks. */
+.bk { background: var(--background); color: var(--foreground); }
+.bk-wrap { display: grid; gap: calc(56px * var(--k-block, 1)); width: min(100%, 1120px); margin: 0 auto; padding: 4px 16px calc(32px * var(--k-block, 1)); }
+.bk-hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: calc(32px * var(--k-block, 1)); align-items: center; padding: calc(24px * var(--k-block, 1)) calc(40px * var(--k-block, 1)); border-radius: calc(var(--radius) * 1.75); background: color-mix(in srgb, var(--primary) 12%, var(--card)); }
+.bk-hero .k-hero__title { max-width: 14ch; font-weight: 600; letter-spacing: -.02em; }
+.bk-hero__art { position: relative; justify-self: center; width: min(100%, 340px); aspect-ratio: 1; }
+.bk-bubble { --l1: 92%; --l2: 78%; position: absolute; display: grid; place-items: center; border-radius: 50%; box-shadow: var(--shadow-md); background: linear-gradient(135deg, hsl(var(--h) 85% var(--l1)), hsl(calc(var(--h) + 20) 75% var(--l2))); }
+.dark .bk-hero__art .bk-bubble { --l1: 44%; --l2: 32%; }
+.bk-bubble--a { --h: 40; inset: 2% 18% 38% 2%; font-size: 84px; }
+.bk-bubble--b { --h: 28; inset: 22% 0 12% 46%; font-size: 70px; }
+.bk-bubble--c { --h: 50; inset: 54% 52% 0 6%; font-size: 58px; }
+.bk-bubble--d { --h: 18; inset: 68% 6% 2% 56%; font-size: 40px; }
+
+.bk-block { display: grid; gap: calc(20px * var(--k-block, 1)); scroll-margin-top: 16px; }
+.bk-block__head { display: grid; gap: 6px; }
+.bk-h2 { margin: 0; font-size: clamp(26px, 3.2vw, 36px); font-weight: 600; letter-spacing: -.02em; }
+.bk-lead { margin: 0; max-width: 62ch; color: var(--muted-foreground); }
+.bk-order { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: calc(24px * var(--k-block, 1)); align-items: start; }
+.bk-order__tray { position: sticky; top: 16px; display: grid; gap: calc(16px * var(--k-block, 1)); padding: calc(20px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); box-shadow: var(--shadow-sm); }
+.bk-tray__title { margin: 0; font-size: 20px; font-weight: 600; }
+.bk-visit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: calc(24px * var(--k-block, 1)); align-items: start; }
+.bk-ways { display: grid; gap: calc(12px * var(--k-block, 1)); }
+.bk-ways .ui-card-header { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; row-gap: 2px; padding-bottom: calc(24px * var(--k-block, 1)); }
+.bk-way__icon { grid-row: 1 / span 2; font-size: 30px; line-height: 1; }
+.bk-footer { padding-top: calc(24px * var(--k-block, 1)); border-top: 1px dashed var(--border); font-size: 14px; }
+.bk-footer p { margin: 4px 0 0; color: var(--muted-foreground); }
+.bk-dialog { width: min(100vw - 24px, 36rem); max-height: calc(100vh - 32px); overflow: auto; padding: calc(24px * var(--k-block, 1)); }
+.bk .k-pgrid__list { grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }
+
+@media (max-width: 860px) {
+  .bk-hero { grid-template-columns: minmax(0, 1fr); padding: calc(20px * var(--k-block, 1)); }
+  .bk-hero__art { width: min(100%, 260px); }
+  .bk-order, .bk-visit { grid-template-columns: minmax(0, 1fr); }
+  .bk-order__tray { position: static; }
+}
+@media (max-width: 640px) { .bk .k-sitenav__links { display: none; } }

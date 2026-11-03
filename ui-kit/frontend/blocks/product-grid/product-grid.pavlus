@@ -1,0 +1,12 @@
+import Grid from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Grid
+    div.k-preview.k-preview--block
+      +Grid#grid(cards=cards emptyTitle="No products found" emptyText="Try another search.")
+      p.k-hint(style="margin-top: 16px") {last}
+  section.k-demo
+    h2.k-demo__title Empty
+    div.k-preview.k-preview--block
+      +Grid#blank(cards=none emptyTitle="No products found" emptyText="Nothing matches these filters. Try removing one.")

@@ -1,0 +1,24 @@
+// A menu by category with prices and add buttons, to embed. State = the props:
+// `sections` (see `sectionsOf` in menu-list.ts). Message: add(id).
+section.k-menu
+  for sec in sections key sec.id
+    div.k-menu__section
+      header.k-menu__head
+        h3.k-menu__title {sec.title}
+        span.k-menu__note {sec.note}
+      ul.k-menu__items
+        for item in sec.items key item.id
+          li.k-menu__item(class:is-sold={item.soldOut})
+            span.k-menu__art(style="--hue: {item.hue}") {item.emoji}
+            div.k-menu__text
+              div.k-menu__line
+                strong.k-menu__name {item.name}
+                span.k-menu__dots(aria-hidden="true")
+                span.k-menu__price {item.priceLabel}
+              p.k-menu__desc {item.desc}
+              if item.tags.length > 0
+                div.k-menu__tags
+                  for tag in item.tags key tag
+                    span.ui-badge.ui-badge-secondary {tag}
+            button.ui-button.ui-button-outline.ui-button-icon-sm.k-menu__add(type="button" aria-label=item.addLabel disabled={item.soldOut} @click=add(item.id))
+              span.k-icon.k-icon-plus
