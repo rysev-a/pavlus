@@ -1,0 +1,12 @@
+import ProcessSteps from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title In a row
+    div.k-preview.k-preview--block
+      +ProcessSteps#row(steps=steps)
+  section.k-demo
+    h2.k-demo__title In a column
+    div.k-preview.k-preview--block
+      div.k-narrow
+        +ProcessSteps#column(steps=steps layout="column")

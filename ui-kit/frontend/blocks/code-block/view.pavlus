@@ -1,0 +1,17 @@
+// A block of code, to embed. State = the props: `lines` (from `codeLines(code,
+// lang)` in code-block.ts: numbered lines of coloured tokens), `title`, `lang`
+// and `plain` (anything: no line numbers).
+figure.k-code
+  if title || lang
+    figcaption.k-code__bar
+      span.k-code__title {title}
+      if lang
+        span.k-code__lang {lang}
+  pre.k-code__pre
+    for line in lines key line.n
+      span.k-code__line
+        if !plain
+          span.k-code__no {line.n}
+        span.k-code__text
+          for tok, i in line.tokens key i
+            span(data-k=tok.k) {tok.t}

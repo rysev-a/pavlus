@@ -1,0 +1,7 @@
+// A row of figures, to embed. State = the props: `stats`, a list of
+// { value, label }, and `tone` ("primary" fills the strip with the brand colour).
+dl.k-stats(class:k-stats--primary={tone === "primary"})
+  for stat in stats key stat.label
+    div.k-stats__item
+      dt.k-stats__value {stat.value}
+      dd.k-stats__label {stat.label}

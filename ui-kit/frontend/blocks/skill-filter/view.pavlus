@@ -1,0 +1,17 @@
+// Skill chips you can switch on and off, to embed. State = the props: `chips`
+// (from `chipsOf` in skill-filter.ts: { id, label, on, count }), `title`,
+// `selectedCount`. Events reach the parent as `<name>.toggle` (the skill id)
+// and `<name>.clear`.
+div.k-sf
+  div.k-sf__head
+    strong.k-sf__title {title}
+    if selectedCount > 0
+      button.ui-button.ui-button-link.ui-button-xs(type="button" @click=clear) Clear ({selectedCount})
+  div.k-sf__chips(role="group" aria-label={title})
+    for chip in chips key chip.id
+      button.k-sf__chip(type="button" aria-pressed={chip.on ? "true" : "false"} @click=toggle(chip.id))
+        if chip.on
+          span.k-icon.k-icon-check
+        span {chip.label}
+        if chip.count > 0
+          span.k-sf__count {chip.count}

@@ -1,0 +1,8 @@
+// An accordion of questions, to embed. State = the props: `items`, a list of
+// { q, a }, and `group` (a name, unique on the page: the browser keeps one
+// <details> of a group open).
+div.ui-accordion.k-faq
+  for item, i in items key item.q
+    details.ui-accordion-item(name=group open={i === 0})
+      summary.ui-accordion-trigger {item.q}
+      div.ui-accordion-content {item.a}
