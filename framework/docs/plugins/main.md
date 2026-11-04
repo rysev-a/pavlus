@@ -30,14 +30,14 @@ DOM event / HTTP reply / timer tick / WS frame
 ```ts
 import { createApp } from "@service-laboratory/pavlus";
 import { createStorePlugin } from "@service-laboratory/pavlus/plugins/store";
-import { createDomPlugin } from "@service-laboratory/pavlus/plugins/dom";
+import { DomPlugin } from "@service-laboratory/pavlus/plugins/dom";
 import { createHttpPlugin } from "@service-laboratory/pavlus/plugins/http";
 
 createApp({
   app: dashboard, // a function, or an instance of a class extending Component
   plugins: [
     createStorePlugin(initialState), // the state lives here
-    createDomPlugin(),
+    new DomPlugin(),
     createHttpPlugin(),
   ],
   mount: "#app", // render the app's view here; sends `mounted`
@@ -55,7 +55,7 @@ createApp({
 
   ```ts
   import {
-    createDomPlugin,
+    DomPlugin,
     createHttpPlugin,
     createStorePlugin,
     storeEffector as store,
@@ -98,15 +98,15 @@ class Users extends Component {
 }
 ```
 
-| Plugin | Effector         | Alias used in the docs | Defined in                      |
-| ------ | ---------------- | ---------------------- | ------------------------------- |
-| store  | `storeEffector`  | `store`                | `src/plugins/store/helpers.ts`  |
-| dom    | `domEffector`    | `dom`                  | `src/plugins/dom/helpers.ts`    |
-| http   | `httpEffector`   | `http`                 | `src/plugins/http/helpers.ts`   |
-| ws     | `wsEffector`     | `ws`                   | `src/plugins/ws/helpers.ts`     |
-| time   | `timeEffector`   | `time`                 | `src/plugins/time/helpers.ts`   |
-| logger | `loggerEffector` | `log`                  | `src/plugins/logger/helpers.ts` |
-| router | `routerEffector` | `router`               | `src/plugins/router/helpers.ts` |
+| Plugin | Effector            | Alias used in the docs | Defined in                      |
+| ------ | ------------------- | ---------------------- | ------------------------------- |
+| store  | `storeEffector`     | `store`                | `src/plugins/store/helpers.ts`  |
+| dom    | `DomPlugin` statics | `DomPlugin`            | `src/plugins/dom/mod.ts`        |
+| http   | `httpEffector`      | `http`                 | `src/plugins/http/helpers.ts`   |
+| ws     | `wsEffector`        | `ws`                   | `src/plugins/ws/helpers.ts`     |
+| time   | `timeEffector`      | `time`                 | `src/plugins/time/helpers.ts`   |
+| logger | `loggerEffector`    | `log`                  | `src/plugins/logger/helpers.ts` |
+| router | `routerEffector`    | `router`               | `src/plugins/router/helpers.ts` |
 
 Import an effector from the plugin's entry point or from the `plugins` barrel
 (both re-export it). An effector does nothing by itself: it builds data, the
@@ -140,8 +140,11 @@ free.
 
 - The **store** plugin owns the application state. After every message, if
   the state changed, the core calls `onState(state)` on every plugin that
-  defines it. A DOM mount re-renders on this only when it was created with
-  `followState`; otherwise views repaint on demand via `dom.update`.
+  defines it (the dom plugin does not: it never reads the state). Nothing
+  repaints on its own: a store write answers with `{ prev, next }` and the
+  component that cares returns `DomPlugin.update(patches)` — the patches its
+  view diff computed. A root that wants "repaint everything on any write"
+  wraps itself in `paintOnWrite(app)`.
 - Every plugin owns its **private mutable state**: the DOM plugin its
   listeners, http its running requests, time its timers, ws its sockets.
   Application code never sees it and never needs to clean it up.

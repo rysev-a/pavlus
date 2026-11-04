@@ -8,8 +8,8 @@ export type Path = string | readonly (string | number)[];
  * is `{ prev, next }`, the state before and after the write — and only when
  * it changed anything (a no-op never answers). How the application learns
  * about its own writes: set, then decide in the next message. The pair is
- * also exactly what `dom.update` diffs, so an answer can be painted
- * directly.
+ * is exactly what a view diff takes, so an answer can be turned into
+ * `DomPlugin.update(patches, target)` directly.
  */
 export type StoreEffect =
   | {

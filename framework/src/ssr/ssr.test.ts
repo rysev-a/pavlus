@@ -2,7 +2,8 @@
 import { describe, expect, test, vi } from "vitest";
 import type { Message, PluginContext } from "../core/types.ts";
 import { Component, viewOf } from "../component/mod.ts";
-import { createDomPlugin } from "../plugins/dom/mod.ts";
+import { compileToView } from "../compiler/mod.ts";
+import { DomPlugin } from "../plugins/dom/mod.ts";
 import type { ElementVNode, View, VNode } from "../runtime/vnode.ts";
 import { renderToString, reviveState, serializeState } from "./mod.ts";
 
@@ -84,7 +85,7 @@ function harness(html: string) {
   const root = document.getElementById("app")!;
   const messages: Message[] = [];
   let current = state;
-  const dom = createDomPlugin();
+  const dom = new DomPlugin();
   const ctx: PluginContext<S> = {
     dispatch: (m) => messages.push(m),
     getState: () => current,
@@ -102,8 +103,9 @@ function harness(html: string) {
     set(next: S) {
       const prev = current;
       current = next;
-      // An explicit repaint: a bare mount does not follow the state.
-      dom.handle({ plugin: "dom", type: "update", prev, next }, ctx);
+      // The harness plays the component: it diffs the pair and hands the
+      // plugin the patches, like a paint handler does.
+      dom.update(root, view.diff(prev, next));
     },
   };
 }
@@ -175,6 +177,71 @@ describe("hydration: mounting into a server render", () => {
     const h = harness("");
     expect(h.root.querySelector("ul")).not.toBeNull();
     expect(h.messages).toEqual([{ id: "ready" }]);
+  });
+
+  test("a slot holds a server render the parent's view does not know", () => {
+    const parent = compileToView(`section\n  div#slot`);
+    const child = compileToView(`p {who}`);
+    document.body.innerHTML = `<div id="app"></div>`;
+    const app = document.getElementById("app")!;
+    // What the server sent: the parent's markup, with the child's render
+    // spliced into the slot the parent's own view leaves empty.
+    app.innerHTML = renderToString(parent, state).replace(
+      `<div id="slot"></div>`,
+      `<div id="slot">${renderToString(child, state)}</div>`,
+    );
+    const dom = new DomPlugin();
+    const ctx: PluginContext<S> = {
+      dispatch: () => {},
+      getState: () => state,
+      dispatchEffect() {},
+    };
+    dom.init!(ctx);
+    // The parent adopts its markup; the unknown slot content is tolerated
+    // (it is exactly a server render) and left for the slot's own mount.
+    dom.handle(
+      { plugin: "dom", type: "mount", target: app, view: parent },
+      ctx,
+    );
+    const p = app.querySelector("#slot p")!;
+    expect(p).not.toBeNull();
+    // The child mounts into the slot and hydrates that markup.
+    dom.handle(
+      { plugin: "dom", type: "mount", target: "#slot", view: child },
+      ctx,
+    );
+    expect(dom.stats()).toMatchObject({ mounts: 2 });
+    // A patch from the child's view diff lands in the slot.
+    dom.update("#slot", child.diff(state, { ...state, who: "slot" }));
+    expect(app.querySelector("#slot p")).toBe(p);
+    expect(p.textContent).toBe("slot");
+  });
+
+  test("leftover markup that is not a server render is still a mismatch", () => {
+    const parent = compileToView(`section\n  div#slot`);
+    document.body.innerHTML = `<div id="app"></div>`;
+    const app = document.getElementById("app")!;
+    app.innerHTML = renderToString(parent, state).replace(
+      `<div id="slot"></div>`,
+      `<div id="slot"><span>junk</span></div>`,
+    );
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const dom = new DomPlugin();
+    const ctx: PluginContext<S> = {
+      dispatch: () => {},
+      getState: () => state,
+      dispatchEffect() {},
+    };
+    dom.init!(ctx);
+    dom.handle(
+      { plugin: "dom", type: "mount", target: app, view: parent },
+      ctx,
+    );
+    // The parent could not adopt: it rendered afresh, wiping the junk.
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn.mock.calls[0][0]).toMatch(/does not match/);
+    expect(app.querySelector("#slot span")).toBeNull();
+    warn.mockRestore();
   });
 });
 

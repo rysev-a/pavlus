@@ -2,6 +2,8 @@ import { describe, expect, test, vi } from "vitest";
 import { createApp } from "./mod.ts";
 import type { Effect, Message, Plugin, PluginContext } from "./types.ts";
 import { createStorePlugin } from "../plugins/store/mod.ts";
+import { storeEffector } from "../plugins/store/helpers.ts";
+import { DomPlugin } from "../plugins/dom/mod.ts";
 import { createTimePlugin } from "../plugins/time/mod.ts";
 import {
   Component,
@@ -308,5 +310,48 @@ describe("createApp({ mount })", () => {
     expect(() =>
       createApp({ app: new Shell(), plugins: [], mount: "#app" }),
     ).toThrow(/dom plugin/);
+  });
+
+  test("a component paints itself in the handler of a store write's answer", () => {
+    const diffs: unknown[] = [];
+    const patches = [{ op: "text" as const, id: "1", text: "x" }];
+    const view = {
+      render: () => [],
+      diff: (prev: unknown, next: unknown) => {
+        diffs.push([prev, next]);
+        return patches;
+      },
+    };
+    class Shell extends Component<{ n: number }> {
+      view = view;
+      inc(_m: Message, s: { n: number }) {
+        return [storeEffector.set("n", s.n + 1, { onSuccess: "paint" })];
+      }
+      paint(msg: Message) {
+        const { prev, next } = msg.payload as {
+          prev: { n: number };
+          next: { n: number };
+        };
+        return [DomPlugin.update(view.diff(prev, next))];
+      }
+    }
+    const dom = fakeDom();
+    const store = createStorePlugin({ n: 0 });
+    const a = createApp({
+      app: new Shell(),
+      plugins: [store, dom.plugin],
+      mount: "#app",
+    });
+    expect(diffs).toEqual([]); // the mount itself renders, it does not diff
+    a.dispatch({ id: "inc" });
+    expect(diffs).toEqual([[{ n: 0 }, { n: 1 }]]);
+    // the patches the diff computed went to the dom plugin as an update,
+    // with no target: they belong to the application's only mount
+    expect(dom.mounts[1]).toMatchObject({
+      plugin: "dom",
+      type: "update",
+      patches,
+    });
+    expect(dom.mounts[1].target).toBeUndefined();
   });
 });

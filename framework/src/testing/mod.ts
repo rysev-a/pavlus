@@ -1,6 +1,6 @@
 import type { Message, PluginContext } from "../core/types.ts";
 import { viewOf } from "../component/mod.ts";
-import { createDomPlugin, type DomPlugin } from "../plugins/dom/mod.ts";
+import { DomPlugin } from "../plugins/dom/mod.ts";
 import type { View } from "../runtime/vnode.ts";
 
 export interface DomHarness<S> {
@@ -8,7 +8,7 @@ export interface DomHarness<S> {
   dom: DomPlugin;
   /** Messages the DOM plugin dispatched (from user events). */
   messages: Message[];
-  /** Change state and let the DOM plugin patch the view. */
+  /** Change the state and let the DOM plugin apply the diff as a patch. */
   set(next: S): void;
   unmount(): void;
 }
@@ -29,14 +29,14 @@ export function mountView<S>(
   const messages: Message[] = [];
   const root = doc.createElement("div");
   doc.body.appendChild(root);
-  const dom = createDomPlugin({ document: doc });
+  const dom = new DomPlugin({ document: doc });
   const ctx: PluginContext<S> = {
     dispatch: (m) => messages.push(m),
     getState: () => state,
     dispatchEffect() {},
   };
-  dom.init!(ctx);
-  dom.handle({ plugin: "dom", type: "mount", target: root, view }, ctx);
+  dom.init(ctx);
+  dom.mount(root, view, { ctx });
   return {
     root,
     dom,
@@ -44,11 +44,12 @@ export function mountView<S>(
     set(next) {
       const prev = state;
       state = next;
-      // An explicit repaint: a bare mount does not follow the state.
-      dom.handle({ plugin: "dom", type: "update", prev, next }, ctx);
+      // The harness plays the component: it diffs the pair and hands the
+      // plugin the patches, like a paint handler does.
+      dom.update(root, view.diff(prev, next));
     },
     unmount() {
-      dom.handle({ plugin: "dom", type: "unmount", target: root }, ctx);
+      dom.unmount(root);
     },
   };
 }

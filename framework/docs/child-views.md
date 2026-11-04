@@ -298,7 +298,52 @@ example, property tests for nested and swapping children (the
 checked for leaked nodes and listeners), display `tag` on `ChildSpec` and
 `Component` (the debug panel's Apps tab labels), and `setComponentTrace` —
 a global receive/emit hook per component boundary that the debug agent
-drains into per-component input/output (the Apps tab's **io** view).
+drains into per-component input/output (the Apps tab's **io** view), and
+`DomPlugin.update` — the plugin applies what a component computed (below).
 
-Not done: slots, template lifecycle hooks, typed props, recursive templates,
-`switch`/`case` (section 7), and any `meta.embeds` check.
+Not done: template slots (content passed into a child, section 7), template
+lifecycle hooks, typed props, recursive templates, `switch`/`case`
+(section 7).
+
+## 10. Children that paint themselves (implemented)
+
+A child embedded with `+Name#key(props)` is rendered by the parent's own
+view, in place — there is nothing to mount by hand. Painting follows the
+same hierarchy as messages and state:
+
+- **Down (a lens):** the child sees only its slice (`state[key]` plus props);
+  its store writes are rooted at `key`; its events are prefixed `key.`.
+- **Up (enrichment):** a child's write answers `paint` with the whole
+  state's `{ prev, next }`; the boundary slices the answer to the child's
+  slice, and the child's paint handler diffs its own view:
+
+```ts
+// user-list/user-list.ts — the child knows nothing of its surroundings
+paint(msg: Message): Effect[] {
+  const { prev, next } = msg.payload as { prev: ListState; next: ListState };
+  return [DomPlugin.update(view.diff(prev, next))]; // no target, local ids
+}
+```
+
+The patches bubble up with the effect, and every boundary adds its own
+segment: node ids get the embed's `"/nid"` in front (so they address the
+nodes the parent's render created), event messages the `"key."` prefix.
+By the root they address the application's one mount; nested children
+compose, because each boundary only adds its own segment. The dom plugin
+never diffs, never reads the state, and knows nothing about components; it
+applies the patches it is given.
+
+- What a child cannot paint is appearing and disappearing: closing a form
+  writes its slice to `null`, which the child's template cannot render. Those
+  writes answer something else (`done`, `closed`), and the parent — whose
+  diff mounts and unmounts the embed (`if edit` in its template) — paints the
+  change itself.
+- A root that wants "repaint everything on any write" wraps itself in
+  `paintOnWrite(app)` and gives its `paint` handler the root diff — the
+  outlet and the embedded children repaint with it, since the root's diff
+  reaches into both.
+- A component is a mini-application: nothing in this wiring differs between
+  the whole app and a child, they compose hierarchically.
+- On the server the shell renders whole, children included, from the same
+  state; the browser hydrates the whole page at once (`adopt` walks the
+  rendered nodes and attaches ids and listeners).

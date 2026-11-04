@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import { compileToView } from "../../compiler/mod.ts";
 import { mountView } from "../../testing/mod.ts";
 import type { PluginContext } from "../../core/types.ts";
-import { createDomPlugin } from "./mod.ts";
+import { DomPlugin } from "./mod.ts";
 
 const DASHBOARD = `
 div.dashboard
@@ -259,7 +259,7 @@ describe("the state does not paint (a mount follows only when told)", () => {
   /** A dom plugin wired to a mutable `current`, without the full core. */
   function plugin(state: { count: number }) {
     let current = state;
-    const dom = createDomPlugin();
+    const dom = new DomPlugin();
     const ctx: PluginContext<{ count: number }> = {
       dispatch() {},
       getState: () => current,
@@ -276,93 +276,53 @@ describe("the state does not paint (a mount follows only when told)", () => {
     };
   }
 
-  test("a bare mount ignores onState; the application repaints with update", () => {
+  test("a mount paints once; an update paints when the app sends one", () => {
     const h = plugin({ count: 1 });
     const root = h.root();
     document.body.appendChild(root);
-    h.dom.handle({ plugin: "dom", type: "mount", target: root, view }, h.ctx);
+    h.dom.mount(root, view, { ctx: h.ctx });
     expect(root.textContent).toBe("1");
     h.set({ count: 2 });
-    h.dom.onState!({ count: 2 }, h.ctx);
+    // nothing follows the state here: only the patches decide
     expect(root.textContent).toBe("1");
-    h.dom.handle(
-      { plugin: "dom", type: "update", prev: { count: 1 }, next: { count: 2 } },
-      h.ctx,
-    );
+    h.dom.update(root, view.diff({ count: 1 }, { count: 2 }));
     expect(root.textContent).toBe("2");
-    h.dom.handle({ plugin: "dom", type: "unmount", target: root }, h.ctx);
+    h.dom.unmount(root);
   });
 
-  test("followState repaints on every state change", () => {
+  test("update applies what the component computed, without reading the state", () => {
     const h = plugin({ count: 1 });
     const root = h.root();
     document.body.appendChild(root);
-    h.dom.handle(
-      { plugin: "dom", type: "mount", target: root, view, followState: true },
-      h.ctx,
-    );
-    h.set({ count: 3 });
-    h.dom.onState!({ count: 3 }, h.ctx);
-    expect(root.textContent).toBe("3");
-    h.dom.handle({ plugin: "dom", type: "unmount", target: root }, h.ctx);
+    h.dom.mount(root, view, { ctx: h.ctx });
+    // getState() says 9 — the plugin never looks: the patches decide.
+    h.set({ count: 9 });
+    h.dom.update(root, view.diff({ count: 1 }, { count: 2 }));
+    expect(root.textContent).toBe("2");
+    h.dom.unmount(root);
   });
 
-  test("update with a target repaints only that mount", () => {
+  test("update with a target applies only to that mount", () => {
     const h = plugin({ count: 1 });
     const a = h.root();
     const b = h.root();
     document.body.append(a, b);
-    h.dom.handle({ plugin: "dom", type: "mount", target: a, view }, h.ctx);
-    h.dom.handle({ plugin: "dom", type: "mount", target: b, view }, h.ctx);
-    h.set({ count: 2 });
-    h.dom.handle(
-      {
-        plugin: "dom",
-        type: "update",
-        prev: { count: 1 },
-        next: { count: 2 },
-        target: a,
-      },
-      h.ctx,
-    );
+    h.dom.mount(a, view, { ctx: h.ctx });
+    h.dom.mount(b, view, { ctx: h.ctx });
+    const patches = view.diff({ count: 1 }, { count: 2 });
+    h.dom.update(a, patches);
     expect(a.textContent).toBe("2");
     expect(b.textContent).toBe("1");
-    h.dom.handle(
-      { plugin: "dom", type: "update", prev: { count: 1 }, next: { count: 2 } },
-      h.ctx,
-    );
+    h.dom.update(b, patches);
     expect(b.textContent).toBe("2");
-  });
-
-  test("update paints the pair it is given, not the current state", () => {
-    const h = plugin({ count: 1 });
-    const root = h.root();
-    document.body.appendChild(root);
-    h.dom.handle({ plugin: "dom", type: "mount", target: root, view }, h.ctx);
-    // The plugin trusts the effect: the mount was painted with 1, and the
-    // pair says 1 -> 2, so it paints 2 even though getState() says 9.
-    h.set({ count: 9 });
-    h.dom.handle(
-      { plugin: "dom", type: "update", prev: { count: 1 }, next: { count: 2 } },
-      h.ctx,
-    );
-    expect(root.textContent).toBe("2");
-    h.dom.handle({ plugin: "dom", type: "unmount", target: root }, h.ctx);
+    h.dom.unmount(a);
+    h.dom.unmount(b);
   });
 
   test("update throws when nothing is mounted at the target", () => {
     const h = plugin({ count: 1 });
     expect(() =>
-      h.dom.handle(
-        {
-          plugin: "dom",
-          type: "update",
-          prev: { count: 1 },
-          next: { count: 2 },
-          target: "#ghost",
-        },
-        h.ctx,
-      ),
+      h.dom.update("#ghost", view.diff({ count: 1 }, { count: 2 })),
     ).toThrow(/nothing mounted/);
   });
 });

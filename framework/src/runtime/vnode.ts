@@ -58,8 +58,12 @@ export type Patch =
 export interface View<S = any> {
   render(state: S, sfx?: string, ns?: string, env?: unknown): VNode[];
   diff(prev: S, next: S, sfx?: string, ns?: string, env?: unknown): Patch[];
-  /** Instance names of the children this template embeds. */
-  meta?: { embeds: string[]; outlet?: boolean };
+  /** Where the embedded children live: name → the id scope it renders under. */
+  meta?: {
+    embeds: Record<string, string>;
+    /** The node id of `+outlet`, or false when there is none. */
+    outlet: number | false;
+  };
 }
 
 /** The comments the DOM plugin (and `renderToString`) put around a render. */

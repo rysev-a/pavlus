@@ -70,8 +70,15 @@ export class EmitBase {
     return lines;
   }
 
+  /**
+   * The id of a node: the id scope it sits under (the embeds and keyed loops
+   * it is nested in, outer first) in front of its own number. The scope grows
+   * by prepending at each boundary, so an effect bubbling from a child — where
+   * each `namespace` puts its own segment in front — composes the same id the
+   * render built.
+   */
   protected id(nid: number, kind: string, ctx: Ctx): string {
-    return `${json(`${nid}${kind}`)} + ${ctx.suffix}`;
+    return `${ctx.suffix} + ${json(`${nid}${kind}`)}`;
   }
 
   protected marker(out: string, id: string): void {

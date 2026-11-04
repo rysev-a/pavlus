@@ -125,9 +125,9 @@ export class RenderEmitter extends ExprEmitter {
             `const ${key} = String(${n.key ? this.expr(n.key, inner, "next") : index});`,
           );
           this.w.line(`const ${suffix} = ${ctx.suffix} + "#" + ${key};`);
-          this.marker(out, `${json(`${n.nid}[`)} + ${suffix}`);
+          this.marker(out, `${suffix} + ${json(`${n.nid}[`)}`);
           this.renderNodes(n.children, inner, out);
-          this.marker(out, `${json(`${n.nid}]`)} + ${suffix}`);
+          this.marker(out, `${suffix} + ${json(`${n.nid}]`)}`);
         },
       );
     });

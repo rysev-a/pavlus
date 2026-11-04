@@ -1,5 +1,5 @@
 import { type ComponentLike, toHandler, viewOf } from "../component/mod.ts";
-import { domEffector } from "../plugins/dom/helpers.ts";
+import { DomPlugin } from "../plugins/dom/mod.ts";
 import type {
   Effect,
   Message,
@@ -20,10 +20,10 @@ export interface CreateAppOptions<S> {
    * Where to render the application: a CSS selector or an element. Needs the
    * dom plugin and an `app` that is a component with a `view`. Once in the
    * DOM, the message `mounted` is dispatched (a component with `routing`
-   * starts listening to the router on it). The root follows application
-   * state changes only when the component sets `updateDomOnStateChange`;
-   * otherwise the application repaints with `dom.update(prev, next)` when
-   * it decides to — usually from a store write's answer.
+   * starts listening to the router on it). What is painted after that is up
+   * to the application: a component paints itself in a handler (usually
+   * `paint`, the answer of a store write) by diffing its own view and
+   * returning `DomPlugin.update(patches)`.
    */
   mount?: string | Element;
   /** Message dispatched once all plugins are initialised (after `mount`). */
@@ -43,8 +43,10 @@ export interface App {
  * Wires the pure application to its plugins.
  *
  * Messages are processed strictly one at a time. For each message the core
- * calls `app(message, state)`, hands the resulting effects to the plugins in
- * order, and, if the state changed, notifies the plugins with `onState`.
+ * calls `app(message, state)` and hands the resulting effects to the plugins
+ * in order; when the state changed, the plugins hear about it through
+ * `onState`. The core never touches the DOM: painting is an effect like any
+ * other, computed by the components.
  */
 export function createApp<S = unknown>(opts: CreateAppOptions<S>): App {
   const app = toHandler(opts.app);
@@ -75,7 +77,9 @@ export function createApp<S = unknown>(opts: CreateAppOptions<S>): App {
       const before = getState();
       perform(effect);
       const next = getState();
-      if (next !== before) for (const p of opts.plugins) p.onState?.(next, ctx);
+      if (next !== before) {
+        for (const p of opts.plugins) p.onState?.(next, ctx);
+      }
     },
   };
 
@@ -121,24 +125,16 @@ export function createApp<S = unknown>(opts: CreateAppOptions<S>): App {
 
   for (const p of opts.plugins) p.init?.(ctx);
   if (opts.mount !== undefined) {
-    const view = typeof opts.app === "function" ? undefined : viewOf(opts.app);
+    const view = viewOf(opts.app as Parameters<typeof viewOf>[0]);
     if (!view) {
       throw new Error(
         "pavlus: `mount` needs an `app` that is a component with a `view`",
       );
     }
     if (!byName.has("dom")) {
-      throw new Error("pavlus: `mount` needs the dom plugin (createDomPlugin)");
+      throw new Error("pavlus: `mount` needs the dom plugin (new DomPlugin())");
     }
-    const followState =
-      (opts.app as { updateDomOnStateChange?: boolean })
-        .updateDomOnStateChange === true;
-    perform(
-      domEffector.mount(opts.mount, view, {
-        onMounted: "mounted",
-        ...(followState && { followState: true }),
-      }),
-    );
+    perform(DomPlugin.mount(opts.mount, view, { onMounted: "mounted" }));
   }
   if (opts.init) dispatch(opts.init);
 

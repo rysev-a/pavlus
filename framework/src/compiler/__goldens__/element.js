@@ -7,7 +7,7 @@ import {
   toText,
 } from "@service-laboratory/pavlus/runtime";
 
-const meta = { embeds: [], outlet: false };
+const meta = { embeds: {}, outlet: false };
 
 /** The template for a state, as virtual nodes. Pure. */
 function render(state, idSuffix = "", messagePrefix = "", env) {
@@ -16,13 +16,13 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   const formChildren = [];
   // line 3: <label>
   const labelChildren = [];
-  labelChildren.push({ t: "text", id: "2" + idSuffix, text: "" + toText(state.label) });
+  labelChildren.push({ t: "text", id: idSuffix + "2", text: "" + toText(state.label) });
   const labelAttrs = {};
   setAttr(labelAttrs, "for", toAttr(state.inputId));
   setAttr(labelAttrs, "class", joinClasses(["lbl " + toText(state.extra)]));
   formChildren.push({
     t: "el",
-    id: "1" + idSuffix,
+    id: idSuffix + "1",
     tag: "label",
     attrs: labelAttrs,
     events: {},
@@ -40,7 +40,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   };
   formChildren.push({
     t: "el",
-    id: "3" + idSuffix,
+    id: idSuffix + "3",
     tag: "input",
     attrs: inputAttrs,
     events: inputEvents,
@@ -48,12 +48,12 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   });
   // line 5: <button.go>
   const buttonChildren = [];
-  buttonChildren.push({ t: "text", id: "5" + idSuffix, text: "" + toText((state.busy ? "Saving..." : "Save")) });
+  buttonChildren.push({ t: "text", id: idSuffix + "5", text: "" + toText((state.busy ? "Saving..." : "Save")) });
   const buttonAttrs = { "type": "submit" };
   setAttr(buttonAttrs, "class", joinClasses(["go", (state.busy ? "busy" : "")]));
   formChildren.push({
     t: "el",
-    id: "4" + idSuffix,
+    id: idSuffix + "4",
     tag: "button",
     attrs: buttonAttrs,
     events: {},
@@ -61,7 +61,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   });
   // line 6: <a>
   const aChildren = [];
-  aChildren.push({ t: "text", id: "7" + idSuffix, text: "" + toText((state.user)?.name) });
+  aChildren.push({ t: "text", id: idSuffix + "7", text: "" + toText((state.user)?.name) });
   const aAttrs = {};
   setAttr(aAttrs, "href", "/u/" + toText((state.user)?.id));
   const aEvents = {
@@ -69,7 +69,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   };
   formChildren.push({
     t: "el",
-    id: "6" + idSuffix,
+    id: idSuffix + "6",
     tag: "a",
     attrs: aAttrs,
     events: aEvents,
@@ -82,7 +82,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   };
   nodes.push({
     t: "el",
-    id: "0" + idSuffix,
+    id: idSuffix + "0",
     tag: "form",
     attrs: formAttrs,
     events: formEvents,
@@ -101,8 +101,8 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
     const nextAction = toAttr(next.url);
     if (prevAction !== nextAction) {
       patches.push(nextAction === null
-        ? { op: "rmAttr", id: "0" + idSuffix, name: "action" }
-        : { op: "attr", id: "0" + idSuffix, name: "action", value: nextAction });
+        ? { op: "rmAttr", id: idSuffix + "0", name: "action" }
+        : { op: "attr", id: idSuffix + "0", name: "action", value: nextAction });
     }
     // line 3: <label> (reads: inputId, extra, label)
     if (prev.inputId !== next.inputId || prev.extra !== next.extra || prev.label !== next.label) {
@@ -110,21 +110,21 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
       const nextFor = toAttr(next.inputId);
       if (prevFor !== nextFor) {
         patches.push(nextFor === null
-          ? { op: "rmAttr", id: "1" + idSuffix, name: "for" }
-          : { op: "attr", id: "1" + idSuffix, name: "for", value: nextFor });
+          ? { op: "rmAttr", id: idSuffix + "1", name: "for" }
+          : { op: "attr", id: idSuffix + "1", name: "for", value: nextFor });
       }
       const prevClass = joinClasses(["lbl " + toText(prev.extra)]);
       const nextClass = joinClasses(["lbl " + toText(next.extra)]);
       if (prevClass !== nextClass) {
         patches.push(nextClass === null
-          ? { op: "rmAttr", id: "1" + idSuffix, name: "class" }
-          : { op: "attr", id: "1" + idSuffix, name: "class", value: nextClass });
+          ? { op: "rmAttr", id: idSuffix + "1", name: "class" }
+          : { op: "attr", id: idSuffix + "1", name: "class", value: nextClass });
       }
       // line 3: text (reads: label)
       if (prev.label !== next.label) {
         const prevText = "" + toText(prev.label);
         const nextText = "" + toText(next.label);
-        if (prevText !== nextText) patches.push({ op: "text", id: "2" + idSuffix, text: nextText });
+        if (prevText !== nextText) patches.push({ op: "text", id: idSuffix + "2", text: nextText });
       }
     }
     // line 4: <input.field> (reads: name, busy, error)
@@ -133,27 +133,27 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
       const nextValue = toAttr(next.name);
       if (prevValue !== nextValue) {
         patches.push(nextValue === null
-          ? { op: "rmAttr", id: "3" + idSuffix, name: "value" }
-          : { op: "attr", id: "3" + idSuffix, name: "value", value: nextValue });
+          ? { op: "rmAttr", id: idSuffix + "3", name: "value" }
+          : { op: "attr", id: idSuffix + "3", name: "value", value: nextValue });
       }
       const prevDisabled = toAttr(prev.busy);
       const nextDisabled = toAttr(next.busy);
       if (prevDisabled !== nextDisabled) {
         patches.push(nextDisabled === null
-          ? { op: "rmAttr", id: "3" + idSuffix, name: "disabled" }
-          : { op: "attr", id: "3" + idSuffix, name: "disabled", value: nextDisabled });
+          ? { op: "rmAttr", id: idSuffix + "3", name: "disabled" }
+          : { op: "attr", id: idSuffix + "3", name: "disabled", value: nextDisabled });
       }
       const prevClass = joinClasses(["field", (prev.error ? "invalid" : "")]);
       const nextClass = joinClasses(["field", (next.error ? "invalid" : "")]);
       if (prevClass !== nextClass) {
         patches.push(nextClass === null
-          ? { op: "rmAttr", id: "3" + idSuffix, name: "class" }
-          : { op: "attr", id: "3" + idSuffix, name: "class", value: nextClass });
+          ? { op: "rmAttr", id: idSuffix + "3", name: "class" }
+          : { op: "attr", id: idSuffix + "3", name: "class", value: nextClass });
       }
       const prevKeydownPayload = [prev.name, 13];
       const nextKeydownPayload = [next.name, 13];
       if (!(sameValues(prevKeydownPayload, nextKeydownPayload))) {
-        patches.push({ op: "handler", id: "3" + idSuffix, event: "keydown", msg: { id: messagePrefix + "key", payload: nextKeydownPayload, stop: true } });
+        patches.push({ op: "handler", id: idSuffix + "3", event: "keydown", msg: { id: messagePrefix + "key", payload: nextKeydownPayload, stop: true } });
       }
     }
     // line 5: <button.go> (reads: busy)
@@ -162,13 +162,13 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
       const nextClass = joinClasses(["go", (next.busy ? "busy" : "")]);
       if (prevClass !== nextClass) {
         patches.push(nextClass === null
-          ? { op: "rmAttr", id: "4" + idSuffix, name: "class" }
-          : { op: "attr", id: "4" + idSuffix, name: "class", value: nextClass });
+          ? { op: "rmAttr", id: idSuffix + "4", name: "class" }
+          : { op: "attr", id: idSuffix + "4", name: "class", value: nextClass });
       }
       // line 5: text
       const prevText = "" + toText((prev.busy ? "Saving..." : "Save"));
       const nextText = "" + toText((next.busy ? "Saving..." : "Save"));
-      if (prevText !== nextText) patches.push({ op: "text", id: "5" + idSuffix, text: nextText });
+      if (prevText !== nextText) patches.push({ op: "text", id: idSuffix + "5", text: nextText });
     }
     // line 6: <a> (reads: user)
     if (prev.user !== next.user) {
@@ -176,18 +176,18 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
       const nextHref = "/u/" + toText((next.user)?.id);
       if (prevHref !== nextHref) {
         patches.push(nextHref === null
-          ? { op: "rmAttr", id: "6" + idSuffix, name: "href" }
-          : { op: "attr", id: "6" + idSuffix, name: "href", value: nextHref });
+          ? { op: "rmAttr", id: idSuffix + "6", name: "href" }
+          : { op: "attr", id: idSuffix + "6", name: "href", value: nextHref });
       }
       const prevClickPayload = [(prev.user)?.id, "profile"];
       const nextClickPayload = [(next.user)?.id, "profile"];
       if (!(sameValues(prevClickPayload, nextClickPayload))) {
-        patches.push({ op: "handler", id: "6" + idSuffix, event: "click", msg: { id: messagePrefix + "open", payload: nextClickPayload, prevent: true } });
+        patches.push({ op: "handler", id: idSuffix + "6", event: "click", msg: { id: messagePrefix + "open", payload: nextClickPayload, prevent: true } });
       }
       // line 6: text
       const prevText = "" + toText((prev.user)?.name);
       const nextText = "" + toText((next.user)?.name);
-      if (prevText !== nextText) patches.push({ op: "text", id: "7" + idSuffix, text: nextText });
+      if (prevText !== nextText) patches.push({ op: "text", id: idSuffix + "7", text: nextText });
     }
   }
   return patches;

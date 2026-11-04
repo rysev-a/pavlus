@@ -1,4 +1,5 @@
 import type { Effect, Message } from "../core/types.ts";
+import { DomPlugin } from "../plugins/dom/mod.ts";
 import { loggerEffector } from "../plugins/logger/helpers.ts";
 import { routerEffector } from "../plugins/router/helpers.ts";
 import { storeEffector } from "../plugins/store/helpers.ts";
@@ -13,7 +14,7 @@ import {
   type RouteSpec,
   type Routing,
 } from "../routing/mod.ts";
-import type { View } from "../runtime/vnode.ts";
+import type { Patch, View } from "../runtime/vnode.ts";
 
 /** The function form of a component: a message and its state in, effects out. */
 export type ComponentFn<S = any> = (message: Message, state: S) => Effect[];
@@ -135,19 +136,76 @@ export function toHandler<S = any>(c: ComponentLike<S>): ComponentFn<S> {
   return h as ComponentFn<S>;
 }
 
+export interface ViewOfOptions<S = any, C = any> {
+  /**
+   * State key of the component: the view renders `state[key]` and its
+   * messages are prefixed `key.` — the same slicing a `children` entry does,
+   * for a component mounted on its own (into a slot of its parent's view).
+   */
+  key?: string;
+  /** Alternative to `key` for choosing the component's state. */
+  select?: (state: S) => C;
+  /** Extra read-only fields merged into the component's state. */
+  props?: (state: S) => Record<string, unknown>;
+  /**
+   * Message id prefix baked into the view's events (a trailing dot is part
+   * of it: `"edit."`). Defaults to `key + "."` when `key` is given.
+   */
+  ns?: string;
+}
+
 /**
  * A `View` to mount: the view itself, or the template of a component closed
  * over the component, so `+outlet` and the embedded children find `routing`
  * and `children` without the DOM plugin knowing what a component is.
+ *
+ * With {@link ViewOfOptions} the view is a standalone mini-application: it
+ * reads its slice of the whole state and addresses its messages through the
+ * prefix, so an event dispatched at the root lands on the component the same
+ * way it would through `children` — and the patches its `diff` computes come
+ * out addressed to it (`handler` patches carry the prefixed message ids).
  */
-export function viewOf(c: View | { view?: View }): View | undefined {
-  if ("render" in c) return c;
-  const view = c.view;
+export function viewOf<S = any, C = any>(
+  c: View | { view?: View } | ComponentFn,
+  opts: ViewOfOptions<S, C> = {},
+): View | undefined {
+  const view = "render" in c ? c : (c as { view?: View }).view;
   if (!view) return undefined;
+  const plain =
+    opts.key === undefined &&
+    opts.select === undefined &&
+    opts.props === undefined &&
+    opts.ns === undefined;
+  if (plain) {
+    if ("render" in c) return c;
+    return {
+      ...view,
+      render: (state, sfx = "", ns = "") => view.render(state, sfx, ns, c),
+      diff: (prev, next, sfx = "", ns = "") =>
+        view.diff(prev, next, sfx, ns, c),
+    };
+  }
+  const key = opts.key;
+  const pick =
+    opts.select ??
+    (key !== undefined ? (s: S) => (s as any)?.[key] : (s: S) => s);
+  const ns = opts.ns ?? (key !== undefined ? `${key}.` : "");
+  const slice = (s: S): C => {
+    const base = pick(s);
+    if (!opts.props) return base as C;
+    const extra = opts.props(s);
+    return (
+      typeof base === "object" && base !== null
+        ? { ...base, ...extra }
+        : { ...extra }
+    ) as C;
+  };
   return {
     ...view,
-    render: (state, sfx = "", ns = "") => view.render(state, sfx, ns, c),
-    diff: (prev, next, sfx = "", ns = "") => view.diff(prev, next, sfx, ns, c),
+    render: (state, sfx = "", _ns = "", _env) =>
+      view.render(slice(state), sfx, ns, c),
+    diff: (prev, next, sfx = "", _ns = "", _env) =>
+      view.diff(slice(prev), slice(next), sfx, ns, c),
   };
 }
 
@@ -155,10 +213,11 @@ function childHandler(
   name: string,
   spec: ChildSpec,
   state: unknown,
+  scope?: string,
 ): ComponentFn | null {
   const comp = spec.select ? spec.select(state) : spec.component;
   if (!comp) return null;
-  return namespace(name, comp, { key: spec.key, props: spec.props });
+  return namespace(name, comp, { key: spec.key, props: spec.props, scope });
 }
 
 /** `base` + a path relative to it (`"/dashboard"` + `"/roles"`). */
@@ -175,6 +234,7 @@ function routedHandler(
   pattern: string,
   spec: RouteSpec,
   state: unknown,
+  outletScope?: string,
 ): ComponentFn | null {
   const comp = routeComponent(spec, state);
   if (!comp) return null;
@@ -188,6 +248,7 @@ function routedHandler(
   const inner = namespace(name, comp, {
     key: spec.key,
     props: (s) => ({ ...(spec.props?.(s) ?? {}), route: childRoute }),
+    scope: outletScope,
   });
   // `base` already holds every ancestor, so only the innermost routed child
   // prefixes; it marks the effect `absolute` so the levels above leave it be.
@@ -370,16 +431,6 @@ export abstract class Component<S = any> {
    * route matches. See `docs/routing.md`.
    */
   declare routing?: Routing<S>;
-  /**
-   * Repaint on application state changes: the dom plugin re-diffs this view
-   * and patches the DOM whenever the state identity changes. Default off —
-   * the view renders when mounted, and again when the application sends it
-   * the `dom.update(prev, next)` effect, so components that only work with
-   * state (services, data slices) never touch the DOM. The root of an
-   * application usually sets `true`: `createApp` reads it off the `app`
-   * component.
-   */
-  declare updateDomOnStateChange?: boolean;
 
   /**
    * Handles one message: the component's own handler for `message.id` first
@@ -392,13 +443,23 @@ export abstract class Component<S = any> {
     const root = trace !== null && curPath === "";
     if (root) trace!.receive("", message);
     const { children, routed } = planOf(this);
+    // Where the embedded children of this component's template render: the
+    // `"/nid"` of each `+Child#name`, and of `+outlet` for the routed ones.
+    // Passed to the child boundaries, so a child that paints itself has its
+    // patches scoped without knowing anything about this template.
+    const embeds = this.view?.meta?.embeds ?? {};
+    const outlet = this.view?.meta?.outlet;
+    const outletScope =
+      outlet === false || outlet === undefined ? undefined : `/${outlet}`;
     const known = (name: string): boolean =>
       Object.hasOwn(children, name) || routed.has(name);
     const childOf = (name: string): ComponentFn | null => {
       if (Object.hasOwn(children, name))
-        return childHandler(name, children[name], state);
+        return childHandler(name, children[name], state, embeds[name]);
       const r = routed.get(name);
-      return r ? routedHandler(name, r.pattern, r.spec, state) : null;
+      return r
+        ? routedHandler(name, r.pattern, r.spec, state, outletScope)
+        : null;
     };
 
     const ctx: ComponentCtx = {
@@ -486,6 +547,28 @@ export function mapEffects<S>(
   return (m, s) => f(h(m, s), m, s);
 }
 
+/**
+ * Makes every store write of `inner` (and of everything embedded in it)
+ * answer "paint": the component's `paint` handler — which a component with
+ * a view usually has — turns the answer's `{ prev, next }` into patches.
+ * The one-liner for a root that repaints the whole tree on any write; a
+ * component that wants finer control answers "paint" write by write.
+ */
+export function paintOnWrite<S>(inner: ComponentLike<S>): ComponentFn<S> {
+  const view = viewOf(inner);
+  const h = mapEffects(inner, (effects) =>
+    effects.map((e) =>
+      e.plugin === "store" &&
+      (e as { onSuccess?: string }).onSuccess === undefined
+        ? { ...e, onSuccess: "paint" }
+        : e,
+    ),
+  );
+  // Keep the view (bound to the real component, so `+outlet` still finds its
+  // `routing`): a wrapped root can still be mounted.
+  return view === undefined ? h : Object.assign(h, { view });
+}
+
 /** Fields of an effect that name the message id of a reply. */
 const REPLY_FIELDS = [
   "replyTo",
@@ -507,12 +590,25 @@ export interface NamespaceOptions<S, C> {
   select?: (state: S) => C;
   /** Extra read-only fields merged into the child's state. */
   props?: (state: S) => Record<string, unknown>;
+  /**
+   * The node id scope of the embed this child renders through (the
+   * `"/nid"` of its `+Child#name` node). Effects of a child that paints
+   * itself (`dom.update` without a target) get their node ids scoped to it,
+   * and the `paint` answers it receives are sliced like its state.
+   */
+  scope?: string;
 }
 
 /**
  * Mounts a child under a message prefix. Only messages `"<prefix>.x"` reach
  * the child (as `"x"`), and the reply ids in its effects get the prefix back,
  * so answers find their way to the right child.
+ *
+ * The boundary also enriches what passes through, so the child only knows its
+ * own environment: store paths get the state key in front, and the patches of
+ * a `dom.update` without a target (a child that paints itself) get scoped to
+ * the embed (`scope`). A `paint` answer — `{ prev, next }` of the whole state
+ * — arrives already sliced to the child's state, ready for its own `diff`.
  */
 export function namespace<S = any, C = any>(
   prefix: string,
@@ -526,20 +622,33 @@ export function namespace<S = any, C = any>(
     (key !== undefined
       ? (s: S) => (s as any)?.[key]
       : (s: S) => s as unknown as C);
+  const pick = (s: S): C => {
+    const base = slice(s);
+    if (!opts.props) return base;
+    const extra = opts.props(s);
+    return (
+      typeof base === "object" && base !== null
+        ? { ...base, ...extra }
+        : { ...extra }
+    ) as C;
+  };
   const head = `${prefix}.`;
   return (m, s) => {
     if (!m.id.startsWith(head)) return [];
     const path = curPath ? `${curPath}.${prefix}` : prefix;
-    let childState = slice(s);
-    if (opts.props) {
-      const base =
-        typeof childState === "object" && childState !== null ? childState : {};
-      childState = { ...base, ...opts.props(s) } as C;
+    const childState = pick(s);
+    // A paint answer carries the states of the whole app; the child's diff
+    // wants its own slice, exactly as it renders it. Every boundary slices
+    // (a lens composed level by level), so the answer is right no matter how
+    // deep the component that asked for it sits.
+    const inner: Message = { ...m, id: m.id.slice(head.length) };
+    if (opts.scope !== undefined && isPaintPayload(m.payload)) {
+      const { prev, next } = m.payload as { prev: S; next: S };
+      inner.payload = { prev: pick(prev), next: pick(next) };
     }
     const prev = curPath;
     curPath = path;
     try {
-      const inner = { ...m, id: m.id.slice(head.length) };
       trace?.receive(path, inner);
       const out = h(inner, childState).map((e) => {
         const out: Effect = { ...e };
@@ -551,6 +660,17 @@ export function namespace<S = any, C = any>(
           out.path =
             typeof sp === "string" ? (sp ? `${key}.${sp}` : key) : [key, ...sp];
         }
+        if (
+          out.plugin === "dom" &&
+          out.type === "update" &&
+          out.target === undefined &&
+          opts.scope !== undefined
+        ) {
+          out.patches = DomPlugin.scopePatches(out.patches as Patch[], {
+            ids: opts.scope,
+            ns: head,
+          }) as unknown as typeof out.patches;
+        }
         return out;
       });
       trace?.emit(path, inner, out);
@@ -559,6 +679,12 @@ export function namespace<S = any, C = any>(
       curPath = prev;
     }
   };
+}
+
+/** A store write's answer: `{ prev, next }` of the states around the write. */
+function isPaintPayload(p: unknown): boolean {
+  const o = p as { prev?: unknown; next?: unknown };
+  return typeof p === "object" && p !== null && "prev" in o && "next" in o;
 }
 
 /** Adds a log effect for every message the wrapped component handles. */

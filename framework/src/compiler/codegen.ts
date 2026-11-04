@@ -5,13 +5,18 @@ import { json, type Ctx } from "./emit/shared.ts";
 /** Writes the whole module: `meta`, `render` and `diff`. */
 class Codegen extends DiffEmitter {
   generate(ast: TemplateAst): string {
-    const embeds = new Set<string>();
-    let outlet = false;
+    // The embeds the template declares: instance name → the node id scope the
+    // child renders under (its `"/" + nid`), so a parent can enrich the
+    // effects of a child that paints itself. The first nid wins: a name used
+    // twice (a loop) shares one children entry.
+    const embeds = new Map<string, string>();
+    let outlet: number | false = false;
     const walk = (nodes: Node[]): void => {
       for (const n of nodes) {
-        if (n.type === "outlet") outlet = true;
-        else if (n.type === "embed") embeds.add(n.name);
-        else if (n.type === "element" || n.type === "for") walk(n.children);
+        if (n.type === "outlet") outlet = outlet || n.nid;
+        else if (n.type === "embed") {
+          if (!embeds.has(n.name)) embeds.set(n.name, `/${n.nid}`);
+        } else if (n.type === "element" || n.type === "for") walk(n.children);
         else if (n.type === "if") n.branches.forEach((b) => walk(b.children));
       }
     };
@@ -29,7 +34,7 @@ class Codegen extends DiffEmitter {
     };
 
     this.w.line(
-      `const meta = { embeds: ${json([...embeds])}, outlet: ${outlet} };`,
+      `const meta = { embeds: ${json(Object.fromEntries(embeds))}, outlet: ${outlet === false ? "false" : outlet} };`,
     );
     this.w.line("");
     this.w.line("/** The template for a state, as virtual nodes. Pure. */");

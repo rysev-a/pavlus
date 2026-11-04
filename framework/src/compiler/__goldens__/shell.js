@@ -8,7 +8,7 @@ import {
   toText,
 } from "@service-laboratory/pavlus/runtime";
 
-const meta = { embeds: [], outlet: true };
+const meta = { embeds: {}, outlet: 6 };
 
 /** The template for a state, as virtual nodes. Pure. */
 function render(state, idSuffix = "", messagePrefix = "", env) {
@@ -18,16 +18,16 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   // line 3: <nav.top-menu>
   const navChildren = [];
   // line 4: for item
-  navChildren.push({ t: "marker", id: "2s" + idSuffix });
+  navChildren.push({ t: "marker", id: idSuffix + "2s" });
   const itemList = (state.menu) || [];
   for (let itemIndex = 0; itemIndex < itemList.length; itemIndex++) {
     const item = itemList[itemIndex];
     const itemKey = String((item)?.path);
     const itemSuffix = idSuffix + "#" + itemKey;
-    navChildren.push({ t: "marker", id: "2[" + itemSuffix });
+    navChildren.push({ t: "marker", id: itemSuffix + "2[" });
     // line 5: <a.top-menu__link>
     const aChildren = [];
-    aChildren.push({ t: "text", id: "4" + itemSuffix, text: "" + toText((item)?.title) });
+    aChildren.push({ t: "text", id: itemSuffix + "4", text: "" + toText((item)?.title) });
     const aAttrs = {};
     setAttr(aAttrs, "href", toAttr((item)?.path));
     setAttr(aAttrs, "class", 
@@ -38,15 +38,15 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
     };
     navChildren.push({
       t: "el",
-      id: "3" + itemSuffix,
+      id: itemSuffix + "3",
       tag: "a",
       attrs: aAttrs,
       events: aEvents,
       children: aChildren,
     });
-    navChildren.push({ t: "marker", id: "2]" + itemSuffix });
+    navChildren.push({ t: "marker", id: itemSuffix + "2]" });
   }
-  navChildren.push({ t: "marker", id: "2e" + idSuffix });
+  navChildren.push({ t: "marker", id: idSuffix + "2e" });
   const navAttrs = { "class": "top-menu" };
   headerChildren.push({
     t: "el",
@@ -66,7 +66,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   // line 7: <main.page>
   const mainChildren = [];
   // line 8: +outlet
-  mainChildren.push({ t: "marker", id: "6s" + idSuffix });
+  mainChildren.push({ t: "marker", id: idSuffix + "6s" });
   const outlet = resolveOutlet(env, state);
   if (outlet) {
     mainChildren.push(...outlet.view.render(
@@ -76,7 +76,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
       outlet.component,
     ));
   }
-  mainChildren.push({ t: "marker", id: "6e" + idSuffix });
+  mainChildren.push({ t: "marker", id: idSuffix + "6e" });
   const mainAttrs = { "class": "page" };
   nodes.push({
     t: "el",
@@ -100,9 +100,9 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
     const nextItemList = (next.menu) || [];
     const prevItemKeys = prevItemList.map((item, itemIndex) => String((item)?.path));
     const nextItemKeys = nextItemList.map((item, itemIndex) => String((item)?.path));
-    const itemStartId = (key) => "2[" + idSuffix + "#" + key;
-    const itemEndId = (key) => "2]" + idSuffix + "#" + key;
-    diffKeyedList(prevItemKeys, nextItemKeys, itemStartId, "2e" + idSuffix, {
+    const itemStartId = (key) => idSuffix + "#" + key + "2[";
+    const itemEndId = (key) => idSuffix + "#" + key + "2]";
+    diffKeyedList(prevItemKeys, nextItemKeys, itemStartId, idSuffix + "2e", {
       remove(key) { patches.push({ op: "remove", from: itemStartId(key), to: itemEndId(key) }); },
       insert(index, beforeId) {
         const item = nextItemList[index];
@@ -112,7 +112,7 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
         itemNodes.push({ t: "marker", id: itemStartId(itemKey) });
         // line 5: <a.top-menu__link>
         const aChildren = [];
-        aChildren.push({ t: "text", id: "4" + itemSuffix, text: "" + toText((item)?.title) });
+        aChildren.push({ t: "text", id: itemSuffix + "4", text: "" + toText((item)?.title) });
         const aAttrs = {};
         setAttr(aAttrs, "href", toAttr((item)?.path));
         setAttr(aAttrs, "class", 
@@ -123,7 +123,7 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
         };
         itemNodes.push({
           t: "el",
-          id: "3" + itemSuffix,
+          id: itemSuffix + "3",
           tag: "a",
           attrs: aAttrs,
           events: aEvents,
@@ -143,26 +143,26 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
           const nextHref = toAttr((nextItem)?.path);
           if (prevHref !== nextHref) {
             patches.push(nextHref === null
-              ? { op: "rmAttr", id: "3" + itemSuffix, name: "href" }
-              : { op: "attr", id: "3" + itemSuffix, name: "href", value: nextHref });
+              ? { op: "rmAttr", id: itemSuffix + "3", name: "href" }
+              : { op: "attr", id: itemSuffix + "3", name: "href", value: nextHref });
           }
           const prevClass = joinClasses(["top-menu__link", ((((prevItem)?.path === "/") ? ((prev.route)?.path === "/") : (((prev.route)?.path === (prevItem)?.path) || (((prev.route)?.path)?.startsWith)?.(((prevItem)?.path + "/")))) ? "top-menu__link--active" : "")]);
           const nextClass = joinClasses(["top-menu__link", ((((nextItem)?.path === "/") ? ((next.route)?.path === "/") : (((next.route)?.path === (nextItem)?.path) || (((next.route)?.path)?.startsWith)?.(((nextItem)?.path + "/")))) ? "top-menu__link--active" : "")]);
           if (prevClass !== nextClass) {
             patches.push(nextClass === null
-              ? { op: "rmAttr", id: "3" + itemSuffix, name: "class" }
-              : { op: "attr", id: "3" + itemSuffix, name: "class", value: nextClass });
+              ? { op: "rmAttr", id: itemSuffix + "3", name: "class" }
+              : { op: "attr", id: itemSuffix + "3", name: "class", value: nextClass });
           }
           const prevClickPayload = (prevItem)?.path;
           const nextClickPayload = (nextItem)?.path;
           if (!(prevClickPayload === nextClickPayload)) {
-            patches.push({ op: "handler", id: "3" + itemSuffix, event: "click", msg: { id: messagePrefix + "navigate", payload: nextClickPayload, prevent: true } });
+            patches.push({ op: "handler", id: itemSuffix + "3", event: "click", msg: { id: messagePrefix + "navigate", payload: nextClickPayload, prevent: true } });
           }
           // line 5: text (reads: item)
           if (prevItem !== nextItem) {
             const prevText = "" + toText((prevItem)?.title);
             const nextText = "" + toText((nextItem)?.title);
-            if (prevText !== nextText) patches.push({ op: "text", id: "4" + itemSuffix, text: nextText });
+            if (prevText !== nextText) patches.push({ op: "text", id: itemSuffix + "4", text: nextText });
           }
         }
       },
@@ -175,9 +175,9 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
     const nextOutlet = resolveOutlet(env, next);
     if (prevOutlet?.view !== nextOutlet?.view || prevOutlet?.name !== nextOutlet?.name) {
       // another page: replace what is between the markers
-      if (prevOutlet) patches.push({ op: "clear", from: "6s" + idSuffix, to: "6e" + idSuffix });
+      if (prevOutlet) patches.push({ op: "clear", from: idSuffix + "6s", to: idSuffix + "6e" });
       if (nextOutlet) {
-        patches.push({ op: "insert", before: "6e" + idSuffix, nodes: nextOutlet.view.render(
+        patches.push({ op: "insert", before: idSuffix + "6e", nodes: nextOutlet.view.render(
           nextOutlet.state,
           idSuffix + "/6",
           messagePrefix + nextOutlet.name + ".",

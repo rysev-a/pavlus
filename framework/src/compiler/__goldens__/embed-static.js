@@ -3,7 +3,7 @@ import { childEnv, diffKeyedList, toText } from "@service-laboratory/pavlus/runt
 import Row from "./row.pavlus";
 import Badge from "./badge.pavlus";
 
-const meta = { embeds: ["row","badge"], outlet: false };
+const meta = { embeds: {"row":"/2","badge":"/3"}, outlet: false };
 
 /** The template for a state, as virtual nodes. Pure. */
 function render(state, idSuffix = "", messagePrefix = "", env) {
@@ -11,13 +11,13 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   // line 5: <ul.rows>
   const ulChildren = [];
   // line 6: for item
-  ulChildren.push({ t: "marker", id: "1s" + idSuffix });
+  ulChildren.push({ t: "marker", id: idSuffix + "1s" });
   const itemList = (state.items) || [];
   for (let itemIndex = 0; itemIndex < itemList.length; itemIndex++) {
     const item = itemList[itemIndex];
     const itemKey = String((item)?.id);
     const itemSuffix = idSuffix + "#" + itemKey;
-    ulChildren.push({ t: "marker", id: "1[" + itemSuffix });
+    ulChildren.push({ t: "marker", id: itemSuffix + "1[" });
     // line 7: +Row#row
     ulChildren.push(...Row.render(
       { ...(item), "selected": (state.selected === (item)?.id), "label": "Item " + toText((item)?.id) },
@@ -25,9 +25,9 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
       messagePrefix + "row.",
       childEnv(env, "row", state),
     ));
-    ulChildren.push({ t: "marker", id: "1]" + itemSuffix });
+    ulChildren.push({ t: "marker", id: itemSuffix + "1]" });
   }
-  ulChildren.push({ t: "marker", id: "1e" + idSuffix });
+  ulChildren.push({ t: "marker", id: idSuffix + "1e" });
   // line 8: +Badge#badge
   ulChildren.push(...Badge.render(
     { "count": (state.items)?.length },
@@ -57,9 +57,9 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
     const nextItemList = (next.items) || [];
     const prevItemKeys = prevItemList.map((item, itemIndex) => String((item)?.id));
     const nextItemKeys = nextItemList.map((item, itemIndex) => String((item)?.id));
-    const itemStartId = (key) => "1[" + idSuffix + "#" + key;
-    const itemEndId = (key) => "1]" + idSuffix + "#" + key;
-    diffKeyedList(prevItemKeys, nextItemKeys, itemStartId, "1e" + idSuffix, {
+    const itemStartId = (key) => idSuffix + "#" + key + "1[";
+    const itemEndId = (key) => idSuffix + "#" + key + "1]";
+    diffKeyedList(prevItemKeys, nextItemKeys, itemStartId, idSuffix + "1e", {
       remove(key) { patches.push({ op: "remove", from: itemStartId(key), to: itemEndId(key) }); },
       insert(index, beforeId) {
         const item = nextItemList[index];

@@ -205,12 +205,12 @@ describe("embeds: render", () => {
     );
   });
 
-  test("meta lists the instance names", () => {
+  test("meta lists the instance names with their id scope", () => {
     const p = compileToView(
       `import Row from "./r"\n+Row#a\nif x\n  +{V}#b\n+Row#a`,
       { components: { Row: row } },
     );
-    expect(p.meta).toEqual({ embeds: ["a", "b"], outlet: false });
+    expect(p.meta).toEqual({ embeds: { a: "/0", b: "/2" }, outlet: false });
   });
 
   test("compileToView without a needed component says which one", () => {
@@ -251,8 +251,8 @@ describe("+outlet", () => {
       children: [{ type: "outlet" }],
     });
     expect(compileToView("main\n  +outlet").meta).toEqual({
-      embeds: [],
-      outlet: true,
+      embeds: {},
+      outlet: 1,
     });
     expect(compileToView("p x").meta?.outlet).toBe(false);
   });

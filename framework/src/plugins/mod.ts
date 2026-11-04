@@ -2,7 +2,7 @@
  * Every built-in plugin and its effector from one import:
  *
  * ```ts
- * import { createDomPlugin, createHttpPlugin, storeEffector as store } from "@service-laboratory/pavlus/plugins";
+ * import { DomPlugin, createHttpPlugin, storeEffector as store } from "@service-laboratory/pavlus/plugins";
  * ```
  *
  * Importing this does not run any code; a bundler only keeps what you use.

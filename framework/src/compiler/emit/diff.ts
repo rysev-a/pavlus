@@ -381,10 +381,10 @@ export class DiffEmitter extends RenderEmitter {
     this.w.line(`const ${prevKeys} = ${prevList}.map(${prevKeyFn});`);
     this.w.line(`const ${nextKeys} = ${nextList}.map(${nextKeyFn});`);
     this.w.line(
-      `const ${startId} = (key) => ${json(`${n.nid}[`)} + ${ctx.suffix} + "#" + key;`,
+      `const ${startId} = (key) => ${ctx.suffix} + "#" + key + ${json(`${n.nid}[`)};`,
     );
     this.w.line(
-      `const ${endId} = (key) => ${json(`${n.nid}]`)} + ${ctx.suffix} + "#" + key;`,
+      `const ${endId} = (key) => ${ctx.suffix} + "#" + key + ${json(`${n.nid}]`)};`,
     );
     this.w.line(
       `${this.h("diffKeyedList")}(${prevKeys}, ${nextKeys}, ${startId}, ${this.id(n.nid, "e", ctx)}, {`,

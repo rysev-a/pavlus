@@ -2,8 +2,8 @@
 
 Holds the **application state** and a history of every change to it. It is the
 only plugin the core asks for the state: `app(message, state)` receives the
-store's current value, and when it changes the other plugins are told (a DOM
-mount with `followState` re-renders).
+store's current value, and when it changes the other plugins are told
+(`onState`).
 
 ```ts
 import {
@@ -47,19 +47,15 @@ With `onSuccess`, the change answers with a message once it **landed** — and
 only when it changed anything (a no-op never answers). The payload is
 `{ prev, next }`: the state before and after the write. This is how the
 application learns about its own writes — and paints: the pair is exactly
-what `dom.update` diffs, so an answer can be turned into the repaint
-directly.
+what a view diff takes, so an answer can be turned into patches directly.
 
 ```ts
 const paint = { onSuccess: "paint" } as const;
 
-"user.created"(msg, s): Effect[] {
-  const user = msg.payload.data;
-  // this write answers "paint" with { prev, next } once the list changed
-  return [store.set("users", [...s.users, user], paint)];
-}
+// In a component whose slice is `users` (the answer arrives already sliced):
 "paint"(msg): Effect[] {
-  return [dom.update(msg.payload.prev, msg.payload.next)];
+  const { prev, next } = msg.payload;
+  return [DomPlugin.update(view.diff(prev, next))]; // no target, local ids
 }
 ```
 

@@ -7,14 +7,13 @@ import { timeEffector as time } from "./time/helpers.ts";
 import { loggerEffector as log } from "./logger/helpers.ts";
 import { wsEffector as ws } from "./ws/helpers.ts";
 import { routerEffector as router } from "./router/helpers.ts";
-import { domEffector as dom } from "./dom/helpers.ts";
+import { DomPlugin } from "./dom/mod.ts";
 import { createStorePlugin } from "./store/mod.ts";
 import { createTimePlugin } from "./time/mod.ts";
 import { createHttpPlugin } from "./http/mod.ts";
 import { createLoggerPlugin } from "./logger/mod.ts";
 import { createWsPlugin, type SocketLike } from "./ws/mod.ts";
 import { createRouterPlugin } from "./router/mod.ts";
-import { createDomPlugin } from "./dom/mod.ts";
 
 const view = { render: () => [], diff: () => [] };
 
@@ -180,49 +179,39 @@ describe("effectors build the effects the plugins document", () => {
   });
 
   test("dom", () => {
-    expect(dom.mount("#app", view)).toEqual({
+    expect(DomPlugin.mount("#app", view)).toEqual({
       plugin: "dom",
       type: "mount",
       target: "#app",
       view,
     });
-    expect(dom.mount("#app", view, { onMounted: "ready" })).toMatchObject({
-      onMounted: "ready",
-    });
-    expect(dom.mount("#app", view, { followState: true })).toEqual({
-      plugin: "dom",
-      type: "mount",
-      target: "#app",
-      view,
-      followState: true,
-    });
-    expect(dom.unmount("#app")).toEqual({
+    expect(DomPlugin.mount("#app", view, { onMounted: "ready" })).toMatchObject(
+      {
+        onMounted: "ready",
+      },
+    );
+    expect(DomPlugin.unmount("#app")).toEqual({
       plugin: "dom",
       type: "unmount",
       target: "#app",
     });
-    expect(dom.update({ a: 1 }, { a: 2 })).toEqual({
+    expect(
+      DomPlugin.update([{ op: "text", id: "1", text: "2" }], "#app"),
+    ).toEqual({
       plugin: "dom",
       type: "update",
-      prev: { a: 1 },
-      next: { a: 2 },
-    });
-    expect(dom.update({ a: 1 }, { a: 2 }, "#app")).toEqual({
-      plugin: "dom",
-      type: "update",
-      prev: { a: 1 },
-      next: { a: 2 },
+      patches: [{ op: "text", id: "1", text: "2" }],
       target: "#app",
     });
-    expect(dom.focus("input")).toEqual({
+    expect(DomPlugin.focus("input")).toEqual({
       plugin: "dom",
       type: "focus",
-      selector: "input",
+      target: "input",
     });
-    expect(dom.blur("input")).toEqual({
+    expect(DomPlugin.blur("input")).toEqual({
       plugin: "dom",
       type: "blur",
-      selector: "input",
+      target: "input",
     });
   });
 });
@@ -355,12 +344,12 @@ describe("the plugins accept what the effectors build", () => {
   test("dom", () => {
     document.body.innerHTML = `<div id="app"></div><input id="name" />`;
     const { got, ctx } = harness();
-    const d = createDomPlugin();
+    const d = new DomPlugin();
     d.init!(ctx);
     const state = {};
     const c = { ...ctx, getState: () => state as never };
     d.handle(
-      dom.mount(
+      DomPlugin.mount(
         "#app",
         { render: () => [{ t: "text", text: "hi" }], diff: () => [] },
         { onMounted: "ready" },
@@ -369,10 +358,10 @@ describe("the plugins accept what the effectors build", () => {
     );
     expect(document.querySelector("#app")?.textContent).toBe("hi");
     expect(got).toEqual([{ id: "ready" }]);
-    d.handle(dom.focus("#name"), c);
+    d.handle(DomPlugin.focus("#name"), c);
     expect(document.activeElement?.id).toBe("name");
-    d.handle(dom.blur("#name"), c);
-    d.handle(dom.unmount("#app"), c);
+    d.handle(DomPlugin.blur("#name"), c);
+    d.handle(DomPlugin.unmount("#app"), c);
     expect(document.querySelector("#app")?.textContent).toBe("");
   });
 });

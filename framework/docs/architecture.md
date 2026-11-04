@@ -65,7 +65,7 @@ flowchart TD
     C --> L
     C --> RO
     D -->|"ctx.dispatch(Message)"| C
-    ST -->|"onState → followState mounts diff → patches"| D
+    ST -.->|"write answers { prev, next } → paint"| C
 ```
 
 ### Reading map (suggested order for a newcomer)
@@ -96,11 +96,12 @@ flowchart TD
    handed to the plugin named `effect.plugin` (`plugin.handle(effect, ctx)`, in
    the order the effects were returned).
 4. Then `getState()` is read again; **only if the state object identity changed**
-   (`next !== state`) every plugin gets `onState(next, ctx)`. A mount re-renders
-   on this only when it was created with `followState`; otherwise views repaint
-   on demand when the app turns a store write's answer (`{ prev, next }`) into
-   a `dom.update(prev, next)` effect — which is why state must be treated as
-   immutable.
+   (`next !== state`) every plugin gets `onState(next, ctx)`. Nothing repaints
+   on its own: a store write that changed anything answers with
+   `{ prev, next }` — exactly what a view `diff` takes — and the component
+   that cares (usually a `paint` handler) returns a
+   `DomPlugin.update(patches)` effect, computed by its own view diff — which
+   is why state must be treated as immutable.
 5. A safety valve throws if more than `maxMessagesPerTick` (default 10 000)
    messages are processed in one tick (message loops).
 6. `dispose()` disposes plugins in reverse registration order.
@@ -119,21 +120,22 @@ sequenceDiagram
     C->>A: app(message, state)
     A-->>C: Effect[] — plain data
     C->>S: handle(store.set(...)) — state replaced immutably
-    C->>P: handle(effect) for every other plugin
-    C->>D: onState(next) — only when state !== previous
-    D->>D: mounts with followState: view.diff(prevState, next) → patches → DOM
+    S->>C: dispatch({ id: onSuccess, payload: { prev, next } })
+    C->>A: the paint handler diffs its view: { prev, next } → patches
+    A-->>C: DomPlugin.update(patches)
+    C->>D: handle(update) — patches → DOM
 ```
 
 **The plugin contract** (`src/core/types.ts`):
 
-| Member                 | Required | Purpose                                                                  |
-| ---------------------- | -------- | ------------------------------------------------------------------------ |
-| `name`                 | yes      | Matches `effect.plugin`.                                                 |
-| `init?(ctx)`           | no       | Grab `dispatch`/`getState`, start listeners.                             |
-| `handle(effect, ctx)`  | yes      | Do the dirty work for one effect.                                        |
-| `onState?(state, ctx)` | no       | React to state changes (a DOM mount re-renders only with `followState`). |
-| `dispose?()`           | no       | Remove listeners, abort requests, close sockets.                         |
-| `getState?()`          | no       | Marks a stateful plugin (the store).                                     |
+| Member                 | Required | Purpose                                            |
+| ---------------------- | -------- | -------------------------------------------------- |
+| `name`                 | yes      | Matches `effect.plugin`.                           |
+| `init?(ctx)`           | no       | Grab `dispatch`/`getState`, start listeners.       |
+| `handle(effect, ctx)`  | yes      | Do the dirty work for one effect.                  |
+| `onState?(state, ctx)` | no       | React to state changes (observers, debug tooling). |
+| `dispose?()`           | no       | Remove listeners, abort requests, close sockets.   |
+| `getState?()`          | no       | Marks a stateful plugin (the store).               |
 
 Application code rarely writes raw effect objects: each plugin exports an
 **effector**, a typed builder (`store.set("user.name", v)`,
@@ -383,9 +385,12 @@ propsNext, …)`.
   detached recursively when nodes are disposed.
 - Form controls: `value`/`checked`/`selected` are mirrored to properties, not just
   attributes (the attribute only seeds a field).
-- `onState` diffs only the mounts created with `followState` (their stored state
-  identity must also differ), then patches. Other mounts repaint via
-  `dom.update(prev, next)`.
+- Nothing repaints on its own: a component that decides to paint returns
+  `DomPlugin.update(patches)` — the patches its view diff computed — and the
+  plugin applies them as-is. A child's patches are scoped to its embed by
+  the boundary it bubbles through (node ids get the `"/nid"` segment,
+  event messages the instance prefix); without a target they belong to the
+  application's one mount.
 
 ## 7. The store plugin (`src/plugins/store/mod.ts`)
 

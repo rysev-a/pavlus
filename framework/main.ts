@@ -31,6 +31,7 @@ export {
   mapEffects,
   mapMessage,
   namespace,
+  paintOnWrite,
   setComponentTrace,
   toHandler,
   viewOf,
@@ -45,6 +46,7 @@ export type {
   ComponentTrace,
   Handler,
   NamespaceOptions,
+  ViewOfOptions,
 } from "./src/component/mod.ts";
 
 export { matchRoute, routeName } from "./src/routing/mod.ts";
