@@ -1,4 +1,8 @@
-import { Component, type Effect, type Message } from "@service-laboratory/pavlus";
+import {
+  Component,
+  type Effect,
+  type Message,
+} from "@service-laboratory/pavlus";
 import { storeEffector as store } from "@service-laboratory/pavlus/plugins";
 import view from "./crud-form.pavlus";
 import {
@@ -13,20 +17,55 @@ import {
 } from "./form.ts";
 
 const ROLES = ["Admin", "Editor", "Viewer"];
-const PERMS = ["users.view", "users.edit", "orders.view", "orders.refund", "reports.export", "settings.edit"];
+const PERMS = [
+  "users.view",
+  "users.edit",
+  "orders.view",
+  "orders.refund",
+  "reports.export",
+  "settings.edit",
+];
 const PRODUCTS: Record<string, number> = { "1": 999, "2": 799, "3": 449 };
 
 /** What the demo's fields look things up in. */
 const ctx = {};
 
 const DEFS: FieldDef<typeof ctx>[] = [
-  { key: "name", label: "Name", kind: "text", required: true, placeholder: "Ann Stone" },
-  { key: "email", label: "Email", kind: "email", required: true, hint: "Used to sign in." },
-  { key: "role", label: "Role", kind: "select", required: true, options: () => ROLES.map((r) => ({ value: r, label: r })) },
+  {
+    key: "name",
+    label: "Name",
+    kind: "text",
+    required: true,
+    placeholder: "Ann Stone",
+  },
+  {
+    key: "email",
+    label: "Email",
+    kind: "email",
+    required: true,
+    hint: "Used to sign in.",
+  },
+  {
+    key: "role",
+    label: "Role",
+    kind: "select",
+    required: true,
+    options: () => ROLES.map((r) => ({ value: r, label: r })),
+  },
   { key: "age", label: "Age", kind: "number", min: 18, max: 99 },
   { key: "bio", label: "Bio", kind: "textarea", rows: 3 },
-  { key: "active", label: "Active", kind: "switch", hint: "The person can sign in" },
-  { key: "perms", label: "Permissions", kind: "checks", options: () => PERMS.map((p) => ({ value: p, label: p })) },
+  {
+    key: "active",
+    label: "Active",
+    kind: "switch",
+    hint: "The person can sign in",
+  },
+  {
+    key: "perms",
+    label: "Permissions",
+    kind: "checks",
+    options: () => PERMS.map((p) => ({ value: p, label: p })),
+  },
   {
     key: "lines",
     label: "Order",
@@ -54,7 +93,10 @@ interface DemoState {
   saved: string;
 }
 
-const shapeOf = (draft: Draft, errors: Record<string, string>): DemoState["shape"] => ({
+const shapeOf = (
+  draft: Draft,
+  errors: Record<string, string>,
+): DemoState["shape"] => ({
   title: "New person",
   description: "Fields marked * are required.",
   fields: fieldsView(DEFS, draft, errors, ctx),
@@ -63,18 +105,44 @@ const shapeOf = (draft: Draft, errors: Record<string, string>): DemoState["shape
   problems: Object.keys(errors).length,
 });
 
-const blank = draftOf(DEFS, { role: "Viewer", active: true, lines: [{ productId: 2, qty: 1, price: 799 }] }, ctx);
+const blank = draftOf(
+  DEFS,
+  {
+    role: "Viewer",
+    active: true,
+    lines: [{ productId: 2, qty: 1, price: 799 }],
+  },
+  ctx,
+);
 
-export const initial: DemoState = { draft: blank, errors: {}, shape: shapeOf(blank, {}), saved: "Nothing saved yet." };
+export const initial: DemoState = {
+  draft: blank,
+  errors: {},
+  shape: shapeOf(blank, {}),
+  saved: "Nothing saved yet.",
+};
 
 export class CrudFormDemo extends Component<DemoState> {
   view = view;
 
   _change(name: string, msg: Message, state: DemoState): Effect[] {
-    const draft = reduceDraft(DEFS, state.draft, name, msg.payload, msg.event, ctx);
+    const draft = reduceDraft(
+      DEFS,
+      state.draft,
+      name,
+      msg.payload,
+      msg.event,
+      ctx,
+    );
     // the messages of a field that was wrong go away as it is edited
-    const errors = Object.keys(state.errors).length ? validateDraft(DEFS, draft, ctx) : state.errors;
-    return [store.set("draft", draft), store.set("errors", errors), store.set("shape", shapeOf(draft, errors))];
+    const errors = Object.keys(state.errors).length
+      ? validateDraft(DEFS, draft, ctx)
+      : state.errors;
+    return [
+      store.set("draft", draft),
+      store.set("errors", errors),
+      store.set("shape", shapeOf(draft, errors)),
+    ];
   }
 
   "form.change"(msg: Message, state: DemoState): Effect[] {
@@ -105,7 +173,10 @@ export class CrudFormDemo extends Component<DemoState> {
   "form.save"(_msg: Message, state: DemoState): Effect[] {
     const errors = validateDraft(DEFS, state.draft, ctx);
     if (Object.keys(errors).length) {
-      return [store.set("errors", errors), store.set("shape", shapeOf(state.draft, errors))];
+      return [
+        store.set("errors", errors),
+        store.set("shape", shapeOf(state.draft, errors)),
+      ];
     }
     const row = rowOf(DEFS, state.draft, {}, ctx);
     return [

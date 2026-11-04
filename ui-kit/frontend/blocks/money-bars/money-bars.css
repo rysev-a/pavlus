@@ -17,3 +17,5 @@
 .k-mbars__label { position: absolute; left: 0; right: 0; bottom: -22px; overflow: hidden; font-size: 11px; text-align: center; color: var(--muted-foreground); text-overflow: ellipsis; white-space: nowrap; }
 .k-mbars__group:hover { background: color-mix(in srgb, var(--foreground) 5%, transparent); border-radius: var(--radius-sm); }
 @media (max-width: 560px) { .k-mbars__group:nth-child(even) .k-mbars__label { visibility: hidden; } }
+.k-mbars--flat .k-mbars__zero { top: auto; bottom: 22px; }
+.k-mbars--flat .k-mbars__down { flex: 0; }

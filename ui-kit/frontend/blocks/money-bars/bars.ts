@@ -55,10 +55,17 @@ export function moneyBars(
       h:
         v.value === 0
           ? 1
-          : Math.max(3, Math.min(100, Math.round((Math.abs(v.value) / top) * 100))),
+          : Math.max(
+              3,
+              Math.min(100, Math.round((Math.abs(v.value) / top) * 100)),
+            ),
       neg: v.value < 0,
       tone: v.tone,
       tip: `${row.label}, ${v.id}: ${format(v.value)}`,
     })),
   }));
 }
+
+/** Pure: true when no bar grows down, so the plot can drop its lower half. */
+export const noLoss = (months: MoneyMonth[]): boolean =>
+  months.every((m) => m.bars.every((b) => !b.neg));

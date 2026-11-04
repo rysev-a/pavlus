@@ -7,13 +7,14 @@
 .k-ctable .ui-data-search { position: relative; flex: 1 1 220px; max-width: 360px; }
 .k-ctable__searchicon { position: absolute; left: 12px; top: 50%; translate: 0 -50%; color: var(--muted-foreground); pointer-events: none; }
 .k-ctable .ui-data-search .ui-input { padding-left: 36px; }
-.k-ctable__filter { width: auto; min-width: 150px; }
+.k-ctable .k-ctable__filter { width: auto; flex: 0 0 auto; min-width: 150px; max-width: 220px; }
 .k-ctable__bulk { margin-left: auto; }
 .k-ctable__strong { display: grid; gap: 1px; min-width: 0; }
 .k-ctable__strong small { font-size: 12px; color: var(--muted-foreground); }
-.k-ctable__mono { font-family: var(--font-mono); font-size: 12.5px; }
+.k-ctable__mono { font-family: var(--font-mono); font-size: 12.5px; white-space: nowrap; }
 .k-ctable__num { font-variant-numeric: tabular-nums; }
 .k-ctable__actionhead { width: 84px; }
+.k-ctable__actioncell { width: 84px; padding-block: 0; }
 .k-ctable__actions { display: flex; justify-content: flex-end; gap: 2px; white-space: nowrap; }
 .k-ctable__danger:hover { color: var(--destructive); }
 .k-ctable .ui-data-footer-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }

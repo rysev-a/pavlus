@@ -7,8 +7,14 @@ import type { Effect, Plugin } from "@service-laboratory/pavlus";
  */
 
 export type FilesEffect = Effect & { plugin: "files" } & (
-    | { type: "download"; name: string; text: string; mime: string; onDone?: string }
-    | { type: "pick"; accept: string; onText: string; onError: string }
+    | {
+        type: "download";
+        name: string;
+        text: string;
+        mime: string;
+        onSuccess?: string;
+      }
+    | { type: "pick"; accept: string; onSuccess: string; onError: string }
   );
 
 /** The reply of `pick`. */
@@ -18,21 +24,26 @@ export interface Picked {
 }
 
 export const filesEffector = {
-  /** Saves `text` as a file; replies `{ name }` to `onDone` when given. */
-  download: (name: string, text: string, mime: string, onDone?: string): FilesEffect => ({
+  /** Saves `text` as a file; replies `{ name }` to `onSuccess` when given. */
+  download: (
+    name: string,
+    text: string,
+    mime: string,
+    onSuccess?: string,
+  ): FilesEffect => ({
     plugin: "files",
     type: "download",
     name,
     text,
     mime,
-    onDone,
+    onSuccess,
   }),
-  /** Opens the file dialog (`accept`: `.json`) and replies `Picked` to `onText`; a cancelled dialog replies nothing. */
-  pick: (accept: string, onText: string, onError: string): FilesEffect => ({
+  /** Opens the file dialog (`accept`: `.json`) and replies `Picked` to `onSuccess`; a cancelled dialog replies nothing. */
+  pick: (accept: string, onSuccess: string, onError: string): FilesEffect => ({
     plugin: "files",
     type: "pick",
     accept,
-    onText,
+    onSuccess,
     onError,
   }),
 };
@@ -46,7 +57,9 @@ export function createFilesPlugin(
       const win = doc.defaultView;
       if (effect.type === "download") {
         try {
-          const url = win!.URL.createObjectURL(new Blob([effect.text], { type: effect.mime }));
+          const url = win!.URL.createObjectURL(
+            new Blob([effect.text], { type: effect.mime }),
+          );
           const a = doc.createElement("a");
           a.href = url;
           a.download = effect.name;
@@ -57,7 +70,11 @@ export function createFilesPlugin(
         } catch {
           // no download in this environment
         }
-        if (effect.onDone) ctx.dispatch({ id: effect.onDone, payload: { name: effect.name } });
+        if (effect.onSuccess)
+          ctx.dispatch({
+            id: effect.onSuccess,
+            payload: { name: effect.name },
+          });
         return;
       }
       if (effect.type === "pick") {
@@ -72,7 +89,10 @@ export function createFilesPlugin(
           if (!file) return;
           file.text().then(
             (text) =>
-              ctx.dispatch({ id: effect.onText, payload: { name: file.name, text } satisfies Picked }),
+              ctx.dispatch({
+                id: effect.onSuccess,
+                payload: { name: file.name, text } satisfies Picked,
+              }),
             (e) =>
               ctx.dispatch({
                 id: effect.onError,

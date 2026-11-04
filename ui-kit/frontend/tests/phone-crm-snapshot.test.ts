@@ -1,5 +1,9 @@
 import { expect, test } from "vitest";
-import { emptyDb, TABLES, type Db } from "../templates/phone-retail-crm/schema.ts";
+import {
+  emptyDb,
+  TABLES,
+  type Db,
+} from "../templates/phone-retail-crm/schema.ts";
 import {
   bytesOf,
   dbCounts,
@@ -11,7 +15,9 @@ import {
 function small(): Db {
   return {
     ...emptyDb(),
-    permissions: [{ id: 1, code: "orders.refund", description: "Refund", module: "orders" }],
+    permissions: [
+      { id: 1, code: "orders.refund", description: "Refund", module: "orders" },
+    ],
     roles: [{ id: 1, name: "Admin", description: "All", permissionIds: [1] }],
     users: [
       {
@@ -80,15 +86,31 @@ function small(): Db {
       },
     ],
     budget: [
-      { id: 1, month: "2026-03", kind: "income", amount: 10, shopId: 0, note: "" },
-      { id: 2, month: "2026-03", kind: "supply", amount: 5, shopId: 1, note: "" },
+      {
+        id: 1,
+        month: "2026-03",
+        kind: "income",
+        amount: 10,
+        shopId: 0,
+        note: "",
+      },
+      {
+        id: 2,
+        month: "2026-03",
+        kind: "supply",
+        amount: 5,
+        shopId: 1,
+        note: "",
+      },
     ],
   };
 }
 
 /** Parses the snapshot of `small()` after `mutate` changed its plain-JSON copy. */
 function corrupt(mutate: (data: Record<string, any[]>) => void) {
-  const snap = JSON.parse(snapshotText(snapshotOf(small(), "2026-03-14T10:00:00")));
+  const snap = JSON.parse(
+    snapshotText(snapshotOf(small(), "2026-03-14T10:00:00")),
+  );
   mutate(snap.data);
   return parseSnapshot(JSON.stringify(snap));
 }
@@ -117,55 +139,105 @@ test("not JSON", () => {
 
 test("not an object, wrong app, wrong version, no data", () => {
   expect(errorOf(parseSnapshot("[]"))).toBe("the file is not a JSON object");
-  expect(errorOf(parseSnapshot('{"app":"other","version":1}'))).toContain('app is "other"');
-  expect(errorOf(parseSnapshot('{"app":"phone-retail-crm","version":2}'))).toContain("version 2");
-  expect(errorOf(parseSnapshot('{"app":"phone-retail-crm","version":1}'))).toContain('"data"');
+  expect(errorOf(parseSnapshot('{"app":"other","version":1}'))).toContain(
+    'app is "other"',
+  );
+  expect(
+    errorOf(parseSnapshot('{"app":"phone-retail-crm","version":2}')),
+  ).toContain("version 2");
+  expect(
+    errorOf(parseSnapshot('{"app":"phone-retail-crm","version":1}')),
+  ).toContain('"data"');
 });
 
 test("a missing table and a table that is not an array", () => {
-  expect(errorOf(corrupt((d) => delete d.shops))).toBe('table "shops" is missing');
-  expect(errorOf(corrupt((d) => (d.shops = {} as never)))).toBe('table "shops" is not an array');
+  expect(errorOf(corrupt((d) => delete d.shops))).toBe(
+    'table "shops" is missing',
+  );
+  expect(errorOf(corrupt((d) => (d.shops = {} as never)))).toBe(
+    'table "shops" is not an array',
+  );
 });
 
 test("a row that is not an object", () => {
-  expect(errorOf(corrupt((d) => (d.users[0] = 5)))).toBe("users[0] is not an object");
+  expect(errorOf(corrupt((d) => (d.users[0] = 5)))).toBe(
+    "users[0] is not an object",
+  );
 });
 
 test("bad ids: missing, zero, fractional, duplicate", () => {
-  expect(errorOf(corrupt((d) => delete d.users[0].id))).toContain("users[0].id undefined is not a positive integer");
-  expect(errorOf(corrupt((d) => (d.users[0].id = 0)))).toContain("users[0].id 0 is not a positive integer");
-  expect(errorOf(corrupt((d) => (d.users[0].id = 1.5)))).toContain("not a positive integer");
-  expect(errorOf(corrupt((d) => d.budget.push({ ...d.budget[0] })))).toBe("budget: id 1 appears twice");
+  expect(errorOf(corrupt((d) => delete d.users[0].id))).toContain(
+    "users[0].id undefined is not a positive integer",
+  );
+  expect(errorOf(corrupt((d) => (d.users[0].id = 0)))).toContain(
+    "users[0].id 0 is not a positive integer",
+  );
+  expect(errorOf(corrupt((d) => (d.users[0].id = 1.5)))).toContain(
+    "not a positive integer",
+  );
+  expect(errorOf(corrupt((d) => d.budget.push({ ...d.budget[0] })))).toBe(
+    "budget: id 1 appears twice",
+  );
 });
 
 test("a required field missing, of the wrong type, or out of its enum", () => {
-  expect(errorOf(corrupt((d) => delete d.users[0].email))).toBe("users[1].email is missing");
-  expect(errorOf(corrupt((d) => (d.products[0].price = "9")))).toBe('products[1].price "9" is not a number');
-  expect(errorOf(corrupt((d) => (d.sessions[0].active = "yes")))).toContain("sessions[1].active");
+  expect(errorOf(corrupt((d) => delete d.users[0].email))).toBe(
+    "users[1].email is missing",
+  );
+  expect(errorOf(corrupt((d) => (d.products[0].price = "9")))).toBe(
+    'products[1].price "9" is not a number',
+  );
+  expect(errorOf(corrupt((d) => (d.sessions[0].active = "yes")))).toContain(
+    "sessions[1].active",
+  );
   expect(errorOf(corrupt((d) => (d.users[0].status = "gone")))).toBe(
     'users[1].status "gone" is not one of active, blocked, invited',
   );
-  expect(errorOf(corrupt((d) => (d.models[0].year = 2023.5)))).toContain("models[1].year 2023.5 is not an integer");
-  expect(errorOf(corrupt((d) => (d.roles[0].permissionIds = [1, "x"])))).toContain("roles[1].permissionIds[1]");
-  expect(errorOf(corrupt((d) => (d.orders[0].items[0].qty = "2")))).toContain("orders[1].items[0].qty");
-  expect(errorOf(corrupt((d) => (d.orders[0].items = null)))).toContain("orders[1].items null is not an array");
+  expect(errorOf(corrupt((d) => (d.models[0].year = 2023.5)))).toContain(
+    "models[1].year 2023.5 is not an integer",
+  );
+  expect(
+    errorOf(corrupt((d) => (d.roles[0].permissionIds = [1, "x"]))),
+  ).toContain("roles[1].permissionIds[1]");
+  expect(errorOf(corrupt((d) => (d.orders[0].items[0].qty = "2")))).toContain(
+    "orders[1].items[0].qty",
+  );
+  expect(errorOf(corrupt((d) => (d.orders[0].items = null)))).toContain(
+    "orders[1].items null is not an array",
+  );
 });
 
 test("every foreign key must resolve", () => {
-  expect(errorOf(corrupt((d) => (d.users[0].roleId = 9)))).toBe("users[1].roleId 9 is not a role");
-  expect(errorOf(corrupt((d) => (d.sessions[0].userId = 9)))).toBe("sessions[1].userId 9 is not a user");
-  expect(errorOf(corrupt((d) => (d.models[0].manufacturerId = 9)))).toBe("models[1].manufacturerId 9 is not a manufacturer");
-  expect(errorOf(corrupt((d) => (d.products[0].modelId = 9)))).toBe("products[1].modelId 9 is not a model");
-  expect(errorOf(corrupt((d) => (d.shops[0].categoryId = 9)))).toBe("shops[1].categoryId 9 is not a shop category");
-  expect(errorOf(corrupt((d) => (d.orders[0].userId = 999)))).toBe("orders[1].userId 999 is not a user");
-  expect(errorOf(corrupt((d) => (d.orders[0].shopId = 0)))).toBe("orders[1].shopId 0 is not a shop");
+  expect(errorOf(corrupt((d) => (d.users[0].roleId = 9)))).toBe(
+    "users[1].roleId 9 is not a role",
+  );
+  expect(errorOf(corrupt((d) => (d.sessions[0].userId = 9)))).toBe(
+    "sessions[1].userId 9 is not a user",
+  );
+  expect(errorOf(corrupt((d) => (d.models[0].manufacturerId = 9)))).toBe(
+    "models[1].manufacturerId 9 is not a manufacturer",
+  );
+  expect(errorOf(corrupt((d) => (d.products[0].modelId = 9)))).toBe(
+    "products[1].modelId 9 is not a model",
+  );
+  expect(errorOf(corrupt((d) => (d.shops[0].categoryId = 9)))).toBe(
+    "shops[1].categoryId 9 is not a shop category",
+  );
+  expect(errorOf(corrupt((d) => (d.orders[0].userId = 999)))).toBe(
+    "orders[1].userId 999 is not a user",
+  );
+  expect(errorOf(corrupt((d) => (d.orders[0].shopId = 0)))).toBe(
+    "orders[1].shopId 0 is not a shop",
+  );
   expect(errorOf(corrupt((d) => (d.orders[0].items[1].productId = 9)))).toBe(
     "orders[1].items[1].productId 9 is not a product",
   );
   expect(errorOf(corrupt((d) => (d.roles[0].permissionIds = [1, 4])))).toBe(
     "roles[1].permissionIds[1] 4 is not a permission",
   );
-  expect(errorOf(corrupt((d) => (d.budget[1].shopId = 3)))).toBe("budget[2].shopId 3 is not a shop");
+  expect(errorOf(corrupt((d) => (d.budget[1].shopId = 3)))).toBe(
+    "budget[2].shopId 3 is not a shop",
+  );
 });
 
 test("budget.shopId 0 means the company and is accepted", () => {
@@ -174,7 +246,9 @@ test("budget.shopId 0 means the company and is accepted", () => {
 
 test("an order total must equal the sum of its items", () => {
   const e = errorOf(corrupt((d) => (d.orders[0].total = 1)));
-  expect(e).toBe("orders[1].total 1 does not match its items (they sum to 0.3)");
+  expect(e).toBe(
+    "orders[1].total 1 does not match its items (they sum to 0.3)",
+  );
 });
 
 test("unknown extra fields are dropped", () => {

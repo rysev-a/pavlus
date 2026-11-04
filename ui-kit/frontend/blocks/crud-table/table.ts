@@ -143,7 +143,10 @@ export function sorted<R extends { id: number }>(
 }
 
 /** Pure: the window of page numbers around the current one (at most 5). */
-export function jumpsOf(page: number, pages: number): { n: number; active: boolean }[] {
+export function jumpsOf(
+  page: number,
+  pages: number,
+): { n: number; active: boolean }[] {
   const from = Math.max(1, Math.min(page - 2, pages - 4));
   const to = Math.min(pages, from + 4);
   const out: { n: number; active: boolean }[] = [];
@@ -198,7 +201,10 @@ export function tableView<R extends { id: number }>(
     pages,
     range: found.length === 0 ? "0" : `${start + 1}-${start + shown.length}`,
     pageSize: st.pageSize,
-    pageSizes: PAGE_SIZES.map((value) => ({ value, active: value === st.pageSize })),
+    pageSizes: PAGE_SIZES.map((value) => ({
+      value,
+      active: value === st.pageSize,
+    })),
     selectedCount: st.selected.length,
     allSelected: shown.length > 0 && onPage === shown.length,
     someSelected: onPage > 0 && onPage < shown.length,

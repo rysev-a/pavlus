@@ -9,4 +9,4 @@ section.k-page
   section.k-demo
     h2.k-demo__title Two bars, six months, shorter
     div.k-preview.k-preview--block
-      +MoneyBars#half(months=half legend=halfLegend height="180px")
+      +MoneyBars#half(months=half legend=halfLegend flat=true height="180px")

@@ -68,8 +68,7 @@ export function niceStep(span: number, want = 5): number {
 
 /** Pure: `-33.9` as `33.9°S`, `151.2` as `151.2°E`. */
 export function degrees(value: number, axis: "lat" | "lng"): string {
-  const hemi =
-    axis === "lat" ? (value < 0 ? "S" : "N") : value < 0 ? "W" : "E";
+  const hemi = axis === "lat" ? (value < 0 ? "S" : "N") : value < 0 ? "W" : "E";
   const abs = Math.abs(Math.round(value * 100) / 100);
   return `${abs}°${abs === 0 ? "" : hemi}`;
 }
@@ -96,11 +95,7 @@ export function boxOf(
   return { minLat, maxLat, minLng, maxLng };
 }
 
-function ticksOf(
-  lo: number,
-  hi: number,
-  axis: "lat" | "lng",
-): GeoTick[] {
+function ticksOf(lo: number, hi: number, axis: "lat" | "lng"): GeoTick[] {
   const step = niceStep(hi - lo, 5);
   const out: GeoTick[] = [];
   for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) {

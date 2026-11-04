@@ -9,14 +9,12 @@
 import { money, type Tone } from "../../blocks/admin-shell/shell.ts";
 import { type Area, areaChart, short } from "../../blocks/area-chart/area.ts";
 import { type Column, columns } from "../../blocks/bar-chart/chart.ts";
-import {
-  type GeoPlot,
-  geoPlot,
-} from "../../blocks/geo-plot/geo.ts";
+import { type GeoPlot, geoPlot } from "../../blocks/geo-plot/geo.ts";
 import {
   type LegendItem,
   type MoneyMonth,
   moneyBars,
+  noLoss,
 } from "../../blocks/money-bars/bars.ts";
 import { type Item, item } from "../../blocks/progress-list/items.ts";
 import { type Card, card, change } from "../../blocks/stat-cards/cards.ts";
@@ -31,7 +29,7 @@ import {
 } from "./schema.ts";
 
 /** The fixed "today" of the demo (no clock in a pure function). */
-export const TODAY = "2026-11-04";
+export const TODAY = "2026-10-31";
 
 const MONTH_NAMES = [
   "Jan",
@@ -179,9 +177,7 @@ export interface MonthBudget {
   profit: number;
 }
 
-const finish = (
-  row: Omit<MonthBudget, "expenses" | "profit">,
-): MonthBudget => {
+const finish = (row: Omit<MonthBudget, "expenses" | "profit">): MonthBudget => {
   const expenses = r(row.salary + row.supply + row.delivery);
   return { ...row, expenses, profit: r(row.income - expenses) };
 };
@@ -363,6 +359,8 @@ export interface BudgetRowView {
 export interface BudgetDashboardProps {
   kpis: Card[];
   months: MoneyMonth[];
+  /** true when no month lost money (the chart drops its lower half) */
+  flat: boolean;
   legend: LegendItem[];
   shares: Item[];
   rows: BudgetRowView[];
@@ -370,14 +368,22 @@ export interface BudgetDashboardProps {
   totals: BudgetRowView;
 }
 
-const KIND_LABEL = { salary: "Salaries", supply: "Shop supply", delivery: "Delivery" };
+const KIND_LABEL = {
+  salary: "Salaries",
+  supply: "Shop supply",
+  delivery: "Delivery",
+};
 const KIND_TONE: Record<string, Tone> = {
   salary: "info",
   supply: "warning",
   delivery: "default",
 };
 
-const rowView = (id: string, label: string, b: BudgetTotals): BudgetRowView => ({
+const rowView = (
+  id: string,
+  label: string,
+  b: BudgetTotals,
+): BudgetRowView => ({
   id,
   label,
   income: usd0(b.income),
@@ -413,7 +419,12 @@ export function budgetDashboard(
     // for costs a rise is bad: the arrow keeps its direction, the hint says so
     return card(id, label, usd0(totals[key]), {
       ...c,
-      trend: inverse && c.trend !== "flat" ? (c.trend === "up" ? "down" : "up") : c.trend,
+      trend:
+        inverse && c.trend !== "flat"
+          ? c.trend === "up"
+            ? "down"
+            : "up"
+          : c.trend,
       hint: `${usd0(cur[key])} this month`,
       icon,
       tone,
@@ -423,9 +434,29 @@ export function budgetDashboard(
   const kpis = [
     kpi("income", "Income, 12 months", "income", "k-ai-dollar", "success"),
     kpi("salary", "Salaries, 12 months", "salary", "k-ai-users", "info", true),
-    kpi("supply", "Shop supply, 12 months", "supply", "k-ai-box", "warning", true),
-    kpi("delivery", "Delivery, 12 months", "delivery", "k-ai-truck", "default", true),
-    kpi("profit", "Profit, 12 months", "profit", "k-ai-chart", totals.profit < 0 ? "destructive" : "success"),
+    kpi(
+      "supply",
+      "Shop supply, 12 months",
+      "supply",
+      "k-ai-box",
+      "warning",
+      true,
+    ),
+    kpi(
+      "delivery",
+      "Delivery, 12 months",
+      "delivery",
+      "k-ai-truck",
+      "default",
+      true,
+    ),
+    kpi(
+      "profit",
+      "Profit, 12 months",
+      "profit",
+      "k-ai-chart",
+      totals.profit < 0 ? "destructive" : "success",
+    ),
   ];
   const months = moneyBars(
     rows.map((x) => ({
@@ -453,6 +484,7 @@ export function budgetDashboard(
   return {
     kpis,
     months,
+    flat: noLoss(months),
     legend,
     shares,
     rows: rows.map((x) => rowView(x.month, monthTitle(x.month), x)),
@@ -482,7 +514,13 @@ export interface ShopsMapProps {
   count: number;
 }
 
-const CATEGORY_TONES: Tone[] = ["default", "success", "warning", "destructive", "info"];
+const CATEGORY_TONES: Tone[] = [
+  "default",
+  "success",
+  "warning",
+  "destructive",
+  "info",
+];
 
 /** The props of `shops-map.pavlus`; `pickedId` is a shop id as text, or "". */
 export function shopsMap(

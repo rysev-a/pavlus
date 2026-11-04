@@ -1,5 +1,5 @@
 // The budget dashboard of the Phone Retail CRM, a part to embed. State = the
-// props from budgetDashboard() in stats.ts: `kpis`, `months`, `legend`,
+// props from budgetDashboard() in stats.ts: `kpis`, `months`, `flat`, `legend`,
 // `shares`, `rows`, `totals`. It sends no events.
 import Stats from "../../blocks/stat-cards/view.pavlus"
 import MoneyBars from "../../blocks/money-bars/view.pavlus"
@@ -13,7 +13,7 @@ div.prcd
         h3.ui-card-title Income and expenses
         p.ui-card-description Expenses are salaries, supply and delivery; a loss grows down
       div.ui-card-content
-        +MoneyBars#bars(months=months legend=legend height="280px")
+        +MoneyBars#bars(months=months flat=flat legend=legend height="280px")
     div.ui-card
       div.ui-card-header
         h3.ui-card-title Where the money goes

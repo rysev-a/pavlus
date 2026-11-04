@@ -15,9 +15,28 @@ export interface MoneyBarsState {
   halfLegend: LegendItem[];
 }
 
-const MONTHS = ["Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
-const INCOME = [41200, 38800, 36100, 44700, 47300, 45200, 52100, 49800, 51600, 48200, 55400, 58900];
-const EXPENSES = [39800, 40100, 38900, 41200, 43800, 44700, 46100, 47600, 49900, 50200, 51300, 52100];
+const MONTHS = [
+  "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+];
+const INCOME = [
+  41200, 38800, 36100, 44700, 47300, 45200, 52100, 49800, 51600, 48200, 55400,
+  58900,
+];
+const EXPENSES = [
+  39800, 40100, 38900, 41200, 43800, 44700, 46100, 47600, 49900, 50200, 51300,
+  52100,
+];
 
 const fmt = (v: number): string => money(v, "$", 0);
 

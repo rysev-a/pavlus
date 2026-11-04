@@ -84,10 +84,14 @@ export interface FieldView {
   rows: number;
 }
 
-const str = (v: DraftValue | undefined): string => (typeof v === "string" ? v : "");
-const ids = (v: DraftValue | undefined): string[] => (Array.isArray(v) && typeof v[0] !== "object" ? (v as string[]) : []);
+const str = (v: DraftValue | undefined): string =>
+  typeof v === "string" ? v : "";
+const ids = (v: DraftValue | undefined): string[] =>
+  Array.isArray(v) && typeof v[0] !== "object" ? (v as string[]) : [];
 const lineList = (v: DraftValue | undefined): LineDraft[] =>
-  Array.isArray(v) ? (v as LineDraft[]).filter((x) => typeof x === "object") : [];
+  Array.isArray(v)
+    ? (v as LineDraft[]).filter((x) => typeof x === "object")
+    : [];
 
 /** `1234.5` becomes `$1,234.50`. */
 export function dollars(n: number): string {
@@ -95,7 +99,8 @@ export function dollars(n: number): string {
   return `${n < 0 ? "-" : ""}$${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}.${cents}`;
 }
 
-const lineSum = (l: LineDraft): number => (Number(l.qty) || 0) * (Number(l.price) || 0);
+const lineSum = (l: LineDraft): number =>
+  (Number(l.qty) || 0) * (Number(l.price) || 0);
 
 /** Pure: the fields as the part shows them. */
 export function fieldsView<Ctx>(
@@ -117,7 +122,8 @@ export function fieldsView<Ctx>(
       checked: value === true,
       options: options.map((o) => ({
         ...o,
-        selected: d.kind === "checks" ? chosen.has(o.value) : o.value === str(value),
+        selected:
+          d.kind === "checks" ? chosen.has(o.value) : o.value === str(value),
       })),
       lines: lines.map((l, i) => ({
         i,
@@ -125,7 +131,10 @@ export function fieldsView<Ctx>(
         qty: l.qty,
         price: l.price,
         sum: dollars(lineSum(l)),
-        options: options.map((o) => ({ ...o, selected: o.value === l.productId })),
+        options: options.map((o) => ({
+          ...o,
+          selected: o.value === l.productId,
+        })),
       })),
       count:
         d.kind === "checks"
@@ -153,11 +162,13 @@ function defaultDraft<Ctx>(d: FieldDef<Ctx>, raw: unknown): DraftValue {
       return Array.isArray(raw) ? raw.map(String) : [];
     case "lines":
       return Array.isArray(raw)
-        ? (raw as { productId: number; qty: number; price: number }[]).map((l) => ({
-            productId: String(l.productId),
-            qty: String(l.qty),
-            price: String(l.price),
-          }))
+        ? (raw as { productId: number; qty: number; price: number }[]).map(
+            (l) => ({
+              productId: String(l.productId),
+              qty: String(l.qty),
+              price: String(l.price),
+            }),
+          )
         : [];
     default:
       return raw === undefined || raw === null ? "" : String(raw);
@@ -172,7 +183,9 @@ export function draftOf<Ctx>(
 ): Draft {
   const draft: Draft = {};
   for (const d of defs) {
-    draft[d.key] = d.toDraft ? d.toDraft(row, ctx) : defaultDraft(d, row[d.key]);
+    draft[d.key] = d.toDraft
+      ? d.toDraft(row, ctx)
+      : defaultDraft(d, row[d.key]);
   }
   return draft;
 }
@@ -237,13 +250,20 @@ export function validateDraft<Ctx>(
       // nothing to check
     } else if (d.kind === "lines") {
       const lines = lineList(v);
-      if (lines.length === 0) error = `Add at least one ${d.label.toLowerCase()} line`;
+      if (lines.length === 0)
+        error = `Add at least one ${d.label.toLowerCase()} line`;
       else {
         const options = new Set((d.options?.(ctx) ?? []).map((o) => o.value));
         lines.forEach((l, i) => {
-          if (!error && !options.has(l.productId)) error = `Line ${i + 1}: choose a product`;
-          if (!error && !(Number.isInteger(Number(l.qty)) && Number(l.qty) >= 1)) error = `Line ${i + 1}: the quantity is a whole number from 1`;
-          if (!error && !(Number(l.price) >= 0 && l.price.trim() !== "")) error = `Line ${i + 1}: the price is a number`;
+          if (!error && !options.has(l.productId))
+            error = `Line ${i + 1}: choose a product`;
+          if (
+            !error &&
+            !(Number.isInteger(Number(l.qty)) && Number(l.qty) >= 1)
+          )
+            error = `Line ${i + 1}: the quantity is a whole number from 1`;
+          if (!error && !(Number(l.price) >= 0 && l.price.trim() !== ""))
+            error = `Line ${i + 1}: the price is a number`;
         });
       }
     } else if (d.kind === "checks") {
@@ -252,18 +272,23 @@ export function validateDraft<Ctx>(
       const s = str(v).trim();
       if (d.required && s === "") error = `${d.label} is required`;
       else if (s !== "") {
-        if (d.kind === "email" && !EMAIL.test(s)) error = "That is not an email address";
+        if (d.kind === "email" && !EMAIL.test(s))
+          error = "That is not an email address";
         else if (d.kind === "number") {
           const n = Number(s);
           if (!Number.isFinite(n)) error = "That is not a number";
-          else if (d.min !== undefined && n < d.min) error = `At least ${d.min}`;
+          else if (d.min !== undefined && n < d.min)
+            error = `At least ${d.min}`;
           else if (d.max !== undefined && n > d.max) error = `At most ${d.max}`;
         } else if (d.kind === "select" && d.options) {
-          if (!d.options(ctx).some((o) => o.value === s)) error = `Choose one of the options`;
-        } else if (d.kind === "date" && !/^\d{4}-\d{2}-\d{2}/.test(s)) error = "Use the form 2026-03-14";
+          if (!d.options(ctx).some((o) => o.value === s))
+            error = `Choose one of the options`;
+        } else if (d.kind === "date" && !/^\d{4}-\d{2}-\d{2}/.test(s))
+          error = "Use the form 2026-03-14";
       }
     }
-    if (!error && d.validate && v !== undefined) error = d.validate(v, draft, ctx);
+    if (!error && d.validate && v !== undefined)
+      error = d.validate(v, draft, ctx);
     if (error) errors[d.key] = error;
   }
   return errors;
@@ -281,7 +306,9 @@ export function reduceDraft<Ctx>(
   ctx: Ctx,
 ): Draft {
   const next = { ...draft };
-  const key = Array.isArray(payload) ? String(payload[0]) : String(payload ?? "");
+  const key = Array.isArray(payload)
+    ? String(payload[0])
+    : String(payload ?? "");
   const def = defs.find((d) => d.key === key);
   switch (msg) {
     case "change":
@@ -308,7 +335,11 @@ export function reduceDraft<Ctx>(
       const first = def?.options?.(ctx)[0]?.value ?? "";
       next[key] = [
         ...lineList(draft[key]),
-        { productId: first, qty: "1", price: def?.priceOf?.(first, ctx) ?? "0" },
+        {
+          productId: first,
+          qty: "1",
+          price: def?.priceOf?.(first, ctx) ?? "0",
+        },
       ];
       break;
     }
@@ -318,12 +349,20 @@ export function reduceDraft<Ctx>(
       break;
     }
     case "lineSet": {
-      const [, i, part] = payload as [string, number, "productId" | "qty" | "price"];
+      const [, i, part] = payload as [
+        string,
+        number,
+        "productId" | "qty" | "price",
+      ];
       next[key] = lineList(draft[key]).map((l, j) => {
         if (j !== i) return l;
         const value = event?.value ?? "";
         return part === "productId"
-          ? { ...l, productId: value, price: def?.priceOf?.(value, ctx) ?? l.price }
+          ? {
+              ...l,
+              productId: value,
+              price: def?.priceOf?.(value, ctx) ?? l.price,
+            }
           : { ...l, [part]: value };
       });
       break;

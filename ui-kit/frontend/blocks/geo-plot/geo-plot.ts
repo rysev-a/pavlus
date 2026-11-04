@@ -76,7 +76,9 @@ export class GeoPlotPage extends Component<GeoPlotState> {
     return patch({
       worldPicked: id,
       world: draw(id),
-      worldName: found ? `${found.label} (${found.lat}, ${found.lng})` : "nothing yet",
+      worldName: found
+        ? `${found.label} (${found.lat}, ${found.lng})`
+        : "nothing yet",
     });
   }
 }

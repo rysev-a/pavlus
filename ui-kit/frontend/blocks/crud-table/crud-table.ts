@@ -1,4 +1,8 @@
-import { Component, type Effect, type Message } from "@service-laboratory/pavlus";
+import {
+  Component,
+  type Effect,
+  type Message,
+} from "@service-laboratory/pavlus";
 import { storeEffector as store } from "@service-laboratory/pavlus/plugins";
 import view from "./crud-table.pavlus";
 import {
@@ -19,8 +23,30 @@ interface Person {
   score: number;
 }
 
-const FIRST = ["Ann", "Ben", "Cleo", "Dan", "Eva", "Finn", "Gia", "Hugo", "Iris", "Jon", "Kai", "Lea"];
-const LAST = ["Stone", "Reyes", "Okafor", "Novak", "Lind", "Park", "Rossi", "Haas"];
+const FIRST = [
+  "Ann",
+  "Ben",
+  "Cleo",
+  "Dan",
+  "Eva",
+  "Finn",
+  "Gia",
+  "Hugo",
+  "Iris",
+  "Jon",
+  "Kai",
+  "Lea",
+];
+const LAST = [
+  "Stone",
+  "Reyes",
+  "Okafor",
+  "Novak",
+  "Lind",
+  "Park",
+  "Rossi",
+  "Haas",
+];
 const ROLES = ["Admin", "Editor", "Viewer"];
 
 const PEOPLE: Person[] = Array.from({ length: 47 }, (_, i) => ({
@@ -45,7 +71,12 @@ const COLUMNS: ColumnDef<Person>[] = [
     cell: (p) => ({
       kind: "pill",
       text: p.role,
-      tone: p.role === "Admin" ? "destructive" : p.role === "Editor" ? "info" : "muted",
+      tone:
+        p.role === "Admin"
+          ? "destructive"
+          : p.role === "Editor"
+            ? "info"
+            : "muted",
     }),
   },
   {
@@ -61,7 +92,10 @@ const FILTERS: FilterDef<Person>[] = [
   {
     key: "role",
     label: "Role",
-    options: [{ value: "", label: "All roles" }, ...ROLES.map((r) => ({ value: r, label: r }))],
+    options: [
+      { value: "", label: "All roles" },
+      ...ROLES.map((r) => ({ value: r, label: r })),
+    ],
     value: (p) => p.role,
   },
 ];
@@ -69,7 +103,12 @@ const FILTERS: FilterDef<Person>[] = [
 interface DemoState {
   people: Person[];
   table: TableState;
-  grid: TableProps & { title: string; addLabel: string; placeholder: string; empty: string };
+  grid: TableProps & {
+    title: string;
+    addLabel: string;
+    placeholder: string;
+    empty: string;
+  };
 }
 
 const grid = (people: Person[], table: TableState): DemoState["grid"] => ({
@@ -102,17 +141,28 @@ export class CrudTableDemo extends Component<DemoState> {
   _table(name: string, msg: Message, state: DemoState): Effect[] {
     const visible = (st: TableState) =>
       tableView(state.people, COLUMNS, FILTERS, st).rows.map((r) => r.id);
-    return this._commit(state.people, reduceTable(state.table, name, msg.payload, visible));
+    return this._commit(
+      state.people,
+      reduceTable(state.table, name, msg.payload, visible),
+    );
   }
 
   "table.search"(msg: Message, state: DemoState): Effect[] {
-    return this._table("search", { ...msg, payload: msg.event?.value ?? "" }, state);
+    return this._table(
+      "search",
+      { ...msg, payload: msg.event?.value ?? "" },
+      state,
+    );
   }
   "table.sort"(msg: Message, state: DemoState): Effect[] {
     return this._table("sort", msg, state);
   }
   "table.filter"(msg: Message, state: DemoState): Effect[] {
-    return this._table("filter", { ...msg, payload: [msg.payload, msg.event?.value ?? ""] }, state);
+    return this._table(
+      "filter",
+      { ...msg, payload: [msg.payload, msg.event?.value ?? ""] },
+      state,
+    );
   }
   "table.toggleAll"(msg: Message, state: DemoState): Effect[] {
     return this._table("toggleAll", msg, state);
@@ -130,18 +180,35 @@ export class CrudTableDemo extends Component<DemoState> {
     return this._table("goto", msg, state);
   }
   "table.pageSize"(msg: Message, state: DemoState): Effect[] {
-    return this._table("pageSize", { ...msg, payload: msg.event?.value }, state);
+    return this._table(
+      "pageSize",
+      { ...msg, payload: msg.event?.value },
+      state,
+    );
   }
 
   "table.add"(_msg: Message, state: DemoState): Effect[] {
     const id = state.people.reduce((m, p) => Math.max(m, p.id), 0) + 1;
-    const person: Person = { id, name: `New person ${id}`, email: `user${id}@example.com`, role: "Viewer", score: 50 };
+    const person: Person = {
+      id,
+      name: `New person ${id}`,
+      email: `user${id}@example.com`,
+      role: "Viewer",
+      score: 50,
+    };
     return this._commit([...state.people, person], state.table);
   }
   "table.edit"(msg: Message, state: DemoState): Effect[] {
     const id = Number(msg.payload);
     return this._commit(
-      state.people.map((p) => (p.id === id ? { ...p, name: p.name.endsWith(" *") ? p.name.slice(0, -2) : `${p.name} *` } : p)),
+      state.people.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              name: p.name.endsWith(" *") ? p.name.slice(0, -2) : `${p.name} *`,
+            }
+          : p,
+      ),
       state.table,
     );
   }
@@ -149,7 +216,10 @@ export class CrudTableDemo extends Component<DemoState> {
     const id = Number(msg.payload);
     return this._commit(
       state.people.filter((p) => p.id !== id),
-      { ...state.table, selected: state.table.selected.filter((x) => x !== id) },
+      {
+        ...state.table,
+        selected: state.table.selected.filter((x) => x !== id),
+      },
     );
   }
   "table.removeSelected"(_msg: Message, state: DemoState): Effect[] {

@@ -13,7 +13,9 @@ const flush = () => new Promise((r) => setTimeout(r, 0));
 
 function rig(backend: Backend = createMemoryBackend()) {
   const sent: { id: string; payload: unknown }[] = [];
-  const ctx = { dispatch: (m: { id: string; payload: unknown }) => sent.push(m) } as never;
+  const ctx = {
+    dispatch: (m: { id: string; payload: unknown }) => sent.push(m),
+  } as never;
   const plugin = createIdbPlugin(backend);
   const run = async (e: IdbEffect) => {
     plugin.handle(e, ctx);
@@ -27,12 +29,19 @@ const T = ["a", "b"];
 test("load of an empty database replies empty tables and empty: true", async () => {
   const { sent, run } = rig();
   await run(idbEffector.load("d", T, "ok", "bad"));
-  expect(sent).toEqual([{ id: "ok", payload: { data: { a: [], b: [] }, empty: true } }]);
+  expect(sent).toEqual([
+    { id: "ok", payload: { data: { a: [], b: [] }, empty: true } },
+  ]);
 });
 
 test("put upserts by id, remove deletes, and a reload sees both", async () => {
   const { sent, run } = rig();
-  await run(idbEffector.put("d", "a", [{ id: 1, v: "x" }, { id: 2, v: "y" }]));
+  await run(
+    idbEffector.put("d", "a", [
+      { id: 1, v: "x" },
+      { id: 2, v: "y" },
+    ]),
+  );
   await run(idbEffector.put("d", "a", [{ id: 2, v: "z" }]));
   await run(idbEffector.put("d", "b", [{ id: 7 }]));
   await run(idbEffector.remove("d", "a", [1]));
@@ -59,17 +68,24 @@ test("writes keep the order they were asked in, even when the backend is slow", 
   p.run(idbEffector.put("d", "a", [{ id: 1, v: 2 }]));
   await new Promise((r) => setTimeout(r, 80));
   await run(idbEffector.load("d", ["a"], "ok", "bad"));
-  expect((sent[0].payload as { data: { a: unknown[] } }).data.a).toEqual([{ id: 1, v: 2 }]);
+  expect((sent[0].payload as { data: { a: unknown[] } }).data.a).toEqual([
+    { id: 1, v: 2 },
+  ]);
 });
 
 test("replaceAll clears every table, writes the data and replies the row count", async () => {
   const { sent, run } = rig();
   await run(idbEffector.put("d", "a", [{ id: 1 }, { id: 2 }]));
   await run(idbEffector.put("d", "b", [{ id: 5 }]));
-  await run(idbEffector.replaceAll("d", { a: [{ id: 9 }], b: [] }, "done", "bad"));
+  await run(
+    idbEffector.replaceAll("d", { a: [{ id: 9 }], b: [] }, "done", "bad"),
+  );
   expect(sent).toEqual([{ id: "done", payload: { rows: 1 } }]);
   await run(idbEffector.load("d", T, "ok", "bad"));
-  expect(sent[1].payload).toEqual({ data: { a: [{ id: 9 }], b: [] }, empty: false });
+  expect(sent[1].payload).toEqual({
+    data: { a: [{ id: 9 }], b: [] },
+    empty: false,
+  });
 });
 
 test("the database is isolated by name", async () => {
@@ -112,7 +128,9 @@ test("the memory backend rejects a row without an id and writes nothing of the b
 
 function filesRig() {
   const sent: { id: string; payload: unknown }[] = [];
-  const ctx = { dispatch: (m: { id: string; payload: unknown }) => sent.push(m) } as never;
+  const ctx = {
+    dispatch: (m: { id: string; payload: unknown }) => sent.push(m),
+  } as never;
   return { sent, ctx, plugin: createFilesPlugin(document) };
 }
 
@@ -128,7 +146,10 @@ test("download makes a link with the file name, clicks it and replies", () => {
     clicked.push(this.download);
   };
   try {
-    plugin.handle(filesEffector.download("a.json", '{"x":1}', "application/json", "saved"), ctx);
+    plugin.handle(
+      filesEffector.download("a.json", '{"x":1}', "application/json", "saved"),
+      ctx,
+    );
   } finally {
     HTMLAnchorElement.prototype.click = orig;
   }
@@ -159,7 +180,9 @@ test("pick opens a hidden file input, reads the chosen file and replies its name
   Object.defineProperty(input!, "files", { value: [file] });
   input!.dispatchEvent(new Event("change"));
   await flush();
-  expect(sent).toEqual([{ id: "got", payload: { name: "data.json", text: "héllo" } }]);
+  expect(sent).toEqual([
+    { id: "got", payload: { name: "data.json", text: "héllo" } },
+  ]);
   expect(document.body.contains(input!)).toBe(false);
 });
 
@@ -193,7 +216,10 @@ test("a file that cannot be read replies the error id", async () => {
   } finally {
     HTMLInputElement.prototype.click = orig;
   }
-  const file = { name: "x.json", text: () => Promise.reject(new Error("gone")) };
+  const file = {
+    name: "x.json",
+    text: () => Promise.reject(new Error("gone")),
+  };
   Object.defineProperty(input!, "files", { value: [file] });
   input!.dispatchEvent(new Event("change"));
   await flush();

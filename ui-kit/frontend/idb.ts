@@ -28,32 +28,48 @@ export type IdbEffect = Effect & { plugin: "idb" } & (
         type: "load";
         db: string;
         tables: string[];
-        onLoaded: string;
+        onSuccess: string;
         onError: string;
       }
     | { type: "put"; db: string; table: string; rows: Rows; onError?: string }
-    | { type: "remove"; db: string; table: string; ids: number[]; onError?: string }
+    | {
+        type: "remove";
+        db: string;
+        table: string;
+        ids: number[];
+        onError?: string;
+      }
     | {
         type: "replaceAll";
         db: string;
         data: Tables;
-        onDone: string;
+        onSuccess: string;
         onError: string;
       }
   );
 
 export const idbEffector = {
-  /** Reads every table as an array of rows; replies `Loaded` to `onLoaded`. */
-  load: (db: string, tables: string[], onLoaded: string, onError: string): IdbEffect => ({
+  /** Reads every table as an array of rows; replies `Loaded` to `onSuccess`. */
+  load: (
+    db: string,
+    tables: string[],
+    onSuccess: string,
+    onError: string,
+  ): IdbEffect => ({
     plugin: "idb",
     type: "load",
     db,
     tables,
-    onLoaded,
+    onSuccess,
     onError,
   }),
   /** Upserts rows by `id`; no reply unless it fails (the error text goes to `onError`). */
-  put: (db: string, table: string, rows: Rows, onError?: string): IdbEffect => ({
+  put: (
+    db: string,
+    table: string,
+    rows: Rows,
+    onError?: string,
+  ): IdbEffect => ({
     plugin: "idb",
     type: "put",
     db,
@@ -62,7 +78,12 @@ export const idbEffector = {
     onError,
   }),
   /** Deletes rows by `id`; no reply unless it fails. */
-  remove: (db: string, table: string, ids: number[], onError?: string): IdbEffect => ({
+  remove: (
+    db: string,
+    table: string,
+    ids: number[],
+    onError?: string,
+  ): IdbEffect => ({
     plugin: "idb",
     type: "remove",
     db,
@@ -71,12 +92,17 @@ export const idbEffector = {
     onError,
   }),
   /** Clears every table of `data` (and every other table) and writes `data`, in one transaction; replies `Replaced`. */
-  replaceAll: (db: string, data: Tables, onDone: string, onError: string): IdbEffect => ({
+  replaceAll: (
+    db: string,
+    data: Tables,
+    onSuccess: string,
+    onError: string,
+  ): IdbEffect => ({
     plugin: "idb",
     type: "replaceAll",
     db,
     data,
-    onDone,
+    onSuccess,
     onError,
   }),
 };
@@ -116,7 +142,8 @@ export function createMemoryBackend(
   return {
     async load(db, tables) {
       const out: Tables = {};
-      for (const table of tables) out[table] = [...tableOf(db, table).values()].map(copy);
+      for (const table of tables)
+        out[table] = [...tableOf(db, table).values()].map(copy);
       return out;
     },
     async put(db, table, rows) {
@@ -130,7 +157,8 @@ export function createMemoryBackend(
     },
     async replaceAll(db, data) {
       const checked = Object.entries(data).map(
-        ([table, rows]) => [table, rows.map((r) => [idOf(r), copy(r)] as const)] as const,
+        ([table, rows]) =>
+          [table, rows.map((r) => [idOf(r), copy(r)] as const)] as const,
       );
       const d = dbs.get(db);
       if (d) for (const t of d.values()) t.clear();
@@ -143,7 +171,9 @@ export function createMemoryBackend(
 }
 
 const wrap = (e: unknown, what: string): Error =>
-  new Error(`${what}: ${e instanceof Error ? e.message : String(e) || "unknown error"}`);
+  new Error(
+    `${what}: ${e instanceof Error ? e.message : String(e) || "unknown error"}`,
+  );
 
 /** The real IndexedDB of the window. Stores are created on upgrade; a database is opened lazily, once per name. */
 export function createIdbBackend(factory?: IDBFactory): Backend {
@@ -157,16 +187,24 @@ export function createIdbBackend(factory?: IDBFactory): Backend {
   /** Everything on one database runs one job at a time: a version bump never meets a live transaction. */
   const exclusive = <T>(name: string, job: () => Promise<T>): Promise<T> => {
     const run = (locks.get(name) ?? Promise.resolve()).then(job, job);
-    locks.set(name, run.catch(() => undefined));
+    locks.set(
+      name,
+      run.catch(() => undefined),
+    );
     return run;
   };
 
-  const openAt = (name: string, version: number | undefined, tables: string[]) =>
+  const openAt = (
+    name: string,
+    version: number | undefined,
+    tables: string[],
+  ) =>
     new Promise<IDBDatabase>((resolve, reject) => {
       let req: IDBOpenDBRequest;
       let gaveUp = false;
       try {
-        req = version === undefined ? idb().open(name) : idb().open(name, version);
+        req =
+          version === undefined ? idb().open(name) : idb().open(name, version);
       } catch (e) {
         reject(wrap(e, `cannot open "${name}"`));
         return;
@@ -179,7 +217,11 @@ export function createIdbBackend(factory?: IDBFactory): Backend {
       };
       req.onblocked = () => {
         gaveUp = true;
-        reject(new Error(`cannot open "${name}": blocked by another tab that holds an older version`));
+        reject(
+          new Error(
+            `cannot open "${name}": blocked by another tab that holds an older version`,
+          ),
+        );
       };
       req.onerror = () => reject(wrap(req.error, `cannot open "${name}"`));
       req.onsuccess = () => {
@@ -190,7 +232,10 @@ export function createIdbBackend(factory?: IDBFactory): Backend {
     });
 
   /** The open database with (at least) these stores; a missing store bumps the version. Call under `exclusive`. */
-  const ensure = async (name: string, tables: string[]): Promise<IDBDatabase> => {
+  const ensure = async (
+    name: string,
+    tables: string[],
+  ): Promise<IDBDatabase> => {
     let db = opened.get(name);
     if (!db) {
       db = await openAt(name, undefined, tables);
@@ -250,8 +295,10 @@ export function createIdbBackend(factory?: IDBFactory): Backend {
           return;
         }
         tx.oncomplete = () => resolve(result);
-        tx.onerror = () => reject(wrap(tx.error, `transaction on "${name}" failed`));
-        tx.onabort = () => reject(wrap(tx.error, `transaction on "${name}" was aborted`));
+        tx.onerror = () =>
+          reject(wrap(tx.error, `transaction on "${name}" failed`));
+        tx.onabort = () =>
+          reject(wrap(tx.error, `transaction on "${name}" was aborted`));
       });
     });
 
@@ -263,7 +310,8 @@ export function createIdbBackend(factory?: IDBFactory): Backend {
     async load(db, tables) {
       const got: Record<string, { v?: unknown[] }> = {};
       await run(db, tables, "readonly", (stores) => {
-        for (const t of tables) asReq(stores[t].getAll() as IDBRequest<unknown[]>, (got[t] = {}));
+        for (const t of tables)
+          asReq(stores[t].getAll() as IDBRequest<unknown[]>, (got[t] = {}));
       });
       const out: Tables = {};
       for (const t of tables) out[t] = got[t].v ?? [];
@@ -293,7 +341,8 @@ export function createIdbBackend(factory?: IDBFactory): Backend {
         "readwrite",
         (s, names) => {
           for (const t of names) s[t].clear();
-          for (const [t, rows] of Object.entries(data)) for (const row of rows) s[t].put(row);
+          for (const [t, rows] of Object.entries(data))
+            for (const row of rows) s[t].put(row);
         },
         true,
       );
@@ -301,7 +350,8 @@ export function createIdbBackend(factory?: IDBFactory): Backend {
   };
 }
 
-const textOf = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+const textOf = (e: unknown): string =>
+  e instanceof Error ? e.message : String(e);
 
 export function createIdbPlugin(
   backend: Backend = createIdbBackend(),
@@ -310,7 +360,10 @@ export function createIdbPlugin(
   const tails = new Map<string, Promise<unknown>>();
   const queue = <T>(db: string, job: () => Promise<T>): Promise<T> => {
     const run = (tails.get(db) ?? Promise.resolve()).then(job, job);
-    tails.set(db, run.catch(() => undefined));
+    tails.set(
+      db,
+      run.catch(() => undefined),
+    );
     return run;
   };
   return {
@@ -321,7 +374,7 @@ export function createIdbPlugin(
           queue(effect.db, () => backend.load(effect.db, effect.tables)).then(
             (data) =>
               ctx.dispatch({
-                id: effect.onLoaded,
+                id: effect.onSuccess,
                 payload: {
                   data,
                   empty: Object.values(data).every((rows) => rows.length === 0),
@@ -337,17 +390,23 @@ export function createIdbPlugin(
               ? () => backend.put(effect.db, effect.table, effect.rows)
               : () => backend.remove(effect.db, effect.table, effect.ids);
           queue(effect.db, job).catch((e) => {
-            if (effect.onError) ctx.dispatch({ id: effect.onError, payload: textOf(e) });
+            if (effect.onError)
+              ctx.dispatch({ id: effect.onError, payload: textOf(e) });
           });
           return;
         }
         case "replaceAll":
-          queue(effect.db, () => backend.replaceAll(effect.db, effect.data)).then(
+          queue(effect.db, () =>
+            backend.replaceAll(effect.db, effect.data),
+          ).then(
             () =>
               ctx.dispatch({
-                id: effect.onDone,
+                id: effect.onSuccess,
                 payload: {
-                  rows: Object.values(effect.data).reduce((n, r) => n + r.length, 0),
+                  rows: Object.values(effect.data).reduce(
+                    (n, r) => n + r.length,
+                    0,
+                  ),
                 } satisfies Replaced,
               }),
             (e) => ctx.dispatch({ id: effect.onError, payload: textOf(e) }),

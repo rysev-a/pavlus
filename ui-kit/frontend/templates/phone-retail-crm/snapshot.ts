@@ -20,7 +20,8 @@ export const snapshotText = (snapshot: Snapshot): string =>
   JSON.stringify(snapshot, null, 2);
 
 /** The size of a text as a file (UTF-8 bytes). */
-export const bytesOf = (text: string): number => new TextEncoder().encode(text).length;
+export const bytesOf = (text: string): number =>
+  new TextEncoder().encode(text).length;
 
 export function dbCounts(db: Db): Record<TableName, number> {
   const out = {} as Record<TableName, number>;
@@ -111,7 +112,11 @@ const isObject = (v: unknown): v is Row =>
 
 const show = (v: unknown): string => {
   const s = JSON.stringify(v);
-  return s === undefined ? String(v) : s.length > 40 ? s.slice(0, 37) + "..." : s;
+  return s === undefined
+    ? String(v)
+    : s.length > 40
+      ? s.slice(0, 37) + "..."
+      : s;
 };
 
 /** Checks one value against a kind; the error says what was expected. */
@@ -123,22 +128,31 @@ function wrong(value: unknown, kind: Kind): string | null {
   }
   switch (kind) {
     case "string":
-      return typeof value === "string" ? null : `${show(value)} is not a string`;
+      return typeof value === "string"
+        ? null
+        : `${show(value)} is not a string`;
     case "boolean":
-      return typeof value === "boolean" ? null : `${show(value)} is not true or false`;
+      return typeof value === "boolean"
+        ? null
+        : `${show(value)} is not true or false`;
     case "number":
       return typeof value === "number" && Number.isFinite(value)
         ? null
         : `${show(value)} is not a number`;
     case "int":
-      return Number.isInteger(value) ? null : `${show(value)} is not an integer`;
+      return Number.isInteger(value)
+        ? null
+        : `${show(value)} is not an integer`;
     default:
       return null;
   }
 }
 
 type Result<T> = { ok: true; value: T } | { ok: false; error: string };
-const fail = (error: string): { ok: false; error: string } => ({ ok: false, error });
+const fail = (error: string): { ok: false; error: string } => ({
+  ok: false,
+  error,
+});
 
 /** Copies the fields of the spec out of `row`, checking each; unknown fields are dropped. */
 function pick(row: Row, spec: Spec, where: string): Result<Row> {
@@ -148,14 +162,16 @@ function pick(row: Row, spec: Spec, where: string): Result<Row> {
     if (!(field in row)) return fail(`${path} is missing`);
     const value = row[field];
     if (kind === "numbers") {
-      if (!Array.isArray(value)) return fail(`${path} ${show(value)} is not an array`);
+      if (!Array.isArray(value))
+        return fail(`${path} ${show(value)} is not an array`);
       for (let i = 0; i < value.length; i++) {
         if (!Number.isInteger(value[i]))
           return fail(`${path}[${i}] ${show(value[i])} is not an integer`);
       }
       out[field] = [...value];
     } else if (kind === "items") {
-      if (!Array.isArray(value)) return fail(`${path} ${show(value)} is not an array`);
+      if (!Array.isArray(value))
+        return fail(`${path} ${show(value)} is not an array`);
       const items: Row[] = [];
       for (let i = 0; i < value.length; i++) {
         const it = value[i];
@@ -181,13 +197,17 @@ export function parseSnapshot(
   try {
     json = JSON.parse(text);
   } catch (e) {
-    return fail(`not valid JSON (${e instanceof Error ? e.message : String(e)})`);
+    return fail(
+      `not valid JSON (${e instanceof Error ? e.message : String(e)})`,
+    );
   }
   if (!isObject(json)) return fail("the file is not a JSON object");
   if (json.app !== "phone-retail-crm")
     return fail(`not a Phone Retail CRM export (app is ${show(json.app)})`);
   if (json.version !== 1)
-    return fail(`unsupported version ${show(json.version)} (this app reads version 1)`);
+    return fail(
+      `unsupported version ${show(json.version)} (this app reads version 1)`,
+    );
   if (!isObject(json.data)) return fail('"data" is missing or not an object');
 
   const db = {} as Record<TableName, Row[]>;
@@ -205,7 +225,8 @@ export function parseSnapshot(
       if (!Number.isInteger(id) || (id as number) <= 0)
         return fail(`${at}.id ${show(id)} is not a positive integer`);
       const label = `${table}[${id}]`;
-      if (seen.has(id as number)) return fail(`${table}: id ${id} appears twice`);
+      if (seen.has(id as number))
+        return fail(`${table}: id ${id} appears twice`);
       seen.add(id as number);
       const r = pick(row, SPECS[table], label);
       if (!r.ok) return r;
@@ -255,15 +276,23 @@ export function parseSnapshot(
   for (const role of db.roles) {
     for (const [i, p] of (role.permissionIds as number[]).entries()) {
       if (!has.permissions.has(p))
-        return fail(`roles[${role.id}].permissionIds[${i}] ${p} is not a permission`);
+        return fail(
+          `roles[${role.id}].permissionIds[${i}] ${p} is not a permission`,
+        );
     }
   }
   for (const order of db.orders) {
-    const items = order.items as { productId: number; qty: number; price: number }[];
+    const items = order.items as {
+      productId: number;
+      qty: number;
+      price: number;
+    }[];
     let sum = 0;
     for (const [i, it] of items.entries()) {
       if (!has.products.has(it.productId))
-        return fail(`orders[${order.id}].items[${i}].productId ${it.productId} is not a product`);
+        return fail(
+          `orders[${order.id}].items[${i}].productId ${it.productId} is not a product`,
+        );
       sum += it.qty * it.price;
     }
     // cents, so that 0.1 + 0.2 is 0.3

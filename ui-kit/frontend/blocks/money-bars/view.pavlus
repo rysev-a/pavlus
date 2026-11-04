@@ -1,8 +1,10 @@
 // Grouped money bars, to embed. State = the props: `months`
 // ([{ id, label, bars: [{ id, h (percent of the half-height), neg, tone, tip }] }])
 // and `legend` ([{ id, label, tone }]); build them with moneyBars() from
-// bars.ts. A bar with `neg` grows down from the zero line. Optional `height`.
-div.k-mbars
+// bars.ts. A bar with `neg` grows down from the zero line. Optional `height`,
+// and `flat` (true when nothing is negative: the zero line moves to the bottom
+// and the bars use the whole height).
+div.k-mbars(class:k-mbars--flat={flat})
   ul.k-mbars__legend
     for key in legend key key.id
       li.k-mbars__key

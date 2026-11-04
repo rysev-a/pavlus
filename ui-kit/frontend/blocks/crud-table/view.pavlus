@@ -63,11 +63,12 @@ div.k-ctable
                     span.k-ctable__num {cell.text}
                   else
                     span {cell.text}
-              td.k-ctable__actions
-                button.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" aria-label="Edit" @click=edit(row.id))
-                  span.k-icon.k-ai-edit
-                button.ui-button.ui-button-ghost.ui-button-icon-sm.k-ctable__danger(type="button" aria-label="Delete" @click=remove(row.id))
-                  span.k-icon.k-ai-trash
+              td.k-ctable__actioncell
+                div.k-ctable__actions
+                  button.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" aria-label="Edit" @click=edit(row.id))
+                    span.k-icon.k-ai-edit
+                  button.ui-button.ui-button-ghost.ui-button-icon-sm.k-ctable__danger(type="button" aria-label="Delete" @click=remove(row.id))
+                    span.k-icon.k-ai-trash
     div.ui-resource-footer
       span {selectedCount} of {total} row(s) selected. Showing {range} of {total}.
       div.ui-data-footer-controls
