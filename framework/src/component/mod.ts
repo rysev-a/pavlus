@@ -142,8 +142,20 @@ export function toHandler<S = any>(c: ComponentLike<S>): ComponentFn<S> {
  */
 export function viewOf(c: View | { view?: View }): View | undefined {
   if ("render" in c) return c;
+  // A direct view (src/direct): no render/diff; it takes its owner in `env`.
+  if ("create" in c) return c as unknown as View;
   const view = c.view;
   if (!view) return undefined;
+  if ("create" in view) {
+    const direct = view as unknown as {
+      create(env: object, state: unknown): unknown;
+    };
+    return {
+      ...direct,
+      create: (env: object, state: unknown) =>
+        direct.create({ ...env, o: c }, state),
+    } as unknown as View;
+  }
   return {
     ...view,
     render: (state, sfx = "", ns = "") => view.render(state, sfx, ns, c),
