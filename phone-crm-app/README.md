@@ -63,3 +63,26 @@ npm run typecheck
 
 The tests use `TEST_DATABASE_URL ?? DATABASE_URL` and **reset the `phone_crm`
 schema** of that database, so do not point them at data you care about.
+
+## Frontend
+
+A standalone pavlus app that renders the ui-kit's Phone Retail CRM template full page.
+The template, its blocks, styles and theming are imported from `../ui-kit/frontend` (nothing is copied);
+only a small optional export was added there (`setScreenHrefs`, an optional `href` of a navigation item).
+
+- `app/` is pure: `app.ts` (the shell: router + routed outlet), `crm.ts` (the template component made URL-aware:
+  every screen is an address, forms are `/<screen>/new` and `/<screen>/<id>`, a failed load is an error with a retry),
+  `routes.ts` (screen <-> path, document titles), `state.ts`.
+- `frontend/` wires the plugins: `http-backend.ts` is an `idb`-compatible plugin whose `Backend` talks to
+  `/api/sync/{load,put,remove,replace}` (same effects and replies as `createIdbPlugin`), `title.ts` sets `document.title`.
+- Routes: `/` redirects to `/orders`; `/users /roles /permissions /sessions /manufacturers /models /products /shops /shops/map
+  /shop-categories /orders /sales /budget /budget/entries /settings`, each list entity also `/<path>/new` and `/<path>/<id>`;
+  anything else is the not-found screen. Navigation links are real `<a href>`; deep links work in dev and behind the production server's SPA fallback.
+- If `/api` cannot be reached the page shows "The server is offline" with a Try again button instead of the data.
+
+```sh
+npm run dev:api   # API on :3010 (needs Postgres, see .env.example)
+npm run dev       # vite on :5174, /api proxied to :3010
+npm run build     # dist/, served by the backend with NODE_ENV=production
+npm test          # vitest (jsdom): http-backend over a fake fetch, routes, the app booted on a stubbed fetch
+```
