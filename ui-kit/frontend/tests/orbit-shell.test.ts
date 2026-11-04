@@ -235,7 +235,9 @@ test("sign out clears the session", () => {
 });
 
 test("an update from a module: rows are upserted and written, the clock moves, the screen changes", () => {
-  const s = send(ready(), "authDemo", "user").state;
+  const full = send(ready(), "authDemo", "user").state;
+  // a small database of our own: the sample data has thousands of posts
+  const s: OrbitState = { ...full, db: { ...emptyDb(), users: full.db.users } };
   const post = {
     id: 1,
     authorId: s.me,
