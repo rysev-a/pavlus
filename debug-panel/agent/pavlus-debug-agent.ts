@@ -7,7 +7,7 @@
  * import { createPavlusDebug } from "../debug-panel/agent/pavlus-debug-agent.ts";
  *
  * const debug = createPavlusDebug({ name: "admin-app", app: shell });
- * const plugins = [store, createDomPlugin(), /* … *\/ debug.plugin];
+ * const plugins = [store, new DomPlugin(), /* … *\/ debug.plugin];
  * debug.watch(plugins);
  * const app = createApp({ app: shell, plugins, onStep: debug.onStep, mount: "#app" });
  * ```
@@ -137,6 +137,8 @@ type AgentEvent =
       seq: number;
       time: number;
       message: DebugMessageInfo;
+      /** The plugin that dispatched the message; absent = the page. */
+      from?: string;
       effects: DebugEffectRec[];
       /** Component paths that received the message (deepest last). */
       comps?: string[];
@@ -182,6 +184,9 @@ interface StepCtx {
   seq: number;
   time: number;
   message: DebugMessageInfo;
+  /** The plugin that dispatched this message; absent = the page (an event,
+   * `app.dispatch`, SSR) or a pre-`from` agent recording. */
+  from?: string;
   recs: DebugEffectRec[];
   /** Index of the next rec the watch wrapper hands to a plugin. */
   next: number;
@@ -336,6 +341,11 @@ export function createPavlusDebug(
   const redoStack: StoreChange[] = [];
   /** Steps being nested (a `handle` dispatched a message). */
   const stack: StepCtx[] = [];
+  /** The plugin whose `handle` is currently running — the sender of any
+   * message dispatched from inside it. Async answers (http) are attributed
+   * via `pendingHttp` instead, since their dispatch happens after the
+   * `handle` returned. */
+  let handling: string | undefined;
   /** Created but not yet posted steps. */
   const unposted: StepCtx[] = [];
   /** Set by `watch`; without it nothing marks a step complete. */
@@ -389,6 +399,7 @@ export function createPavlusDebug(
       seq: s.seq,
       time: s.time,
       message: s.message,
+      from: s.from,
       effects: s.recs,
       comps: s.comps,
     });
@@ -586,6 +597,9 @@ export function createPavlusDebug(
         payload: cloneSafe(message.payload),
         event: cloneSafe(message.event),
       },
+      // who dispatched this message: the plugin whose `handle` is running
+      // (a nested dispatch), else the http answer matched below, else the page
+      from: handling,
       recs,
       next: 0,
       left: effects.length,
@@ -598,6 +612,7 @@ export function createPavlusDebug(
     for (const [hid, p] of [...pendingHttp]) {
       if (message.id !== p.onSuccess && message.id !== p.onError) continue;
       pendingHttp.delete(hid);
+      if (step.from === undefined) step.from = "http";
       const wait: AgentEvent = {
         type: "wait",
         appId,
@@ -853,9 +868,12 @@ export function createPavlusDebug(
         const top = stack[stack.length - 1];
         const rec = top?.recs[top.next++];
         const t0 = mono();
+        const prevHandling = handling;
+        handling = p.name;
         try {
           orig(effect, c);
         } finally {
+          handling = prevHandling;
           if (rec) rec.dur = ms(mono() - t0);
           if (top && top.left > 0 && --top.left === 0) postStep(top);
         }

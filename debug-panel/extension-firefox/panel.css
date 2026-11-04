@@ -274,13 +274,29 @@ button:disabled {
 
 /* chips ----------------------------------------------------------------- */
 
-#chips {
+#chips,
+#msg-chips,
+#console-bar {
   flex: none;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
   padding: 8px 10px;
   border-bottom: 1px solid var(--line);
+}
+
+#chips .filter-input,
+#msg-chips .filter-input {
+  flex: 1;
+  min-width: 120px;
+  margin-left: auto;
+}
+
+.chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .chip {
@@ -342,6 +358,22 @@ button:disabled {
   white-space: nowrap;
   padding: 0 4px;
   border-radius: 3px;
+}
+
+/* long keys and values clip with an ellipsis at the pane edge instead of
+   widening the tree (a long string payload would otherwise give the whole
+   pane a horizontal scrollbar) */
+.v-row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.v-row .v-arrow,
+.v-row .v-punc,
+.v-row .v-brace,
+.v-row .v-count {
+  flex: none;
 }
 
 .v-row.tog {
@@ -485,11 +517,82 @@ button:disabled {
   font-size: 11px;
 }
 
-/* detail panes + draggable dividers -------------------------------------*/
+/* console ---------------------------------------------------------------- */
 
-#tab-messages {
-  flex-direction: row;
+#console-cols {
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }
+
+#console-bar .chips-list + .chips-list {
+  margin-left: auto;
+}
+
+#console-bar .filter-input {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* the time column stays flush left on every row; only the effect content
+   is indented under its message */
+#console-rows .c-fx .plug {
+  margin-left: 28px;
+}
+
+#console-rows .c-msg .k.msg {
+  color: var(--accent);
+  flex: none;
+  font-weight: 600;
+}
+
+/* viewer tools (expand / collapse all) ---------------------------------- */
+
+.v-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* the state tree fills the left column and scrolls when it is tall */
+#store-state .v-wrap {
+  flex: 1;
+}
+
+.v-tools {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  gap: 2px;
+  padding: 1px 4px;
+  background: var(--bg2);
+  border-left: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 6px;
+  line-height: 0;
+  color: var(--dim);
+  border: none;
+  background: none;
+}
+
+.icon-btn:hover {
+  color: var(--fg);
+}
+
+.icon-btn.copied {
+  color: var(--ok);
+}
+
+/* detail panes + draggable dividers -------------------------------------*/
 
 .detail-pane {
   flex: 1;
@@ -501,6 +604,41 @@ button:disabled {
   flex: 1;
   min-height: 0;
   display: flex;
+}
+
+/* filter bar (Messages / Effects) --------------------------------------- */
+
+#messages-cols {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.filter-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg2);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.filter-clear {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 7px;
+  color: #fff;
+  line-height: 0;
 }
 
 .divider-v {

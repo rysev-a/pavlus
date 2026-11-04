@@ -124,6 +124,10 @@ test("messages, effects, durations, http wait and store history are recorded", (
   assert.equal(wait.uid, step.effects[1].uid);
   assert.equal(typeof wait.ms, "number");
 
+  // the sender: "go" came from the page, "ok" from the http plugin's handle
+  assert.equal(step.from, undefined);
+  assert.equal(stepOf(f, "ok").from, "http");
+
   // the store change produced a timeline entry naming its message…
   const hist = f.events().find((e) => e.type === "history+");
   assert.ok(hist);

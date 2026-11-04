@@ -47,9 +47,17 @@ const S = {
   filterApp: "all", // "all" | app id
   filterComp: null, // component path within the selected app (Apps tab)
   chip: "all", // "all" | plugin name
+  msgFilter: "", // text filter on the Messages tab
+  msgChip: "all", // "all" | sender plugin name | "page"
+  fxFilter: "", // text filter on the Effects tab
+  consoleView: "all", // console tab: all | messages | effects
+  consoleChip: "all", // console tab plugin filter: "all" | plugin | "page"
+  consoleFilter: "", // text filter on the console tab
+  consoleSel: null, // row inspected on the console's right pane: {k:"msg",key} | {k:"fx",uid}
   selectedMsg: null, // message inspected on the right: `${appId}:${seq}`
   selectedFx: null, // effect inspected on the effects tab: uid
   split: {
+    console: 0.6,
     messages: 0.55,
     effects: 0.55,
     store: 0.5,
@@ -98,6 +106,88 @@ function shortJson(v, max = 80) {
 
 const appIds = () =>
   S.filterApp === "all" ? [...S.apps.keys()] : [S.filterApp];
+
+// console-style text filter: case-insensitive substring over any field
+const matchesFilter = (q, ...fields) =>
+  !q ||
+  fields.some((f) =>
+    String(f ?? "")
+      .toLowerCase()
+      .includes(q),
+  );
+
+// the 🚫 button on Messages / Effects: drop the recorded steps (and the io
+// counts and http waits derived from them). Store history survives — the
+// timeline is time travel, not a log; the next page hello replays anyway.
+function clearRecording() {
+  S.steps.clear();
+  S.io.clear();
+  S.waits.clear();
+  S.selectedMsg = null;
+  S.selectedFx = null;
+  S.consoleSel = null;
+  S.details.clear();
+  refresh();
+}
+
+// console-style filter controls, created once so typing into the input
+// survives the row re-renders
+function filterInput(stateKey, rerender) {
+  const input = el("input", "filter-input");
+  input.type = "text";
+  input.placeholder = "Filter";
+  input.spellcheck = false;
+  input.value = S[stateKey];
+  input.addEventListener("input", () => {
+    S[stateKey] = input.value.trim().toLowerCase();
+    rerender();
+  });
+  return input;
+}
+
+// the white circle-slash "clear logs" button
+function clearButton() {
+  const b = el("button", "filter-clear");
+  b.title = "clear the recorded messages and effects";
+  b.innerHTML =
+    '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">' +
+    '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/>' +
+    '<line x1="3.8" y1="3.8" x2="12.2" y2="12.2" stroke="currentColor" stroke-width="1.5"/></svg>';
+  b.addEventListener("click", clearRecording);
+  return b;
+}
+
+// a small icon-only toolbar button (viewer tools, …)
+function iconButton(title, svg, click) {
+  const b = el("button", "icon-btn");
+  b.title = title;
+  b.innerHTML = svg;
+  b.addEventListener("click", click);
+  return b;
+}
+
+// chips over the message senders seen in the recording: "all" + every
+// plugin that dispatched a message, with `page` for steps whose from is
+// unknown (page events / console / SSR / a recording from an older agent)
+function senderChips(rerender) {
+  const senders = new Set();
+  for (const id of appIds())
+    for (const s of stepsOf(id)) senders.add(s.from ?? "page");
+  const bar = el("div", "chips-list");
+  for (const chip of ["all", ...[...senders].sort()]) {
+    const b = el(
+      "button",
+      "chip" + (S.msgChip === chip ? " active" : ""),
+      chip,
+    );
+    b.addEventListener("click", () => {
+      S.msgChip = chip;
+      rerender();
+    });
+    bar.append(b);
+  }
+  return bar;
+}
 
 const stepsOf = (id) => S.steps.get(id) ?? [];
 
@@ -172,6 +262,7 @@ function applyHello(h) {
   S.waits.clear();
   S.selectedMsg = null;
   S.selectedFx = null;
+  S.consoleSel = null;
   S.tlShow = null;
   S.details.clear();
   S.filterComp = null;
@@ -314,7 +405,7 @@ $("#rescan").addEventListener("click", () => {
 
 /* ------------------------------------------------------------------- tabs */
 
-let active = "messages";
+let active = "console";
 
 // switch tabs programmatically (the nav buttons and deep links from the
 // Apps tab's data views both go through here)
@@ -363,10 +454,22 @@ const messagesRows = el("div", "rows");
 const msgDetail = el("div", "detail-pane");
 msgDetail.id = "msg-detail";
 const msgBar = el("div", "divider-v");
-$("#tab-messages").append(messagesRows, msgBar, msgDetail);
+const messagesCols = el("div", "");
+messagesCols.id = "messages-cols";
+// the messages toolbar is one row: clear, sender chips, then the filter
+const msgToolbar = el("div", "toolbar");
+msgToolbar.id = "msg-chips";
+const msgChips = el("div", "chips-list");
+msgToolbar.append(
+  clearButton(),
+  msgChips,
+  filterInput("msgFilter", renderMessages),
+);
+messagesCols.append(messagesRows, msgBar, msgDetail);
+$("#tab-messages").append(msgToolbar, messagesCols);
 applyFlex(messagesRows, S.split.messages);
 dragDivider(msgBar, (ev) => {
-  const r = $("#tab-messages").getBoundingClientRect();
+  const r = messagesCols.getBoundingClientRect();
   S.split.messages = clampFrac((ev.clientX - r.left) / r.width, 0.15, 0.85);
   applyFlex(messagesRows, S.split.messages);
 });
@@ -377,6 +480,13 @@ effectDetail.id = "effect-detail";
 const fxBar = el("div", "divider-v");
 const effectsCols = el("div", "");
 effectsCols.id = "effects-cols";
+// the effects toolbar is one row: clear, the plugin chips, then the filter
+const fxChips = el("div", "chips-list");
+$("#chips").append(
+  clearButton(),
+  fxChips,
+  filterInput("fxFilter", renderEffects),
+);
 effectsCols.append(effectRows, fxBar, effectDetail);
 $("#tab-effects").append(effectsCols);
 applyFlex(effectRows, S.split.effects);
@@ -385,6 +495,186 @@ dragDivider(fxBar, (ev) => {
   S.split.effects = clampFrac((ev.clientX - r.left) / r.width, 0.15, 0.85);
   applyFlex(effectRows, S.split.effects);
 });
+
+/* --------------------------------------------------------------- console */
+
+const consoleRows = el("div", "rows");
+consoleRows.id = "console-rows";
+const consoleViewChips = el("div", "chips-list");
+const consolePluginChips = el("div", "chips-list");
+const consoleBar = el("div", "");
+consoleBar.id = "console-bar";
+consoleBar.append(
+  clearButton(),
+  consoleViewChips,
+  consolePluginChips,
+  filterInput("consoleFilter", renderConsole),
+);
+const consoleDetail = el("div", "detail-pane");
+consoleDetail.id = "console-detail";
+const consoleDiv = el("div", "divider-v");
+const consoleCols = el("div", "");
+consoleCols.id = "console-cols";
+consoleCols.append(consoleRows, consoleDiv, consoleDetail);
+$("#tab-console").append(consoleBar, consoleCols);
+applyFlex(consoleRows, S.split.console);
+dragDivider(consoleDiv, (ev) => {
+  const r = consoleCols.getBoundingClientRect();
+  S.split.console = clampFrac((ev.clientX - r.left) / r.width, 0.15, 0.85);
+  applyFlex(consoleRows, S.split.console);
+});
+
+// one chip button; `active` lights the current one
+function chipBtn(label, on, click) {
+  const b = el("button", "chip" + (on ? " active" : ""), label);
+  b.addEventListener("click", click);
+  return b;
+}
+
+function renderConsole() {
+  // toolbar: clear | all / messages / effects | plugin chips (right)
+  consoleViewChips.replaceChildren(
+    ...["all", "messages", "effects"].map((v) =>
+      chipBtn(v, S.consoleView === v, () => {
+        S.consoleView = v;
+        renderConsole();
+      }),
+    ),
+  );
+  const names = new Set();
+  for (const id of appIds()) {
+    for (const p of S.apps.get(id)?.plugins ?? []) names.add(p);
+    for (const s of stepsOf(id)) {
+      names.add(s.from ?? "page");
+      for (const e of s.effects) names.add(e.plugin);
+    }
+  }
+  consolePluginChips.replaceChildren(
+    ...["all", ...[...names].sort()].map((c) =>
+      chipBtn(c, S.consoleChip === c, () => {
+        S.consoleChip = c;
+        renderConsole();
+      }),
+    ),
+  );
+
+  // stick to the bottom while live rows stream in, unless scrolled up
+  const pinned =
+    consoleRows.scrollHeight -
+      consoleRows.scrollTop -
+      consoleRows.clientHeight <
+    40;
+  consoleRows.replaceChildren();
+
+  const items = [];
+  const q = S.consoleFilter;
+  for (const appId of appIds())
+    for (const s of stepsOf(appId)) {
+      const wantMsg =
+        S.consoleView !== "effects" &&
+        (S.consoleChip === "all" ||
+          (s.from ?? "page") === S.consoleChip ||
+          s.effects.some((e) => e.plugin === S.consoleChip)) &&
+        matchesFilter(
+          q,
+          s.message.id,
+          s.message.payload ?? s.message.event,
+          s.from,
+        );
+      if (wantMsg) items.push({ k: "msg", t: s.time, s, appId });
+      if (S.consoleView === "messages") continue;
+      for (const e of s.effects)
+        if (
+          (S.consoleChip === "all" || e.plugin === S.consoleChip) &&
+          matchesFilter(q, `${e.plugin}:${e.type}`, e.summary, e.detail)
+        )
+          items.push({ k: "fx", t: e.time, s, appId, e });
+    }
+  items.sort(
+    (a, b) => a.t - b.t || a.s.seq - b.s.seq || (a.k === "msg" ? -1 : 1),
+  );
+
+  if (!items.length) {
+    consoleRows.append(
+      el(
+        "div",
+        "empty-tab",
+        appIds().some((id) => stepsOf(id).length)
+          ? "nothing matches the filters"
+          : "nothing recorded yet — dispatch a message in the app",
+      ),
+    );
+    renderConsoleDetail();
+    return;
+  }
+  for (const it of items.slice(-MAX_ROWS)) {
+    const { s, appId } = it;
+    if (it.k === "msg") {
+      const key = `${appId}:${s.seq}`;
+      const row = el(
+        "div",
+        "row c-msg" +
+          (S.consoleSel?.k === "msg" && S.consoleSel.key === key ? " sel" : ""),
+      );
+      row.append(
+        el("span", "t", fmtTime(s.time)),
+        el("span", "k msg", "»"),
+        el("span", "id", s.message.id),
+        el("span", "sum", shortJson(s.message.payload ?? s.message.event)),
+      );
+      if (s.from) row.append(el("span", "app", `← ${s.from}`));
+      if (S.filterApp === "all") row.append(el("span", "num", appId));
+      row.title = "click to inspect the message and its effects on the right";
+      row.addEventListener("click", () => {
+        S.consoleSel =
+          S.consoleSel?.k === "msg" && S.consoleSel.key === key
+            ? null
+            : { k: "msg", key };
+        renderConsole();
+      });
+      consoleRows.append(row);
+    } else {
+      const e = it.e;
+      const row = el(
+        "div",
+        "row c-fx" +
+          (S.consoleSel?.k === "fx" && S.consoleSel.uid === e.uid
+            ? " sel"
+            : ""),
+      );
+      row.append(
+        el("span", "t", fmtTime(e.time)),
+        el("span", "plug", `${e.plugin}:${e.type}`),
+        el("span", "sum", e.summary),
+      );
+      if (e.dur !== undefined) row.append(el("span", "num dur", `${e.dur}ms`));
+      const wait = S.waits.get(e.uid);
+      if (wait !== undefined) row.append(el("span", "num wait", `⧗${wait}ms`));
+      row.title = `message "${s.message.id}" — click to inspect on the right`;
+      row.addEventListener("click", () => {
+        S.consoleSel =
+          S.consoleSel?.k === "fx" && S.consoleSel.uid === e.uid
+            ? null
+            : { k: "fx", uid: e.uid };
+        renderConsole();
+      });
+      consoleRows.append(row);
+    }
+  }
+  if (pinned) consoleRows.scrollTop = consoleRows.scrollHeight;
+  renderConsoleDetail();
+}
+
+// the console's right pane reuses the Messages / Effects detail renderers
+function renderConsoleDetail() {
+  if (!S.consoleSel)
+    consoleDetail.replaceChildren(
+      el("div", "empty-tab", "click a row on the left to inspect it here"),
+    );
+  else if (S.consoleSel.k === "msg")
+    renderMsgDetail(consoleDetail, S.consoleSel.key);
+  else renderEffectDetail(consoleDetail, S.consoleSel.uid);
+}
 
 const appsTree = el("div", "rows");
 appsTree.id = "apps-tree";
@@ -413,7 +703,8 @@ function refresh() {
     // a live update doesn't yank the pane back to the top
     const view = $("#tab-" + active);
     const kept = keepScroll(view);
-    if (active === "messages") renderMessages();
+    if (active === "console") renderConsole();
+    else if (active === "messages") renderMessages();
     else if (active === "effects") renderEffects();
     else if (active === "store") renderStore();
     else if (active === "travel") renderTravel();
@@ -430,6 +721,8 @@ function scrollables(tab) {
   return [...tab.querySelectorAll("*")].filter(
     (n) =>
       n.id !== "stepper" &&
+      // the console pins itself to the bottom instead
+      n.id !== "console-rows" &&
       (n.scrollHeight > n.clientHeight || n.scrollWidth > n.clientWidth),
   );
 }
@@ -516,10 +809,90 @@ const vPreview = (v) => {
   return String(v);
 };
 
+// full JSON of a viewer value, with the exotic kinds made printable
+const jsonOf = (v) =>
+  JSON.stringify(
+    v,
+    (k, x) => {
+      if (x instanceof Map) return Object.fromEntries(x);
+      if (x instanceof Set) return [...x];
+      if (x instanceof Date) return x.toISOString();
+      if (typeof x === "function")
+        return x.name ? `[Function ${x.name}]` : "[Function]";
+      return x;
+    },
+    2,
+  ) ?? "undefined";
+
+function copyText(text) {
+  if (navigator.clipboard?.writeText)
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  else fallbackCopy(text);
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  document.body.append(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+  } catch {
+    /* clipboard unavailable */
+  }
+  ta.remove();
+}
+
 function viewer(key, value) {
+  const wrap = el("div", "v-wrap");
   const root = el("div", "viewer");
   root.append(vRow(null, value, "", key, 0, new Set()));
-  return root;
+  // the branch rows of the built tree (children appear lazily as branches
+  // open, which is why expanding keeps clicking until a pass finds nothing)
+  const branchRows = () => [...root.querySelectorAll(".v-branch > .v-row.tog")];
+  const tools = el("div", "v-tools");
+  const flash = (b) => {
+    b.classList.add("copied");
+    setTimeout(() => b.classList.remove("copied"), 700);
+  };
+  tools.append(
+    iconButton(
+      "expand all branches",
+      '<svg viewBox="0 0 16 16" width="11" height="11"><path d="M3 3l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 9l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+      () => {
+        for (let pass = 0; pass < 1000; pass++) {
+          const closed = branchRows().filter(
+            (r) => r.nextElementSibling.style.display === "none",
+          );
+          if (!closed.length) break;
+          for (const r of closed) r.click();
+        }
+      },
+    ),
+    iconButton(
+      "collapse all branches",
+      '<svg viewBox="0 0 16 16" width="11" height="11"><path d="M3 6l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+      () => {
+        const rows = branchRows(); // rows[0] is the root — keep it open
+        for (let i = 1; i < rows.length; i++)
+          if (rows[i].nextElementSibling.style.display !== "none")
+            rows[i].click();
+      },
+    ),
+    (() => {
+      const b = iconButton(
+        "copy as JSON",
+        '<svg viewBox="0 0 16 16" width="11" height="11"><rect x="5" y="5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
+        () => {
+          copyText(jsonOf(value));
+          flash(b);
+        },
+      );
+      return b;
+    })(),
+  );
+  wrap.append(tools, root);
+  return wrap;
 }
 
 function vRow(key, v, path, vkey, depth, seen) {
@@ -536,7 +909,10 @@ function vRow(key, v, path, vkey, depth, seen) {
   if (key !== null)
     row.append(el("span", "v-key", key), el("span", "v-punc", ": "));
   if (!branch) {
-    row.append(el("span", "v-" + valClass(v), vPreview(v)));
+    const preview = vPreview(v);
+    row.append(el("span", "v-" + valClass(v), preview));
+    // the row clips with an ellipsis — the full value goes to the tooltip
+    row.title = preview;
     return row;
   }
   const entries = vEntries(v);
@@ -608,17 +984,35 @@ function vRow(key, v, path, vkey, depth, seen) {
 /* -------------------------------------------------------------- messages */
 
 function renderMessages() {
+  msgChips.replaceChildren(...senderChips(renderMessages).childNodes);
   messagesRows.replaceChildren();
   const all = appIds().flatMap((id) => stepsOf(id).map((s) => [s, id]));
   all.sort((a, b) => a[0].time - b[0].time || a[0].seq - b[0].seq);
-  if (!all.length) {
+  const q = S.msgFilter;
+  const list = all.filter(
+    ([s]) =>
+      (S.msgChip === "all" || (s.from ?? "page") === S.msgChip) &&
+      matchesFilter(
+        q,
+        s.message.id,
+        s.message.payload ?? s.message.event,
+        ...s.effects.flatMap((e) => [`${e.plugin}:${e.type}`, e.summary]),
+      ),
+  );
+  if (!list.length) {
     messagesRows.append(
-      el("div", "empty-tab", "no messages yet — dispatch one in the app"),
+      el(
+        "div",
+        "empty-tab",
+        all.length
+          ? "no messages match the filter"
+          : "no messages yet — dispatch one in the app",
+      ),
     );
     renderMsgDetail();
     return;
   }
-  for (const [s, appId] of [...all].reverse().slice(0, MAX_ROWS)) {
+  for (const [s, appId] of [...list].reverse().slice(0, MAX_ROWS)) {
     const key = `${appId}:${s.seq}`;
     const row = el("div", "row" + (S.selectedMsg === key ? " sel" : ""));
     row.append(
@@ -627,6 +1021,7 @@ function renderMessages() {
       el("span", "sum", shortJson(s.message.payload ?? s.message.event)),
       el("span", "num", `${s.effects.length} eff`),
     );
+    if (s.from) row.append(el("span", "app", `← ${s.from}`));
     if (S.filterApp === "all") row.append(el("span", "app", appId));
     row.title = "click to inspect the message and its effects on the right";
     row.addEventListener("click", () => {
@@ -640,11 +1035,10 @@ function renderMessages() {
 
 /* ---------------------------------------------------- message detail pane */
 
-function renderMsgDetail() {
-  msgDetail.replaceChildren();
-  const key = S.selectedMsg;
+function renderMsgDetail(target = msgDetail, key = S.selectedMsg) {
+  target.replaceChildren();
   if (!key) {
-    msgDetail.append(
+    target.append(
       el("div", "empty-tab", "click a message on the left to inspect it here"),
     );
     return;
@@ -653,7 +1047,7 @@ function renderMsgDetail() {
   const appId = key.slice(0, sep);
   const s = stepsOf(appId).find((x) => String(x.seq) === key.slice(sep + 1));
   if (!s) {
-    msgDetail.append(
+    target.append(
       el(
         "div",
         "empty-tab",
@@ -662,44 +1056,35 @@ function renderMsgDetail() {
     );
     return;
   }
+  // mirrors the effect detail: head = content (as much as fits) + time,
+  // then the name line — switching between rows should read identically
   const head = el("div", "detail-head");
   head.append(
-    el("span", "id", s.message.id),
+    // no JS-side truncation: like the effect summary, CSS clips it with an
+    // ellipsis at the pane width (the cap is only a pathological-payload guard)
+    el("span", "sum", shortJson(s.message.payload ?? s.message.event, 1e4)),
     el("span", "t", fmtTime(s.time)),
-    el("span", "num", `${s.effects.length} effects`),
   );
-  msgDetail.append(head);
+  target.append(head);
 
-  msgDetail.append(el("h4", "", "payload"));
-  msgDetail.append(viewer(`msg:${key}`, s.message.payload ?? s.message.event));
+  const line = el("div", "detail-line", "message: ");
+  line.append(el("span", "id", s.message.id));
+  target.append(line);
+
+  target.append(el("h4", "", "payload"));
+  target.append(viewer(`msg:${key}`, s.message.payload ?? s.message.event));
 
   const effects = el("div", "detail-sec");
   effects.append(el("h4", "", `effects — ${s.effects.length}`));
   if (!s.effects.length) effects.append(el("div", "erow", "no effects"));
-  for (const e of s.effects) {
-    const er = el("div", "erow" + (S.details.has(e.uid) ? " sel" : ""));
-    er.append(
-      el("span", "plug", `${e.plugin}:${e.type}`),
-      el("span", "sum", e.summary),
-    );
-    if (e.dur !== undefined) er.append(el("span", "num dur", `${e.dur}ms`));
-    const wait = S.waits.get(e.uid);
-    if (wait !== undefined) er.append(el("span", "num wait", `⧗${wait}ms`));
-    er.title = "click for the raw effect object";
-    er.addEventListener("click", () => {
-      S.details.has(e.uid) ? S.details.delete(e.uid) : S.details.add(e.uid);
-      renderMsgDetail();
-    });
-    effects.append(er);
-    if (S.details.has(e.uid)) effects.append(viewer(`fx:${e.uid}`, e.detail));
-  }
-  msgDetail.append(effects);
+  else effects.append(viewer(`msg-fx:${key}`, s.effects));
+  target.append(effects);
 }
 
 /* ---------------------------------------------------------------- effects */
 
 function renderEffects() {
-  const chips = $("#chips");
+  const chips = fxChips;
   chips.replaceChildren();
   const plugins = new Set();
   for (const id of appIds())
@@ -717,11 +1102,28 @@ function renderEffects() {
   const all = appIds().flatMap((id) =>
     stepsOf(id).flatMap((s) => s.effects.map((e) => [e, s, id])),
   );
-  const list = all.filter(([e]) => S.chip === "all" || e.plugin === S.chip);
+  const q = S.fxFilter;
+  const list = all.filter(
+    ([e, s]) =>
+      (S.chip === "all" || e.plugin === S.chip) &&
+      matchesFilter(
+        q,
+        `${e.plugin}:${e.type}`,
+        e.summary,
+        e.detail,
+        s.message.id,
+      ),
+  );
   list.sort((a, b) => b[0].time - a[0].time || b[1].seq - a[1].seq);
   if (!list.length) {
     effectRows.append(
-      el("div", "empty-tab", "no effects yet — dispatch a message in the app"),
+      el(
+        "div",
+        "empty-tab",
+        all.length
+          ? "no effects match the filter"
+          : "no effects yet — dispatch a message in the app",
+      ),
     );
     renderEffectDetail();
     return;
@@ -749,10 +1151,10 @@ function renderEffects() {
 
 /* ----------------------------------------------------- effect detail pane */
 
-function renderEffectDetail() {
-  effectDetail.replaceChildren();
-  if (!S.selectedFx) {
-    effectDetail.append(
+function renderEffectDetail(target = effectDetail, uid = S.selectedFx) {
+  target.replaceChildren();
+  if (!uid) {
+    target.append(
       el("div", "empty-tab", "click an effect on the left to inspect it here"),
     );
     return;
@@ -760,14 +1162,14 @@ function renderEffectDetail() {
   let found = null;
   for (const id of appIds())
     for (const s of stepsOf(id)) {
-      const e = s.effects.find((x) => x.uid === S.selectedFx);
+      const e = s.effects.find((x) => x.uid === uid);
       if (e) {
         found = [e, s];
         break;
       }
     }
   if (!found) {
-    effectDetail.append(
+    target.append(
       el("div", "empty-tab", "that effect is gone from the recording — rescan"),
     );
     return;
@@ -783,14 +1185,14 @@ function renderEffectDetail() {
   if (e.dur !== undefined) parts.push(`${e.dur}ms`);
   if (wait !== undefined) parts.push(`⧗${wait}ms`);
   head.append(el("span", "t", parts.join(" · ")));
-  effectDetail.append(head);
+  target.append(head);
 
   const line = el("div", "detail-line", "message ");
   line.append(el("span", "id", s.message.id));
-  effectDetail.append(line);
+  target.append(line);
 
-  effectDetail.append(el("h4", "", "effect object"));
-  effectDetail.append(viewer(`fx:${e.uid}`, e.detail));
+  target.append(el("h4", "", "effect object"));
+  target.append(viewer(`fx:${e.uid}`, e.detail));
 }
 
 /* ------------------------------------------------------------------ store */
