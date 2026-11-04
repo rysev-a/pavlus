@@ -49,3 +49,5 @@
 .orba .ui-data-toolbar { flex-wrap: wrap; }
 .orba .ui-data-footer-controls { flex-wrap: wrap; }
 .orba .ui-resource-footer { flex-wrap: wrap; gap: 8px; }
+.orba .ui-data-scroll { overflow-x: auto; max-width: 100%; }
+.orba .k-ctable { display: grid; grid-template-columns: minmax(0, 1fr); }
