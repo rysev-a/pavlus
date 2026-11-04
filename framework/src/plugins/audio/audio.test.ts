@@ -459,7 +459,10 @@ describe("audio mediaSession", () => {
     return s;
   }
   class Meta {
-    constructor(public init: unknown) {}
+    init: unknown;
+    constructor(init: unknown) {
+      this.init = init;
+    }
   }
 
   test("sets metadata and action handlers that dispatch messages", () => {
