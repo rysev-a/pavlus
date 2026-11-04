@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The brand mark of the header (.ui-brand-mark): a dark rounded square with an A. -->
+  <rect width="32" height="32" rx="7" fill="#171717"/>
+  <text x="16" y="22" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="700" fill="#fafafa">A</text>
+</svg>

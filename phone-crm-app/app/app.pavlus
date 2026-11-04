@@ -1,0 +1,14 @@
+// The page is the CRM, full width: the routed screen (`+outlet`), or, when the
+// server could not be reached, an error with a Retry.
+if crm.status === "failed"
+  div.app-failed(role="alert")
+    div.ui-card.app-failed__card
+      div.ui-card-header
+        h1.ui-card-title Cannot open the database
+        p.ui-card-description {crm.error}
+      div.ui-card-content
+        p.app-failed__hint The data lives on the server. Check that it is running, then try again.
+      div.ui-card-footer
+        button.ui-button.ui-button-default.ui-button-sm(type="button" @click=retry) Try again
+else
+  +outlet

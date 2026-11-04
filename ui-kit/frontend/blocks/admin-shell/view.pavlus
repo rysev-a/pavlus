@@ -16,7 +16,7 @@ nav.k-snav(aria-label="Application")
         ul.ui-sidebar-menu
           for item in group.items key item.id
             li
-              a.ui-sidebar-button(href={"#" + item.id} data-active={item.id === active ? "true" : null} @click.prevent=go(item.id))
+              a.ui-sidebar-button(href={item.href ?? "#" + item.id} data-active={item.id === active ? "true" : null} @click.prevent=go(item.id))
                 span.ui-sidebar-icon
                   span(class="k-icon {item.icon}")
                 span.ui-sidebar-label {item.label}

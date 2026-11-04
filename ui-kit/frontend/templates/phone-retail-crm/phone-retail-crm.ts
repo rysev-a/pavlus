@@ -152,8 +152,15 @@ const USER: ShellUser = {
   initials: "DW",
 };
 
+let hrefOf: ((screen: string) => string) | undefined;
+
+/** An app with URL routing gives every screen a real address (`href` of its link). */
+export function setScreenHrefs(fn: ((screen: string) => string) | undefined): void {
+  hrefOf = fn;
+}
+
 /** The navigation with the number of rows as a badge. */
-function navOf(db: Db): NavGroup[] {
+export function navOf(db: Db): NavGroup[] {
   return GROUPS.map((g) => ({
     title: g.title,
     items: g.items.map((i) => ({
@@ -161,6 +168,7 @@ function navOf(db: Db): NavGroup[] {
       label: i.label,
       icon: i.icon,
       badge: i.table ? String(db[i.table].length) : undefined,
+      href: hrefOf?.(i.id),
     })),
   }));
 }
