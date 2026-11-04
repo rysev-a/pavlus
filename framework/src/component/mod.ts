@@ -370,6 +370,15 @@ export abstract class Component<S = any> {
    * route matches. See `docs/routing.md`.
    */
   declare routing?: Routing<S>;
+  /**
+   * Repaint on application state changes: the dom plugin re-diffs this view
+   * and patches the DOM whenever the state identity changes. Default off —
+   * the view renders when mounted, and again when the application sends it
+   * the `dom.update` effect, so components that only work with state
+   * (services, data slices) never touch the DOM. The root of an application
+   * usually sets `true`: `createApp` reads it off the `app` component.
+   */
+  declare updateDomOnStateChange?: boolean;
 
   /**
    * Handles one message: the component's own handler for `message.id` first

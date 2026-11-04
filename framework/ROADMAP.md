@@ -2,21 +2,21 @@
 
 ## Status
 
-| Milestone | State |
-|---|---|
-| M1 Template parser | done |
-| M2 Core runtime, plugin contract, logger, time | done |
-| M3 Compiler + Vite plugin | done |
-| M4 DOM plugin: mount / unmount | done |
-| M5 Store plugin with `restoreEffect` history | done |
-| M6 Update: dependency analysis + compiled `diff` | done (keyed lists, moves, if/else, nested loops) |
-| M7 Component hierarchy | done: function / object / class components, `children` routing, `ctx.send`, `props`, embedded child views (static `+Name`, dynamic `+{expr}`), wrappers |
-| M8 http, ws, router plugins | done |
-| Plugin effectors and docs | done: `storeEffector`, `httpEffector`, `timeEffector`, `loggerEffector`, `wsEffector`, `routerEffector`, `domEffector`; one doc per plugin in `docs/plugins/` |
-| Declarative routing | done: `routing` tables, `+outlet`, nested routes, relative `navigate`, `setRoute` with `enter`/`leave` ([docs/routing.md](./docs/routing.md)). Not done: guards, redirects, query parsing |
-| Editor support | tree-sitter grammar + Zed extension done (`editors/`, highlighting only; not yet installed from Zed's UI by me). Language server not started |
-| M9 Determinism / DX | dropped on purpose: purity is not enforced (app code may mutate, at the author's own risk). Missing: HMR with state, editor syntax file |
-| M10 Packaging | `jsr publish --dry-run` passes. Not published yet |
+| Milestone                                        | State                                                                                                                                                                                     |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1 Template parser                               | done                                                                                                                                                                                      |
+| M2 Core runtime, plugin contract, logger, time   | done                                                                                                                                                                                      |
+| M3 Compiler + Vite plugin                        | done                                                                                                                                                                                      |
+| M4 DOM plugin: mount / unmount                   | done                                                                                                                                                                                      |
+| M5 Store plugin with `restoreEffect` history     | done                                                                                                                                                                                      |
+| M6 Update: dependency analysis + compiled `diff` | done (keyed lists, moves, if/else, nested loops)                                                                                                                                          |
+| M7 Component hierarchy                           | done: function / object / class components, `children` routing, `ctx.send`, `props`, embedded child views (static `+Name`, dynamic `+{expr}`), wrappers                                   |
+| M8 http, ws, router plugins                      | done                                                                                                                                                                                      |
+| Plugin effectors and docs                        | done: `storeEffector`, `httpEffector`, `timeEffector`, `loggerEffector`, `wsEffector`, `routerEffector`, `domEffector`; one doc per plugin in `docs/plugins/`                             |
+| Declarative routing                              | done: `routing` tables, `+outlet`, nested routes, relative `navigate`, `setRoute` with `enter`/`leave` ([docs/routing.md](./docs/routing.md)). Not done: guards, redirects, query parsing |
+| Editor support                                   | tree-sitter grammar + Zed extension done (`editors/`, highlighting only; not yet installed from Zed's UI by me). Language server not started                                              |
+| M9 Determinism / DX                              | dropped on purpose: purity is not enforced (app code may mutate, at the author's own risk). Missing: HMR with state, editor syntax file                                                   |
+| M10 Packaging                                    | `jsr publish --dry-run` passes. Not published yet                                                                                                                                         |
 
 Not implemented yet:
 
@@ -27,18 +27,18 @@ Not implemented yet:
 
 ## Decisions as implemented (D1-D10)
 
-| # | Decision |
-|---|---|
-| D1 | Core passes the store snapshot with each message: `app(message, state)`. After a message, if the state changed, plugins get `onState` (the DOM plugin diffs mounted views). |
-| D2 | Event handlers are message descriptors (`{id, payload}`), compared by value in `diff`. |
-| D3 | Attribute value = expression. Complex ones need `{...}`, quotes are interpolated strings. |
-| D4 | Own small expression language, so dependencies are exact. All member access is null safe. |
-| D5 | `for x in xs key expr`; without `key` items are keyed by index. Duplicate keys throw. |
-| D6 | Trailing `:` is accepted but not needed; `else if` / `else` supported. |
-| D7 | `//` is a comment. Child views: `+Name#x(...)` / `+{expr}#x(...)` (see docs/child-views.md). Slots: not yet. |
-| D8 | Time is an effect (`time.now`) whose answer returns as a message. |
-| D9 | Effects carry the reply message id (`replyTo`, `onSuccess`, ...); `namespace` prefixes them so replies return to the right child. |
-| D10 | Single package with sub-path exports (see `jsr.json`). |
+| #   | Decision                                                                                                                                                                                           |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Core passes the store snapshot with each message: `app(message, state)`. After a message, if the state changed, plugins get `onState` (a DOM mount re-diffs only when mounted with `followState`). |
+| D2  | Event handlers are message descriptors (`{id, payload}`), compared by value in `diff`.                                                                                                             |
+| D3  | Attribute value = expression. Complex ones need `{...}`, quotes are interpolated strings.                                                                                                          |
+| D4  | Own small expression language, so dependencies are exact. All member access is null safe.                                                                                                          |
+| D5  | `for x in xs key expr`; without `key` items are keyed by index. Duplicate keys throw.                                                                                                              |
+| D6  | Trailing `:` is accepted but not needed; `else if` / `else` supported.                                                                                                                             |
+| D7  | `//` is a comment. Child views: `+Name#x(...)` / `+{expr}#x(...)` (see docs/child-views.md). Slots: not yet.                                                                                       |
+| D8  | Time is an effect (`time.now`) whose answer returns as a message.                                                                                                                                  |
+| D9  | Effects carry the reply message id (`replyTo`, `onSuccess`, ...); `namespace` prefixes them so replies return to the right child.                                                                  |
+| D10 | Single package with sub-path exports (see `jsr.json`).                                                                                                                                             |
 
 ## Syntax changes versus task.md
 
@@ -78,7 +78,7 @@ Two pure pieces sit on either side of the plugin boundary:
 
 - **Application code**: `(message, state) → effects[]`.
 - **Compiled template**: `render(state) → tree` and `diff(prev, next) → DomPatch[]`.
-  Because `diff` returns *data* (patches), not DOM calls, the DOM plugin is the
+  Because `diff` returns _data_ (patches), not DOM calls, the DOM plugin is the
   only place that touches the DOM. That keeps task.md's rule that all dirty work
   lives in plugins.
 
@@ -87,18 +87,18 @@ Two pure pieces sit on either side of the plugin boundary:
 These come from gaps or inconsistencies in task.md. Each has a recommended
 default, so work isn't blocked. Record the final answers in `docs/decisions.md`.
 
-| # | Question | Recommended default | Why it matters |
-|---|----------|---------------------|----------------|
-| D1 | Where does app state live? §3 says the store is a plugin, but §4 says the app is a pure function of its input. | Core passes the current store snapshot with each message: `app(message, state)`. The store plugin owns the state and history. | The app cannot be pure and deterministic without state as an input. |
-| D2 | What is an event handler in a template: a function or a message? `onclick=removeUser(user)` looks like a call. | A **message descriptor** (data), Elm-style. `onclick=removeUser(user)` builds `{id:'removeUser', payload:{user}}`. A bare `onclick=switchTab` is a message constructor receiving the DOM event. | Message data can be compared by value in `diff`, which gives cheap "did the handler change?" checks. Function identity breaks on every render. It also keeps the whole app serializable and replayable. |
-| D3 | Attribute value syntax. The task mixes `href={item.url}` and `href=user.url`. | One rule: the value is an expression, and braces are optional around simple paths. Plain text is written `"..."`. | The parser needs one grammar. |
-| D4 | Expression language inside `{}` / `if` / `for`. | A small own subset: paths, literals, calls, `! && \|\| ?:`, comparison, `+ -`. No arbitrary JS. | The compiler must know exactly which state paths each binding reads. This is the foundation of the dependency graph. |
-| D5 | Keys in loops. | `for user in users key user.id:` is required for lists that can reorder or remove items. Without `key` it diffs by index. | Without keys, `removeUser` would rewrite every following row. |
-| D6 | Block syntax: `for ...:` has a colon, `if ...` doesn't in task.md. | Optional trailing `:` on both, plus `else` / `else if`. | Same reason as D3. |
-| D7 | `{tab.content()} // - as element`. Is `//` a comment, or does the note mean the value is an element? | `//` starts a line comment. A `{expr}` that evaluates to a template node (not a string) is inserted as an element. | This defines the slot/child-component mechanism. |
-| D8 | Time and randomness in a deterministic app. | Both are effects whose answer comes back as a message (`time.now` → `{id:'time.now', at}`). Ids/seeds come in via messages. | Needed to keep the "no `Date.now()` / `Math.random()`" rule honest. |
-| D9 | Effect results are routed back how? | Every effect carries a `replyTo` message constructor. The core builds the reply message and sends it down the component tree. | Needed for parent/child routing in §4 of the task. |
-| D10 | Single package or monorepo? | Single JSR package with sub-path exports: `.` (core), `./vite` (plugin), `./plugins/dom`, `./plugins/store`, ... Split later only if needed. | Fits the current `jsr.json` and avoids overhead early on. |
+| #   | Question                                                                                                       | Recommended default                                                                                                                                                                             | Why it matters                                                                                                                                                                                          |
+| --- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Where does app state live? §3 says the store is a plugin, but §4 says the app is a pure function of its input. | Core passes the current store snapshot with each message: `app(message, state)`. The store plugin owns the state and history.                                                                   | The app cannot be pure and deterministic without state as an input.                                                                                                                                     |
+| D2  | What is an event handler in a template: a function or a message? `onclick=removeUser(user)` looks like a call. | A **message descriptor** (data), Elm-style. `onclick=removeUser(user)` builds `{id:'removeUser', payload:{user}}`. A bare `onclick=switchTab` is a message constructor receiving the DOM event. | Message data can be compared by value in `diff`, which gives cheap "did the handler change?" checks. Function identity breaks on every render. It also keeps the whole app serializable and replayable. |
+| D3  | Attribute value syntax. The task mixes `href={item.url}` and `href=user.url`.                                  | One rule: the value is an expression, and braces are optional around simple paths. Plain text is written `"..."`.                                                                               | The parser needs one grammar.                                                                                                                                                                           |
+| D4  | Expression language inside `{}` / `if` / `for`.                                                                | A small own subset: paths, literals, calls, `! && \|\| ?:`, comparison, `+ -`. No arbitrary JS.                                                                                                 | The compiler must know exactly which state paths each binding reads. This is the foundation of the dependency graph.                                                                                    |
+| D5  | Keys in loops.                                                                                                 | `for user in users key user.id:` is required for lists that can reorder or remove items. Without `key` it diffs by index.                                                                       | Without keys, `removeUser` would rewrite every following row.                                                                                                                                           |
+| D6  | Block syntax: `for ...:` has a colon, `if ...` doesn't in task.md.                                             | Optional trailing `:` on both, plus `else` / `else if`.                                                                                                                                         | Same reason as D3.                                                                                                                                                                                      |
+| D7  | `{tab.content()} // - as element`. Is `//` a comment, or does the note mean the value is an element?           | `//` starts a line comment. A `{expr}` that evaluates to a template node (not a string) is inserted as an element.                                                                              | This defines the slot/child-component mechanism.                                                                                                                                                        |
+| D8  | Time and randomness in a deterministic app.                                                                    | Both are effects whose answer comes back as a message (`time.now` → `{id:'time.now', at}`). Ids/seeds come in via messages.                                                                     | Needed to keep the "no `Date.now()` / `Math.random()`" rule honest.                                                                                                                                     |
+| D9  | Effect results are routed back how?                                                                            | Every effect carries a `replyTo` message constructor. The core builds the reply message and sends it down the component tree.                                                                   | Needed for parent/child routing in §4 of the task.                                                                                                                                                      |
+| D10 | Single package or monorepo?                                                                                    | Single JSR package with sub-path exports: `.` (core), `./vite` (plugin), `./plugins/dom`, `./plugins/store`, ... Split later only if needed.                                                    | Fits the current `jsr.json` and avoids overhead early on.                                                                                                                                               |
 
 ## 2. Repository layout (target)
 
@@ -201,7 +201,7 @@ part (M6, update), so the architecture is validated early.
 This is task 2.3. Split into three steps that each ship on their own.
 
 1. **Reference differ.** A generic tree diff `diff(prevTree, nextTree) →
-   DomPatch[]` with keyed lists. It isn't optimized. It exists as the
+DomPatch[]` with keyed lists. It isn't optimized. It exists as the
    **correctness oracle** for the optimized version.
    `DomPatch` is data: `setText`, `setAttr`, `removeAttr`, `setHandler`,
    `insert`, `remove`, `move`.
@@ -226,6 +226,7 @@ This is task 2.3. Split into three steps that each ship on their own.
      same DOM as rendering `next` from scratch. Run it as a property test
      (fast-check) over generated states for the dashboard example and others,
      comparing the compiled `diff` with the M6.1 oracle.
+
 - Acceptance: the dashboard example. Toggling `showUsers`, changing `users`,
   hiding one user, and swapping `removeUser` produce exactly the minimal patch
   lists described in task.md, asserted by tests.
@@ -294,14 +295,14 @@ Each follows the same contract and ships with a fake for tests.
 
 ## 5. Main risks
 
-| Risk | Mitigation |
-|------|------------|
-| Compiled diff is subtly wrong for nested `if`/`for` | Build the oracle differ first (M6.1) and property-test against it. |
-| Template language grows without a clear grammar | Freeze grammar decisions D3–D7 before M1 and write the grammar down. |
-| Handler identity makes updates noisy | Message-descriptor handlers (D2). |
-| State mutated by accident breaks `===` checks | Immutable state convention, dev-mode freezing (M9), typed `readonly` state. |
-| Effects fired in a loop forever | Core guards: max effects per tick in dev mode, with a clear error. |
-| Scope too large to finish | M1–M4 is already a usable preview; later milestones are independent releases. |
+| Risk                                                | Mitigation                                                                    |
+| --------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Compiled diff is subtly wrong for nested `if`/`for` | Build the oracle differ first (M6.1) and property-test against it.            |
+| Template language grows without a clear grammar     | Freeze grammar decisions D3–D7 before M1 and write the grammar down.          |
+| Handler identity makes updates noisy                | Message-descriptor handlers (D2).                                             |
+| State mutated by accident breaks `===` checks       | Immutable state convention, dev-mode freezing (M9), typed `readonly` state.   |
+| Effects fired in a loop forever                     | Core guards: max effects per tick in dev mode, with a clear error.            |
+| Scope too large to finish                           | M1–M4 is already a usable preview; later milestones are independent releases. |
 
 ## 6. Suggested first week
 

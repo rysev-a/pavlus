@@ -43,7 +43,8 @@ export function mountView<S>(
     messages,
     set(next) {
       state = next;
-      dom.onState!(next, ctx);
+      // An explicit repaint: a bare mount does not follow the state.
+      dom.handle({ plugin: "dom", type: "update" }, ctx);
     },
     unmount() {
       dom.handle({ plugin: "dom", type: "unmount", target: root }, ctx);

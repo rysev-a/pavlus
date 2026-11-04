@@ -2,8 +2,8 @@
 
 Holds the **application state** and a history of every change to it. It is the
 only plugin the core asks for the state: `app(message, state)` receives the
-store's current value, and when it changes the other plugins are told (the DOM
-plugin re-renders).
+store's current value, and when it changes the other plugins are told (a DOM
+mount with `followState` re-renders).
 
 ```ts
 import {
@@ -14,33 +14,50 @@ import {
 const plugin = createStorePlugin({ user: { name: "Ann" }, todos: [] });
 createApp({ app, plugins: [plugin /* , ... */] });
 
-plugin.getState();   // the current state
-plugin.history;      // every recorded change
+plugin.getState(); // the current state
+plugin.history; // every recorded change
 ```
 
 ## Effectors
 
 ```ts
-store.set("user.name", "Bob")            // set a value, creating missing parents
-store.merge("user", { age: 30 })         // shallow-merge into an object
-store.remove("user.age")                 // remove a value or array element
-store.undo()                             // revert the last change
-store.undo(3)                            // revert the last 3
-store.restoreTo(timestamp)               // revert everything after a time
+store.set("user.name", "Bob"); // set a value, creating missing parents
+store.set("users", list, { onSuccess: "users.changed" });
+store.merge("user", { age: 30 }); // shallow-merge into an object
+store.remove("user.age"); // remove a value or array element
+store.undo(); // revert the last change
+store.undo(3); // revert the last 3
+store.restoreTo(timestamp); // revert everything after a time
 ```
 
-| Effect | Fields | Meaning |
-|---|---|---|
-| `set` | `path`, `value` | Set the value at `path`. A root `path` (`""` or `[]`) replaces the whole state. |
-| `merge` | `path`, `value` | Shallow-merge `value` into the object at `path` (an absent or non-object target becomes `{}` first). |
-| `remove` | `path` | Remove the value. For an array element the array shrinks (later items shift). Removing something that is not there changes nothing. |
-| `undo` | `steps?` | Revert the last `steps` (default 1) recorded changes, newest first. |
-| `restoreTo` | `timestamp` | Revert recorded changes while the newest one is later than `timestamp`. |
+| Effect      | Fields                        | Meaning                                                                                                                             |
+| ----------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `set`       | `path`, `value`, `onSuccess?` | Set the value at `path`. A root `path` (`""` or `[]`) replaces the whole state.                                                     |
+| `merge`     | `path`, `value`, `onSuccess?` | Shallow-merge `value` into the object at `path` (an absent or non-object target becomes `{}` first).                                |
+| `remove`    | `path`, `onSuccess?`          | Remove the value. For an array element the array shrinks (later items shift). Removing something that is not there changes nothing. |
+| `undo`      | `steps?`                      | Revert the last `steps` (default 1) recorded changes, newest first.                                                                 |
+| `restoreTo` | `timestamp`                   | Revert recorded changes while the newest one is later than `timestamp`.                                                             |
 
 A **path** is a dotted string (`"user.name"`, `"todos.0.done"`) or an array
 (`["todos", 0, "done"]`). Numeric segments index arrays.
 
-The store sends no messages back.
+### The store answers its writes
+
+With `onSuccess`, the change answers with a message once it **landed** — and
+only when it changed anything (a no-op never answers). The payload is the
+effect without `plugin`. This is how the application learns about its own
+writes: set, then load or repaint in the next message.
+
+```ts
+"user.created"(msg, s): Effect[] {
+  const user = msg.payload.data;
+  // this write answers "users.changed" once the list really changed
+  return [store.set("users", [...s.users, user], { onSuccess: "users.changed" })];
+}
+"users.changed"(): Effect[] {
+  return [store.set("form", null)];   // the next decision
+}
+```
 
 ## State is immutable
 
@@ -57,16 +74,18 @@ what it already is changes nothing and records nothing.
 Each change is recorded as
 
 ```ts
-{ timestamp, effect, restoreEffect }
+{
+  (timestamp, effect, restoreEffect);
+}
 ```
 
 `restoreEffect` is the effect that, applied to the state after `effect`,
 brings back the state before it. It is computed when the change is applied:
 
-| Change | `restoreEffect` |
-|---|---|
-| set/merge over an existing value | `set` of the old value |
-| set/merge that created new keys | `remove` of the topmost key it created |
+| Change                                           | `restoreEffect`                                                                       |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| set/merge over an existing value                 | `set` of the old value                                                                |
+| set/merge that created new keys                  | `remove` of the topmost key it created                                                |
 | change that adds or removes an **array element** | `set` of the whole old array (indices shift, so restoring one element would be wrong) |
 
 `undo` and `restoreTo` apply `restoreEffect`s without recording anything, so
@@ -74,7 +93,7 @@ undoing never grows the history. History is capped (`maxHistory`, default
 1000); the oldest entries are dropped first.
 
 ```ts
-store.set("user", null)
+store.set("user", null);
 // history[0].restoreEffect  →  store.set("user", { name: "Ann" })
 ```
 
@@ -82,9 +101,9 @@ store.set("user", null)
 
 ```ts
 createStorePlugin(initial, {
-  now: () => number,     // clock for timestamps, default Date.now
-  maxHistory: number,    // default 1000
-})
+  now: () => number, // clock for timestamps, default Date.now
+  maxHistory: number, // default 1000
+});
 ```
 
 `getState()`, `history` (read only). `getIn(state, path)` and
@@ -98,5 +117,5 @@ let t = 0;
 const plugin = createStorePlugin({ n: 0 }, { now: () => ++t });
 plugin.handle(store.set("n", 1), ctx);
 plugin.handle(store.set("n", 2), ctx);
-plugin.handle(store.restoreTo(1), ctx);   // back to n = 1
+plugin.handle(store.restoreTo(1), ctx); // back to n = 1
 ```

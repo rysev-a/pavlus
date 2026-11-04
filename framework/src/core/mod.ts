@@ -20,7 +20,9 @@ export interface CreateAppOptions<S> {
    * Where to render the application: a CSS selector or an element. Needs the
    * dom plugin and an `app` that is a component with a `view`. Once in the
    * DOM, the message `mounted` is dispatched (a component with `routing`
-   * starts listening to the router on it).
+   * starts listening to the router on it). The root follows application
+   * state changes only when the component sets `updateDomOnStateChange`;
+   * otherwise the application repaints with `dom.update` when it decides to.
    */
   mount?: string | Element;
   /** Message dispatched once all plugins are initialised (after `mount`). */
@@ -127,7 +129,15 @@ export function createApp<S = unknown>(opts: CreateAppOptions<S>): App {
     if (!byName.has("dom")) {
       throw new Error("pavlus: `mount` needs the dom plugin (createDomPlugin)");
     }
-    perform(domEffector.mount(opts.mount, view, { onMounted: "mounted" }));
+    const followState =
+      (opts.app as { updateDomOnStateChange?: boolean })
+        .updateDomOnStateChange === true;
+    perform(
+      domEffector.mount(opts.mount, view, {
+        onMounted: "mounted",
+        ...(followState && { followState: true }),
+      }),
+    );
   }
   if (opts.init) dispatch(opts.init);
 

@@ -101,7 +101,8 @@ function harness(html: string) {
     messages,
     set(next: S) {
       current = next;
-      dom.onState!(next, ctx);
+      // An explicit repaint: a bare mount does not follow the state.
+      dom.handle({ plugin: "dom", type: "update" }, ctx);
     },
   };
 }

@@ -12,8 +12,8 @@ Pavlus is an Elm-style architecture with a compiler attached:
 - **Application code is pure.** A handler receives a message and the state and
   returns effects. It may not touch the DOM, the network, the clock or
   randomness.
-- **Effects are plain data.** `{ plugin, type, ... }` objects describe *what*
-  should happen; plugins decide *how*.
+- **Effects are plain data.** `{ plugin, type, ... }` objects describe _what_
+  should happen; plugins decide _how_.
 - **Plugins own every side effect.** DOM, HTTP, websockets, timers, logging and
   routing are separate, swappable plugins.
 - **Templates compile to pure functions.** A `.pavlus` file becomes a module
@@ -65,24 +65,24 @@ flowchart TD
     C --> L
     C --> RO
     D -->|"ctx.dispatch(Message)"| C
-    ST -->|"onState → dom.diff → patches"| D
+    ST -->|"onState → followState mounts diff → patches"| D
 ```
 
 ### Reading map (suggested order for a newcomer)
 
-| # | File | What you learn |
-|---|---|---|
-| 1 | `main.ts` | The public API surface (one screen). |
-| 2 | `src/core/types.ts` | The whole contract: `Message`, `Effect`, `Plugin`, `PluginContext`. |
-| 3 | `src/core/mod.ts` | The runtime loop: ~110 lines, no dependencies beyond types. |
-| 4 | `src/component/mod.ts` | How objects and classes become handlers; children and namespacing. |
-| 5 | `src/runtime/vnode.ts` | What templates produce: `VNode`, `Patch`, `View`. |
-| 6 | `src/plugins/dom/mod.ts` | How vnodes and patches become DOM; how events become messages. |
-| 7 | `src/plugins/store/mod.ts` | Immutable updates and undo history. |
-| 8 | `src/template/parser.ts`, `src/template/ast.ts` | Template source → AST. |
-| 9 | `src/compiler/analyze.ts` | The dependency trick that makes `diff` cheap. |
-| 10 | `src/compiler/codegen.ts`, `src/compiler/emit/` | AST → readable `render`/`diff` source. Read `emit/` bottom-up: `base` → `expr` → `render` → `diff`. |
-| 11 | `../admin-app/` | Everything assembled in a real app. |
+| #   | File                                            | What you learn                                                                                      |
+| --- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 1   | `main.ts`                                       | The public API surface (one screen).                                                                |
+| 2   | `src/core/types.ts`                             | The whole contract: `Message`, `Effect`, `Plugin`, `PluginContext`.                                 |
+| 3   | `src/core/mod.ts`                               | The runtime loop: ~110 lines, no dependencies beyond types.                                         |
+| 4   | `src/component/mod.ts`                          | How objects and classes become handlers; children and namespacing.                                  |
+| 5   | `src/runtime/vnode.ts`                          | What templates produce: `VNode`, `Patch`, `View`.                                                   |
+| 6   | `src/plugins/dom/mod.ts`                        | How vnodes and patches become DOM; how events become messages.                                      |
+| 7   | `src/plugins/store/mod.ts`                      | Immutable updates and undo history.                                                                 |
+| 8   | `src/template/parser.ts`, `src/template/ast.ts` | Template source → AST.                                                                              |
+| 9   | `src/compiler/analyze.ts`                       | The dependency trick that makes `diff` cheap.                                                       |
+| 10  | `src/compiler/codegen.ts`, `src/compiler/emit/` | AST → readable `render`/`diff` source. Read `emit/` bottom-up: `base` → `expr` → `render` → `diff`. |
+| 11  | `../admin-app/`                                 | Everything assembled in a real app.                                                                 |
 
 ## 2. One tick of the app (`src/core/mod.ts`)
 
@@ -96,8 +96,10 @@ flowchart TD
    handed to the plugin named `effect.plugin` (`plugin.handle(effect, ctx)`, in
    the order the effects were returned).
 4. Then `getState()` is read again; **only if the state object identity changed**
-   (`next !== state`) every plugin gets `onState(next, ctx)`. This is what makes
-   the DOM plugin re-render, and why state must be treated as immutable.
+   (`next !== state`) every plugin gets `onState(next, ctx)`. A mount re-renders
+   on this only when it was created with `followState`; otherwise views repaint
+   on demand when the app dispatches a `dom.update` effect — which is why state
+   must be treated as immutable.
 5. A safety valve throws if more than `maxMessagesPerTick` (default 10 000)
    messages are processed in one tick (message loops).
 6. `dispose()` disposes plugins in reverse registration order.
@@ -118,19 +120,19 @@ sequenceDiagram
     C->>S: handle(store.set(...)) — state replaced immutably
     C->>P: handle(effect) for every other plugin
     C->>D: onState(next) — only when state !== previous
-    D->>D: view.diff(prevState, next) → patches → DOM
+    D->>D: mounts with followState: view.diff(prevState, next) → patches → DOM
 ```
 
 **The plugin contract** (`src/core/types.ts`):
 
-| Member | Required | Purpose |
-|---|---|---|
-| `name` | yes | Matches `effect.plugin`. |
-| `init?(ctx)` | no | Grab `dispatch`/`getState`, start listeners. |
-| `handle(effect, ctx)` | yes | Do the dirty work for one effect. |
-| `onState?(state, ctx)` | no | React to state changes (the DOM plugin re-renders). |
-| `dispose?()` | no | Remove listeners, abort requests, close sockets. |
-| `getState?()` | no | Marks a stateful plugin (the store). |
+| Member                 | Required | Purpose                                                                  |
+| ---------------------- | -------- | ------------------------------------------------------------------------ |
+| `name`                 | yes      | Matches `effect.plugin`.                                                 |
+| `init?(ctx)`           | no       | Grab `dispatch`/`getState`, start listeners.                             |
+| `handle(effect, ctx)`  | yes      | Do the dirty work for one effect.                                        |
+| `onState?(state, ctx)` | no       | React to state changes (a DOM mount re-renders only with `followState`). |
+| `dispose?()`           | no       | Remove listeners, abort requests, close sockets.                         |
+| `getState?()`          | no       | Marks a stateful plugin (the store).                                     |
 
 Application code rarely writes raw effect objects: each plugin exports an
 **effector**, a typed builder (`store.set("user.name", v)`,
@@ -235,12 +237,13 @@ flowchart LR
   `codegen.ts` wires the top layer into the module (`meta`, `render`, `diff`).
   Diff sits above render because it has to produce new nodes (an inserted list
   item, a new branch) with the render emitters. Two details matter:
-  - *Names*: a scope stack makes generated variables readable (`userList`,
+  - _Names_: a scope stack makes generated variables readable (`userList`,
     `prevUserKeys`, `liChildren`) and unique only where JS scopes genuinely
     overlap.
-  - *Two sides*: every expression is emitted twice, once against `prev` and once
+  - _Two sides_: every expression is emitted twice, once against `prev` and once
     against `next` (`expr(e, ctx, side)`); comparisons between the two become
     guards.
+
 - **Output module**: header comment, `import { … } from "<runtime>"` (only helpers
   actually used), imports of child views, then `meta`, `render`, `diff`,
   `export { render, diff, meta }` and a default export. Deliberately **no source
@@ -271,22 +274,32 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   const ulChildren = [];
   // line 2: for user
   ulChildren.push({ t: "marker", id: "1s" + idSuffix });
-  const userList = (state.users) || [];
+  const userList = state.users || [];
   for (let userIndex = 0; userIndex < userList.length; userIndex++) {
     const user = userList[userIndex];
-    const userKey = String((user)?.id);
+    const userKey = String(user?.id);
     const userSuffix = idSuffix + "#" + userKey;
     ulChildren.push({ t: "marker", id: "1[" + userSuffix });
     // line 3: <li.item>
     const liChildren = [];
-    liChildren.push({ t: "text", id: "3" + userSuffix, text: "" + toText((user)?.name) });
+    liChildren.push({
+      t: "text",
+      id: "3" + userSuffix,
+      text: "" + toText(user?.name),
+    });
     const liAttrs = {};
-    setAttr(liAttrs, "class", joinClasses(["item", ((user)?.on ? "on" : "")]));
+    setAttr(liAttrs, "class", joinClasses(["item", user?.on ? "on" : ""]));
     const liEvents = {
-      "click": { id: messagePrefix + "pick", payload: (user)?.id },
+      click: { id: messagePrefix + "pick", payload: user?.id },
     };
-    ulChildren.push({ t: "el", id: "2" + userSuffix, tag: "li",
-      attrs: liAttrs, events: liEvents, children: liChildren });
+    ulChildren.push({
+      t: "el",
+      id: "2" + userSuffix,
+      tag: "li",
+      attrs: liAttrs,
+      events: liEvents,
+      children: liChildren,
+    });
     ulChildren.push({ t: "marker", id: "1]" + userSuffix });
   }
   ulChildren.push({ t: "marker", id: "1e" + idSuffix });
@@ -300,24 +313,36 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
   // line 1: <ul.list> (reads: users)
   if (prev.users !== next.users) {
     // line 2: for user
-    const prevUserList = (prev.users) || [];
-    const nextUserList = (next.users) || [];
-    const prevUserKeys = prevUserList.map((user, userIndex) => String((user)?.id));
-    const nextUserKeys = nextUserList.map((user, userIndex) => String((user)?.id));
+    const prevUserList = prev.users || [];
+    const nextUserList = next.users || [];
+    const prevUserKeys = prevUserList.map((user, userIndex) =>
+      String(user?.id),
+    );
+    const nextUserKeys = nextUserList.map((user, userIndex) =>
+      String(user?.id),
+    );
     const userStartId = (key) => "1[" + idSuffix + "#" + key;
     const userEndId = (key) => "1]" + idSuffix + "#" + key;
     diffKeyedList(prevUserKeys, nextUserKeys, userStartId, "1e" + idSuffix, {
-      remove(key) { /* patch: remove the item's range */ },
-      insert(index, beforeId) { /* render the new item from `next`, patch: insert */ },
-      move(key, beforeId) { /* patch: move the item's range */ },
+      remove(key) {
+        /* patch: remove the item's range */
+      },
+      insert(index, beforeId) {
+        /* render the new item from `next`, patch: insert */
+      },
+      move(key, beforeId) {
+        /* patch: move the item's range */
+      },
       common(prevIndex, nextIndex) {
         const prevUser = prevUserList[prevIndex];
         const nextUser = nextUserList[nextIndex];
         // line 3: <li.item> (reads: user)
         if (prevUser !== nextUser) {
-          const prevClass = joinClasses(["item", ((prevUser)?.on ? "on" : "")]);
-          const nextClass = joinClasses(["item", ((nextUser)?.on ? "on" : "")]);
-          if (prevClass !== nextClass) { /* patch: attr class (or rmAttr) */ }
+          const prevClass = joinClasses(["item", prevUser?.on ? "on" : ""]);
+          const nextClass = joinClasses(["item", nextUser?.on ? "on" : ""]);
+          if (prevClass !== nextClass) {
+            /* patch: attr class (or rmAttr) */
+          }
           // payload `user.id`: patch "handler" only if it changed
           // text `user.name`:  patch "text" only if it changed
         }
@@ -339,7 +364,7 @@ What `diff` gets away with:
   inside.
 - **Embeds and outlets:** the child view is replaced (never cross-diffed) when the
   view or component itself changes; otherwise `childView.diff(propsPrev,
-  propsNext, …)`.
+propsNext, …)`.
 - **Handlers are data**, so `diff` compares payloads by value and re-binds
   listeners only when they changed.
 
@@ -351,35 +376,38 @@ What `diff` gets away with:
 - `build(vnode)` creates nodes and registers ids; `apply(patches)` interprets the
   eight patch ops (`text`, `attr`, `rmAttr`, `handler`, `insert`, `clear`,
   `remove`, `move`): the only imperative DOM code in the framework.
-- **Listeners:** per element and event *type* one stable listener reads the
-  *latest* `EventMsg` from a map, applies `.prevent`/`.stop`, snapshots
+- **Listeners:** per element and event _type_ one stable listener reads the
+  _latest_ `EventMsg` from a map, applies `.prevent`/`.stop`, snapshots
   `{ type, value?, checked?, key? }` and dispatches the message. Listeners are
   detached recursively when nodes are disposed.
 - Form controls: `value`/`checked`/`selected` are mirrored to properties, not just
   attributes (the attribute only seeds a field).
-- `onState` diffs every instance whose stored state identity differs, then patches.
+- `onState` diffs only the mounts created with `followState` (their stored state
+  identity must also differ), then patches. Other mounts repaint via `dom.update`.
 
 ## 7. The store plugin (`src/plugins/store/mod.ts`)
 
 - Effects: `set`, `merge`, `remove`, `undo`, `restoreTo`, all addressed by a
-  `Path` (`"user.email"` or `["users", 3, "name"]`).
+  `Path` (`"user.email"` or `["users", 3, "name"]`). The writes (`set`, `merge`,
+  `remove`) carry an optional `onSuccess` message id — answered with a dispatch
+  only when the change actually landed (a no-op never replies).
 - Updates are pure functions (`setAt`, `removeAt`, `applyChange`) with structural
   sharing: untouched branches keep their object identity, which is exactly what
   `diff`'s `===` checks need. No-op writes return the same state and are not
   recorded.
-- Every recorded change stores the *inverse* effect (`restoreFor`): undo and
+- Every recorded change stores the _inverse_ effect (`restoreFor`): undo and
   time travel (`restoreTo`) need no snapshots. Adding or removing an array element
   restores the whole array (indices shift).
 
 ## 8. The other plugins
 
-| Plugin | File | State | Notes |
-|---|---|---|---|
-| `http` | `plugins/http/mod.ts` | `Map<id, AbortController>` | A new request with a running id aborts the old one; a cancelled request never dispatches. |
-| `ws` | `plugins/ws/mod.ts` | `Map<id, SocketLike>` | `SocketLike` makes sockets fakeable in tests. String frames are `JSON.parse`d when possible. |
-| `time` | `plugins/time/mod.ts` | `Map<id, cancelFn>` | The same id restarts a timer; `cancelAll` for teardown. The clock is injectable. |
-| `logger` | `plugins/logger/mod.ts` | none | Writes to an injectable console-like sink. |
-| `router` | `plugins/router/mod.ts` | one `stop()` closure | History API; `navigate` dispatches a synthetic `popstate` (pushState fires no event). |
+| Plugin   | File                    | State                      | Notes                                                                                        |
+| -------- | ----------------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
+| `http`   | `plugins/http/mod.ts`   | `Map<id, AbortController>` | A new request with a running id aborts the old one; a cancelled request never dispatches.    |
+| `ws`     | `plugins/ws/mod.ts`     | `Map<id, SocketLike>`      | `SocketLike` makes sockets fakeable in tests. String frames are `JSON.parse`d when possible. |
+| `time`   | `plugins/time/mod.ts`   | `Map<id, cancelFn>`        | The same id restarts a timer; `cancelAll` for teardown. The clock is injectable.             |
+| `logger` | `plugins/logger/mod.ts` | none                       | Writes to an injectable console-like sink.                                                   |
+| `router` | `plugins/router/mod.ts` | one `stop()` closure       | History API; `navigate` dispatches a synthetic `popstate` (pushState fires no event).        |
 
 ## 9. Invariants to preserve
 
@@ -389,7 +417,7 @@ What `diff` gets away with:
    only interpreters.
 3. **`diff` trusts `===`.** Store updates must keep structural sharing.
 4. **Generated code stays readable**: named variables, `// line N:` comments, one
-   statement per line, no minified helper names. It is a *tested feature*
+   statement per line, no minified helper names. It is a _tested feature_
    (`compiler/output.test.ts` and the goldens).
 5. **`erasableSyntaxOnly`**: no enums, namespaces or constructor parameter
    properties. Classes are fine; parameter properties are not. (This is what lets
@@ -404,23 +432,23 @@ What `diff` gets away with:
 
 ## Glossary
 
-| Term | Meaning | Defined in |
-|---|---|---|
-| **Message** | Input of the app: `{ id, payload?, event? }`. Plain data. | `core/types.ts` |
-| **Effect** | Output of the app: `{ plugin, type, ... }`. A request for a plugin to do something. | `core/types.ts` |
-| **Effector** | A plugin's typed builder of effects (`store.set(...)`, `http.request(...)`). | `plugins/*/helpers.ts` |
-| **Plugin** | Owns side effects and its own mutable state; turns the outside world into messages. | `core/types.ts` |
-| **Component** | A function, or an instance of a class extending `Component`, that maps `(message, state)` to effects; may have a `view`, `children`, `routing`. | `component/mod.ts` |
-| **Handler** | A component method named after the message id it handles. | `component/mod.ts` |
-| **Child / instance name** | A component under a parent; one name is its message prefix, state key and embed name. | `component/mod.ts` |
-| **`namespace`** | Mounts a child under a prefix: routes messages in, re-roots reply ids and store paths out. | `component/mod.ts` |
-| **View** | A compiled template: `{ render, diff, meta }`. | `runtime/vnode.ts` |
-| **VNode** | What `render` returns: `el`, `text` or `marker` nodes, with ids where patched. | `runtime/vnode.ts` |
-| **Patch** | What `diff` returns: one of eight DOM operations as data. | `runtime/vnode.ts` |
-| **Marker** | An empty comment node delimiting an `if`, `for` or embed block. | generated code |
-| **`idSuffix` / `messagePrefix`** | Passed to a child view so its node ids stay unique and its events carry the instance prefix. | generated code |
-| **Embed** | `+Child#name(props)` (static) or `+{expr}#name(props)` (dynamic): a child view inside a template. | `template/parser.ts` |
-| **Outlet** | `+outlet`: the routed child the component's `routing` selects for `state.route`. | `routing/mod.ts` |
-| **`env`** | The component that owns a template, passed through `render`/`diff` so `+outlet` can read its `routing`. | `routing/mod.ts` |
-| **Route** | `{ path, base, params, search, hash }`: where a routed child is, relative to its base. | `routing/mod.ts` |
-| **`enter` / `leave`** | Messages sent to routed children when they become (in)active. | `component/mod.ts` |
+| Term                             | Meaning                                                                                                                                         | Defined in             |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| **Message**                      | Input of the app: `{ id, payload?, event? }`. Plain data.                                                                                       | `core/types.ts`        |
+| **Effect**                       | Output of the app: `{ plugin, type, ... }`. A request for a plugin to do something.                                                             | `core/types.ts`        |
+| **Effector**                     | A plugin's typed builder of effects (`store.set(...)`, `http.request(...)`).                                                                    | `plugins/*/helpers.ts` |
+| **Plugin**                       | Owns side effects and its own mutable state; turns the outside world into messages.                                                             | `core/types.ts`        |
+| **Component**                    | A function, or an instance of a class extending `Component`, that maps `(message, state)` to effects; may have a `view`, `children`, `routing`. | `component/mod.ts`     |
+| **Handler**                      | A component method named after the message id it handles.                                                                                       | `component/mod.ts`     |
+| **Child / instance name**        | A component under a parent; one name is its message prefix, state key and embed name.                                                           | `component/mod.ts`     |
+| **`namespace`**                  | Mounts a child under a prefix: routes messages in, re-roots reply ids and store paths out.                                                      | `component/mod.ts`     |
+| **View**                         | A compiled template: `{ render, diff, meta }`.                                                                                                  | `runtime/vnode.ts`     |
+| **VNode**                        | What `render` returns: `el`, `text` or `marker` nodes, with ids where patched.                                                                  | `runtime/vnode.ts`     |
+| **Patch**                        | What `diff` returns: one of eight DOM operations as data.                                                                                       | `runtime/vnode.ts`     |
+| **Marker**                       | An empty comment node delimiting an `if`, `for` or embed block.                                                                                 | generated code         |
+| **`idSuffix` / `messagePrefix`** | Passed to a child view so its node ids stay unique and its events carry the instance prefix.                                                    | generated code         |
+| **Embed**                        | `+Child#name(props)` (static) or `+{expr}#name(props)` (dynamic): a child view inside a template.                                               | `template/parser.ts`   |
+| **Outlet**                       | `+outlet`: the routed child the component's `routing` selects for `state.route`.                                                                | `routing/mod.ts`       |
+| **`env`**                        | The component that owns a template, passed through `render`/`diff` so `+outlet` can read its `routing`.                                         | `routing/mod.ts`       |
+| **Route**                        | `{ path, base, params, search, hash }`: where a routed child is, relative to its base.                                                          | `routing/mod.ts`       |
+| **`enter` / `leave`**            | Messages sent to routed children when they become (in)active.                                                                                   | `component/mod.ts`     |

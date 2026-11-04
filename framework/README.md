@@ -39,18 +39,18 @@ main
     | Nothing here
 ```
 
-| Feature | Syntax |
-|---|---|
-| Element | `tag.class#id(attr=expr attr2="text {expr}" flag)`; tag defaults to `div` |
-| Text | inline after the element, `\| text` lines, `{expr}` interpolation (`\{` escapes). Consecutive text lines are joined with a newline (a space in HTML) |
+| Feature         | Syntax                                                                                                                                                |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Element         | `tag.class#id(attr=expr attr2="text {expr}" flag)`; tag defaults to `div`                                                                             |
+| Text            | inline after the element, `\| text` lines, `{expr}` interpolation (`\{` escapes). Consecutive text lines are joined with a newline (a space in HTML)  |
 | Attribute value | `name=expr` (no spaces; use `{a + b}` or parens for complex ones), `name="str {expr}"`; `false`/`null` removes the attribute, `true` renders it empty |
-| Class toggle | `class:active=cond` |
-| Event | `@click=msg`, `@click=msg(arg)`, `@submit.prevent=save`, `.stop` modifier; dotted ids like `users.remove` |
-| Condition | `if expr` / `else if expr` / `else` |
-| Loop | `for item in list [key expr]`, `for item, index in list` |
-| Child view | `import Row from "./row.pavlus"` at the top, then `+Row#row(id=item.id ...list)` (static); `+{expr}#name(props)` when the view is a value (dynamic) |
-| Routed child | `+outlet`: renders the child the component's `routing` table selects for `state.route` ([docs/routing.md](./docs/routing.md)) |
-| Comment | `// to end of line` (only after whitespace, so `http://` is safe) |
+| Class toggle    | `class:active=cond`                                                                                                                                   |
+| Event           | `@click=msg`, `@click=msg(arg)`, `@submit.prevent=save`, `.stop` modifier; dotted ids like `users.remove`                                             |
+| Condition       | `if expr` / `else if expr` / `else`                                                                                                                   |
+| Loop            | `for item in list [key expr]`, `for item, index in list`                                                                                              |
+| Child view      | `import Row from "./row.pavlus"` at the top, then `+Row#row(id=item.id ...list)` (static); `+{expr}#name(props)` when the view is a value (dynamic)   |
+| Routed child    | `+outlet`: renders the child the component's `routing` table selects for `state.route` ([docs/routing.md](./docs/routing.md))                         |
+| Comment         | `// to end of line` (only after whitespace, so `http://` is safe)                                                                                     |
 
 Expressions are a small pure subset of JS: paths (null safe), literals,
 `! - + * / % == != === !== < > <= >= && \|\| ??`, `a ? b : c`, calls, arrays.
@@ -112,30 +112,32 @@ class Dashboard extends Component {
 
 createApp({
   app: new Dashboard(),
-  plugins: [createStorePlugin({ /* initial state */ }), createDomPlugin()],
+  plugins: [createStorePlugin({/* initial state */}), createDomPlugin()],
   mount: "#app", // renders the view here; `mounted` is the first message
 });
 ```
 
-A complete application is in [`../admin-app`](../admin-app): three routed pages
-behind one top menu (router plugin), a dashboard with a users child whose view
-is swapped at runtime, an admin page with roles, and a plain-node backend on
-Postgres behind it.
+A complete application is in [`../admin-app`](../admin-app), arranged the way
+the framework intends: `app/` holds the pure isomorphic code (state,
+component, template), a thin `frontend/` mounts it into the DOM, and a plain
+`backend/` serves the API from Postgres and server-renders the same `app/`
+for hydration. Every repaint is explicit: a handler pairs its store writes
+with a `dom.update()` effect — a state change alone paints nothing.
 
 ## Plugins
 
 Plugins do everything with side effects; the application only returns effects.
 Each plugin has a doc in [`docs/plugins`](./docs/plugins/main.md):
 
-| Plugin | Effects | Doc |
-|---|---|---|
-| `plugins/dom` | `mount`, `unmount`, `focus`, `blur`. Re-renders mounted views when the state changes; owns all listeners; hydrates a server render ([docs/ssr.md](./docs/ssr.md)) | [dom](./docs/plugins/dom.md) |
-| `plugins/store` | `set`, `merge`, `remove`, `undo`, `restoreTo`. Every change is recorded with a `restoreEffect` | [store](./docs/plugins/store.md) |
-| `plugins/http` | `request` (required `id`; same id cancels the previous), `cancel`; `settled()` for server rendering | [http](./docs/plugins/http.md) |
-| `plugins/ws` | `connect`, `send`, `close` (by connection id) | [ws](./docs/plugins/ws.md) |
-| `plugins/time` | `now`, `setTimeout`, `setInterval`, `cancel`, `cancelAll` (by timer id) | [time](./docs/plugins/time.md) |
-| `plugins/logger` | `log` | [logger](./docs/plugins/logger.md) |
-| `plugins/router` | `listen`, `navigate`, `back`, `forward` | [router](./docs/plugins/router.md) |
+| Plugin           | Effects                                                                                                                                                                                                             | Doc                                |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `plugins/dom`    | `mount`, `unmount`, `update`, `focus`, `blur`. A mount re-renders on state change only with `followState`; `update` repaints on demand. Owns all listeners; hydrates a server render ([docs/ssr.md](./docs/ssr.md)) | [dom](./docs/plugins/dom.md)       |
+| `plugins/store`  | `set`, `merge`, `remove` (each answers `onSuccess` with a message when the change landed), `undo`, `restoreTo`. Every change is recorded with a `restoreEffect`                                                     | [store](./docs/plugins/store.md)   |
+| `plugins/http`   | `request` (required `id`; same id cancels the previous), `cancel`; `settled()` for server rendering                                                                                                                 | [http](./docs/plugins/http.md)     |
+| `plugins/ws`     | `connect`, `send`, `close` (by connection id)                                                                                                                                                                       | [ws](./docs/plugins/ws.md)         |
+| `plugins/time`   | `now`, `setTimeout`, `setInterval`, `cancel`, `cancelAll` (by timer id)                                                                                                                                             | [time](./docs/plugins/time.md)     |
+| `plugins/logger` | `log`                                                                                                                                                                                                               | [logger](./docs/plugins/logger.md) |
+| `plugins/router` | `listen`, `navigate`, `back`, `forward`                                                                                                                                                                             | [router](./docs/plugins/router.md) |
 
 Build effects with each plugin's **effector** instead of writing the objects by
 hand:
@@ -149,7 +151,12 @@ class Users extends Component {
   load() {
     return [
       store.set("status", "loading"),
-      http.request({ id: "users", url: "/api/users", onSuccess: "loaded", onError: "failed" }),
+      http.request({
+        id: "users",
+        url: "/api/users",
+        onSuccess: "loaded",
+        onError: "failed",
+      }),
       log.info("loading users"),
     ];
   }
@@ -172,13 +179,24 @@ name, so there is no `switch`:
 import { Component, type Message } from "@service-laboratory/pavlus";
 
 class UsersList extends Component<UsersState> {
-  view = view;                             // import view from "./users-list.pavlus"
-  load() { return [store.set("status", "loading"), request()]; }
-  loaded(msg: Message) { return [store.set("items", msg.payload.data)]; }
-  remove(msg: Message, state: UsersState) {
-    return [store.set("items", state.items.filter((u) => u.id !== msg.payload))];
+  view = view; // import view from "./users-list.pavlus"
+  load() {
+    return [store.set("status", "loading"), request()];
   }
-  _helper() { /* `_name` and `#name` are never messages */ }
+  loaded(msg: Message) {
+    return [store.set("items", msg.payload.data)];
+  }
+  remove(msg: Message, state: UsersState) {
+    return [
+      store.set(
+        "items",
+        state.items.filter((u) => u.id !== msg.payload),
+      ),
+    ];
+  }
+  _helper() {
+    /* `_name` and `#name` are never messages */
+  }
 }
 export const usersList = new UsersList();
 ```
@@ -220,17 +238,20 @@ and `state.users`.
 ```ts
 class Dashboard extends Component<DashboardState> {
   view = view;
-  children: Children<DashboardState> = {   // the annotation types the arrows below
+  children: Children<DashboardState> = {
+    // the annotation types the arrows below
     users: {
-      component: usersList,                 // or select: (s) => s.usersComponent
-      key: "users",                         // the child sees state.users
+      component: usersList, // or select: (s) => s.usersComponent
+      key: "users", // the child sees state.users
       props: (s) => ({ filter: s.filter }), // plus read-only inputs from the parent
     },
   };
   mounted(_msg: Message, _s: DashboardState, { send }: ComponentCtx) {
-    return send("users", "load");           // the parent starts the child
+    return send("users", "load"); // the parent starts the child
   }
-  "users.remove"(msg: Message) { return [/* the parent may observe its children */]; }
+  "users.remove"(msg: Message) {
+    return [/* the parent may observe its children */];
+  }
 }
 export const dashboard = new Dashboard();
 ```

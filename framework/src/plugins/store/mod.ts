@@ -1,17 +1,30 @@
-import type { Effect, StatefulPlugin } from "../../core/types.ts";
+import type { PluginContext, StatefulPlugin } from "../../core/types.ts";
 
 /** `"user.email"` or `["user", "email"]`. Numeric segments index arrays. */
 export type Path = string | readonly (string | number)[];
 
+/**
+ * `onSuccess` is the message dispatched once the change landed — `payload`
+ * is the effect without `plugin` — and only when it changed anything (a
+ * no-op never answers). How the application learns about its own writes:
+ * set, then load or repaint in the next message.
+ */
 export type StoreEffect =
-  | { plugin: "store"; type: "set"; path: Path; value: unknown }
+  | {
+      plugin: "store";
+      type: "set";
+      path: Path;
+      value: unknown;
+      onSuccess?: string;
+    }
   | {
       plugin: "store";
       type: "merge";
       path: Path;
       value: Record<string, unknown>;
+      onSuccess?: string;
     }
-  | { plugin: "store"; type: "remove"; path: Path }
+  | { plugin: "store"; type: "remove"; path: Path; onSuccess?: string }
   /** Revert the last `steps` (default 1) recorded changes. */
   | { plugin: "store"; type: "undo"; steps?: number }
   /** Revert everything recorded after `timestamp`. */
@@ -175,9 +188,9 @@ export function createStorePlugin<S>(
   let state = initial;
   const history: HistoryEntry[] = [];
 
-  const change = (effect: StoreChange, record: boolean): void => {
+  const change = (effect: StoreChange, record: boolean): boolean => {
     const next = applyChange(state, effect) as S;
-    if (next === state) return;
+    if (next === state) return false;
     if (record) {
       history.push({
         timestamp: now(),
@@ -187,6 +200,7 @@ export function createStorePlugin<S>(
       if (history.length > max) history.shift();
     }
     state = next;
+    return true;
   };
 
   const undo = (): boolean => {
@@ -202,12 +216,17 @@ export function createStorePlugin<S>(
       return history;
     },
     getState: () => state,
-    handle(effect: StoreEffect) {
+    handle(effect: StoreEffect, ctx) {
       switch (effect.type) {
         case "set":
         case "merge":
-        case "remove":
-          return change(effect, true);
+        case "remove": {
+          if (change(effect, true) && effect.onSuccess !== undefined) {
+            const { plugin: _plugin, ...payload } = effect;
+            ctx.dispatch({ id: effect.onSuccess, payload });
+          }
+          return;
+        }
         case "undo":
           for (let i = 0; i < (effect.steps ?? 1) && undo(); i++);
           return;

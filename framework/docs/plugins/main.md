@@ -15,15 +15,15 @@ DOM event / HTTP reply / timer tick / WS frame
           and sends the result back as a message
 ```
 
-| Plugin | Does | Doc |
-|---|---|---|
-| `store` | holds the application state and its history | [store.md](./store.md) |
-| `dom` | renders views, patches the DOM, owns every event listener | [dom.md](./dom.md) |
-| `http` | requests, cancellable by id | [http.md](./http.md) |
-| `ws` | WebSocket connections by id | [ws.md](./ws.md) |
-| `time` | clock, timeouts and intervals, cancellable by id | [time.md](./time.md) |
-| `logger` | writes log entries to the console | [logger.md](./logger.md) |
-| `router` | URL and history | [router.md](./router.md) |
+| Plugin   | Does                                                      | Doc                      |
+| -------- | --------------------------------------------------------- | ------------------------ |
+| `store`  | holds the application state and its history               | [store.md](./store.md)   |
+| `dom`    | renders views, patches the DOM, owns every event listener | [dom.md](./dom.md)       |
+| `http`   | requests, cancellable by id                               | [http.md](./http.md)     |
+| `ws`     | WebSocket connections by id                               | [ws.md](./ws.md)         |
+| `time`   | clock, timeouts and intervals, cancellable by id          | [time.md](./time.md)     |
+| `logger` | writes log entries to the console                         | [logger.md](./logger.md) |
+| `router` | URL and history                                           | [router.md](./router.md) |
 
 ## Using plugins
 
@@ -34,14 +34,14 @@ import { createDomPlugin } from "@service-laboratory/pavlus/plugins/dom";
 import { createHttpPlugin } from "@service-laboratory/pavlus/plugins/http";
 
 createApp({
-  app: dashboard,                       // a function, or an instance of a class extending Component
+  app: dashboard, // a function, or an instance of a class extending Component
   plugins: [
-    createStorePlugin(initialState),    // the state lives here
+    createStorePlugin(initialState), // the state lives here
     createDomPlugin(),
     createHttpPlugin(),
   ],
-  mount: "#app",                        // render the app's view here; sends `mounted`
-  init: { id: "init" },                 // the first message, if any
+  mount: "#app", // render the app's view here; sends `mounted`
+  init: { id: "init" }, // the first message, if any
 });
 ```
 
@@ -63,7 +63,7 @@ createApp({
   ```
 
   Importing the barrel runs no code (the package is marked `sideEffects:
-  false`), so a bundler keeps only what you use.
+false`), so a bundler keeps only what you use.
 
 ## Effectors: building effects
 
@@ -86,22 +86,27 @@ class Users extends Component {
   load() {
     return [
       store.set("status", "loading"),
-      http.request({ id: "users", url: "/api/users", onSuccess: "loaded", onError: "failed" }),
+      http.request({
+        id: "users",
+        url: "/api/users",
+        onSuccess: "loaded",
+        onError: "failed",
+      }),
       log.info("loading users"),
     ];
   }
 }
 ```
 
-| Plugin | Effector | Alias used in the docs | Defined in |
-|---|---|---|---|
-| store | `storeEffector` | `store` | `src/plugins/store/helpers.ts` |
-| dom | `domEffector` | `dom` | `src/plugins/dom/helpers.ts` |
-| http | `httpEffector` | `http` | `src/plugins/http/helpers.ts` |
-| ws | `wsEffector` | `ws` | `src/plugins/ws/helpers.ts` |
-| time | `timeEffector` | `time` | `src/plugins/time/helpers.ts` |
-| logger | `loggerEffector` | `log` | `src/plugins/logger/helpers.ts` |
-| router | `routerEffector` | `router` | `src/plugins/router/helpers.ts` |
+| Plugin | Effector         | Alias used in the docs | Defined in                      |
+| ------ | ---------------- | ---------------------- | ------------------------------- |
+| store  | `storeEffector`  | `store`                | `src/plugins/store/helpers.ts`  |
+| dom    | `domEffector`    | `dom`                  | `src/plugins/dom/helpers.ts`    |
+| http   | `httpEffector`   | `http`                 | `src/plugins/http/helpers.ts`   |
+| ws     | `wsEffector`     | `ws`                   | `src/plugins/ws/helpers.ts`     |
+| time   | `timeEffector`   | `time`                 | `src/plugins/time/helpers.ts`   |
+| logger | `loggerEffector` | `log`                  | `src/plugins/logger/helpers.ts` |
+| router | `routerEffector` | `router`               | `src/plugins/router/helpers.ts` |
 
 Import an effector from the plugin's entry point or from the `plugins` barrel
 (both re-export it). An effector does nothing by itself: it builds data, the
@@ -114,7 +119,12 @@ which message id to answer with, and the plugin dispatches
 `{ id, payload }` into the application:
 
 ```ts
-http.request({ id: "users", url: "/api/users", onSuccess: "loaded", onError: "failed" })
+http.request({
+  id: "users",
+  url: "/api/users",
+  onSuccess: "loaded",
+  onError: "failed",
+});
 // ... later the application receives:
 //   { id: "loaded", payload: { status: 200, data: [...] } }
 ```
@@ -130,7 +140,8 @@ free.
 
 - The **store** plugin owns the application state. After every message, if
   the state changed, the core calls `onState(state)` on every plugin that
-  defines it. The DOM plugin uses this to re-render.
+  defines it. A DOM mount re-renders on this only when it was created with
+  `followState`; otherwise views repaint on demand via `dom.update`.
 - Every plugin owns its **private mutable state**: the DOM plugin its
   listeners, http its running requests, time its timers, ws its sockets.
   Application code never sees it and never needs to clean it up.
@@ -155,15 +166,15 @@ free.
 Every plugin takes its outside world as an option, so tests need no mocking
 library and no real network, clock or browser:
 
-| Plugin | Option | What to pass |
-|---|---|---|
-| http | `fetch` | a fake `fetch` |
-| time | `now`, `setTimeout`, `clearTimeout`, `setInterval`, `clearInterval` | a fake clock, or `vi.useFakeTimers()` |
-| ws | `create` | a function returning a fake socket |
-| logger | `sink` | an object whose methods collect calls |
-| router | `window` | a jsdom window |
-| dom | `document` | a jsdom document |
-| store | `now`, `maxHistory` | a counter for timestamps |
+| Plugin | Option                                                              | What to pass                          |
+| ------ | ------------------------------------------------------------------- | ------------------------------------- |
+| http   | `fetch`                                                             | a fake `fetch`                        |
+| time   | `now`, `setTimeout`, `clearTimeout`, `setInterval`, `clearInterval` | a fake clock, or `vi.useFakeTimers()` |
+| ws     | `create`                                                            | a function returning a fake socket    |
+| logger | `sink`                                                              | an object whose methods collect calls |
+| router | `window`                                                            | a jsdom window                        |
+| dom    | `document`                                                          | a jsdom document                      |
+| store  | `now`, `maxHistory`                                                 | a counter for timestamps              |
 
 Application code is pure, so most tests do not need plugins at all: call the
 component with a message and a state and compare the returned effects (with
@@ -174,7 +185,12 @@ import { toHandler } from "@service-laboratory/pavlus";
 
 expect(toHandler(dashboard)({ id: "reload" }, state)).toEqual([
   store.set("users.status", "loading"),
-  http.request({ id: "users", url: "/api/users", onSuccess: "users.loaded", onError: "users.failed" }),
+  http.request({
+    id: "users",
+    url: "/api/users",
+    onSuccess: "users.loaded",
+    onError: "users.failed",
+  }),
 ]);
 ```
 
@@ -187,15 +203,22 @@ effector so using it feels like the built-in ones.
 // clipboard/mod.ts
 import type { Plugin } from "@service-laboratory/pavlus";
 
-export type ClipboardEffect =
-  | { plugin: "clipboard"; type: "write"; text: string; onDone: string; onError: string };
+export type ClipboardEffect = {
+  plugin: "clipboard";
+  type: "write";
+  text: string;
+  onDone: string;
+  onError: string;
+};
 
 export interface ClipboardOptions {
   /** Defaults to `navigator.clipboard`; replace it in tests. */
   clipboard?: Pick<Clipboard, "writeText">;
 }
 
-export function createClipboardPlugin(opts: ClipboardOptions = {}): Plugin<ClipboardEffect> {
+export function createClipboardPlugin(
+  opts: ClipboardOptions = {},
+): Plugin<ClipboardEffect> {
   return {
     name: "clipboard",
     handle(effect, ctx) {
@@ -215,11 +238,19 @@ import type { ClipboardEffect } from "./mod.ts";
 
 export interface ClipboardEffector {
   /** Copies `text`; replies `onDone`, or `onError` with the reason. */
-  write(text: string, replies: { onDone: string; onError: string }): ClipboardEffect;
+  write(
+    text: string,
+    replies: { onDone: string; onError: string },
+  ): ClipboardEffect;
 }
 
 export const clipboardEffector: ClipboardEffector = {
-  write: (text, replies) => ({ plugin: "clipboard", type: "write", text, ...replies }),
+  write: (text, replies) => ({
+    plugin: "clipboard",
+    type: "write",
+    text,
+    ...replies,
+  }),
 };
 ```
 
@@ -253,7 +284,7 @@ interface Plugin<E extends { plugin: string; type: string }, S = unknown> {
   dispose?(): void;
 }
 interface PluginContext<S> {
-  dispatch(message: Message): void;   // feed a message into the application
-  getState(): S;                      // current application state
+  dispatch(message: Message): void; // feed a message into the application
+  getState(): S; // current application state
 }
 ```

@@ -2,6 +2,8 @@
 import { describe, expect, test } from "vitest";
 import { compileToView } from "../../compiler/mod.ts";
 import { mountView } from "../../testing/mod.ts";
+import type { PluginContext } from "../../core/types.ts";
+import { createDomPlugin } from "./mod.ts";
 
 const DASHBOARD = `
 div.dashboard
@@ -248,5 +250,79 @@ describe("form state", () => {
     h.set({ q: "from state", on: true });
     expect(q.value).toBe("from state");
     expect(c.checked).toBe(true);
+  });
+});
+
+describe("the state does not paint (a mount follows only when told)", () => {
+  const view = compileToView<{ count: number }>(`p {count}`);
+
+  /** A dom plugin wired to a mutable `current`, without the full core. */
+  function plugin(state: { count: number }) {
+    let current = state;
+    const dom = createDomPlugin();
+    const ctx: PluginContext<{ count: number }> = {
+      dispatch() {},
+      getState: () => current,
+      dispatchEffect() {},
+    };
+    dom.init!(ctx);
+    return {
+      dom,
+      ctx,
+      root: () => document.createElement("div"),
+      set(next: { count: number }) {
+        current = next;
+      },
+    };
+  }
+
+  test("a bare mount ignores onState; the application repaints with update", () => {
+    const h = plugin({ count: 1 });
+    const root = h.root();
+    document.body.appendChild(root);
+    h.dom.handle({ plugin: "dom", type: "mount", target: root, view }, h.ctx);
+    expect(root.textContent).toBe("1");
+    h.set({ count: 2 });
+    h.dom.onState!({ count: 2 }, h.ctx);
+    expect(root.textContent).toBe("1");
+    h.dom.handle({ plugin: "dom", type: "update" }, h.ctx);
+    expect(root.textContent).toBe("2");
+    h.dom.handle({ plugin: "dom", type: "unmount", target: root }, h.ctx);
+  });
+
+  test("followState repaints on every state change", () => {
+    const h = plugin({ count: 1 });
+    const root = h.root();
+    document.body.appendChild(root);
+    h.dom.handle(
+      { plugin: "dom", type: "mount", target: root, view, followState: true },
+      h.ctx,
+    );
+    h.set({ count: 3 });
+    h.dom.onState!({ count: 3 }, h.ctx);
+    expect(root.textContent).toBe("3");
+    h.dom.handle({ plugin: "dom", type: "unmount", target: root }, h.ctx);
+  });
+
+  test("update with a target repaints only that mount", () => {
+    const h = plugin({ count: 1 });
+    const a = h.root();
+    const b = h.root();
+    document.body.append(a, b);
+    h.dom.handle({ plugin: "dom", type: "mount", target: a, view }, h.ctx);
+    h.dom.handle({ plugin: "dom", type: "mount", target: b, view }, h.ctx);
+    h.set({ count: 2 });
+    h.dom.handle({ plugin: "dom", type: "update", target: a }, h.ctx);
+    expect(a.textContent).toBe("2");
+    expect(b.textContent).toBe("1");
+    h.dom.handle({ plugin: "dom", type: "update" }, h.ctx);
+    expect(b.textContent).toBe("2");
+  });
+
+  test("update throws when nothing is mounted at the target", () => {
+    const h = plugin({ count: 1 });
+    expect(() =>
+      h.dom.handle({ plugin: "dom", type: "update", target: "#ghost" }, h.ctx),
+    ).toThrow(/nothing mounted/);
   });
 });

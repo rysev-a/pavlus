@@ -23,8 +23,24 @@ export type DomEffect =
       view: View;
       /** Message id dispatched once the view is in the DOM. */
       onMounted?: string;
+      /**
+       * Keep it in sync with the application state: every state change is
+       * re-diffed and patched. Off by default — the application repaints the
+       * mount with `update` when it decides to (the root of an app sets this
+       * through the component's `updateDomOnStateChange`).
+       */
+      followState?: boolean;
     }
   | { plugin: "dom"; type: "unmount"; target: string | Element }
+  | {
+      plugin: "dom";
+      type: "update";
+      /**
+       * Repaint one mount: the view is re-diffed against the current state.
+       * Without `target`, every mount is repainted.
+       */
+      target?: string | Element;
+    }
   | { plugin: "dom"; type: "focus"; selector: string }
   | { plugin: "dom"; type: "blur"; selector: string };
 
@@ -57,12 +73,18 @@ interface Instance {
   end: Comment;
   view: View;
   state: unknown;
+  /** Re-diffed on `onState` (mounted with `followState`). */
+  follow: boolean;
   nodes: Map<string, Node>;
 }
 
 /**
  * The only code that touches the DOM. Mounts compiled views, applies the
- * patches `view.diff` produces, and owns every event listener it adds.
+ * patches `view.diff` produces, and owns every event listener it adds. A
+ * mount follows the application state only when mounted with `followState`
+ * (the root of an app whose component sets `updateDomOnStateChange`); every
+ * other mount is repainted when the application sends it `update` — a state
+ * change alone never touches the DOM.
  */
 export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin {
   const doc = opts.document ?? globalThis.document;
@@ -241,6 +263,22 @@ export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin {
     return n;
   }
 
+  /** Re-diffs a mount against `state` and patches the DOM (no-op if equal). */
+  function repaint(inst: Instance, state: unknown): void {
+    if (inst.state === state) return;
+    const patches = inst.view.diff(inst.state, state);
+    inst.state = state;
+    apply(patches, inst);
+  }
+
+  function repaintAt(target: string | Element, state: unknown): void {
+    const el = typeof target === "string" ? doc.querySelector(target) : target;
+    const inst = el ? instances.get(el) : undefined;
+    if (!inst)
+      throw new Error(`pavlus/dom: nothing mounted at "${String(target)}"`);
+    repaint(inst, state);
+  }
+
   function apply(patches: Patch[], inst: Instance): void {
     for (const p of patches) {
       switch (p.op) {
@@ -290,6 +328,7 @@ export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin {
     view: View,
     c: PluginContext<any>,
     onMounted?: string,
+    follow = false,
   ): void {
     const container = resolve(target);
     if (instances.has(container)) unmount(container);
@@ -302,6 +341,7 @@ export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin {
       end: server?.end ?? doc.createComment(RENDER_END),
       view,
       state,
+      follow,
       nodes: new Map(),
     };
     // A server render in the container (`renderToString`) is hydrated: the
@@ -348,9 +388,22 @@ export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin {
     handle(effect: DomEffect, c) {
       switch (effect.type) {
         case "mount":
-          return mount(effect.target, effect.view, c, effect.onMounted);
+          return mount(
+            effect.target,
+            effect.view,
+            c,
+            effect.onMounted,
+            effect.followState === true,
+          );
         case "unmount":
           return unmount(effect.target);
+        case "update":
+          if (effect.target === undefined) {
+            const state = c.getState();
+            for (const inst of instances.values()) repaint(inst, state);
+            return;
+          }
+          return repaintAt(effect.target, c.getState());
         case "focus":
           return (
             doc.querySelector(effect.selector) as HTMLElement | null
@@ -363,10 +416,8 @@ export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin {
     },
     onState(state) {
       for (const inst of instances.values()) {
-        if (inst.state === state) continue;
-        const patches = inst.view.diff(inst.state, state);
-        inst.state = state;
-        apply(patches, inst);
+        if (!inst.follow) continue;
+        repaint(inst, state);
       }
     },
     dispose() {
