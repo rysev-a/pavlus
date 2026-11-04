@@ -37,7 +37,8 @@ export interface Friend {
   since: string;
 }
 
-export type PostKind = "text" | "music" | "photo" | "picture" | "link" | "repost";
+export type PostKind =
+  "text" | "music" | "photo" | "picture" | "link" | "repost";
 
 /**
  * An item of a wall. `wallId` is the user whose wall it is on (the author's own

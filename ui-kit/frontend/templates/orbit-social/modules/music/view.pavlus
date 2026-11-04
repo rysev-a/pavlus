@@ -1,5 +1,297 @@
-// STUB of the "music" view: replace it. State = the props: the module's slice, spread.
-div.ui-card
-  div.ui-card-header
-    h3.ui-card-title {title}
-    p.ui-card-description Coming soon.
+// The music screen: five tabs (Library, Genres, Artists, Albums, Playlists), the
+// pages of an artist / an album / a playlist, the "Add to playlist" menu and the
+// sticky player at the bottom. State = the module's slice, spread (see index.ts).
+import Songs from "../../../../blocks/song-table/view.pavlus"
+import Pager from "../../../../blocks/music-pager/view.pavlus"
+import Confirm from "../../../../blocks/danger-confirm/view.pavlus"
+
+div.orbm
+  div.ui-tabs-list.orbm__tabs(role="tablist" aria-label="Music")
+    for t in tabs key t.id
+      button.ui-tabs-trigger(type="button" role="tab" aria-selected={t.active ? "true" : "false"} @click=setTab(t.id)) {t.label}
+
+  div.orbm__pane
+    if pane === "library"
+      div.orbm__stack
+        div.orbm__toolbar
+          div.ui-data-search.orbm__search
+            span.k-icon.k-icon-search.orbm__searchicon
+            input.ui-input(type="search" placeholder="Search title, artist or album" aria-label="Search songs" autocomplete="off" value={lib.query} @input=setQuery)
+          select.ui-select-control.orbm__select(aria-label="Genre" @change=setGenre)
+            for o in lib.genreOptions key o.value
+              option(value={o.value} selected={o.active}) {o.label}
+          div.orbm__typeahead
+            input.ui-input(type="text" placeholder="Filter by artist (2+ letters)" aria-label="Filter by artist" autocomplete="off" value={lib.artistText} @input=setArtistText)
+            if lib.suggestions.length > 0
+              ul.orbm__suggest
+                for a in lib.suggestions key a.id
+                  li
+                    button.orbm__suggestitem(type="button" @click=pickArtist(a.id))
+                      span {a.name}
+                      small {a.country}
+          select.ui-select-control.orbm__select(aria-label="Sort by" @change=setSort)
+            for o in lib.sortOptions key o.value
+              option(value={o.value} selected={o.active}) Sort: {o.label}
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" aria-label="Sort direction" @click=toggleDir) {lib.dirLabel}
+        div.orbm__chips
+          p.orbm__count {lib.count}
+          if lib.artistChip
+            button.ui-button.ui-button-secondary.ui-button-sm(type="button" aria-label="Remove the artist filter" @click=clearArtist)
+              | Artist: {lib.artistChip}
+              span.k-icon.k-icon-x
+          if lib.albumChip
+            button.ui-button.ui-button-secondary.ui-button-sm(type="button" aria-label="Remove the album filter" @click=clearAlbum)
+              | Album: {lib.albumChip}
+              span.k-icon.k-icon-x
+          if lib.hasFilters
+            button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=clearFilters) Clear all
+        +Songs#songs(...lib.table)
+        +Pager#lpager(...lib.pager)
+
+    else if pane === "genres"
+      div.orbm__stack
+        p.orbm__count Pick a genre to see its songs in the Library.
+        div.orbm__genres
+          for g in genreCards key g.name
+            button.orbm__genre(type="button" style="--hue: {g.hue}" @click=pickGenre(g.name))
+              strong {g.name}
+              span {g.countLabel}
+
+    else if pane === "artists"
+      div.orbm__stack
+        div.orbm__toolbar
+          div.ui-data-search.orbm__search
+            span.k-icon.k-icon-search.orbm__searchicon
+            input.ui-input(type="search" placeholder="Search artists or countries" aria-label="Search artists" autocomplete="off" value={artistList.query} @input=setArtistsQuery)
+          p.orbm__count {artistList.count}
+        div.ui-data-table
+          div.ui-data-scroll
+            table
+              thead
+                tr
+                  th Artist
+                  th.orbm__col Country
+                  th Albums
+                  th Songs
+              tbody
+                if artistList.rows.length === 0
+                  tr
+                    td.ui-resource-empty(colspan="4") No artists match.
+                for a in artistList.rows key a.id
+                  tr
+                    td
+                      button.orbm__link(type="button" @click=openArtist(a.id)) {a.name}
+                    td.orbm__col {a.country}
+                    td {a.albumsLabel}
+                    td {a.songsLabel}
+        +Pager#apager(...artistList.pager)
+
+    else if pane === "artist"
+      div.orbm__stack
+        div.orbm__head
+          button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=closeArtist)
+            span.k-icon.k-icon-chevron-left
+            | Artists
+          div.orbm__titles
+            h2.orbm__h {artistPg.name}
+            p.orbm__count {artistPg.summary}
+        h3.orbm__h3 Albums
+        div.orbm__albums
+          for a in artistPg.albums key a.id
+            button.orbm__album(type="button" aria-label="{a.title}, {a.year}" @click=openAlbum(a.id))
+              div.orbm__cover(style={a.cover.style})
+                span {a.cover.glyph}
+              strong {a.title}
+              small {a.year} · {a.tracksLabel}
+        h3.orbm__h3 Top songs
+        +Songs#songs(...artistPg.table)
+
+    else if pane === "albums"
+      div.orbm__stack
+        div.orbm__toolbar
+          div.ui-data-search.orbm__search
+            span.k-icon.k-icon-search.orbm__searchicon
+            input.ui-input(type="search" placeholder="Search albums or artists" aria-label="Search albums" autocomplete="off" value={albumList.query} @input=setAlbumsQuery)
+          p.orbm__count {albumList.count}
+        div.orbm__albums
+          for a in albumList.cards key a.id
+            button.orbm__album(type="button" aria-label="{a.title} by {a.artist}" @click=openAlbum(a.id))
+              div.orbm__cover(style={a.cover.style})
+                span {a.cover.glyph}
+              strong {a.title}
+              small {a.artist}
+              small {a.year} · {a.tracksLabel}
+        if albumList.cards.length === 0
+          p.orbm__empty No albums match.
+        +Pager#bpager(...albumList.pager)
+
+    else if pane === "album"
+      div.orbm__stack
+        div.orbm__head
+          button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=closeAlbum)
+            span.k-icon.k-icon-chevron-left
+            | Albums
+        div.orbm__albumhead
+          div.orbm__cover.orbm__cover--big(style={albumPg.cover.style})
+            span {albumPg.cover.glyph}
+          div.orbm__titles
+            h2.orbm__h {albumPg.title}
+            button.orbm__link(type="button" @click=openArtist(albumPg.artistId)) {albumPg.artist}
+            p.orbm__count {albumPg.summary}
+            div.orbm__actions
+              button.ui-button.ui-button-default.ui-button-sm(type="button" @click=playAlbum(albumPg.id))
+                span.k-icon.k-mp-i-play
+                | Play album
+              button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=addAlbum(albumPg.id))
+                span.k-icon.k-icon-plus
+                | Add to playlist
+              button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=filterByAlbum(albumPg.id)) Show in Library
+        +Songs#songs(...albumPg.table)
+
+    else if pane === "playlists"
+      div.orbm__stack
+        h3.orbm__h3 My playlists
+        div.orbm__create
+          input.ui-input(type="text" placeholder="New playlist title" aria-label="New playlist title" maxlength="80" value={lists.newTitle} @input=setNewTitle @keydown=newKey)
+          button.ui-button.ui-button-default.ui-button-sm(type="button" @click=createPlaylist)
+            span.k-icon.k-icon-plus
+            | Create
+        div.orbm__lists
+          if lists.mine.length === 0
+            p.orbm__empty You have no playlists yet. Create one above, or use Add to playlist on any song.
+          for pl in lists.mine key pl.id
+            div.orbm__listrow
+              if pl.renaming
+                input.ui-input(type="text" aria-label="Playlist title" maxlength="80" value={draft} @input=setDraft @keydown=draftKey)
+                div.orbm__actions
+                  button.ui-button.ui-button-default.ui-button-sm(type="button" @click=saveRename) Save
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=cancelRename) Cancel
+              else
+                div.orbm__titles
+                  button.orbm__link.orbm__link--strong(type="button" @click=openPlaylist(pl.id)) {pl.title}
+                  small {pl.countLabel} · {pl.duration}
+                div.orbm__actions
+                  button.ui-button.ui-button-default.ui-button-sm(type="button" aria-label="Play {pl.title}" @click=playPlaylist(pl.id))
+                    span.k-icon.k-mp-i-play
+                    | Play
+                  button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=openPlaylist(pl.id)) Open
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-label="Rename {pl.title}" @click=startRename(pl.id)) Rename
+                  button.ui-button.ui-button-ghost.ui-button-sm.orbm__danger(type="button" aria-label="Delete {pl.title}" @click=askDelete(pl.id)) Delete
+        h3.orbm__h3 Playlists of other people
+        div.orbm__toolbar
+          div.ui-data-search.orbm__search
+            span.k-icon.k-icon-search.orbm__searchicon
+            input.ui-input(type="search" placeholder="Search by title or owner" aria-label="Search playlists" autocomplete="off" value={lists.query} @input=setPlQuery)
+          p.orbm__count {lists.othersCount}
+        div.orbm__lists
+          if lists.others.length === 0
+            p.orbm__empty No playlists match.
+          for pl in lists.others key pl.id
+            div.orbm__listrow
+              div.orbm__titles
+                button.orbm__link.orbm__link--strong(type="button" @click=openPlaylist(pl.id)) {pl.title}
+                small by {pl.owner} · {pl.countLabel} · {pl.duration}
+              div.orbm__actions
+                button.ui-button.ui-button-default.ui-button-sm(type="button" aria-label="Play {pl.title}" @click=playPlaylist(pl.id))
+                  span.k-icon.k-mp-i-play
+                  | Play
+                button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=openPlaylist(pl.id)) Open
+        +Pager#ppager(...lists.pager)
+
+    else if pane === "playlist"
+      div.orbm__stack
+        div.orbm__head
+          button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=closePlaylist)
+            span.k-icon.k-icon-chevron-left
+            | Playlists
+        div.orbm__listhead
+          div.orbm__titles
+            if listPg.renaming
+              div.orbm__create
+                input.ui-input(type="text" aria-label="Playlist title" maxlength="80" value={draft} @input=setDraft @keydown=draftKey)
+                button.ui-button.ui-button-default.ui-button-sm(type="button" @click=saveRename) Save
+                button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=cancelRename) Cancel
+            else
+              h2.orbm__h {listPg.title}
+            p.orbm__count by {listPg.owner} · {listPg.summary}
+          div.orbm__actions
+            button.ui-button.ui-button-default.ui-button-sm(type="button" @click=playPlaylist(listPg.id))
+              span.k-icon.k-mp-i-play
+              | Play playlist
+            if listPg.mine
+              button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=startRename(listPg.id)) Rename
+              button.ui-button.ui-button-outline.ui-button-sm.orbm__danger(type="button" @click=askDelete(listPg.id)) Delete
+        +Songs#songs(...listPg.table)
+
+  div.orbm__player(role="region" aria-label="Player")
+    if player.queueOpen
+      div.orbm__queue
+        div.orbm__queuehead
+          strong Queue
+          span {queueLabel} · {player.queueInfo}
+        if player.queueRows.length === 0
+          p.orbm__empty The queue is empty. Press Play on a song.
+        for r in player.queueRows key r.key
+          button.orbm__qrow(type="button" class:is-current={r.current} @click=jump(r.pos))
+            span.orbm__qtitle {r.title}
+            span.orbm__qartist {r.artist}
+            span.orbm__qlen {r.length}
+    div.orbm__bar
+      div.orbm__now
+        div.orbm__cover.orbm__cover--mini(style={player.cover.style})
+          span {player.cover.glyph}
+        div.orbm__meta
+          strong {player.title}
+          span {player.artist}
+          small {player.album}
+      div.orbm__center
+        div.orbm__controls
+          button.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" class:is-on={player.shuffleOn} aria-pressed={player.shuffleOn ? "true" : "false"} aria-label="Shuffle" title="Shuffle" @click=toggleShuffle)
+            span.k-icon.k-mp-i-shuffle
+          button.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" aria-label="Previous song" title="Previous" @click=prev)
+            span.k-icon.k-mp-i-prev
+          button.ui-button.ui-button-default.ui-button-icon-sm.orbm__playbtn(type="button" aria-label={player.playing ? "Pause" : "Play"} @click=toggle)
+            if player.playing
+              span.k-icon.k-mp-i-pause
+            else
+              span.k-icon.k-mp-i-play
+          button.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" aria-label="Next song" title="Next" @click=next)
+            span.k-icon.k-mp-i-next
+          button.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" class:is-on={player.repeatMode !== "off"} aria-label={player.repeatText} title={player.repeatText} @click=cycleRepeat)
+            if player.repeatMode === "one"
+              span.k-icon.k-mp-i-repeat-one
+            else
+              span.k-icon.k-mp-i-repeat
+        div.orbm__seek
+          span.orbm__time {player.elapsedLabel}
+          input.ui-slider-input(type="range" min="0" max={player.duration} step="1" value={player.elapsed} aria-label="Seek" disabled={!player.has} @input=seek)
+          span.orbm__time {player.durationLabel}
+      div.orbm__side
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" aria-expanded={player.queueOpen ? "true" : "false"} @click=toggleQueue) Queue
+        small.orbm__hint Simulated player: no sound
+
+  if addOpen
+    div.k-modal
+      div.k-modal__scrim(@click=closeAdd)
+      div.ui-dialog.orbm__dialog(role="dialog" aria-modal="true" aria-label="Add to playlist")
+        div.ui-dialog-header
+          h2.ui-dialog-title {menu.title}
+        div.orbm__menu
+          if menu.empty
+            p.orbm__empty You have no playlists yet. Make the first one below.
+          for pl in menu.lists key pl.id
+            button.orbm__menuitem(type="button" @click=addPick(pl.id))
+              strong {pl.title}
+              small {pl.countLabel}
+          if addCreating
+            div.orbm__create
+              input.ui-input(type="text" placeholder="Title of the new playlist" aria-label="Title of the new playlist" maxlength="80" value={addTitle} @input=setAddTitle @keydown=addKey)
+              button.ui-button.ui-button-default.ui-button-sm(type="button" @click=addCreate) Create
+          else
+            button.orbm__menuitem.orbm__menuitem--new(type="button" @click=addNewStart)
+              span.k-icon.k-icon-plus
+              | New playlist...
+        div.ui-dialog-footer
+          button.ui-button.ui-button-outline(type="button" @click=closeAdd) Cancel
+
+  +Confirm#confirm(...confirm)

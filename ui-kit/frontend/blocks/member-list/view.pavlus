@@ -1,0 +1,24 @@
+// People with a role and actions, to embed: `+Members#members(...list)`. State = members
+// ({ id, name, avatarStyle, avatarText, role, roleTone, city, canMessage, canPromote, canDemote,
+// canRemove }), empty (the text when there is nobody). Events (with the name of the embed in
+// front): open(id), message(id), promote(id), demote(id), remove(id).
+div.k-cmem
+  if members.length === 0
+    p.k-cmem__empty {empty}
+  ul.k-cmem__list
+    for m in members key m.id
+      li.k-cmem__row
+        button.k-cmem__av(type="button" aria-label="Open the wall of {m.name}" style={m.avatarStyle} @click=open(m.id)) {m.avatarText}
+        div.k-cmem__who
+          button.k-cmem__name(type="button" @click=open(m.id)) {m.name}
+          span.k-cmem__city {m.city}
+        span(class="ui-badge ui-badge-{m.roleTone}") {m.role}
+        div.k-cmem__actions
+          if m.canMessage
+            button.ui-button.ui-button-outline.ui-button-xs(type="button" @click=message(m.id)) Message
+          if m.canPromote
+            button.ui-button.ui-button-outline.ui-button-xs(type="button" @click=promote(m.id)) Make moderator
+          if m.canDemote
+            button.ui-button.ui-button-outline.ui-button-xs(type="button" @click=demote(m.id)) Remove moderator
+          if m.canRemove
+            button.ui-button.ui-button-destructive.ui-button-xs(type="button" @click=remove(m.id)) Remove

@@ -22,7 +22,11 @@
  * is the handler `card.like`.
  */
 import type { Effect, Message } from "@service-laboratory/pavlus";
-import type { NavGroup, ShellAction, ShellUser } from "../../blocks/admin-shell/shell.ts";
+import type {
+  NavGroup,
+  ShellAction,
+  ShellUser,
+} from "../../blocks/admin-shell/shell.ts";
 import type { Db, TableName } from "./schema.ts";
 import type { AdminState } from "./modules/admin/index.ts";
 import type { BlogState } from "./modules/blog/index.ts";
@@ -133,7 +137,10 @@ export interface Module<S> {
    */
   derive: (state: OrbitState) => S;
   /** Called when the screen is opened, with the params of a `go`. */
-  enter?: (params: Record<string, unknown> | undefined, state: OrbitState) => Update | void;
+  enter?: (
+    params: Record<string, unknown> | undefined,
+    state: OrbitState,
+  ) => Update | void;
   /** By event name, without the module's key. */
   handlers: Record<string, Handler>;
 }
@@ -173,7 +180,10 @@ export function upsert<T extends { id: number }>(table: T[], rows: T[]): T[] {
 }
 
 /** Pure: the table without the rows with these ids. */
-export function without<T extends { id: number }>(table: T[], ids: number[]): T[] {
+export function without<T extends { id: number }>(
+  table: T[],
+  ids: number[],
+): T[] {
   if (ids.length === 0) return table;
   const gone = new Set(ids);
   return table.filter((r) => !gone.has(r.id));
@@ -190,15 +200,34 @@ export function tick(now: string): string {
 
 /** `2026-11-04T09:30:00` as `Nov 4, 09:30` (or `09:30` when it is today). */
 export function when(iso: string, now: string): string {
-  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const MONTHS = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   if (iso.slice(0, 10) === now.slice(0, 10)) return iso.slice(11, 16);
   const month = MONTHS[Number(iso.slice(5, 7)) - 1] ?? "";
   const day = Number(iso.slice(8, 10));
-  return iso.slice(0, 4) === now.slice(0, 4) ? `${month} ${day}, ${iso.slice(11, 16)}` : `${month} ${day}, ${iso.slice(0, 4)}`;
+  return iso.slice(0, 4) === now.slice(0, 4)
+    ? `${month} ${day}, ${iso.slice(11, 16)}`
+    : `${month} ${day}, ${iso.slice(0, 4)}`;
 }
 
 /** A page of a list: `items` of the 1-based `page`, and how many pages there are. */
-export function paged<T>(items: T[], page: number, size: number): { items: T[]; page: number; pages: number } {
+export function paged<T>(
+  items: T[],
+  page: number,
+  size: number,
+): { items: T[]; page: number; pages: number } {
   const pages = Math.max(1, Math.ceil(items.length / size));
   const p = Math.min(Math.max(1, page), pages);
   return { items: items.slice((p - 1) * size, p * size), page: p, pages };

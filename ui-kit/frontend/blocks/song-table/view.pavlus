@@ -1,0 +1,83 @@
+// A table of songs, to embed. State = the props: `rows` (each: key, id, pos, n,
+// title, artist, artistId, album, albumId, genre, year, length, current,
+// playing, first, last), `showNumber`, `showAlbum`, `showGenre`, `showYear`,
+// `sortable`, `sortKey`, `sortDir` ("asc" | "desc"), `canEdit` (remove and move
+// buttons), `empty` (the text of an empty table). Events, with the name of the
+// embed in front: `play(pos)`, `add(id)`, `artist(artistId)`, `album(albumId)`,
+// `sort(key)`, `remove(pos)`, `up(pos)`, `down(pos)`.
+div.k-songtbl
+  div.ui-data-table
+    div.ui-data-scroll
+      table
+        thead
+          tr
+            th.k-songtbl__play
+            if showNumber
+              th.k-songtbl__n #
+            th
+              if sortable
+                button.ui-resource-sort(type="button" @click=sort("title")) Title
+                  span.k-icon.k-icon-chevrons-up-down(class:ui-sort-idle={sortKey !== "title"})
+              else
+                | Title
+            if showAlbum
+              th.k-songtbl__album
+                if sortable
+                  button.ui-resource-sort(type="button" @click=sort("album")) Album
+                    span.k-icon.k-icon-chevrons-up-down(class:ui-sort-idle={sortKey !== "album"})
+                else
+                  | Album
+            if showGenre
+              th.k-songtbl__genre Genre
+            if showYear
+              th.k-songtbl__year
+                if sortable
+                  button.ui-resource-sort(type="button" @click=sort("year")) Year
+                    span.k-icon.k-icon-chevrons-up-down(class:ui-sort-idle={sortKey !== "year"})
+                else
+                  | Year
+            th.k-songtbl__len
+              if sortable
+                button.ui-resource-sort(type="button" @click=sort("duration")) Time
+                  span.k-icon.k-icon-chevrons-up-down(class:ui-sort-idle={sortKey !== "duration"})
+              else
+                | Time
+            th.k-songtbl__actionhead
+        tbody
+          if rows.length === 0
+            tr
+              td.ui-resource-empty(colspan="8") {empty}
+          for row in rows key row.key
+            tr(data-current={row.current ? "true" : null})
+              td.k-songtbl__play
+                button.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" aria-label="Play {row.title}" title="Play" @click=play(row.pos))
+                  if row.playing
+                    span.k-icon.k-mp-i-pause
+                  else
+                    span.k-icon.k-mp-i-play
+              if showNumber
+                td.k-songtbl__n {row.n}
+              td
+                div.k-songtbl__strong
+                  strong {row.title}
+                  button.k-songtbl__link(type="button" @click=artist(row.artistId)) {row.artist}
+              if showAlbum
+                td.k-songtbl__album
+                  button.k-songtbl__link(type="button" @click=album(row.albumId)) {row.album}
+              if showGenre
+                td.k-songtbl__genre
+                  span.ui-pill.ui-pill-info {row.genre}
+              if showYear
+                td.k-songtbl__year {row.year}
+              td.k-songtbl__len {row.length}
+              td.k-songtbl__actioncell
+                div.k-songtbl__actions
+                  button.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" aria-label="Add {row.title} to a playlist" title="Add to playlist" @click=add(row.id))
+                    span.k-icon.k-icon-plus
+                  if canEdit
+                    button.ui-button.ui-button-ghost.ui-button-icon-sm.k-songtbl__up(type="button" aria-label="Move up" title="Move up" disabled={row.first} @click=up(row.pos))
+                      span.k-icon.k-icon-chevron-down
+                    button.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" aria-label="Move down" title="Move down" disabled={row.last} @click=down(row.pos))
+                      span.k-icon.k-icon-chevron-down
+                    button.ui-button.ui-button-ghost.ui-button-icon-sm.k-songtbl__danger(type="button" aria-label="Remove from the playlist" title="Remove" @click=remove(row.pos))
+                      span.k-icon.k-icon-x

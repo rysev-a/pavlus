@@ -2,11 +2,26 @@
 // while the page is open, in `state.db`. This is the shell: sign in, the navigation,
 // the database, and the glue that runs the feature modules (see core.ts for the
 // contract). Everything here is a pure function of (message, state).
-import { Component, type Effect, type Message } from "@service-laboratory/pavlus";
+import {
+  Component,
+  type Effect,
+  type Message,
+} from "@service-laboratory/pavlus";
 import { storeEffector as store } from "@service-laboratory/pavlus/plugins";
-import { type NavGroup, notice, type ShellAction, type ShellUser } from "../../blocks/admin-shell/shell.ts";
+import {
+  type NavGroup,
+  notice,
+  type ShellAction,
+  type ShellUser,
+} from "../../blocks/admin-shell/shell.ts";
 import { idbEffector, type Loaded } from "../../idb.ts";
-import { checkRegistration, DEMO_ADMIN, DEMO_PASSWORD, login, newUser } from "./auth.ts";
+import {
+  checkRegistration,
+  DEMO_ADMIN,
+  DEMO_PASSWORD,
+  login,
+  newUser,
+} from "./auth.ts";
 import {
   type AuthState,
   type OrbitState,
@@ -27,7 +42,10 @@ export const DB_NAME = "orbit-social";
 
 // ---- the navigation ----
 
-const NAV: { title: string; items: { id: Screen; label: string; icon: string; admin?: boolean }[] }[] = [
+const NAV: {
+  title: string;
+  items: { id: Screen; label: string; icon: string; admin?: boolean }[];
+}[] = [
   {
     title: "Social",
     items: [
@@ -51,25 +69,51 @@ const NAV: { title: string; items: { id: Screen; label: string; icon: string; ad
       { id: "games", label: "Games", icon: "k-ai-play" },
     ],
   },
-  { title: "System", items: [{ id: "admin", label: "Admin panel", icon: "k-ai-key", admin: true }] },
+  {
+    title: "System",
+    items: [
+      { id: "admin", label: "Admin panel", icon: "k-ai-key", admin: true },
+    ],
+  },
 ];
 
-export const labelOf = (screen: Screen): string => NAV.flatMap((g) => g.items).find((i) => i.id === screen)?.label ?? "";
+export const labelOf = (screen: Screen): string =>
+  NAV.flatMap((g) => g.items).find((i) => i.id === screen)?.label ?? "";
 
-const ACTIONS: ShellAction[] = [{ id: "logout", label: "Sign out", icon: "k-ai-logout", variant: "outline" }];
+const ACTIONS: ShellAction[] = [
+  { id: "logout", label: "Sign out", icon: "k-ai-logout", variant: "outline" },
+];
 
 const NO_USER: ShellUser = { name: "Guest", role: "", initials: "?" };
 
 /** The shell's own derived fields: the navigation, the title and who is signed in. */
-export function deriveShell(s: OrbitState): Pick<OrbitState, "groups" | "user" | "title" | "subtitle" | "actions" | "view"> {
+export function deriveShell(
+  s: OrbitState,
+): Pick<
+  OrbitState,
+  "groups" | "user" | "title" | "subtitle" | "actions" | "view"
+> {
   const me = s.db.users.find((u) => u.id === s.me);
   const groups: NavGroup[] = NAV.map((g) => ({
     title: g.title,
-    items: g.items.filter((i) => !i.admin || me?.role === "admin").map((i) => ({ id: i.id, label: i.label, icon: i.icon })),
+    items: g.items
+      .filter((i) => !i.admin || me?.role === "admin")
+      .map((i) => ({ id: i.id, label: i.label, icon: i.icon })),
   })).filter((g) => g.items.length > 0);
   return {
     groups,
-    user: me ? { name: me.name, role: me.role === "admin" ? "Administrator" : me.role === "moderator" ? "Moderator" : "Member", initials: initialsOf(me.name) } : NO_USER,
+    user: me
+      ? {
+          name: me.name,
+          role:
+            me.role === "admin"
+              ? "Administrator"
+              : me.role === "moderator"
+                ? "Moderator"
+                : "Member",
+          initials: initialsOf(me.name),
+        }
+      : NO_USER,
     title: labelOf(s.screen),
     subtitle: me ? `Signed in as ${me.email}` : "",
     actions: ACTIONS,
@@ -77,7 +121,14 @@ export function deriveShell(s: OrbitState): Pick<OrbitState, "groups" | "user" |
   };
 }
 
-const NO_AUTH: AuthState = { email: "", password: "", name: "", confirm: "", error: "", errors: {} };
+const NO_AUTH: AuthState = {
+  email: "",
+  password: "",
+  name: "",
+  confirm: "",
+  error: "",
+  errors: {},
+};
 
 export function initialState(): OrbitState {
   const s = {
@@ -152,11 +203,23 @@ export function applyUpdate(
   }
   if (u.replaceDb) {
     set({ db: u.replaceDb });
-    effects.push(idbEffector.replaceAll(DB_NAME, u.replaceDb as unknown as Record<string, unknown[]>, "persisted", "dbFailed"));
+    effects.push(
+      idbEffector.replaceAll(
+        DB_NAME,
+        u.replaceDb as unknown as Record<string, unknown[]>,
+        "persisted",
+        "dbFailed",
+      ),
+    );
   }
   if (content) set({ now: tick(s.now) });
   if (u.me !== undefined) {
-    set({ me: u.me, screen: u.me > 0 ? "wall" : s.screen, auth: NO_AUTH, authView: "login" });
+    set({
+      me: u.me,
+      screen: u.me > 0 ? "wall" : s.screen,
+      auth: NO_AUTH,
+      authView: "login",
+    });
     const row = [{ id: 1, userId: u.me }];
     if (u.me > 0) {
       set({ db: { ...s.db, session: row } });
@@ -180,7 +243,8 @@ export function applyUpdate(
   if (depth === 0) {
     const shell = deriveShell(s);
     s = { ...s, ...shell };
-    if (s.view === "app") s = { ...s, [s.screen]: MODULES[s.screen].derive(s) } as OrbitState;
+    if (s.view === "app")
+      s = { ...s, [s.screen]: MODULES[s.screen].derive(s) } as OrbitState;
   }
   return { state: s, effects };
 }
@@ -202,7 +266,10 @@ export class OrbitSocial extends Component<OrbitState> {
     // every handler of every module becomes the message `<key>.<name>`
     for (const mod of Object.values(MODULES)) {
       for (const [name, handler] of Object.entries(mod.handlers)) {
-        (this as unknown as Record<string, unknown>)[`${mod.key}.${name}`] = (msg: Message, state: OrbitState): Effect[] => {
+        (this as unknown as Record<string, unknown>)[`${mod.key}.${name}`] = (
+          msg: Message,
+          state: OrbitState,
+        ): Effect[] => {
           const u = handler(msg.payload, msg.event, state);
           return u ? this._apply(state, mod.key, u) : [];
         };
@@ -216,10 +283,15 @@ export class OrbitSocial extends Component<OrbitState> {
   }
 
   /** A plain change of shell fields (no module involved). */
-  _set(state: OrbitState, patch: Partial<OrbitState>, extra: Effect[] = []): Effect[] {
+  _set(
+    state: OrbitState,
+    patch: Partial<OrbitState>,
+    extra: Effect[] = [],
+  ): Effect[] {
     let s = { ...state, ...patch } as OrbitState;
     s = { ...s, ...deriveShell(s) };
-    if (s.view === "app" && (patch.screen || patch.me !== undefined)) s = { ...s, [s.screen]: MODULES[s.screen].derive(s) } as OrbitState;
+    if (s.view === "app" && (patch.screen || patch.me !== undefined))
+      s = { ...s, [s.screen]: MODULES[s.screen].derive(s) } as OrbitState;
     return [...diffEffects(state, s), ...extra];
   }
 
@@ -227,7 +299,9 @@ export class OrbitSocial extends Component<OrbitState> {
 
   enter(_msg: Message, state: OrbitState): Effect[] {
     if (state.status === "ready") return [];
-    return [idbEffector.load(DB_NAME, TABLES as string[], "loaded", "dbFailed")];
+    return [
+      idbEffector.load(DB_NAME, TABLES as string[], "loaded", "dbFailed"),
+    ];
   }
 
   loaded(msg: Message, state: OrbitState): Effect[] {
@@ -236,12 +310,20 @@ export class OrbitSocial extends Component<OrbitState> {
       const db = seedDb();
       return [
         ...this._set(state, { db, status: "ready" }),
-        idbEffector.replaceAll(DB_NAME, db as unknown as Record<string, unknown[]>, "persisted", "dbFailed"),
+        idbEffector.replaceAll(
+          DB_NAME,
+          db as unknown as Record<string, unknown[]>,
+          "persisted",
+          "dbFailed",
+        ),
         ...notice("Sample data created in your browser"),
       ];
     }
     const db: Db = { ...emptyDb(), ...(data as unknown as Partial<Db>) };
-    const me = db.users.find((u) => u.id === db.session[0]?.userId && u.status === "active")?.id ?? 0;
+    const me =
+      db.users.find(
+        (u) => u.id === db.session[0]?.userId && u.status === "active",
+      )?.id ?? 0;
     return this._set(state, { db, status: "ready", me });
   }
 
@@ -253,7 +335,12 @@ export class OrbitSocial extends Component<OrbitState> {
     const text = String(msg.payload ?? "the database failed");
     // without IndexedDB (a private window) Orbit still works on the sample data, for this visit
     if (state.status === "loading") {
-      return [...this._set(state, { db: seedDb(), status: "ready" }), ...notice(`IndexedDB is not available (${text}): your changes will not be kept`)];
+      return [
+        ...this._set(state, { db: seedDb(), status: "ready" }),
+        ...notice(
+          `IndexedDB is not available (${text}): your changes will not be kept`,
+        ),
+      ];
     }
     return notice(`Could not save: ${text}`);
   }
@@ -278,39 +365,67 @@ export class OrbitSocial extends Component<OrbitState> {
     return [store.set("notice", "")];
   }
   "top.action"(msg: Message, state: OrbitState): Effect[] {
-    return msg.payload === "logout" ? this._apply(state, "wall", { me: 0, notice: "Signed out" }) : [];
+    return msg.payload === "logout"
+      ? this._apply(state, "wall", { me: 0, notice: "Signed out" })
+      : [];
   }
 
   // ---- sign in and registration ----
 
   authField(msg: Message, state: OrbitState): Effect[] {
     const field = String(msg.payload) as keyof AuthState;
-    return this._set(state, { auth: { ...state.auth, [field]: msg.event?.value ?? "", error: "", errors: {} } });
+    return this._set(state, {
+      auth: {
+        ...state.auth,
+        [field]: msg.event?.value ?? "",
+        error: "",
+        errors: {},
+      },
+    });
   }
 
   authSwitch(msg: Message, state: OrbitState): Effect[] {
-    return this._set(state, { authView: msg.payload === "register" ? "register" : "login", auth: NO_AUTH });
+    return this._set(state, {
+      authView: msg.payload === "register" ? "register" : "login",
+      auth: NO_AUTH,
+    });
   }
 
   authLogin(_msg: Message, state: OrbitState): Effect[] {
     const r = login(state.db, state.auth.email, state.auth.password);
-    if (!r.ok) return this._set(state, { auth: { ...state.auth, error: r.error } });
+    if (!r.ok)
+      return this._set(state, { auth: { ...state.auth, error: r.error } });
     return this._apply(state, "wall", { me: r.userId, notice: "Welcome back" });
   }
 
   /** The demo buttons: fill in a user and sign in. */
   authDemo(msg: Message, state: OrbitState): Effect[] {
-    const email = msg.payload === "admin" ? DEMO_ADMIN : (state.db.users.find((u) => u.role === "user" && u.status === "active")?.email ?? "");
+    const email =
+      msg.payload === "admin"
+        ? DEMO_ADMIN
+        : (state.db.users.find(
+            (u) => u.role === "user" && u.status === "active",
+          )?.email ?? "");
     const r = login(state.db, email, DEMO_PASSWORD);
-    return r.ok ? this._apply(state, "wall", { me: r.userId, notice: `Signed in as ${email}` }) : [];
+    return r.ok
+      ? this._apply(state, "wall", {
+          me: r.userId,
+          notice: `Signed in as ${email}`,
+        })
+      : [];
   }
 
   authRegister(_msg: Message, state: OrbitState): Effect[] {
     const a = state.auth;
     const errors = checkRegistration(state.db, a);
-    if (Object.keys(errors).length > 0) return this._set(state, { auth: { ...a, errors } });
+    if (Object.keys(errors).length > 0)
+      return this._set(state, { auth: { ...a, errors } });
     const user = newUser(state.db, a, state.now);
-    return this._apply(state, "wall", { put: { users: [user] }, me: user.id, notice: `Welcome to Orbit, ${user.name}` });
+    return this._apply(state, "wall", {
+      put: { users: [user] },
+      me: user.id,
+      notice: `Welcome to Orbit, ${user.name}`,
+    });
   }
 }
 

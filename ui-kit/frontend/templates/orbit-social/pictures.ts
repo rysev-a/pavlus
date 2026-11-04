@@ -6,7 +6,8 @@
  * photo or a wallpaper is a `div(style=...)`. Pure.
  */
 
-export const gradient = (hue: number, hue2: number, glyph = ""): string => `grad:${Math.round(hue) % 360}:${Math.round(hue2) % 360}:${glyph}`;
+export const gradient = (hue: number, hue2: number, glyph = ""): string =>
+  `grad:${Math.round(hue) % 360}:${Math.round(hue2) % 360}:${glyph}`;
 
 export const isUpload = (src: string): boolean => src.startsWith("data:");
 
@@ -18,11 +19,13 @@ export function glyphOf(src: string): string {
 
 /** The inline style that paints a box with the picture. */
 export function pictureStyle(src: string): string {
-  if (isUpload(src)) return `background-image: url(${src}); background-size: cover; background-position: center`;
+  if (isUpload(src))
+    return `background-image: url(${src}); background-size: cover; background-position: center`;
   const [, a, b] = src.split(":");
   const h1 = Number(a);
   const h2 = Number(b);
-  if (!Number.isFinite(h1) || !Number.isFinite(h2)) return "background: var(--muted)";
+  if (!Number.isFinite(h1) || !Number.isFinite(h2))
+    return "background: var(--muted)";
   return `background: linear-gradient(135deg, hsl(${h1} 70% 55%), hsl(${h2} 70% 42%))`;
 }
 

@@ -1,0 +1,13 @@
+// A community in a list, to embed: `+Card#card(...community)`. State = id, name, description,
+// wallpaperStyle, wallpaperGlyph, members ("128 members"), role ("" or a badge text), roleTone.
+// Events (with the name of the embed in front): open(id).
+article.ui-card.k-comty
+  button.k-comty__wall(type="button" aria-label="Open {name}" style={wallpaperStyle} @click=open(id)) {wallpaperGlyph}
+  div.k-comty__body
+    h3.k-comty__name
+      button(type="button" @click=open(id)) {name}
+    p.k-comty__desc {description}
+    div.k-comty__foot
+      span.k-comty__members {members}
+      if role
+        span(class="ui-badge ui-badge-{roleTone}") {role}

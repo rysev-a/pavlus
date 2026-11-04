@@ -203,11 +203,7 @@ test("registration: errors per field, then the account exists and is signed in",
   let s = send(ready(), "authSwitch", "register").state;
   expect(s.authView).toBe("register");
   s = send(s, "authRegister").state;
-  expect(Object.keys(s.auth.errors)).toEqual([
-    "name",
-    "email",
-    "password",
-  ]);
+  expect(Object.keys(s.auth.errors)).toEqual(["name", "email", "password"]);
   for (const [f, v] of [
     ["name", "Zed Zed"],
     ["email", "zed@example.com"],

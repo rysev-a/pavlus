@@ -1,0 +1,50 @@
+/* Orbit, the admin panel: the layout of its own screen; the blocks bring their own styles. */
+.orba { display: grid; gap: calc(16px * var(--k-block, 1)); min-width: 0; align-content: start; }
+.orba > * { min-width: 0; }
+.orba__tabs { justify-self: start; max-width: 100%; overflow-x: auto; }
+.orba__tabs .ui-tabs-trigger { display: inline-flex; align-items: center; gap: 6px; }
+.orba__denied { display: grid; justify-items: center; gap: 8px; text-align: center; padding: calc(32px * var(--k-block, 1)) 0; color: var(--muted-foreground); }
+.orba__denied h3 { margin: 0; color: var(--foreground); }
+.orba__denied p { margin: 0; }
+.orba__alert { margin: 0; }
+.orba__bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.orba__overview { display: grid; gap: calc(16px * var(--k-block, 1)); min-width: 0; }
+.orba__cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: calc(16px * var(--k-block, 1)); }
+.orba__cols--even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.orba__cols > * { min-width: 0; }
+.orba__picker { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.orba__picker .ui-field-label { margin: 0; }
+.orba__picker select { max-width: 100%; min-width: 220px; }
+.orba__bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--muted); }
+.orba__detail { display: grid; gap: calc(16px * var(--k-block, 1)); min-width: 0; }
+.orba__who { display: flex; flex-wrap: wrap; align-items: center; gap: calc(16px * var(--k-block, 1)); }
+.orba__avatar { width: 72px; height: 72px; flex: none; border-radius: 999px; background: var(--muted); }
+.orba__whotext { flex: 1 1 200px; min-width: 0; }
+.orba__whotext h2 { margin: 0; font-size: 20px; overflow-wrap: anywhere; }
+.orba__whotext p { margin: 2px 0 6px; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.orba__pills { display: flex; gap: 6px; }
+.orba__who .orba__bar { margin: 0; flex: 1 1 100%; }
+.orba__danger { color: var(--destructive); }
+.orba__counts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr)); gap: 8px; }
+.orba__count { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--card); }
+.orba__countlabel { font-size: 13px; color: var(--muted-foreground); }
+.orba__fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 12px; margin: 0; }
+.orba__field { min-width: 0; }
+.orba__field dt { font-size: 12px; color: var(--muted-foreground); }
+.orba__field dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.orba__lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: calc(16px * var(--k-block, 1)); }
+.orba__list { min-width: 0; }
+.orba__items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.orba__item { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.orba__thumb { width: 36px; height: 36px; flex: none; border-radius: var(--radius-md); background: var(--muted); }
+.orba__itemtext { display: grid; min-width: 0; }
+.orba__itemtext strong, .orba__itemtext small { overflow-wrap: anywhere; }
+.orba__itemtext small { color: var(--muted-foreground); }
+.orba__empty { margin: 0; color: var(--muted-foreground); }
+.orba__pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+.orba__settings { display: grid; gap: calc(16px * var(--k-block, 1)); max-width: 980px; }
+.orba__row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.orba__ask { font-weight: 500; }
+@media (max-width: 800px) {
+  .orba__cols, .orba__cols--even { grid-template-columns: minmax(0, 1fr); }
+}

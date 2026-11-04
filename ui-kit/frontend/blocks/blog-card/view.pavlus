@@ -1,0 +1,20 @@
+// An article in a list, to embed: `+Card#card(...article)`. State = id, title, excerpt, coverStyle,
+// coverGlyph, authorId, authorName, avatarStyle, avatarText, when, tags (strings), likes, liked.
+// Events (with the name of the embed in front): open(id), author(authorId), like(id), tag(name).
+article.ui-card.k-bcard
+  button.k-bcard__cover(type="button" aria-label="Read {title}" style={coverStyle} @click=open(id)) {coverGlyph}
+  div.k-bcard__body
+    h3.k-bcard__title
+      button(type="button" @click=open(id)) {title}
+    div.k-bcard__by
+      button.k-bcard__av(type="button" aria-label="Open the wall of {authorName}" style={avatarStyle} @click=author(authorId)) {avatarText}
+      button.k-bcard__author(type="button" @click=author(authorId)) {authorName}
+      span.k-bcard__when {when}
+    p.k-bcard__excerpt {excerpt}
+    div.k-bcard__foot
+      div.k-bcard__tags
+        for t in tags key t
+          button.k-bcard__tag(type="button" @click=tag(t)) {"#" + t}
+      button.k-bcard__like(type="button" aria-pressed={liked ? "true" : "false"} aria-label="Like" class:is-on={liked} @click=like(id))
+        span.k-icon.k-icon-heart(class:k-icon-heart-fill={liked})
+        | {likes}

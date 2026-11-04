@@ -1,0 +1,4 @@
+.k-mpager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; min-width: 0; }
+.k-mpager__label { font-size: 13px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.k-mpager__nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.k-mpager__jump { min-width: 32px; padding-inline: 8px; }

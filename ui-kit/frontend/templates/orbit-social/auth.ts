@@ -12,9 +12,15 @@ export function hashPassword(password: string): string {
     h1 = Math.imul(h1 ^ c, 2654435761);
     h2 = Math.imul(h2 ^ c, 1597334677);
   }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, "0");
+  h1 =
+    Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^
+    Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 =
+    Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^
+    Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0))
+    .toString(16)
+    .padStart(14, "0");
 }
 
 /** The password every sample user has. */
@@ -23,12 +29,17 @@ export const DEMO_ADMIN = "admin@orbit.example";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export type LoginResult = { ok: true; userId: number } | { ok: false; error: string };
+export type LoginResult =
+  { ok: true; userId: number } | { ok: false; error: string };
 
 export function login(db: Db, email: string, password: string): LoginResult {
-  const user = db.users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-  if (!user || user.passwordHash !== hashPassword(password)) return { ok: false, error: "The email or the password is wrong." };
-  if (user.status === "banned") return { ok: false, error: "This account is banned." };
+  const user = db.users.find(
+    (u) => u.email.toLowerCase() === email.trim().toLowerCase(),
+  );
+  if (!user || user.passwordHash !== hashPassword(password))
+    return { ok: false, error: "The email or the password is wrong." };
+  if (user.status === "banned")
+    return { ok: false, error: "This account is banned." };
   return { ok: true, userId: user.id };
 }
 
@@ -40,11 +51,19 @@ export interface RegisterForm {
 }
 
 /** An error message per field that is wrong (a valid form gives `{}`). */
-export function checkRegistration(db: Db, f: RegisterForm): Record<string, string> {
+export function checkRegistration(
+  db: Db,
+  f: RegisterForm,
+): Record<string, string> {
   const errors: Record<string, string> = {};
-  if (f.name.trim().length < 2) errors.name = "Tell us your name (at least 2 letters)";
-  if (!EMAIL.test(f.email.trim())) errors.email = "That is not an email address";
-  else if (db.users.some((u) => u.email.toLowerCase() === f.email.trim().toLowerCase())) errors.email = "Someone already has this email";
+  if (f.name.trim().length < 2)
+    errors.name = "Tell us your name (at least 2 letters)";
+  if (!EMAIL.test(f.email.trim()))
+    errors.email = "That is not an email address";
+  else if (
+    db.users.some((u) => u.email.toLowerCase() === f.email.trim().toLowerCase())
+  )
+    errors.email = "Someone already has this email";
   if (f.password.length < 6) errors.password = "At least 6 characters";
   if (f.confirm !== f.password) errors.confirm = "The passwords differ";
   return errors;

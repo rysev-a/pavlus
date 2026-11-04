@@ -1,0 +1,83 @@
+// A wall post of any kind, to embed: `+Post#post(...card)` where `card` comes from
+// `cardOf()` in modules/wall/posts.ts. State = id, authorId, authorName, avatarStyle,
+// avatarText, when, where, kind (text, music, photo, picture, link, repost), text, hasText,
+// song {id title artist album duration}, hasImage, imageStyle, imageGlyph, url, linkTitle,
+// hasOriginal, originalGone, original (the same fields of the quoted post, with id), likes,
+// liked, commentCount, canDelete, open, sharing, shareText.
+// Events (with the name of the embed in front): profile(authorId), like(id), comments(id),
+// share(id), setShare (the input), shareSend(id), remove(id), play(songId), original(id).
+article.ui-card.k-spost
+  header.k-spost__head
+    button.k-spost__av(type="button" aria-label="Open the wall of {authorName}" style={avatarStyle} @click=profile(authorId)) {avatarText}
+    div.k-spost__who
+      div.k-spost__line
+        button.k-spost__name(type="button" @click=profile(authorId)) {authorName}
+        if where
+          span.k-spost__where {where}
+      span.k-spost__when {when}
+    if canDelete
+      button.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" aria-label="Delete the post" @click=remove(id))
+        span.k-icon.k-ai-trash
+  if hasText
+    p.k-spost__text {text}
+  if kind === "repost"
+    if hasOriginal
+      div.k-spost__quote
+        header.k-spost__head
+          button.k-spost__av.k-spost__av--sm(type="button" aria-label="Open the wall of {original.authorName}" style={original.avatarStyle} @click=profile(original.authorId)) {original.avatarText}
+          div.k-spost__who
+            div.k-spost__line
+              button.k-spost__name(type="button" @click=profile(original.authorId)) {original.authorName}
+              if original.where
+                span.k-spost__where {original.where}
+            span.k-spost__when {original.when}
+        if original.hasText
+          p.k-spost__text {original.text}
+        if original.song
+          div.k-spost__music
+            button.k-spost__play(type="button" aria-label="Play {original.song.title}" @click=play(original.song.id))
+              span.k-icon.k-ai-play
+            div.k-spost__song
+              strong {original.song.title}
+              span {original.song.artist} · {original.song.album}
+            span.k-spost__dur {original.song.duration}
+        if original.hasImage
+          div.k-spost__image(style={original.imageStyle})
+            span {original.imageGlyph}
+        if original.url
+          a.k-spost__link(href={original.url} target="_blank" rel="noopener noreferrer")
+            strong {original.linkTitle}
+            span {original.url}
+        button.ui-button.ui-button-link.ui-button-sm.k-spost__goto(type="button" @click=original(id)) Go to the original wall
+    else
+      p.k-spost__gone The original post was deleted.
+  else
+    if song
+      div.k-spost__music
+        button.k-spost__play(type="button" aria-label="Play {song.title}" @click=play(song.id))
+          span.k-icon.k-ai-play
+        div.k-spost__song
+          strong {song.title}
+          span {song.artist} · {song.album}
+        span.k-spost__dur {song.duration}
+    if hasImage
+      div.k-spost__image(style={imageStyle})
+        span {imageGlyph}
+    if url
+      a.k-spost__link(href={url} target="_blank" rel="noopener noreferrer")
+        strong {linkTitle}
+        span {url}
+  footer.k-spost__actions
+    button.k-spost__act(type="button" aria-pressed={liked ? "true" : "false"} aria-label="Like" class:is-on={liked} @click=like(id))
+      span.k-icon.k-icon-heart(class:k-icon-heart-fill={liked})
+      | {likes}
+    button.k-spost__act(type="button" aria-pressed={open ? "true" : "false"} aria-label="Comments" class:is-on={open} @click=comments(id))
+      span.k-icon.k-glyph(data-glyph="message")
+      | {commentCount}
+    button.k-spost__act(type="button" aria-pressed={sharing ? "true" : "false"} aria-label="Share on my wall" class:is-on={sharing} @click=share(id))
+      span.k-icon.k-glyph(data-glyph="repeat")
+      | Share
+  if sharing
+    form.k-spost__share(novalidate @submit.prevent=shareSend(id))
+      input.ui-input(type="text" aria-label="Your words for the repost" placeholder="Add a few words (optional)" autocomplete="off" value={shareText} @input=setShare)
+      button.ui-button.ui-button-default.ui-button-sm(type="submit") Repost
