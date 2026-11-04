@@ -1,0 +1,33 @@
+// The wall: the header of the user, the tabs, the composer, the posts with their comments, the pager.
+// State = the slice of modules/wall/index.ts: notFound, isOwn, showTabs, tabs, header, feed, hint.
+import Head from "../../../../blocks/social-header/view.pavlus"
+import Composer from "../../../../blocks/wall-composer/view.pavlus"
+import Post from "../../../../blocks/social-post/view.pavlus"
+import Comments from "../../../../blocks/post-comments/view.pavlus"
+import Pager from "../../../../blocks/pager-bar/view.pavlus"
+
+div.orbw
+  if notFound
+    div.ui-card.orbw__missing
+      h3 This user does not exist
+      p The wall you opened is gone.
+  else
+    +Head#header(...header)
+    if showTabs
+      div.ui-tabs-list.orbw__tabs(role="tablist")
+        for t in tabs key t.id
+          button.ui-tabs-trigger(type="button" role="tab" aria-selected={t.active ? "true" : "false"} @click=pickTab(t.id)) {t.label}
+    if feed.composer
+      +Composer#composer(...feed.composer)
+    else if hint
+      p.orbw__hint {hint}
+    div.orbw__feed
+      for p in feed.cards key p.id
+        div.orbw__item
+          +Post#post(...p)
+          if p.open
+            div.orbw__comments
+              +Comments#cm(...p.thread)
+      if feed.cards.length === 0
+        p.orbw__empty {feed.empty}
+    +Pager#pager(...feed.pager)

@@ -1,0 +1,14 @@
+/* Orbit: only the layout of its own page (the sign-in screens); the modules bring their own styles. */
+.orbit__splash { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 50vh; color: var(--muted-foreground); }
+.orbit__splash p { margin: 0; }
+.orbit__auth { display: grid; justify-items: center; align-content: start; gap: calc(20px * var(--k-block, 1)); padding: calc(40px * var(--k-block, 1)) 16px; }
+.orbit__hero { display: grid; justify-items: center; gap: 6px; text-align: center; max-width: 420px; }
+.orbit__hero h1 { margin: 0; font-size: 34px; letter-spacing: -.02em; }
+.orbit__hero p { margin: 0; color: var(--muted-foreground); }
+.orbit__card { width: min(420px, 100%); }
+.orbit__switch { justify-content: center; gap: 6px; font-size: 14px; }
+.orbit__demo { display: grid; justify-items: center; gap: 8px; font-size: 13px; color: var(--muted-foreground); text-align: center; }
+.orbit__demo p { margin: 0; }
+.orbit__demobtns { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.orbit .k-ashell__content { display: grid; grid-template-columns: minmax(0, 1fr); gap: calc(16px * var(--k-block, 1)); align-content: start; min-width: 0; }
+.orbit .k-ashell__main { min-width: 0; }

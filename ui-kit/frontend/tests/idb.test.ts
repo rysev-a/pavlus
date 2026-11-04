@@ -7,7 +7,12 @@ import {
   type Backend,
   type IdbEffect,
 } from "../idb.ts";
-import { createFilesPlugin, filesEffector } from "../files.ts";
+import {
+  createFilesPlugin,
+  filesEffector,
+  isImageDataUrl,
+  scaleSize,
+} from "../files.ts";
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
@@ -224,4 +229,153 @@ test("a file that cannot be read replies the error id", async () => {
   input!.dispatchEvent(new Event("change"));
   await flush();
   expect(sent).toEqual([{ id: "bad", payload: "cannot read x.json: gone" }]);
+});
+
+// ---- pickImages ----
+
+test("scaleSize keeps the proportions, never scales up", () => {
+  expect(scaleSize(2000, 1000, 500)).toEqual({ width: 500, height: 250 });
+  expect(scaleSize(1000, 4000, 512)).toEqual({ width: 128, height: 512 });
+  expect(scaleSize(300, 200, 512)).toEqual({ width: 300, height: 200 });
+  expect(scaleSize(512, 512, 512)).toEqual({ width: 512, height: 512 });
+  expect(scaleSize(10000, 1, 100)).toEqual({ width: 100, height: 1 });
+});
+
+test("isImageDataUrl", () => {
+  expect(isImageDataUrl("data:image/jpeg;base64,AAAA")).toBe(true);
+  expect(isImageDataUrl("data:image/svg+xml,<svg/>")).toBe(true);
+  expect(isImageDataUrl("data:text/plain;base64,AAAA")).toBe(false);
+  expect(isImageDataUrl("grad:10:20:x")).toBe(false);
+  expect(isImageDataUrl("")).toBe(false);
+});
+
+/** Runs pickImages with a fake Image and a fake canvas; `files` are the chosen ones. */
+async function pickImagesRun(
+  files: File[],
+  opts: {
+    decode?: (name: string) => { w: number; h: number } | null;
+    maxSide?: number;
+    multiple?: boolean;
+  } = {},
+) {
+  const { sent, ctx, plugin } = filesRig();
+  const win = document.defaultView as unknown as Record<string, unknown>;
+  const realImage = win.Image;
+  const proto = HTMLCanvasElement.prototype as unknown as Record<
+    string,
+    unknown
+  >;
+  const realCtx = proto.getContext;
+  const realUrl = proto.toDataURL;
+  const drawn: { w: number; h: number; dw: number; dh: number }[] = [];
+  let lastSrc = "";
+  win.Image = class {
+    onload: () => void = () => {};
+    onerror: () => void = () => {};
+    naturalWidth = 0;
+    naturalHeight = 0;
+    set src(v: string) {
+      lastSrc = v;
+      const size = (opts.decode ?? (() => ({ w: 2000, h: 1000 })))(v);
+      setTimeout(() => {
+        if (!size) return this.onerror();
+        this.naturalWidth = size.w;
+        this.naturalHeight = size.h;
+        this.onload();
+      }, 0);
+    }
+  };
+  proto.getContext = function (this: HTMLCanvasElement) {
+    return {
+      fillRect() {},
+      fillStyle: "",
+      drawImage: (
+        _i: unknown,
+        _x: number,
+        _y: number,
+        dw: number,
+        dh: number,
+      ) => drawn.push({ w: this.width, h: this.height, dw, dh }),
+    };
+  };
+  proto.toDataURL = (type: string, q: number) => `data:${type};base64,Q${q}`;
+  let input: HTMLInputElement | undefined;
+  const origClick = HTMLInputElement.prototype.click;
+  HTMLInputElement.prototype.click = function (this: HTMLInputElement) {
+    input = this;
+  };
+  try {
+    plugin.handle(
+      filesEffector.pickImages(
+        opts.maxSide ?? 512,
+        opts.multiple ?? true,
+        "got",
+        "bad",
+      ),
+      ctx,
+    );
+    expect(input!.type).toBe("file");
+    expect(input!.accept).toBe("image/*");
+    expect(input!.multiple).toBe(opts.multiple ?? true);
+    Object.defineProperty(input!, "files", { value: files });
+    input!.dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 30));
+  } finally {
+    HTMLInputElement.prototype.click = origClick;
+    win.Image = realImage;
+    proto.getContext = realCtx;
+    proto.toDataURL = realUrl;
+  }
+  return { sent, drawn, input: input!, lastSrc };
+}
+
+test("pickImages downsizes every chosen image to a JPEG data URL", async () => {
+  const a = new File(["x"], "a.png", { type: "image/png" });
+  const b = new File(["y"], "b.png", { type: "image/png" });
+  const r = await pickImagesRun([a, b], { maxSide: 512 });
+  expect(r.sent).toEqual([
+    {
+      id: "got",
+      payload: {
+        images: [
+          { name: "a.png", src: "data:image/jpeg;base64,Q0.8" },
+          { name: "b.png", src: "data:image/jpeg;base64,Q0.8" },
+        ],
+      },
+    },
+  ]);
+  expect(r.drawn[0]).toEqual({ w: 512, h: 256, dw: 512, dh: 256 });
+  expect(r.lastSrc.startsWith("data:")).toBe(true);
+  expect(document.body.contains(r.input)).toBe(false);
+});
+
+test("pickImages skips what cannot be decoded and replies the rest", async () => {
+  const good = new File(["x"], "ok.png", { type: "image/png" });
+  const bad = new File(["y"], "no.txt", { type: "text/plain" });
+  let n = 0;
+  const r = await pickImagesRun([bad, good], {
+    decode: () => (n++ === 0 ? null : { w: 100, h: 100 }),
+  });
+  expect(r.sent).toHaveLength(1);
+  expect((r.sent[0].payload as { images: unknown[] }).images).toEqual([
+    { name: "ok.png", src: "data:image/jpeg;base64,Q0.8" },
+  ]);
+});
+
+test("pickImages replies the error id when nothing can be decoded, nothing when cancelled", async () => {
+  const bad = new File(["y"], "no.txt", { type: "text/plain" });
+  const r = await pickImagesRun([bad], { decode: () => null });
+  expect(r.sent).toEqual([
+    { id: "bad", payload: "cannot read no.txt: not an image" },
+  ]);
+  const none = await pickImagesRun([]);
+  expect(none.sent).toEqual([]);
+  expect(document.body.contains(none.input)).toBe(false);
+});
+
+test("pickImages with multiple = false asks for one file", async () => {
+  const r = await pickImagesRun([new File(["x"], "a.png")], {
+    multiple: false,
+  });
+  expect(r.sent).toHaveLength(1);
 });

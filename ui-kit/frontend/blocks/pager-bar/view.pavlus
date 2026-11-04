@@ -1,0 +1,12 @@
+// The bar under a paged list, to embed: `+Pager#pager(...pager)`. State = page, pages, label
+// ("34 posts"), hasPrev, hasNext, prevLabel, nextLabel. Events (with the name of the embed
+// in front): prev, next.
+div.k-pgbar
+  span.k-pgbar__label {label} · page {page} of {pages}
+  div.k-pgbar__btns
+    button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={!hasPrev} @click=prev)
+      span.k-icon.k-icon-chevron-left
+      | {prevLabel}
+    button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={!hasNext} @click=next)
+      | {nextLabel}
+      span.k-icon.k-icon-chevron-right

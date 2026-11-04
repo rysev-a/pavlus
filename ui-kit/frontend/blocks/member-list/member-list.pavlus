@@ -1,0 +1,7 @@
+import Members from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Members
+    div.k-preview.k-preview--block
+      +Members#members(...list)

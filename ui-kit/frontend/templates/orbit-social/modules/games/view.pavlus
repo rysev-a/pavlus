@@ -1,0 +1,92 @@
+// The "games" screen of Orbit. State = the props: the module's slice, spread (see index.ts).
+// Events (the message is `games.<event>`): open(game), back, start, restart, pause, resume,
+// key (keydown on the board: arrows/WASD, space, P, Enter), pad(action) (the touch pad).
+div.orbg
+  if game === ""
+    div.orbg__menu
+      for c in menu key c.id
+        div.ui-card.orbg__gcard
+          div.ui-card-header
+            div.orbg__gicon {c.icon}
+            h3.ui-card-title {c.name}
+            p.ui-card-description {c.blurb}
+          div.ui-card-content.orbg__facts
+            div.orbg__fact
+              span.orbg__flabel My best
+              strong {c.best}
+            div.orbg__fact
+              span.orbg__flabel Top player
+              if c.topName
+                span.orbg__top
+                  span.orbg__ava(style={c.topAvatar}) {c.topGlyph}
+                  span.orbg__topname {c.topName}
+                  strong {c.topScore}
+              else
+                span.orbg__flabel Nobody yet
+          div.ui-card-footer
+            button.ui-button.ui-button-default(type="button" @click=open(c.id)) Play {c.name}
+  else
+    div.orbg__play
+      div.orbg__main
+        div.ui-card.orbg__head
+          div.orbg__titlebar
+            h2.orbg__title {title}
+            button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=back) Back to games
+          div.orbg__stats
+            for st in stats key st.label
+              div.orbg__stat
+                span.orbg__flabel {st.label}
+                strong.orbg__sval {st.value}
+        div.orbg__stage
+          div.orbg__boardwrap(style={wrapStyle})
+            div.orbg__board(style={boardStyle} data-status={status})
+              for c in cells key c.id
+                div.orbg__c(data-k={c.k})
+              input.orbg__keys#orbg-keys(type="text" readonly aria-label="Game controls: arrow keys or WASD, space, P to pause" autocomplete="off" inputmode="none" @keydown=key)
+            if status === "paused"
+              div.orbg__veil Paused
+            else if status === "over"
+              div.orbg__veil Game over
+          if preview.length > 0
+            div.orbg__side
+              span.orbg__flabel Next
+              div.orbg__next(style={previewStyle})
+                for c in preview key c.id
+                  div.orbg__c(data-k={c.k})
+        p.orbg__hint(data-status={status}) {hint}
+        div.orbg__controls
+          if status === "idle"
+            button.ui-button.ui-button-default(type="button" @click=start) Start
+          if status === "running"
+            button.ui-button.ui-button-default(type="button" @click=pause) Pause
+          if status === "paused"
+            button.ui-button.ui-button-default(type="button" @click=resume) Resume
+          if status === "over"
+            button.ui-button.ui-button-default(type="button" @click=restart) Play again
+          if status === "running"
+            button.ui-button.ui-button-outline(type="button" @click=restart) Restart
+          if status === "paused"
+            button.ui-button.ui-button-outline(type="button" @click=restart) Restart
+        div.orbg__pad(data-g={game} aria-label="Touch controls")
+          for b in pad key b.id
+            button.orbg__pb(type="button" data-p={b.id} aria-label={b.name} @click=pad(b.id)) {b.label}
+      aside.ui-card.orbg__lb
+        div.ui-card-header
+          h3.ui-card-title Leaderboard
+          p.ui-card-description Top 10 players of {title}
+        div.ui-card-content
+          if top.length === 0
+            p.orbg__empty No scores yet. Be the first!
+          else
+            ol.orbg__rows
+              for r in top key r.rank
+                li.orbg__row(class:is-mine={r.mine})
+                  span.orbg__rank {r.rank}
+                  span.orbg__ava(style={r.avatar}) {r.glyph}
+                  span.orbg__name {r.name}
+                  strong.orbg__score {r.score}
+        div.ui-card-footer.orbg__mine
+          span My best
+          strong {myBest}
+          if myRank > 0
+            span.orbg__flabel place {myRank}

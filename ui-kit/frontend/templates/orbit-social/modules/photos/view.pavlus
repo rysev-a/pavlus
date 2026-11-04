@@ -1,0 +1,134 @@
+// The photos screen. State = the props: the slice of the `photos` module, spread.
+// Events are `photos.<name>` (see index.ts). Pictures are painted with `style`.
+div.orbph
+  if !found
+    div.ui-card
+      div.ui-card-header
+        h3.ui-card-title These albums do not exist
+        p.ui-card-description The person may have left Orbit.
+  else if !album
+    div.orbph__top
+      div.orbph__titles
+        h2.orbph__title {heading}
+        if !own
+          button.ui-button.ui-button-link.ui-button-sm(type="button" @click=owner(ownerId)) Open the profile of {ownerName}
+      if own
+        button.ui-button.ui-button-default(type="button" @click=newAlbum) New album
+    if form.open
+      form.ui-card(novalidate @submit.prevent=saveAlbum)
+        div.ui-card-header
+          if form.id > 0
+            h3.ui-card-title Edit the album
+          else
+            h3.ui-card-title New album
+        div.ui-card-content.orbph__fields
+          div.ui-field(data-invalid={errors.title ? "true" : null})
+            label.ui-field-label Title
+            input.ui-input(type="text" value={form.title} @input=field("title"))
+            if errors.title
+              p.ui-field-error {errors.title}
+          div.ui-field(data-invalid={errors.description ? "true" : null})
+            label.ui-field-label Description
+            textarea.ui-textarea-control(rows="3" value={form.description} @input=field("description"))
+            if errors.description
+              p.ui-field-error {errors.description}
+        div.ui-card-footer.orbph__foot
+          button.ui-button.ui-button-default(type="button" @click=saveAlbum) Save
+          button.ui-button.ui-button-outline(type="button" @click=cancelForm) Cancel
+    if hasAlbums
+      div.orbph__albums
+        for a in albums key a.id
+          article.orbph__album
+            button.orbph__cover(type="button" style={a.style} aria-label="Open {a.title}" @click=open(a.id)) {a.glyph}
+            div.orbph__info
+              strong.orbph__atitle {a.title}
+              span {a.countLabel}
+              if a.description
+                p.orbph__desc {a.description}
+            if own
+              if a.confirming
+                div.orbph__confirm
+                  p Delete this album and its {a.countLabel}?
+                  div.orbph__row
+                    button.ui-button.ui-button-destructive.ui-button-sm(type="button" @click=confirmDelete(a.id)) Delete
+                    button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=cancelDelete) Keep
+              else
+                div.orbph__row
+                  button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=editAlbum(a.id)) Edit
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=askDelete(a.id)) Delete
+    else
+      div.ui-card
+        div.ui-card-content
+          p.orbph__muted No albums yet.
+  else
+    div.orbph__top
+      div.orbph__titles
+        button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=back)
+          span.k-icon.k-icon-chevron-left
+          | {heading}
+        h2.orbph__title {album.title}
+        p.orbph__muted {album.countLabel}
+        if album.description
+          p.orbph__desc {album.description}
+      if own
+        button.ui-button.ui-button-default(type="button" @click=upload) Upload photos
+    if hasPhotos
+      div.orbph__grid
+        for p in photos key p.id
+          button.orbph__tile(type="button" style={p.style} aria-label="Open {p.caption}" @click=show(p.id))
+            span.orbph__glyph {p.glyph}
+            if p.caption
+              span.orbph__cap {p.caption}
+      if pages > 1
+        div.orbph__pager
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={!hasPrev} @click=turn(-1)) Previous
+          span Page {pageNo} of {pages}
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={!hasNext} @click=turn(1)) Next
+    else
+      div.ui-card
+        div.ui-card-content
+          p.orbph__muted There are no photos in this album yet.
+    if viewer
+      div.orbph__lightbox
+        div.orbph__scrim(@click=close)
+        div.orbph__stage#orbph-viewer(role="dialog" aria-modal="true" aria-label="Photo" tabindex="-1" @keydown=key)
+          button.ui-button.ui-button-secondary.ui-button-icon.orbph__close(type="button" aria-label="Close" @click=close)
+            span.k-icon.k-icon-x
+          button.ui-button.ui-button-secondary.ui-button-icon.orbph__nav.orbph__nav--prev(type="button" aria-label="Previous photo" disabled={!viewer.hasPrev} @click=prev)
+            span.k-icon.k-icon-chevron-left
+          div.orbph__figure
+            div.orbph__frame(style={viewer.style}) {viewer.glyph}
+            div.orbph__side
+              if editingCaption
+                div.ui-field
+                  label.ui-field-label Caption
+                  input.ui-input(type="text" value={captionText} @input=captionField)
+                div.orbph__row
+                  button.ui-button.ui-button-default.ui-button-sm(type="button" @click=saveCaption) Save
+                  button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=cancelCaption) Cancel
+              else
+                strong.orbph__vcap {viewer.caption || "No caption"}
+              span.orbph__muted {viewer.albumTitle} · {viewer.date} · {viewer.position}
+              if own
+                if !editingCaption
+                  div.orbph__row
+                    button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=editCaption) Edit caption
+                    button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=setAvatar) Set as my avatar
+                if viewer.moveTargets.length > 0
+                  div.ui-field
+                    label.ui-field-label Move to another album
+                    select.ui-select-control(@change=move)
+                      option(value="" selected=true) Choose an album
+                      for t in viewer.moveTargets key t.id
+                        option(value={t.id}) {t.title}
+                if confirmPhoto
+                  div.orbph__confirm
+                    p Delete this photo?
+                    div.orbph__row
+                      button.ui-button.ui-button-destructive.ui-button-sm(type="button" @click=remove) Delete
+                      button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=cancelRemove) Keep
+                else
+                  div.orbph__row
+                    button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=askRemove) Delete photo
+          button.ui-button.ui-button-secondary.ui-button-icon.orbph__nav.orbph__nav--next(type="button" aria-label="Next photo" disabled={!viewer.hasNext} @click=next)
+            span.k-icon.k-icon-chevron-right

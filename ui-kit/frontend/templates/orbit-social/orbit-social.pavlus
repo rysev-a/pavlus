@@ -1,0 +1,101 @@
+// Orbit, a social network: the sign-in screens, and the app: the navigation and
+// the top bar around the view of one module at a time (`screen`).
+import Nav from "../../blocks/admin-shell/view.pavlus"
+import Top from "../../blocks/admin-shell/topbar.pavlus"
+import Wall from "./modules/wall/view.pavlus"
+import Blog from "./modules/blog/view.pavlus"
+import Profile from "./modules/profile/view.pavlus"
+import Photos from "./modules/photos/view.pavlus"
+import Messages from "./modules/messages/view.pavlus"
+import Communities from "./modules/communities/view.pavlus"
+import Games from "./modules/games/view.pavlus"
+import Music from "./modules/music/view.pavlus"
+import Admin from "./modules/admin/view.pavlus"
+
+div.k-template.orbit
+  if view === "loading"
+    div.orbit__splash
+      span.k-icon.k-icon-loader
+      p Opening the database in your browser...
+  else if view === "auth"
+    div.orbit__auth
+      div.orbit__hero
+        span.ui-brand-mark O
+        h1 Orbit
+        p A social network for 1000 people. Everything you do is kept in your browser.
+      div.ui-card.orbit__card
+        div.ui-card-header
+          if authView === "login"
+            h3.ui-card-title Sign in
+            p.ui-card-description Welcome back. Use your email and password.
+          else
+            h3.ui-card-title Create an account
+            p.ui-card-description It takes a minute.
+        div.ui-card-content
+          form.ui-form(novalidate @submit.prevent=authLogin)
+            if authView === "register"
+              div.ui-field(data-invalid={auth.errors.name ? "true" : null})
+                label.ui-label Your name
+                input.ui-input(type="text" placeholder="Ann Stone" value={auth.name} @input=authField("name"))
+                if auth.errors.name
+                  p.ui-field-error {auth.errors.name}
+            div.ui-field(data-invalid={auth.errors.email ? "true" : null})
+              label.ui-label Email
+              input.ui-input(type="email" placeholder="you@example.com" value={auth.email} @input=authField("email"))
+              if auth.errors.email
+                p.ui-field-error {auth.errors.email}
+            div.ui-field(data-invalid={auth.errors.password ? "true" : null})
+              label.ui-label Password
+              input.ui-input(type="password" value={auth.password} @input=authField("password"))
+              if auth.errors.password
+                p.ui-field-error {auth.errors.password}
+            if authView === "register"
+              div.ui-field(data-invalid={auth.errors.confirm ? "true" : null})
+                label.ui-label Repeat the password
+                input.ui-input(type="password" value={auth.confirm} @input=authField("confirm"))
+                if auth.errors.confirm
+                  p.ui-field-error {auth.errors.confirm}
+            if auth.error
+              p.ui-field-error {auth.error}
+            if authView === "login"
+              button.ui-button.ui-button-default(type="button" @click=authLogin) Sign in
+            else
+              button.ui-button.ui-button-default(type="button" @click=authRegister) Create my account
+        div.ui-card-footer.orbit__switch
+          if authView === "login"
+            span No account yet?
+            button.ui-button.ui-button-link(type="button" @click=authSwitch("register")) Register
+          else
+            span Already a member?
+            button.ui-button.ui-button-link(type="button" @click=authSwitch("login")) Sign in
+      div.orbit__demo
+        p Just looking around? Every sample user has the password orbit123.
+        div.orbit__demobtns
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=authDemo("user")) Sign in as a member
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=authDemo("admin")) Sign in as the administrator
+  else
+    div.k-ashell.orbit__app(data-nav={navOpen ? "open" : "closed"})
+      aside.k-ashell__side
+        +Nav#nav(brand="Orbit" tagline="Social network" groups=groups active=screen user=user)
+      div.k-ashell__scrim(@click=closeNav)
+      div.k-ashell__main
+        +Top#top(title=title subtitle=subtitle notice=notice actions=actions user=user)
+        main.k-ashell__content
+          if screen === "wall"
+            +Wall#wall(...wall)
+          else if screen === "blog"
+            +Blog#blog(...blog)
+          else if screen === "profile"
+            +Profile#profile(...profile)
+          else if screen === "photos"
+            +Photos#photos(...photos)
+          else if screen === "messages"
+            +Messages#messages(...messages)
+          else if screen === "communities"
+            +Communities#communities(...communities)
+          else if screen === "games"
+            +Games#games(...games)
+          else if screen === "music"
+            +Music#music(...music)
+          else if screen === "admin"
+            +Admin#admin(...admin)

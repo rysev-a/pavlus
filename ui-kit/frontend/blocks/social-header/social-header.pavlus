@@ -1,0 +1,11 @@
+import Head from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A wall
+    div.k-preview.k-preview--block
+      +Head#wall(...wall)
+  section.k-demo
+    h2.k-demo__title A community
+    div.k-preview.k-preview--block
+      +Head#community(...community)
