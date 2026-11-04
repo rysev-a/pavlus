@@ -25,10 +25,10 @@
 <rect x="24" y="442" width="1192" height="315" rx="10" fill="#0f172a" stroke="#1e293b"/>
 <text x="38" y="465" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">3 · target functions</text>
 <text x="1202" y="465" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">codegen.generate()</text>
-<text x="38" y="486" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">const meta = { embeds: [], outlet: false };</text>
+<text x="38" y="486" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">const meta = { embeds: {}, outlet: false };</text>
 <text x="38" y="501" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function render(state, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
 <text x="38" y="516" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;p&gt;</text>
-<text x="38" y="531" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  pChildren.push({ t: &quot;text&quot;, id: &quot;1&quot; + idSuffix, text: &quot;Hello, &quot; + toText(state.name) + &quot;! You have &quot; + toText(state.count) + &quot; items.&quot; });</text>
+<text x="38" y="531" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  pChildren.push({ t: &quot;text&quot;, id: idSuffix + &quot;1&quot;, text: &quot;Hello, &quot; + toText(state.name) + &quot;! You have &quot; + toText(state.count) + &quot; items.&quot; });</text>
 <text x="38" y="546" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    t: &quot;el&quot;,</text>
 <text x="38" y="561" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    events: {},</text>
 <text x="38" y="576" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  return nodes;</text>
@@ -40,7 +40,7 @@
 <text x="38" y="666" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 1: text</text>
 <text x="38" y="681" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    const prevText = &quot;Hello, &quot; + toText(prev.name) + &quot;! You have &quot; + toText(prev.count) + &quot; items.&quot;;</text>
 <text x="38" y="696" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    const nextText = &quot;Hello, &quot; + toText(next.name) + &quot;! You have &quot; + toText(next.count) + &quot; items.&quot;;</text>
-<text x="38" y="711" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    if (prevText !== nextText) patches.push({ op: &quot;text&quot;, id: &quot;1&quot; + idSuffix, text: nextText });</text>
+<text x="38" y="711" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    if (prevText !== nextText) patches.push({ op: &quot;text&quot;, id: idSuffix + &quot;1&quot;, text: nextText });</text>
 <text x="38" y="726" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  return patches;</text>
 <text x="38" y="749" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">full module below — this is the code the browser runs</text>
 <line x1="360" y1="222" x2="394" y2="222" stroke="#98a2b3" stroke-width="1.5"/>

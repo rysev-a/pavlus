@@ -38,18 +38,18 @@
 <text x="38" y="673" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">3 · target functions</text>
 <text x="1202" y="673" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">codegen.generate()</text>
 <text x="38" y="694" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">import { diffKeyedList, toText } from &quot;@service-laboratory/pavlus/runtime&quot;;</text>
-<text x="38" y="709" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">const meta = { embeds: [], outlet: false };</text>
+<text x="38" y="709" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">const meta = { embeds: {}, outlet: false };</text>
 <text x="38" y="724" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function render(state, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
 <text x="38" y="739" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;ul&gt;</text>
 <text x="38" y="754" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 2: for item</text>
-<text x="38" y="769" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  ulChildren.push({ t: &quot;marker&quot;, id: &quot;1s&quot; + idSuffix });</text>
-<text x="38" y="784" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    ulChildren.push({ t: &quot;marker&quot;, id: &quot;1[&quot; + itemSuffix });</text>
+<text x="38" y="769" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  ulChildren.push({ t: &quot;marker&quot;, id: idSuffix + &quot;1s&quot; });</text>
+<text x="38" y="784" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    ulChildren.push({ t: &quot;marker&quot;, id: itemSuffix + &quot;1[&quot; });</text>
 <text x="38" y="799" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 3: &lt;li&gt;</text>
-<text x="38" y="814" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    liChildren.push({ t: &quot;text&quot;, id: &quot;3&quot; + itemSuffix, text: &quot;&quot; + toText(item) });</text>
+<text x="38" y="814" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    liChildren.push({ t: &quot;text&quot;, id: itemSuffix + &quot;3&quot;, text: &quot;&quot; + toText(item) });</text>
 <text x="38" y="829" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      t: &quot;el&quot;,</text>
 <text x="38" y="844" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      events: {},</text>
-<text x="38" y="859" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    ulChildren.push({ t: &quot;marker&quot;, id: &quot;1]&quot; + itemSuffix });</text>
-<text x="38" y="874" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  ulChildren.push({ t: &quot;marker&quot;, id: &quot;1e&quot; + idSuffix });</text>
+<text x="38" y="859" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    ulChildren.push({ t: &quot;marker&quot;, id: itemSuffix + &quot;1]&quot; });</text>
+<text x="38" y="874" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  ulChildren.push({ t: &quot;marker&quot;, id: idSuffix + &quot;1e&quot; });</text>
 <text x="38" y="889" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    t: &quot;el&quot;,</text>
 <text x="38" y="904" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    events: {},</text>
 <text x="38" y="919" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve"> </text>
@@ -58,11 +58,11 @@
 <text x="38" y="964" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;ul&gt; (reads: items)</text>
 <text x="38" y="979" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev.items !== next.items) {</text>
 <text x="38" y="994" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 2: for item</text>
-<text x="38" y="1009" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    diffKeyedList(prevItemKeys, nextItemKeys, itemStartId, &quot;1e&quot; + idSuffix, {</text>
+<text x="38" y="1009" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    diffKeyedList(prevItemKeys, nextItemKeys, itemStartId, idSuffix + &quot;1e&quot;, {</text>
 <text x="38" y="1024" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      remove(key) { patches.push({ op: &quot;remove&quot;, from: itemStartId(key), to: itemEndId(key) }); },</text>
 <text x="38" y="1039" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        itemNodes.push({ t: &quot;marker&quot;, id: itemStartId(itemKey) });</text>
 <text x="38" y="1054" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">        // line 3: &lt;li&gt;</text>
-<text x="38" y="1069" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        liChildren.push({ t: &quot;text&quot;, id: &quot;3&quot; + itemSuffix, text: &quot;&quot; + toText(item) });</text>
+<text x="38" y="1069" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        liChildren.push({ t: &quot;text&quot;, id: itemSuffix + &quot;3&quot;, text: &quot;&quot; + toText(item) });</text>
 <text x="38" y="1084" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">          t: &quot;el&quot;,</text>
 <text x="38" y="1099" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">          events: {},</text>
 <text x="38" y="1114" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        itemNodes.push({ t: &quot;marker&quot;, id: itemEndId(itemKey) });</text>
@@ -80,14 +80,14 @@
 <text x="570" y="1256" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">real output</text>
 <text x="38" y="1275" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">el &lt;ul&gt;</text>
 <text x="38" y="1290" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1s</text>
-<text x="38" y="1305" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1[#0</text>
+<text x="38" y="1305" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker #01[</text>
 <text x="38" y="1320" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  el &lt;li&gt;</text>
-<text x="38" y="1335" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    text &quot;a&quot;  · #3#0</text>
-<text x="38" y="1350" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1]#0</text>
-<text x="38" y="1365" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1[#1</text>
+<text x="38" y="1335" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    text &quot;a&quot;  · ##03</text>
+<text x="38" y="1350" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker #01]</text>
+<text x="38" y="1365" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker #11[</text>
 <text x="38" y="1380" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  el &lt;li&gt;</text>
-<text x="38" y="1395" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    text &quot;b&quot;  · #3#1</text>
-<text x="38" y="1410" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1]#1</text>
+<text x="38" y="1395" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    text &quot;b&quot;  · ##13</text>
+<text x="38" y="1410" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker #11]</text>
 <text x="38" y="1425" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  marker 1e</text>
 <text x="38" y="1450" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#d97706" font-weight="600" xml:space="preserve">→ DOM plugin build(vnodes) creates the nodes:</text>
 <text x="38" y="1466" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">&lt;ul&gt;&lt;li&gt;a&lt;/li&gt;&lt;li&gt;b&lt;/li&gt;&lt;/ul&gt;</text>

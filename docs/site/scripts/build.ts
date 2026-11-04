@@ -91,7 +91,7 @@ const usersSvg = usersScenarioSvg(
 /* ---- source excerpts (always in sync with the code) */
 
 const rel = (p: string) => join(root, "framework", "src", p);
-const appRel = (p: string) => join(root, "admin-app", "frontend", p);
+const appRel = (p: string) => join(root, "admin-app", "app", p);
 const sliceIn =
   (base: (p: string) => string) =>
   (p: string, from: number, to: number): string =>
@@ -103,25 +103,26 @@ const slice = sliceIn(rel);
 const sliceApp = sliceIn(appRel);
 
 const excerpts = {
-  core: { code: slice("core/mod.ts", 46, 107), from: 46 },
-  storeApply: { code: slice("plugins/store/mod.ts", 108, 124), from: 108 },
-  storeChange: { code: slice("plugins/store/mod.ts", 178, 197), from: 178 },
+  core: { code: slice("core/mod.ts", 42, 121), from: 42 },
+  storeApply: { code: slice("plugins/store/mod.ts", 124, 140), from: 124 },
+  storeChange: { code: slice("plugins/store/mod.ts", 193, 206), from: 193 },
+  storeAnswer: { code: slice("plugins/store/mod.ts", 221, 233), from: 221 },
   httpType: { code: slice("plugins/http/mod.ts", 6, 23), from: 6 },
   httpRun: { code: slice("plugins/http/mod.ts", 66, 98), from: 66 },
-  domHandler: { code: slice("plugins/dom/mod.ts", 91, 105), from: 91 },
-  domApply: { code: slice("plugins/dom/mod.ts", 244, 258), from: 244 },
-  domOnState: { code: slice("plugins/dom/mod.ts", 364, 371), from: 364 },
+  domHandler: { code: slice("plugins/dom/mod.ts", 378, 396), from: 378 },
+  domApply: { code: slice("plugins/dom/mod.ts", 553, 575), from: 553 },
   loggerType: { code: slice("plugins/logger/mod.ts", 3, 11), from: 3 },
   loggerPlugin: { code: slice("plugins/logger/mod.ts", 18, 31), from: 18 },
   timeType: { code: slice("plugins/time/mod.ts", 3, 24), from: 3 },
   wsType: { code: slice("plugins/ws/mod.ts", 3, 16), from: 3 },
   wsFrames: { code: slice("plugins/ws/mod.ts", 59, 70), from: 59 },
-  embedNamed: { code: sliceApp("pages/admin/admin.pavlus", 3, 8), from: 3 },
+  outletShell: { code: sliceApp("app.pavlus", 12, 16), from: 12 },
   embedValue: {
-    code: sliceApp("pages/dashboard/overview/overview.pavlus", 1, 7),
+    code: slice("compiler/__fixtures__/embed-dynamic.pavlus", 1, 5),
     from: 1,
   },
-  childrenDecl: { code: sliceApp("pages/admin/admin.ts", 22, 33), from: 22 },
+  routingDecl: { code: sliceApp("app.ts", 38, 55), from: 38 },
+  childPaint: { code: sliceApp("user-list/user-list.ts", 70, 77), from: 70 },
   pluginCtx: { code: slice("core/types.ts", 24, 35), from: 24 },
   pluginType: { code: slice("core/types.ts", 47, 54), from: 47 },
 };

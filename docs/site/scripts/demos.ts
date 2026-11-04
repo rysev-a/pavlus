@@ -10,7 +10,7 @@ button(@click=inc) Increment`;
 
 export const counterApp = `import { Component, createApp, type Message } from "@service-laboratory/pavlus";
 import { createStorePlugin, storeEffector as store } from "@service-laboratory/pavlus/plugins/store";
-import { createDomPlugin } from "@service-laboratory/pavlus/plugins/dom";
+import { DomPlugin } from "@service-laboratory/pavlus/plugins/dom";
 import view from "./counter.pavlus";
 
 class Counter extends Component<{ count: number }> {
@@ -23,7 +23,7 @@ class Counter extends Component<{ count: number }> {
 
 createApp({
   app: new Counter(),
-  plugins: [createStorePlugin({ count: 0 }), createDomPlugin()],
+  plugins: [createStorePlugin({ count: 0 }), new DomPlugin()],
   mount: "#app", // renders the view; \`mounted\` is the first message
 });`;
 
@@ -39,7 +39,7 @@ export const usersTemplate = `ul.users
 export const usersApp = `import { Component, createApp, type Message } from "@service-laboratory/pavlus";
 import { createStorePlugin, storeEffector as store } from "@service-laboratory/pavlus/plugins/store";
 import { createHttpPlugin, httpEffector as http } from "@service-laboratory/pavlus/plugins/http";
-import { createDomPlugin } from "@service-laboratory/pavlus/plugins/dom";
+import { DomPlugin } from "@service-laboratory/pavlus/plugins/dom";
 import view from "./users.pavlus";
 
 interface UsersState {
@@ -78,7 +78,7 @@ createApp({
   plugins: [
     createStorePlugin({ status: "boot", users: [], error: "" }),
     createHttpPlugin(),
-    createDomPlugin(),
+    new DomPlugin(),
   ],
   mount: "#app",
 });`;

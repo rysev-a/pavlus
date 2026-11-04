@@ -49,19 +49,19 @@
 <rect x="24" y="650" width="1192" height="510" rx="10" fill="#0f172a" stroke="#1e293b"/>
 <text x="38" y="673" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">3 · target functions</text>
 <text x="1202" y="673" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">codegen.generate()</text>
-<text x="38" y="694" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">const meta = { embeds: [], outlet: false };</text>
+<text x="38" y="694" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">const meta = { embeds: {}, outlet: false };</text>
 <text x="38" y="709" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function render(state, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
 <text x="38" y="724" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: if</text>
-<text x="38" y="739" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  nodes.push({ t: &quot;marker&quot;, id: &quot;0s&quot; + idSuffix });</text>
+<text x="38" y="739" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  nodes.push({ t: &quot;marker&quot;, id: idSuffix + &quot;0s&quot; });</text>
 <text x="38" y="754" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 2: &lt;p.status&gt;</text>
 <text x="38" y="769" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    pChildren.push({ t: &quot;text&quot;, text: &quot;Loading...&quot; });</text>
 <text x="38" y="784" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      t: &quot;el&quot;,</text>
 <text x="38" y="799" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      events: {},</text>
 <text x="38" y="814" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 4: &lt;p.done&gt;</text>
-<text x="38" y="829" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    pChildren.push({ t: &quot;text&quot;, id: &quot;4&quot; + idSuffix, text: &quot;Loaded &quot; + toText(state.count) + &quot; items&quot; });</text>
+<text x="38" y="829" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    pChildren.push({ t: &quot;text&quot;, id: idSuffix + &quot;4&quot;, text: &quot;Loaded &quot; + toText(state.count) + &quot; items&quot; });</text>
 <text x="38" y="844" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      t: &quot;el&quot;,</text>
 <text x="38" y="859" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      events: {},</text>
-<text x="38" y="874" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  nodes.push({ t: &quot;marker&quot;, id: &quot;0e&quot; + idSuffix });</text>
+<text x="38" y="874" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  nodes.push({ t: &quot;marker&quot;, id: idSuffix + &quot;0e&quot; });</text>
 <text x="38" y="889" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  return nodes;</text>
 <text x="38" y="904" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve"> </text>
 <text x="38" y="919" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function diff(prev, next, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
@@ -72,7 +72,7 @@
 <text x="38" y="994" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    const nextBranch = next.loading ? 0 : 1;</text>
 <text x="38" y="1009" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    if (prevBranch !== nextBranch) {</text>
 <text x="38" y="1024" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">      // another branch: replace what is between the markers</text>
-<text x="38" y="1039" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      if (prevBranch !== -1) patches.push({ op: &quot;clear&quot;, from: &quot;0s&quot; + idSuffix, to: &quot;0e&quot; + idSuffix });</text>
+<text x="38" y="1039" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      if (prevBranch !== -1) patches.push({ op: &quot;clear&quot;, from: idSuffix + &quot;0s&quot;, to: idSuffix + &quot;0e&quot; });</text>
 <text x="38" y="1054" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      if (nextBranch !== -1) {</text>
 <text x="38" y="1069" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        if (nextBranch === 0) {</text>
 <text x="38" y="1084" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">          // line 2: &lt;p.status&gt;</text>

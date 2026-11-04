@@ -107,7 +107,7 @@
 <line x1="518" y1="1204.5" x2="532" y2="1204.5" stroke="#059669" stroke-dasharray="2 3"/>
 <rect x="328" y="1235" width="278.3" height="42" rx="6" fill="#ffffff" stroke="#d97706"/>
 <text x="338" y="1251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">diff (keyed list):</text>
-<text x="338" y="1264" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">{&quot;op&quot;:&quot;remove&quot;,&quot;from&quot;:&quot;4[#3&quot;,&quot;to&quot;:&quot;4]#3&quot;}</text>
+<text x="338" y="1264" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#1f2430" xml:space="preserve">{&quot;op&quot;:&quot;remove&quot;,&quot;from&quot;:&quot;#34[&quot;,&quot;to&quot;:&quot;#34]&quot;}</text>
 <line x1="314" y1="1254" x2="328" y2="1254" stroke="#d97706" stroke-dasharray="2 3"/>
 <text x="212" y="1299" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#d97706" text-anchor="middle" xml:space="preserve">apply → Clara's row removed</text>
 <line x1="314" y1="1307" x2="110" y2="1307" stroke="#d97706" stroke-width="1.6"/>

@@ -55,15 +55,17 @@ export interface DocsInput {
     httpRun: Excerpt;
     domHandler: Excerpt;
     domApply: Excerpt;
-    domOnState: Excerpt;
+    storeAnswer: Excerpt;
+    childPaint: Excerpt;
+    outletShell: Excerpt;
     loggerType: Excerpt;
     loggerPlugin: Excerpt;
     timeType: Excerpt;
     wsType: Excerpt;
     wsFrames: Excerpt;
-    embedNamed: Excerpt;
+    outletShell: Excerpt;
     embedValue: Excerpt;
-    childrenDecl: Excerpt;
+    routingDecl: Excerpt;
     pluginCtx: Excerpt;
     pluginType: Excerpt;
   };
@@ -627,7 +629,7 @@ export function randomPlugin(): Plugin<RandomEffect> {
 
 const SAMPLE_USAGE = `import { Component, createApp, type Message } from "@service-laboratory/pavlus";
 import { createStorePlugin, storeEffector as store } from "@service-laboratory/pavlus/plugins/store";
-import { createDomPlugin } from "@service-laboratory/pavlus/plugins/dom";
+import { DomPlugin } from "@service-laboratory/pavlus/plugins/dom";
 import { randomInt, randomPlugin } from "./random-plugin";
 
 class Dice extends Component<{ dice: number }> {
@@ -641,7 +643,7 @@ class Dice extends Component<{ dice: number }> {
 
 createApp({
   app: new Dice(),
-  plugins: [createStorePlugin({ dice: 0 }), randomPlugin(), createDomPlugin()],
+  plugins: [createStorePlugin({ dice: 0 }), randomPlugin(), new DomPlugin()],
   mount: "#app",
 });`;
 
@@ -659,7 +661,7 @@ function persistedStore(initial: Record<string, unknown>) {
 const saved = JSON.parse(localStorage.getItem("app-state") ?? "null");
 createApp({
   app: new App(),
-  plugins: [persistedStore(saved ?? { theme: "dark" }), createDomPlugin()],
+  plugins: [persistedStore(saved ?? { theme: "dark" }), new DomPlugin()],
 });`;
 
 // the last line contains a template literal, so its backtick and \${ are escaped
@@ -740,7 +742,7 @@ export function renderDocsPage(input: DocsInput): string {
   <a class="item" href="#events">events</a>
   <a class="item" href="#if">conditions</a>
   <a class="item" href="#for">cycles</a>
-  <a class="item" href="#components">components and slots</a>
+  <a class="item" href="#components">components and routing</a>
   <div class="group"><a href="#core">Core</a></div>
   <a class="item" href="#core">the pure concept</a>
   <a class="item" href="#core-source">the core, in full</a>
@@ -784,7 +786,7 @@ export function renderDocsPage(input: DocsInput): string {
 ${exampleSections}
 
 <section class="example" id="components">
-  <div class="sec-head"><span class="part-badge">part I · composition</span><h2>Components and slots</h2></div>
+  <div class="sec-head"><span class="part-badge">part I · composition</span><h2>Components and routing</h2></div>
   <p class="intro">A template embeds another component with <code>+Name#instance(props)</code>:
   the props are expressions on the parent's state and become the child template's state;
   <code>...expr</code> spreads one. Events inside the child are prefixed with the instance
@@ -792,17 +794,22 @@ ${exampleSections}
   reaches the parent as <code>users.select</code>. One name ties the three layers together:
   <code>users</code> in the template, <code>users</code> in the parent's <code>children</code>,
   <code>users</code> in the state.</p>
+  <p class="intro">Pages that replace each other are routes, not embeds: the shell's template
+  embeds the sidebar and leaves the page to <code>+outlet</code>, and a <code>routing</code> table says
+  which page shows at which path. Each entry is a child like any other (its own state key, its own message
+  prefix), plus the route in its state; the pages below it — the users table, the create
+  and edit forms — load their data in <code>enter</code> and paint themselves.</p>
   <div class="grid2">
     ${pre(
-      "embed by name — admin-app/frontend/pages/admin/admin.pavlus",
-      input.excerpts.embedNamed.code,
-      { lang: "pavlus", from: input.excerpts.embedNamed.from },
+      "the shell — admin-app/app/app.pavlus",
+      input.excerpts.outletShell.code,
+      { lang: "pavlus", from: input.excerpts.outletShell.from },
     )}
-    ${pre(
-      "the child declaration — admin-app/frontend/pages/admin/admin.ts",
-      input.excerpts.childrenDecl.code,
-      { lang: "ts", from: input.excerpts.childrenDecl.from },
-    )}
+      ${pre(
+        "the routing table — admin-app/app/app.ts",
+        input.excerpts.routingDecl.code,
+        { lang: "ts", from: input.excerpts.routingDecl.from },
+      )}
   </div>
   <p class="intro">The embed can also be a <em>value in the state</em> (<code>+{expr}#instance</code>):
   the dashboard swaps its users list for a table at runtime, and <code>diff</code> compares the
@@ -810,7 +817,7 @@ ${exampleSections}
   value diffs only its props. This is also how routed pages work: the shell's <code>+outlet</code>
   renders whatever page the router selected.</p>
   ${pre(
-    "embed by value — admin-app/frontend/pages/dashboard/overview/overview.pavlus",
+    "embed by value — framework/src/compiler/__fixtures__/embed-dynamic.pavlus",
     input.excerpts.embedValue.code,
     { lang: "pavlus", from: input.excerpts.embedValue.from },
   )}
@@ -827,8 +834,10 @@ ${exampleSections}
   <p class="intro">The compiler gives you pure views; the architecture makes the whole application pure.
   Your handlers never touch the DOM, the network, the clock or randomness: they get a message and the state,
   and return an array of effects — plain data. The core feeds effects to plugins in order; the store plugin
-  replaces the state immutably; when the state object identity changes, every plugin gets
-  <code>onState(next)</code>, and the DOM plugin turns the change into patches for the browser.
+  replaces the state immutably and answers a write with the states around it — <code>{ prev, next }</code>,
+  exactly what a view <code>diff</code> takes, so a handler paints by returning
+  <code>DomPlugin.update(patches)</code>. When the state identity changes, every plugin gets
+  <code>onState(next)</code>.
   Purity is a documented contract, not a runtime police: the framework simply gives you nowhere dirty to go.</p>
 
   <h3>The whole system</h3>
@@ -990,12 +999,26 @@ ${exampleSections}
       from: input.excerpts.domApply.from,
     },
   )}
+  <p class="intro">Nothing repaints on its own. A store write that changed anything answers with the
+  states around it, and the component that cares — usually through a handler named <code>paint</code> —
+  diffs its own view and returns the patches as an <code>update</code> effect. A child embedded with
+  <code>+Child#name</code> knows nothing of its surroundings: it returns patches with ids relative to
+  itself, and every boundary it bubbles through scopes them — the node ids get the embed's segment in
+  front, the event messages the instance name — so by the root they address the one mount.</p>
   ${pre(
-    "when the state changes — framework/src/plugins/dom/mod.ts",
-    input.excerpts.domOnState.code,
+    "a write answers its states — framework/src/plugins/store/mod.ts",
+    input.excerpts.storeAnswer.code,
     {
       lang: "ts",
-      from: input.excerpts.domOnState.from,
+      from: input.excerpts.storeAnswer.from,
+    },
+  )}
+  ${pre(
+    "a child paints itself — admin-app/app/user-list/user-list.ts",
+    input.excerpts.childPaint.code,
+    {
+      lang: "ts",
+      from: input.excerpts.childPaint.from,
     },
   )}
 

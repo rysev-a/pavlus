@@ -930,37 +930,37 @@ export function pureConceptSvg(): Svg {
   });
 
   // store plugin
-  svg.rect(430, 500, 380, 112, {
+  svg.rect(460, 500, 350, 112, {
     fill: C.panel,
     stroke: C.state,
     rx: 10,
     sw: 1.4,
   });
-  svg.text(620, 524, "store plugin — the state", {
+  svg.text(635, 524, "store plugin — the state", {
     size: 13.5,
     bold: true,
     anchor: "middle",
     fill: C.state,
   });
-  svg.text(620, 546, "set · merge · remove · undo · restoreTo", {
+  svg.text(635, 546, "set · merge · remove · undo · restoreTo", {
     size: 10.5,
     mono: true,
     anchor: "middle",
     fill: C.muted,
   });
-  svg.text(620, 562, "immutable updates, structural sharing", {
+  svg.text(635, 562, "immutable updates, structural sharing", {
     size: 10.5,
     mono: true,
     anchor: "middle",
     fill: C.muted,
   });
-  svg.text(620, 578, "history of { effect, restoreEffect }", {
+  svg.text(635, 578, "history of { effect, restoreEffect }", {
     size: 10.5,
     mono: true,
     anchor: "middle",
     fill: C.muted,
   });
-  svg.text(620, 598, "the first plugin with getState() wins", {
+  svg.text(635, 598, "the first plugin with getState() wins", {
     size: 10,
     italic: true,
     anchor: "middle",
@@ -968,21 +968,27 @@ export function pureConceptSvg(): Svg {
   });
 
   // browser
-  svg.rect(90, 500, 250, 112, { fill: C.panel, stroke: C.border, rx: 10 });
-  svg.text(215, 524, "browser", { size: 13.5, bold: true, anchor: "middle" });
-  svg.text(215, 546, "DOM tree · user events", {
+  svg.rect(90, 500, 220, 112, { fill: C.panel, stroke: C.border, rx: 10 });
+  svg.text(200, 524, "browser", { size: 13.5, bold: true, anchor: "middle" });
+  svg.text(200, 546, "DOM tree · user events", {
     size: 10.5,
     mono: true,
     anchor: "middle",
     fill: C.muted,
   });
-  svg.text(215, 562, "network (fetch)", {
+  svg.text(200, 562, "can persist to IndexedDB", {
     size: 10.5,
     mono: true,
     anchor: "middle",
     fill: C.muted,
   });
-  svg.text(215, 582, "the outside world", {
+  svg.text(200, 578, "RAM holds the live state", {
+    size: 10.5,
+    mono: true,
+    anchor: "middle",
+    fill: C.muted,
+  });
+  svg.text(200, 598, "the outside world", {
     size: 10,
     italic: true,
     anchor: "middle",
@@ -1014,6 +1020,12 @@ export function pureConceptSvg(): Svg {
   // store -> core
   svg.arrow(730, 500, 730, 400, { stroke: C.state, sw: 1.6 });
   svg.caption(740, 462, "new state (identity changes)");
+  // store <-> browser: the state also lives in the browser — the live state
+  // object sits in its RAM, and can persist to IndexedDB and revive on reload
+  svg.arrow(460, 545, 310, 545, { stroke: C.state, sw: 1.6 });
+  svg.caption(385, 533, "state → RAM · IndexedDB", "middle");
+  svg.arrow(310, 585, 460, 585, { stroke: C.msg, sw: 1.6 });
+  svg.caption(385, 601, "revived on reload", "middle");
   // core -> http
   svg.arrow(810, 330, 930, 330, { stroke: C.effect, sw: 1.6 });
   svg.caption(870, 318, "handle(request)", "middle");
@@ -1118,11 +1130,11 @@ const P4 = "remove Alan";
 
 /**
  * The story of a tiny admin session, as data: open the start page, open the
- * users page, edit one user, remove one user — fifteen steps, four phases.
+ * users page, edit one user, remove one user — sixteen steps, four phases.
  * The users page walks every hop of the loop once (message → app → effects →
- * plugins → state → patches); edit and remove compress the repeated hops
- * into their captions — the model never bends. The toy browser in the hero
- * reads `browser` frames to stay in sync with the packet.
+ * plugins → state → browser → patches); edit and remove compress the
+ * repeated hops into their captions — the model never bends. The toy browser
+ * in the hero reads `browser` frames to stay in sync with the packet.
  */
 export const FLOW_STEPS: FlowStep[] = [
   {
@@ -1193,12 +1205,25 @@ export const FLOW_STEPS: FlowStep[] = [
     pts: E.c2s,
     label: 'handle(store.merge("users.loading", true))',
     caption:
-      "The store applies the merge immutably — a new state object — and the skeleton shows up in the browser.",
+      "The store commits immutably — a brand-new state object. As plain data it paints nothing yet: first it travels on to the browser.",
+    phase: P2,
+    browser: {
+      dbg: { t: "state", m: "loading = true" },
+      store: "users.loading ← true",
+    },
+  },
+  {
+    from: "store",
+    to: "browser",
+    color: C.state,
+    fly: [{ p: [840, 258] }, { p: [997, 258] }],
+    label: "new state → browser RAM · IndexedDB",
+    caption:
+      "The new state object lives in the browser's RAM — the page's one source of truth — and can persist to IndexedDB to survive a reload. onState fires, the skeleton paints.",
     phase: P2,
     browser: {
       view: "users-loading",
-      dbg: { t: "state", m: "loading = true" },
-      store: "users.loading ← true",
+      dbg: { t: "state", m: "state → RAM · IndexedDB" },
     },
   },
   {
@@ -1623,6 +1648,7 @@ export function pureConceptFlowSvg(id = "flowviz-svg"): string {
   svg.caption(918, 124, "DOM work", "middle");
   svg.arrow(840, 258, 997, 258, { stroke: C.state, sw: 1.4 });
   svg.caption(918, 246, "state change", "middle");
+  svg.caption(918, 276, "RAM · IndexedDB", "middle");
   svg.arrow(840, 378, 997, 378, { stroke: C.net, sw: 1.4 });
   svg.caption(918, 366, "network", "middle");
   svg.arrow(840, 502, 997, 502, { stroke: C.muted, sw: 1.4 });
@@ -1783,7 +1809,7 @@ export function pureConceptFlowSvg(id = "flowviz-svg"): string {
     fill: C.codeText,
   });
   svg.rect(1012, 454, 34, 2, { fill: "#6366f1" });
-  svg.text(1488, 448, "1/15", {
+  svg.text(1488, 448, `1/${FLOW_STEPS.length}`, {
     size: 10,
     mono: true,
     fill: "#64748b",

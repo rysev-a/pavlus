@@ -57,7 +57,7 @@
 <rect x="24" y="754" width="1192" height="525" rx="10" fill="#0f172a" stroke="#1e293b"/>
 <text x="38" y="777" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">3 · target functions</text>
 <text x="1202" y="777" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">codegen.generate()</text>
-<text x="38" y="798" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">const meta = { embeds: [], outlet: false };</text>
+<text x="38" y="798" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">const meta = { embeds: {}, outlet: false };</text>
 <text x="38" y="813" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function render(state, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
 <text x="38" y="828" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;form&gt;</text>
 <text x="38" y="843" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 2: &lt;input&gt;</text>
@@ -65,13 +65,13 @@
 <text x="38" y="873" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  setAttr(inputAttrs, &quot;disabled&quot;, toAttr(state.busy));</text>
 <text x="38" y="888" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    t: &quot;el&quot;,</text>
 <text x="38" y="903" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 3: &lt;button&gt;</text>
-<text x="38" y="918" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  buttonChildren.push({ t: &quot;text&quot;, id: &quot;3&quot; + idSuffix, text: &quot;&quot; + toText((state.busy ? &quot;Saving...&quot; : &quot;Save&quot;)) });</text>
+<text x="38" y="918" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  buttonChildren.push({ t: &quot;text&quot;, id: idSuffix + &quot;3&quot;, text: &quot;&quot; + toText((state.busy ? &quot;Saving...&quot; : &quot;Save&quot;)) });</text>
 <text x="38" y="933" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  setAttr(buttonAttrs, &quot;disabled&quot;, toAttr(state.busy));</text>
 <text x="38" y="948" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  setAttr(buttonAttrs, &quot;class&quot;, joinClasses([(state.busy ? &quot;busy&quot; : &quot;&quot;)]));</text>
 <text x="38" y="963" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    t: &quot;el&quot;,</text>
 <text x="38" y="978" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    events: {},</text>
 <text x="38" y="993" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 4: if</text>
-<text x="38" y="1008" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  formChildren.push({ t: &quot;marker&quot;, id: &quot;4s&quot; + idSuffix });</text>
+<text x="38" y="1008" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  formChildren.push({ t: &quot;marker&quot;, id: idSuffix + &quot;4s&quot; });</text>
 <text x="38" y="1023" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve"> </text>
 <text x="38" y="1038" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function diff(prev, next, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
 <text x="38" y="1053" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev === next) return patches;</text>
@@ -86,7 +86,7 @@
 <text x="38" y="1188" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">      // line 3: text</text>
 <text x="38" y="1203" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      const prevText = &quot;&quot; + toText((prev.busy ? &quot;Saving...&quot; : &quot;Save&quot;));</text>
 <text x="38" y="1218" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      const nextText = &quot;&quot; + toText((next.busy ? &quot;Saving...&quot; : &quot;Save&quot;));</text>
-<text x="38" y="1233" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      if (prevText !== nextText) patches.push({ op: &quot;text&quot;, id: &quot;3&quot; + idSuffix, text: nextText });</text>
+<text x="38" y="1233" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      if (prevText !== nextText) patches.push({ op: &quot;text&quot;, id: idSuffix + &quot;3&quot;, text: nextText });</text>
 <text x="38" y="1248" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 4: if (reads: error)</text>
 <text x="38" y="1271" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">full module below — this is the code the browser runs</text>
 <line x1="360" y1="378" x2="394" y2="378" stroke="#98a2b3" stroke-width="1.5"/>
