@@ -1,8 +1,0 @@
-import Roles from "../../modules/roles/roles.pavlus"
-
-section.admin
-  div.ui-page-header
-    div
-      h1.page-title.ui-page-title Admin
-      p.page-intro.ui-page-description Roles and how many users have each. The users themselves are on the dashboard.
-  +Roles#roles(...roles)

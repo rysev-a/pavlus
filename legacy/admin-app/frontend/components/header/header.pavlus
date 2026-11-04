@@ -1,7 +1,0 @@
-// The top bar: the sidebar triggers. The desktop one collapses the sidebar column, the
-// mobile one opens the off-canvas drawer. Their clicks reach the shell as
-// `header.toggleSidebar` / `header.toggleDrawer`.
-header.top.ui-shell-header
-  div.ui-shell-header-start
-    button.ui-button.ui-button-ghost.ui-button-icon.ui-shell-trigger.ui-shell-trigger--desktop(title="Toggle sidebar" aria-label="Toggle sidebar" @click=toggleSidebar)
-    button.ui-button.ui-button-ghost.ui-button-icon.ui-shell-trigger.ui-shell-trigger--mobile(title="Toggle menu" aria-label="Toggle menu" @click=toggleDrawer)
