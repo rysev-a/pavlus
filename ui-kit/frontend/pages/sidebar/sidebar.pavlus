@@ -27,7 +27,6 @@ section.k-page
                       span.k-icon.k-icon-settings
                     span.ui-sidebar-label Settings
                     span.ui-sidebar-chevron
-                      span.k-icon.k-icon-chevron-right
                   ul.ui-sidebar-sub
                     li
                       a.ui-sidebar-sub-button(href="/") General
