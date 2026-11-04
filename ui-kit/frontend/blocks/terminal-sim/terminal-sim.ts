@@ -4,7 +4,7 @@ import {
   type Message,
 } from "@service-laboratory/pavlus";
 import {
-  domEffector as dom,
+  DomPlugin,
   storeEffector as store,
 } from "@service-laboratory/pavlus/plugins";
 import { type Fs, HOME, makeFs } from "./fs.ts";
@@ -76,7 +76,7 @@ export class TerminalSimPage extends Component<TerminalSimState> {
     return this._show("term", stepTerm(s.term, "key", msg.event));
   }
   "term.focus"(): Effect[] {
-    return [dom.focus("#tsim-demo-input")];
+    return [DomPlugin.focus("#tsim-demo-input")];
   }
 
   "task.type"(msg: Message, s: TerminalSimState): Effect[] {
@@ -89,7 +89,7 @@ export class TerminalSimPage extends Component<TerminalSimState> {
     return this._show("task", stepTerm(s.task, "key", msg.event));
   }
   "task.focus"(): Effect[] {
-    return [dom.focus("#tsim-demo-task")];
+    return [DomPlugin.focus("#tsim-demo-task")];
   }
 
   reset(): Effect[] {

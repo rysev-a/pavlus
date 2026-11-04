@@ -4,7 +4,7 @@ import {
   type Message,
 } from "@service-laboratory/pavlus";
 import {
-  domEffector as dom,
+  DomPlugin,
   routerEffector as router,
   storeEffector as store,
 } from "@service-laboratory/pavlus/plugins";
@@ -103,7 +103,7 @@ export class DocsPage extends Component<DocsState> {
       store.set("doc", doc),
       store.set("summary", doc.summary),
       store.set("status", "ready"),
-      dom.focus("#docs-title"),
+      DomPlugin.focus("#docs-title"),
     ];
   }
 
@@ -133,13 +133,15 @@ export class DocsPage extends Component<DocsState> {
 
   /** A link of the table of contents: focus the heading, the browser scrolls to it. */
   jump(msg: Message): Effect[] {
-    return [dom.focus(`#${String(msg.payload)}`)];
+    return [DomPlugin.focus(`#${String(msg.payload)}`)];
   }
 
   /** The playground: the editors, Run, Reset and the compiler's answer. */
   pgInput(msg: Message): Effect[] {
     const value = String(msg.event?.value ?? "");
-    return [store.set(msg.payload === "state" ? "pgState" : "pgTemplate", value)];
+    return [
+      store.set(msg.payload === "state" ? "pgState" : "pgTemplate", value),
+    ];
   }
 
   pgRun(_msg: Message, state: DocsState): Effect[] {

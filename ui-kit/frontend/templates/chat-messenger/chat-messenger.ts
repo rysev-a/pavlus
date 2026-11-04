@@ -9,7 +9,7 @@ import {
   type Message,
 } from "@service-laboratory/pavlus";
 import {
-  domEffector as dom,
+  DomPlugin,
   storeEffector as store,
   timeEffector as time,
 } from "@service-laboratory/pavlus/plugins";
@@ -390,7 +390,7 @@ export class ChatMessenger extends Component<ChatState> {
   }
 
   "head.jump"(msg: Message): Effect[] {
-    return [dom.focus(`#msg-${msg.payload as string}`)];
+    return [DomPlugin.focus(`#msg-${msg.payload as string}`)];
   }
 
   // ---- the bubbles ----
@@ -429,11 +429,11 @@ export class ChatMessenger extends Component<ChatState> {
   }
 
   "bub.jump"(msg: Message): Effect[] {
-    return [dom.focus(`#msg-${msg.payload as string}`)];
+    return [DomPlugin.focus(`#msg-${msg.payload as string}`)];
   }
 
   focusInput(): Effect[] {
-    return [dom.focus("#k-mc-input")];
+    return [DomPlugin.focus("#k-mc-input")];
   }
 
   // ---- the composer ----
@@ -611,7 +611,7 @@ export class ChatMessenger extends Component<ChatState> {
   }
 
   jumpTo(msg: Message): Effect[] {
-    return [dom.focus(`#msg-${msg.payload as string}`)];
+    return [DomPlugin.focus(`#msg-${msg.payload as string}`)];
   }
 
   /** A member: open the direct chat with them, or start one. */

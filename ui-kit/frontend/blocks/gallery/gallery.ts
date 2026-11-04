@@ -5,7 +5,7 @@ import {
   type Message,
 } from "@service-laboratory/pavlus";
 import {
-  domEffector as dom,
+  DomPlugin,
   storeEffector as store,
   timeEffector as time,
 } from "@service-laboratory/pavlus/plugins";
@@ -132,7 +132,7 @@ export class Gallery extends Component<GalleryState> {
   }
 
   focusStage(): Effect[] {
-    return [dom.focus("#gal-lightbox")];
+    return [DomPlugin.focus("#gal-lightbox")];
   }
 
   close(): Effect[] {

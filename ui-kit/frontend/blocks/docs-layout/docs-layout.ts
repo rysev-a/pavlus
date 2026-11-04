@@ -5,7 +5,7 @@ import {
   type Message,
 } from "@service-laboratory/pavlus";
 import {
-  domEffector as dom,
+  DomPlugin,
   storeEffector as store,
 } from "@service-laboratory/pavlus/plugins";
 import {
@@ -116,7 +116,7 @@ export class DocsLayout extends Component<DocsState> {
         results: [],
         total: 0,
       }),
-      dom.focus("#dl-title"),
+      DomPlugin.focus("#dl-title"),
     ];
   }
 
@@ -126,7 +126,7 @@ export class DocsLayout extends Component<DocsState> {
 
   /** A link of the table of contents: focus the heading, the browser scrolls to it. */
   jump(msg: Message): Effect[] {
-    return [dom.focus(`#${msg.payload as string}`)];
+    return [DomPlugin.focus(`#${msg.payload as string}`)];
   }
 
   toggleGroup(msg: Message, state: DocsState): Effect[] {

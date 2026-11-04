@@ -5,13 +5,19 @@ import {
   type Message,
   type Route,
   type Routing,
+  viewOf,
 } from "@service-laboratory/pavlus";
 import {
   routerEffector as router,
   storeEffector as store,
 } from "@service-laboratory/pavlus/plugins";
+import { DomPlugin } from "@service-laboratory/pavlus/plugins/dom";
 import view from "./app.pavlus";
-import { enginePage, type EngineState, engineState } from "./engine/engine-page.ts";
+import {
+  enginePage,
+  type EngineState,
+  engineState,
+} from "./engine/engine-page.ts";
 import { docsPage, type DocsState, docsState } from "./docs/docs-page.ts";
 import { docPath, docsNav, type Lang, LANGS, PAGES } from "./docs/pages.ts";
 import {
@@ -194,9 +200,16 @@ function sourceReset(current: Entry | null, base: string): Effect[] {
 
 export class AppShell extends Component<AppState> {
   view = view;
-  // The shell repaints on every state change — the opt-in keeps the previous
-  // behavior now that the dom plugin no longer follows the state by default.
-  updateDomOnStateChange = true;
+
+  /**
+   * The shell paints itself from the answer of a store write (the app is
+   * wrapped in `paintOnWrite`): one diff of the whole tree — the pages the
+   * outlet renders included.
+   */
+  paint(msg: Message): Effect[] {
+    const { prev, next } = msg.payload as { prev: AppState; next: AppState };
+    return [DomPlugin.update(viewOf(this)!.diff(prev, next))];
+  }
 
   routing: Routing<AppState> = routingOf<AppState>({
     "/": {
@@ -288,7 +301,10 @@ export class AppShell extends Component<AppState> {
 
   /** A section of the top menu: go there and fold the menu. */
   "header.navigate"(msg: Message): Effect[] {
-    return [router.navigate(msg.payload as string), store.set("menuOpen", false)];
+    return [
+      router.navigate(msg.payload as string),
+      store.set("menuOpen", false),
+    ];
   }
 
   /** "Pages of this section": the sidebar drawer, and the menu folds. */
@@ -399,7 +415,12 @@ export class AppShell extends Component<AppState> {
   "themepanel.export"(msg: Message, state: AppState): Effect[] {
     return [
       store.set("exportNote", ""),
-      exportEffector.css(state.css, state.look.style, msg.payload === "all" ? "all" : "current", "exported"),
+      exportEffector.css(
+        state.css,
+        state.look.style,
+        msg.payload === "all" ? "all" : "current",
+        "exported",
+      ),
     ];
   }
 

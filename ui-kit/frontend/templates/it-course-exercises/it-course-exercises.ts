@@ -8,7 +8,7 @@ import {
   type Message,
 } from "@service-laboratory/pavlus";
 import {
-  domEffector as dom,
+  DomPlugin,
   storeEffector as store,
   timeEffector as time,
 } from "@service-laboratory/pavlus/plugins";
@@ -590,7 +590,7 @@ export class ItCourse extends Component<CourseState> {
     return this._term(state, "key", msg);
   }
   "term.focus"(): Effect[] {
-    return [dom.focus(`#${TERM_ID}`)];
+    return [DomPlugin.focus(`#${TERM_ID}`)];
   }
 
   // the footer

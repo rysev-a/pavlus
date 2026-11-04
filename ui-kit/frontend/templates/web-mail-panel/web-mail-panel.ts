@@ -8,7 +8,7 @@ import {
   type Message,
 } from "@service-laboratory/pavlus";
 import {
-  domEffector as dom,
+  DomPlugin,
   storeEffector as store,
   timeEffector as time,
 } from "@service-laboratory/pavlus/plugins";
@@ -366,7 +366,7 @@ export class WebMailPanel extends Component<MailState> {
   }
 
   focusSearch(): Effect[] {
-    return [dom.focus("#k-mtool-search")];
+    return [DomPlugin.focus("#k-mtool-search")];
   }
 
   showFolders(_msg: Message, s: MailState): Effect[] {

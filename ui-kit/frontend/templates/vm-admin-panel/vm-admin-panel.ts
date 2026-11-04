@@ -4,7 +4,7 @@
 // transition goes through the time plugin; every list is derived by `derive`.
 import type { Effect, Message } from "@service-laboratory/pavlus";
 import {
-  domEffector as dom,
+  DomPlugin,
   timeEffector as time,
 } from "@service-laboratory/pavlus/plugins";
 import { AdminApp, type AppState } from "../../blocks/admin-shell/app.ts";
@@ -949,7 +949,7 @@ export class VmAdminPanel extends AdminApp<VmState> {
     return this._console(state, "key", msg);
   }
   "term.focus"(): Effect[] {
-    return [dom.focus(`#${TERM_ID}`)];
+    return [DomPlugin.focus(`#${TERM_ID}`)];
   }
 
   // snapshots

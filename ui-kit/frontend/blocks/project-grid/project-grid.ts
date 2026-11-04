@@ -5,7 +5,7 @@ import {
   type Message,
 } from "@service-laboratory/pavlus";
 import {
-  domEffector as dom,
+  DomPlugin,
   storeEffector as store,
   timeEffector as time,
 } from "@service-laboratory/pavlus/plugins";
@@ -116,7 +116,7 @@ export class ProjectGrid extends Component<ProjectGridState> {
   }
 
   focusDetail(): Effect[] {
-    return [dom.focus("#pg-detail")];
+    return [DomPlugin.focus("#pg-detail")];
   }
 
   close(): Effect[] {

@@ -4,9 +4,9 @@ import "./kit.css";
 import "./docs/docs.css";
 // the stylesheet of a block or a template sits in its folder: `<slug>.css`
 import.meta.glob("./{blocks,templates}/*/*.css", { eager: true });
-import { createApp } from "@service-laboratory/pavlus";
+import { createApp, paintOnWrite } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createRouterPlugin,
   createStorePlugin,
   createHttpPlugin,
@@ -39,10 +39,12 @@ export const store = createStorePlugin<AppState>(
 );
 
 export const app = createApp<AppState>({
-  app: shell,
+  // every store write answers "paint" — the shell's paint handler diffs the
+  // whole tree from the answer
+  app: paintOnWrite(shell),
   plugins: [
     store,
-    createDomPlugin(),
+    new DomPlugin(),
     // the site is served under a base path; the app routes without it
     createRouterPlugin({ window: windowAt(root) }),
     createHttpPlugin(),
