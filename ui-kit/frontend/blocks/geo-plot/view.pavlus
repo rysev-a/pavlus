@@ -1,0 +1,31 @@
+// A map-like scatter plot, to embed. State = the props from geoPlot() in
+// geo.ts: `points` ([{ id, label, sub, x, y (percents), tone, active, flipX,
+// flipY }]), `legend` ([{ id, label, tone }]) and `ticks` ({ lng, lat }: [{ id,
+// label, pos }]). Optional `height`. A click on a point is sent as
+// `<name>.pick` with its id.
+div.k-geo
+  div.k-geo__body(style="height: {height ?? '360px'}")
+    div.k-geo__yaxis
+      for t in ticks.lat key t.id
+        span.k-geo__ytick(style="bottom: {t.pos}%") {t.label}
+    div.k-geo__frame
+      for t in ticks.lng key t.id
+        span.k-geo__vline(style="left: {t.pos}%")
+      for t in ticks.lat key t.id
+        span.k-geo__hline(style="bottom: {t.pos}%")
+      for p in points key p.id
+        div.k-geo__spot(class:k-geo__spot--on={p.active} style="left: {p.x}%; bottom: {p.y}%")
+          button(type="button" class="k-geo__pt k-adm-t-{p.tone}" data-active={p.active ? "true" : null} title="{p.label}, {p.sub}" aria-label="{p.label}, {p.sub}" aria-pressed={p.active ? "true" : "false"} @click=pick(p.id))
+          if p.active
+            div.k-geo__card(class:k-geo__card--left={p.flipX} class:k-geo__card--below={p.flipY})
+              strong {p.label}
+              small {p.sub}
+    div.k-geo__xaxis
+      for t in ticks.lng key t.id
+        span.k-geo__xtick(style="left: {t.pos}%") {t.label}
+  if legend.length > 0
+    ul.k-geo__legend
+      for key in legend key key.id
+        li.k-geo__key
+          span(class="k-geo__swatch k-adm-t-{key.tone}")
+          | {key.label}

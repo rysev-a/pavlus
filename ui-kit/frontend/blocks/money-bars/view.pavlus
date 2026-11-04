@@ -1,0 +1,27 @@
+// Grouped money bars, to embed. State = the props: `months`
+// ([{ id, label, bars: [{ id, h (percent of the half-height), neg, tone, tip }] }])
+// and `legend` ([{ id, label, tone }]); build them with moneyBars() from
+// bars.ts. A bar with `neg` grows down from the zero line. Optional `height`,
+// and `flat` (true when nothing is negative: the zero line moves to the bottom
+// and the bars use the whole height).
+div.k-mbars(class:k-mbars--flat={flat})
+  ul.k-mbars__legend
+    for key in legend key key.id
+      li.k-mbars__key
+        span(class="k-mbars__swatch k-adm-t-{key.tone}")
+        | {key.label}
+  div.k-mbars__plot(style="height: {height ?? '240px'}")
+    span.k-mbars__zero
+    div.k-mbars__groups
+      for month in months key month.id
+        div.k-mbars__group
+          div.k-mbars__bars
+            for bar in month.bars key bar.id
+              div.k-mbars__slot(title=bar.tip)
+                div.k-mbars__up
+                  if !bar.neg
+                    span(class="k-mbars__bar k-adm-t-{bar.tone}" style="height: {bar.h}%")
+                div.k-mbars__down
+                  if bar.neg
+                    span(class="k-mbars__bar k-mbars__bar--neg k-adm-t-{bar.tone}" style="height: {bar.h}%")
+          span.k-mbars__label {month.label}

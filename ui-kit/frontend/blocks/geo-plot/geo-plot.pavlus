@@ -1,0 +1,12 @@
+import Geo from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Fifty places around the world
+    div.k-preview.k-preview--block
+      +Geo#world(...world height="380px")
+    p.k-demo__note Click a point to label it. Picked: {worldName}.
+  section.k-demo
+    h2.k-demo__title A regional cluster
+    div.k-preview.k-preview--block
+      +Geo#region(...region height="320px")
