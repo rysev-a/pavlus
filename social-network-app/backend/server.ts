@@ -170,12 +170,21 @@ export function startServer(
           }
           const auth = req.headers.authorization ?? "";
           const token = /^Bearer\s+(\S+)$/i.exec(auth)?.[1] ?? null;
-          const reply = await handleApi(req.method ?? "GET", url.pathname, db, body, {
-            token,
-            params: url.searchParams,
-          });
+          const reply = await handleApi(
+            req.method ?? "GET",
+            url.pathname,
+            db,
+            body,
+            {
+              token,
+              params: url.searchParams,
+            },
+          );
           sendJson(res, reply.status, reply.body);
-        } else if (serveDist && (req.method === "GET" || req.method === "HEAD")) {
+        } else if (
+          serveDist &&
+          (req.method === "GET" || req.method === "HEAD")
+        ) {
           await sendStatic(url.pathname, res, dist, req.method === "HEAD");
         } else if (serveDist) {
           sendJson(res, 405, { error: `${req.method} is not allowed` });

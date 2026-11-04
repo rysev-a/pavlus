@@ -9,7 +9,10 @@
  * chunk of rows (a handful of array parameters, however many rows), so the
  * ~51k seed rows take a second or two.
  */
-import type { Db, TableName } from "../../../ui-kit/frontend/templates/orbit-social/schema.ts";
+import type {
+  Db,
+  TableName,
+} from "../../../ui-kit/frontend/templates/orbit-social/schema.ts";
 import type { Query } from "./query.ts";
 
 export type Row = Record<string, unknown> & { id: number };
@@ -67,7 +70,12 @@ const oneOf = (f: string, c: string, values: readonly string[]): Col => ({
   t: "text",
   enum: values,
 });
-const list = (table: string, parent: string, value: string, f: string): Child => ({
+const list = (
+  table: string,
+  parent: string,
+  value: string,
+  f: string,
+): Child => ({
   table,
   parent,
   value,
@@ -116,7 +124,14 @@ export const TABLE_DEFS: Record<TableName, TableDef> = {
       int("authorId", "author_id"),
       nint("wallId", "wall_id"),
       nint("communityId", "community_id"),
-      oneOf("kind", "kind", ["text", "music", "photo", "picture", "link", "repost"]),
+      oneOf("kind", "kind", [
+        "text",
+        "music",
+        "photo",
+        "picture",
+        "link",
+        "repost",
+      ]),
       text("text", "text", true),
       nint("songId", "song_id"),
       nint("photoId", "photo_id"),
@@ -565,9 +580,10 @@ export async function upsertRows(
       ...def.cols.map((c) => part.map((r) => toDb(c, r[c.f]))),
     ]);
     for (const ch of def.children) {
-      await run(`DELETE FROM ${ch.table} WHERE ${q(ch.parent)} = ANY($1::int[])`, [
-        part.map((r) => r.id),
-      ]);
+      await run(
+        `DELETE FROM ${ch.table} WHERE ${q(ch.parent)} = ANY($1::int[])`,
+        [part.map((r) => r.id)],
+      );
       const parents: number[] = [];
       const positions: number[] = [];
       const values: number[] = [];

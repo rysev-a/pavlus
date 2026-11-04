@@ -71,9 +71,7 @@ const contains = (text: string): string =>
 // ------------------------------------------------------------- parameters
 
 class Bad extends Error {
-  constructor(
-    readonly reply: Reply,
-  ) {
+  constructor(readonly reply: Reply) {
     super("bad request");
   }
 }
@@ -118,7 +116,7 @@ async function guard(
   return me;
 }
 
-const isReply = (v: Principal | Reply): v is Reply => "status" in v;
+const isReply = (v: Principal | Reply): v is Reply => "body" in v;
 
 // ------------------------------------------------------------------- users
 
@@ -231,7 +229,11 @@ function tableOf(name: unknown): TableDef | Reply {
 
 const show = (v: unknown): string => {
   const s = JSON.stringify(v);
-  return s === undefined ? String(v) : s.length > 40 ? s.slice(0, 37) + "..." : s;
+  return s === undefined
+    ? String(v)
+    : s.length > 40
+      ? s.slice(0, 37) + "..."
+      : s;
 };
 
 /** Validates rows of one table; the first wrong field is the error. */
@@ -249,11 +251,7 @@ function checkRows(
   return out;
 }
 
-async function sync(
-  db: Query,
-  action: string,
-  body: unknown,
-): Promise<Reply> {
+async function sync(db: Query, action: string, body: unknown): Promise<Reply> {
   switch (action) {
     case "load": {
       const names: string[] = TABLE_NAMES.slice();
@@ -296,7 +294,8 @@ async function sync(
       const data: Record<string, Row[]> = {};
       for (const [name, rows] of Object.entries(body.data)) {
         const def = tableOf(name);
-        if ("status" in def) return fail(400, `table ${show(name)} is unknown`, "data");
+        if ("status" in def)
+          return fail(400, `table ${show(name)} is unknown`, "data");
         if (!Array.isArray(rows))
           return fail(400, `data.${name} must be an array`, `data.${name}`);
         const clean = checkRows(def, rows, `data.${name}`);
@@ -374,9 +373,11 @@ async function tableRoute(
   body: unknown,
   ctx: ApiContext,
 ): Promise<Reply> {
-  const writeRoles: Role[] = def.name === "users" ? ["admin"] : ["moderator", "admin"];
+  const writeRoles: Role[] =
+    def.name === "users" ? ["admin"] : ["moderator", "admin"];
   if (idText === undefined) {
-    if (method === "GET") return listTable(db, def, ctx.params ?? new URLSearchParams());
+    if (method === "GET")
+      return listTable(db, def, ctx.params ?? new URLSearchParams());
     if (method !== "POST") return fail(405, `${method} is not allowed here`);
     const me = await guard(db, ctx, writeRoles);
     if (isReply(me)) return me;
@@ -446,7 +447,8 @@ async function feed(db: Query, params: URLSearchParams): Promise<Reply> {
   const values: unknown[] = [];
   if (raw !== null && raw !== "") {
     const userId = /^\d+$/.test(raw) ? Number(raw) : 0;
-    if (!isId(userId)) return fail(400, "userId must be a positive integer", "userId");
+    if (!isId(userId))
+      return fail(400, "userId must be a positive integer", "userId");
     if (!(await db(`SELECT 1 FROM users WHERE id = $1`, [userId])).length)
       return fail(404, `no user ${userId}`);
     where = "WHERE wall_id = $1";
@@ -499,7 +501,9 @@ async function searchSongs(db: Query, params: URLSearchParams): Promise<Reply> {
   const q = params.get("q")?.trim();
   if (q) {
     const p = add(contains(q));
-    where.push(`(s.title ILIKE ${p} OR a.name ILIKE ${p} OR al.title ILIKE ${p})`);
+    where.push(
+      `(s.title ILIKE ${p} OR a.name ILIKE ${p} OR al.title ILIKE ${p})`,
+    );
   }
   const genre = params.get("genre")?.trim();
   if (genre) where.push(`lower(s.genre) = lower(${add(genre)})`);
@@ -572,7 +576,11 @@ async function adminOverview(db: Query): Promise<Reply> {
     "ORDER BY created_at DESC, id DESC LIMIT 10",
     [],
   );
-  const [stats] = await db<{ banned: number; admins: number; moderators: number }>(
+  const [stats] = await db<{
+    banned: number;
+    admins: number;
+    moderators: number;
+  }>(
     `SELECT count(*) FILTER (WHERE status = 'banned')::int AS banned,
             count(*) FILTER (WHERE role = 'admin')::int AS admins,
             count(*) FILTER (WHERE role = 'moderator')::int AS moderators
@@ -692,7 +700,10 @@ async function route(
   if (parts[0] !== "api") return fail(404, `no route ${pathname}`);
   const [, a, b, c] = parts.map((p) => decodeURIComponent(p));
   const params = ctx.params ?? new URLSearchParams();
-  const only = (verb: string, fn: () => Promise<Reply>): Promise<Reply> | Reply =>
+  const only = (
+    verb: string,
+    fn: () => Promise<Reply>,
+  ): Promise<Reply> | Reply =>
     method === verb ? fn() : fail(405, `${method} is not allowed here`);
   const idOf = (text: string | undefined): number | undefined =>
     text !== undefined && /^\d+$/.test(text) && isId(Number(text))
@@ -748,8 +759,17 @@ async function route(
     case "admin": {
       const route404 = () => fail(404, `no route ${pathname}`);
       const isOverview = b === "overview" && parts.length === 3;
-      const userId = b === "users" && c !== undefined && parts[4] === "data" && parts.length === 5 ? idOf(c) : undefined;
-      if (!isOverview && !(b === "users" && parts.length === 5 && parts[4] === "data"))
+      const userId =
+        b === "users" &&
+        c !== undefined &&
+        parts[4] === "data" &&
+        parts.length === 5
+          ? idOf(c)
+          : undefined;
+      if (
+        !isOverview &&
+        !(b === "users" && parts.length === 5 && parts[4] === "data")
+      )
         return route404();
       if (method !== "GET") return fail(405, `${method} is not allowed here`);
       const me = await guard(db, ctx, ["admin"]);
@@ -766,7 +786,8 @@ async function route(
       }
     // falls through to the generic table routes
     default: {
-      if (a === undefined || !isTable(a)) return fail(404, `no route ${pathname}`);
+      if (a === undefined || !isTable(a))
+        return fail(404, `no route ${pathname}`);
       if (parts.length > 3) return fail(404, `no route ${pathname}`);
       return tableRoute(db, method, TABLE_DEFS[a], b, body, ctx);
     }
