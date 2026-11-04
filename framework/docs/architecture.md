@@ -98,8 +98,9 @@ flowchart TD
 4. Then `getState()` is read again; **only if the state object identity changed**
    (`next !== state`) every plugin gets `onState(next, ctx)`. A mount re-renders
    on this only when it was created with `followState`; otherwise views repaint
-   on demand when the app dispatches a `dom.update` effect — which is why state
-   must be treated as immutable.
+   on demand when the app turns a store write's answer (`{ prev, next }`) into
+   a `dom.update(prev, next)` effect — which is why state must be treated as
+   immutable.
 5. A safety valve throws if more than `maxMessagesPerTick` (default 10 000)
    messages are processed in one tick (message loops).
 6. `dispose()` disposes plugins in reverse registration order.
@@ -383,14 +384,16 @@ propsNext, …)`.
 - Form controls: `value`/`checked`/`selected` are mirrored to properties, not just
   attributes (the attribute only seeds a field).
 - `onState` diffs only the mounts created with `followState` (their stored state
-  identity must also differ), then patches. Other mounts repaint via `dom.update`.
+  identity must also differ), then patches. Other mounts repaint via
+  `dom.update(prev, next)`.
 
 ## 7. The store plugin (`src/plugins/store/mod.ts`)
 
 - Effects: `set`, `merge`, `remove`, `undo`, `restoreTo`, all addressed by a
   `Path` (`"user.email"` or `["users", 3, "name"]`). The writes (`set`, `merge`,
   `remove`) carry an optional `onSuccess` message id — answered with a dispatch
-  only when the change actually landed (a no-op never replies).
+  carrying `{ prev, next }` only when the change actually landed (a no-op never
+  replies).
 - Updates are pure functions (`setAt`, `removeAt`, `applyChange`) with structural
   sharing: untouched branches keep their object identity, which is exactly what
   `diff`'s `===` checks need. No-op writes return the same state and are not

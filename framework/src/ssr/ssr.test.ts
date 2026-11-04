@@ -100,9 +100,10 @@ function harness(html: string) {
     dom,
     messages,
     set(next: S) {
+      const prev = current;
       current = next;
       // An explicit repaint: a bare mount does not follow the state.
-      dom.handle({ plugin: "dom", type: "update" }, ctx);
+      dom.handle({ plugin: "dom", type: "update", prev, next }, ctx);
     },
   };
 }

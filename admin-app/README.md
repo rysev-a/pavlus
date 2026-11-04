@@ -19,26 +19,32 @@ tests/      the app over the real API on the real database, and the server rende
 browser mounts it and repaints on demand; the server runs it without a DOM
 and renders the final state to HTML.
 
-## The idea: the repaint is an effect
+## The idea: the repaint is a message
 
-Nothing follows the state. A state change alone never touches the DOM —
-a handler that changed something the user should see returns the repaint
-next to the write:
+Nothing follows the state, and plugins never talk to each other — everything
+goes through the application. A store write answers with a message carrying
+`{ prev, next }` (the state before and after, only when the write landed),
+and the application turns that answer into the repaint:
 
 ```ts
+const paint = { onSuccess: "paint" } as const;
+
 "users.loaded"(msg: Message): Effect[] {
   return [
-    store.set("users", msg.payload.data),
-    dom.update(),          // the list paints now — because we asked
+    store.set("users", msg.payload.data, paint), // → the store answers
   ];
+}
+
+"paint"(msg: Message): Effect[] {
+  const { prev, next } = msg.payload;
+  return [dom.update(prev, next)]; // the dom plugin diffs prev → next
 }
 ```
 
-The effects run in order: the store replaces the state first, then the dom
-plugin re-diffs the view against the state that already has the change. A
-handler that only asks for data (`submitForm`) returns no `dom.update()`
-at all — there is nothing to paint until the answer comes back as a new
-message.
+A state change alone paints nothing: a no-op write never answers, and a
+handler that only asks for data (`submitForm`) writes nothing at all. The
+`{ prev, next }` pair is frozen when the write lands, so the paints of one
+batch chain exactly (S0→S1, then S1→S2) — every landed write paints.
 
 ## Run it
 

@@ -44,18 +44,22 @@ A **path** is a dotted string (`"user.name"`, `"todos.0.done"`) or an array
 ### The store answers its writes
 
 With `onSuccess`, the change answers with a message once it **landed** — and
-only when it changed anything (a no-op never answers). The payload is the
-effect without `plugin`. This is how the application learns about its own
-writes: set, then load or repaint in the next message.
+only when it changed anything (a no-op never answers). The payload is
+`{ prev, next }`: the state before and after the write. This is how the
+application learns about its own writes — and paints: the pair is exactly
+what `dom.update` diffs, so an answer can be turned into the repaint
+directly.
 
 ```ts
+const paint = { onSuccess: "paint" } as const;
+
 "user.created"(msg, s): Effect[] {
   const user = msg.payload.data;
-  // this write answers "users.changed" once the list really changed
-  return [store.set("users", [...s.users, user], { onSuccess: "users.changed" })];
+  // this write answers "paint" with { prev, next } once the list changed
+  return [store.set("users", [...s.users, user], paint)];
 }
-"users.changed"(): Effect[] {
-  return [store.set("form", null)];   // the next decision
+"paint"(msg): Effect[] {
+  return [dom.update(msg.payload.prev, msg.payload.next)];
 }
 ```
 

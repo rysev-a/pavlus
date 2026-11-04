@@ -22,7 +22,8 @@ export interface CreateAppOptions<S> {
    * DOM, the message `mounted` is dispatched (a component with `routing`
    * starts listening to the router on it). The root follows application
    * state changes only when the component sets `updateDomOnStateChange`;
-   * otherwise the application repaints with `dom.update` when it decides to.
+   * otherwise the application repaints with `dom.update(prev, next)` when
+   * it decides to — usually from a store write's answer.
    */
   mount?: string | Element;
   /** Message dispatched once all plugins are initialised (after `mount`). */

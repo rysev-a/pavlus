@@ -201,10 +201,17 @@ describe("effectors build the effects the plugins document", () => {
       type: "unmount",
       target: "#app",
     });
-    expect(dom.update()).toEqual({ plugin: "dom", type: "update" });
-    expect(dom.update("#app")).toEqual({
+    expect(dom.update({ a: 1 }, { a: 2 })).toEqual({
       plugin: "dom",
       type: "update",
+      prev: { a: 1 },
+      next: { a: 2 },
+    });
+    expect(dom.update({ a: 1 }, { a: 2 }, "#app")).toEqual({
+      plugin: "dom",
+      type: "update",
+      prev: { a: 1 },
+      next: { a: 2 },
       target: "#app",
     });
     expect(dom.focus("input")).toEqual({
@@ -253,12 +260,7 @@ describe("the plugins accept what the effectors build", () => {
     expect(got).toEqual([
       {
         id: "changed",
-        payload: {
-          type: "set",
-          path: "n",
-          value: 2,
-          onSuccess: "changed",
-        },
+        payload: { prev: { n: 1 }, next: { n: 2 } },
       },
     ]);
     expect(s.getState()).toEqual({ n: 1 });

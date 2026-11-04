@@ -285,7 +285,10 @@ describe("the state does not paint (a mount follows only when told)", () => {
     h.set({ count: 2 });
     h.dom.onState!({ count: 2 }, h.ctx);
     expect(root.textContent).toBe("1");
-    h.dom.handle({ plugin: "dom", type: "update" }, h.ctx);
+    h.dom.handle(
+      { plugin: "dom", type: "update", prev: { count: 1 }, next: { count: 2 } },
+      h.ctx,
+    );
     expect(root.textContent).toBe("2");
     h.dom.handle({ plugin: "dom", type: "unmount", target: root }, h.ctx);
   });
@@ -312,17 +315,54 @@ describe("the state does not paint (a mount follows only when told)", () => {
     h.dom.handle({ plugin: "dom", type: "mount", target: a, view }, h.ctx);
     h.dom.handle({ plugin: "dom", type: "mount", target: b, view }, h.ctx);
     h.set({ count: 2 });
-    h.dom.handle({ plugin: "dom", type: "update", target: a }, h.ctx);
+    h.dom.handle(
+      {
+        plugin: "dom",
+        type: "update",
+        prev: { count: 1 },
+        next: { count: 2 },
+        target: a,
+      },
+      h.ctx,
+    );
     expect(a.textContent).toBe("2");
     expect(b.textContent).toBe("1");
-    h.dom.handle({ plugin: "dom", type: "update" }, h.ctx);
+    h.dom.handle(
+      { plugin: "dom", type: "update", prev: { count: 1 }, next: { count: 2 } },
+      h.ctx,
+    );
     expect(b.textContent).toBe("2");
+  });
+
+  test("update paints the pair it is given, not the current state", () => {
+    const h = plugin({ count: 1 });
+    const root = h.root();
+    document.body.appendChild(root);
+    h.dom.handle({ plugin: "dom", type: "mount", target: root, view }, h.ctx);
+    // The plugin trusts the effect: the mount was painted with 1, and the
+    // pair says 1 -> 2, so it paints 2 even though getState() says 9.
+    h.set({ count: 9 });
+    h.dom.handle(
+      { plugin: "dom", type: "update", prev: { count: 1 }, next: { count: 2 } },
+      h.ctx,
+    );
+    expect(root.textContent).toBe("2");
+    h.dom.handle({ plugin: "dom", type: "unmount", target: root }, h.ctx);
   });
 
   test("update throws when nothing is mounted at the target", () => {
     const h = plugin({ count: 1 });
     expect(() =>
-      h.dom.handle({ plugin: "dom", type: "update", target: "#ghost" }, h.ctx),
+      h.dom.handle(
+        {
+          plugin: "dom",
+          type: "update",
+          prev: { count: 1 },
+          next: { count: 2 },
+          target: "#ghost",
+        },
+        h.ctx,
+      ),
     ).toThrow(/nothing mounted/);
   });
 });

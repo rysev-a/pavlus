@@ -1,13 +1,15 @@
 /**
  * The application: one pure component. A handler never touches the DOM and
- * never changes state in place — it returns effects. The order matters and
- * is the whole idea:
+ * never changes state in place — it returns effects. Plugins never talk to
+ * each other; everything goes through the application, and the repaint is
+ * the application's decision, made in a message:
  *
- *   [store.set(...), dom.update()]
+ *   store.set(..., paint)              // paint = { onSuccess: "paint" }
+ *   → the store answers "paint" with `{ prev, next }` once the write landed
+ *   → the "paint" handler relays the pair: dom.update(prev, next)
+ *   → the dom plugin diffs prev → next and patches the DOM
  *
- * the store applies the write first, then the dom plugin re-diffs the view
- * against the state that already has it. The repaint is a decision the
- * handler makes per change: a state change alone paints nothing, and a
+ * A state change alone paints nothing — a no-op write never answers — and a
  * handler that only asks for data (`submitForm`) paints nothing at all.
  */
 import {
@@ -23,16 +25,28 @@ import {
 import view from "./app.pavlus";
 import type { AppState, FormState, User } from "./state.ts";
 
+/** Every write answers this message; the repaint happens in "paint". */
+const paint = { onSuccess: "paint" } as const;
+
 export class App extends Component<AppState> {
   view = view;
+
+  /**
+   * The store answered a write with `{ prev, next }` — the state before and
+   * after it. The application turns that answer into the repaint. The pair
+   * is frozen when the write lands, so the paints of one batch chain
+   * exactly (S0→S1, then S1→S2) no matter when the messages drain.
+   */
+  paint(msg: Message): Effect[] {
+    const { prev, next } = msg.payload as { prev: AppState; next: AppState };
+    return [dom.update(prev, next)];
+  }
 
   /** `createApp({ mount })` dispatches this once the view is in the DOM. */
   mounted(): Effect[] {
     return [
-      store.set("status", "loading"),
-      store.set("error", ""),
-      // Show "Loading..." now; the writes alone would not paint anything.
-      dom.update(),
+      store.set("status", "loading", paint),
+      store.set("error", "", paint),
       http.request({
         id: "users",
         url: "/api/users",
@@ -51,26 +65,25 @@ export class App extends Component<AppState> {
   "users.loaded"(msg: Message): Effect[] {
     const users = (msg.payload as { data: User[] }).data;
     return [
-      store.set("status", "idle"),
-      store.set("error", ""),
-      store.set("users", users),
-      dom.update(),
+      store.set("status", "idle", paint),
+      store.set("error", "", paint),
+      store.set("users", users, paint),
     ];
   }
 
   "roles.loaded"(msg: Message): Effect[] {
     const roles = (msg.payload as { data: AppState["roles"] }).data;
-    return [store.set("roles", roles), dom.update()];
+    return [store.set("roles", roles, paint)];
   }
 
   "users.failed"(msg: Message): Effect[] {
     return [
-      store.set("status", "failed"),
+      store.set("status", "failed", paint),
       store.set(
         "error",
         (msg.payload as { error?: string }).error ?? "could not load the users",
+        paint,
       ),
-      dom.update(),
     ];
   }
 
@@ -79,15 +92,14 @@ export class App extends Component<AppState> {
       store.set(
         "error",
         (msg.payload as { error?: string }).error ?? "could not load the roles",
+        paint,
       ),
-      dom.update(),
     ];
   }
 
   newUser(): Effect[] {
     return [
-      store.set("form", { id: null, name: "", email: "", roleId: "" }),
-      dom.update(),
+      store.set("form", { id: null, name: "", email: "", roleId: "" }, paint),
     ];
   }
 
@@ -100,23 +112,23 @@ export class App extends Component<AppState> {
       email: u.email,
       roleId: String(u.role_id),
     };
-    return [store.set("form", form), dom.update()];
+    return [store.set("form", form, paint)];
   }
 
   cancelForm(): Effect[] {
-    return [store.set("form", null), dom.update()];
+    return [store.set("form", null, paint)];
   }
 
   formName(msg: Message): Effect[] {
-    return [store.set("form.name", msg.event?.value ?? ""), dom.update()];
+    return [store.set("form.name", msg.event?.value ?? "", paint)];
   }
 
   formEmail(msg: Message): Effect[] {
-    return [store.set("form.email", msg.event?.value ?? ""), dom.update()];
+    return [store.set("form.email", msg.event?.value ?? "", paint)];
   }
 
   formRole(msg: Message): Effect[] {
-    return [store.set("form.roleId", msg.event?.value ?? ""), dom.update()];
+    return [store.set("form.roleId", msg.event?.value ?? "", paint)];
   }
 
   /**
@@ -154,9 +166,8 @@ export class App extends Component<AppState> {
   "user.created"(msg: Message, s: AppState): Effect[] {
     const user = (msg.payload as { data: User }).data;
     return [
-      store.set("users", [...s.users, user]),
-      store.set("form", null),
-      dom.update(),
+      store.set("users", [...s.users, user], paint),
+      store.set("form", null, paint),
     ];
   }
 
@@ -166,9 +177,9 @@ export class App extends Component<AppState> {
       store.set(
         "users",
         s.users.map((u) => (u.id === user.id ? user : u)),
+        paint,
       ),
-      store.set("form", null),
-      dom.update(),
+      store.set("form", null, paint),
     ];
   }
 
@@ -191,8 +202,8 @@ export class App extends Component<AppState> {
       store.set(
         "users",
         s.users.filter((u) => u.id !== id),
+        paint,
       ),
-      dom.update(),
     ];
   }
 
@@ -201,8 +212,8 @@ export class App extends Component<AppState> {
       store.set(
         "error",
         (msg.payload as { error?: string }).error ?? "could not save",
+        paint,
       ),
-      dom.update(),
     ];
   }
 }

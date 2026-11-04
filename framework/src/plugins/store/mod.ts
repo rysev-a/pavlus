@@ -5,9 +5,11 @@ export type Path = string | readonly (string | number)[];
 
 /**
  * `onSuccess` is the message dispatched once the change landed — `payload`
- * is the effect without `plugin` — and only when it changed anything (a
- * no-op never answers). How the application learns about its own writes:
- * set, then load or repaint in the next message.
+ * is `{ prev, next }`, the state before and after the write — and only when
+ * it changed anything (a no-op never answers). How the application learns
+ * about its own writes: set, then decide in the next message. The pair is
+ * also exactly what `dom.update` diffs, so an answer can be painted
+ * directly.
  */
 export type StoreEffect =
   | {
@@ -221,10 +223,12 @@ export function createStorePlugin<S>(
         case "set":
         case "merge":
         case "remove": {
-          if (change(effect, true) && effect.onSuccess !== undefined) {
-            const { plugin: _plugin, ...payload } = effect;
-            ctx.dispatch({ id: effect.onSuccess, payload });
-          }
+          const prev = state;
+          if (change(effect, true) && effect.onSuccess !== undefined)
+            ctx.dispatch({
+              id: effect.onSuccess,
+              payload: { prev, next: state },
+            });
           return;
         }
         case "undo":

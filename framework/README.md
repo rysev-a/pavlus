@@ -121,23 +121,24 @@ A complete application is in [`../admin-app`](../admin-app), arranged the way
 the framework intends: `app/` holds the pure isomorphic code (state,
 component, template), a thin `frontend/` mounts it into the DOM, and a plain
 `backend/` serves the API from Postgres and server-renders the same `app/`
-for hydration. Every repaint is explicit: a handler pairs its store writes
-with a `dom.update()` effect — a state change alone paints nothing.
+for hydration. Every repaint is explicit: a store write answers with
+`{ prev, next }`, and the application paints from that answer — a state
+change alone paints nothing.
 
 ## Plugins
 
 Plugins do everything with side effects; the application only returns effects.
 Each plugin has a doc in [`docs/plugins`](./docs/plugins/main.md):
 
-| Plugin           | Effects                                                                                                                                                                                                             | Doc                                |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `plugins/dom`    | `mount`, `unmount`, `update`, `focus`, `blur`. A mount re-renders on state change only with `followState`; `update` repaints on demand. Owns all listeners; hydrates a server render ([docs/ssr.md](./docs/ssr.md)) | [dom](./docs/plugins/dom.md)       |
-| `plugins/store`  | `set`, `merge`, `remove` (each answers `onSuccess` with a message when the change landed), `undo`, `restoreTo`. Every change is recorded with a `restoreEffect`                                                     | [store](./docs/plugins/store.md)   |
-| `plugins/http`   | `request` (required `id`; same id cancels the previous), `cancel`; `settled()` for server rendering                                                                                                                 | [http](./docs/plugins/http.md)     |
-| `plugins/ws`     | `connect`, `send`, `close` (by connection id)                                                                                                                                                                       | [ws](./docs/plugins/ws.md)         |
-| `plugins/time`   | `now`, `setTimeout`, `setInterval`, `cancel`, `cancelAll` (by timer id)                                                                                                                                             | [time](./docs/plugins/time.md)     |
-| `plugins/logger` | `log`                                                                                                                                                                                                               | [logger](./docs/plugins/logger.md) |
-| `plugins/router` | `listen`, `navigate`, `back`, `forward`                                                                                                                                                                             | [router](./docs/plugins/router.md) |
+| Plugin           | Effects                                                                                                                                                                                                                                    | Doc                                |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
+| `plugins/dom`    | `mount`, `unmount`, `update`, `focus`, `blur`. A mount re-renders on state change only with `followState`; `update(prev, next)` repaints the pair it is given. Owns all listeners; hydrates a server render ([docs/ssr.md](./docs/ssr.md)) | [dom](./docs/plugins/dom.md)       |
+| `plugins/store`  | `set`, `merge`, `remove` (each answers `onSuccess` with `{ prev, next }` when the change landed), `undo`, `restoreTo`. Every change is recorded with a `restoreEffect`                                                                     | [store](./docs/plugins/store.md)   |
+| `plugins/http`   | `request` (required `id`; same id cancels the previous), `cancel`; `settled()` for server rendering                                                                                                                                        | [http](./docs/plugins/http.md)     |
+| `plugins/ws`     | `connect`, `send`, `close` (by connection id)                                                                                                                                                                                              | [ws](./docs/plugins/ws.md)         |
+| `plugins/time`   | `now`, `setTimeout`, `setInterval`, `cancel`, `cancelAll` (by timer id)                                                                                                                                                                    | [time](./docs/plugins/time.md)     |
+| `plugins/logger` | `log`                                                                                                                                                                                                                                      | [logger](./docs/plugins/logger.md) |
+| `plugins/router` | `listen`, `navigate`, `back`, `forward`                                                                                                                                                                                                    | [router](./docs/plugins/router.md) |
 
 Build effects with each plugin's **effector** instead of writing the objects by
 hand:

@@ -23,20 +23,20 @@ see [docs/ssr.md](../ssr.md). The effects below are for everything else.
 ```ts
 dom.mount("#panel", panelView, { onMounted: "panelMounted" });
 dom.mount("#app", appView, { followState: true }); // follow every state change
-dom.update("#panel"); // repaint one mount now
-dom.update(); // repaint every mount
+dom.update(prev, next); // repaint every mount: diff prev → next
+dom.update(prev, next, "#panel"); // repaint one mount
 dom.unmount("#app");
 dom.focus("input.filter");
 dom.blur("input.filter");
 ```
 
-| Effect    | Fields                                         | Meaning                                                                                                                                                                            |
-| --------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mount`   | `target`, `view`, `onMounted?`, `followState?` | Render `view` into `target` (a CSS selector or an element) using the current state. With `followState`, the mount is re-diffed on every application state change.                  |
-| `update`  | `target?`                                      | Repaint now: re-diff the view against the current state. With `target`, that one mount (throws `pavlus/dom: nothing mounted at "…"` if nothing is there); without it, every mount. |
-| `unmount` | `target`                                       | Remove what was mounted into `target`.                                                                                                                                             |
-| `focus`   | `selector`                                     | Focus the first matching element.                                                                                                                                                  |
-| `blur`    | `selector`                                     | Blur the first matching element.                                                                                                                                                   |
+| Effect    | Fields                                         | Meaning                                                                                                                                                                                                                      |
+| --------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mount`   | `target`, `view`, `onMounted?`, `followState?` | Render `view` into `target` (a CSS selector or an element) using the current state. With `followState`, the mount is re-diffed on every application state change.                                                            |
+| `update`  | `prev`, `next`, `target?`                      | Repaint now: re-diff the view between `prev` and `next` — the pair a store write's answer carries. With `target`, that one mount (throws `pavlus/dom: nothing mounted at "…"` if nothing is there); without it, every mount. |
+| `unmount` | `target`                                       | Remove what was mounted into `target`.                                                                                                                                                                                       |
+| `focus`   | `selector`                                     | Focus the first matching element.                                                                                                                                                                                            |
+| `blur`    | `selector`                                     | Blur the first matching element.                                                                                                                                                                                             |
 
 `view` is a compiled template (`import view from "./page.pavlus"`), or
 `viewOf(component)` for a component whose template has an `+outlet` or
@@ -73,8 +73,10 @@ alone never touches the DOM. There are two ways to repaint:
   the whole view tracks the state. Anything mounted without the flag — a
   service or a data slice has no view at all, and a panel mounted by hand —
   stays untouched by state changes.
-- **`dom.update(target?)`** — the application repaints when it decides to:
-  after a store write answered (`onSuccess`), on a timer, on its own schedule.
+- **`dom.update(prev, next)`** — the application repaints when it decides
+  to: usually in the handler of a store write's answer, which carries
+  exactly this pair. Also on a timer, on its own schedule. The plugin diffs
+  what it is given — it never reads the state itself.
 
 Mounting into a target that already has a view unmounts the old one first.
 The view is placed between two comment nodes (`<!--pavlus-->` ...

@@ -17,8 +17,9 @@ const serialized = (globalThis as { __PAVLUS_STATE__?: string })
   .__PAVLUS_STATE__;
 
 // The application (app/) is pure: everything that touches the outside world
-// is a plugin, wired here. Nothing follows the state — the handlers ask for
-// their repaints themselves, with `dom.update()` effects.
+// is a plugin, wired here. Nothing follows the state: every store write
+// answers with `{ prev, next }`, and the app paints from that answer (the
+// "paint" handler in app/app.ts).
 export const store = createStorePlugin<AppState>(
   serialized ? reviveState<AppState>(serialized) : initialState,
 );

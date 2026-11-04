@@ -62,8 +62,9 @@ test("the app over the real API: load, create, edit a seed row, delete", async (
   try {
     const { app, store } = await import("../frontend/main.ts");
 
-    // `mounted` puts "loading" on the screen (an explicit dom.update()), the
-    // answers paint the list. Nothing repaints on its own.
+    // `mounted` puts "loading" on the screen (the write answers "paint",
+    // the app repaints from `{ prev, next }`), the answers paint the list.
+    // Nothing repaints on its own.
     expect(text("p.status")).toBe("Loading...");
     await until("the seed loads (8 users)", () => rows().length === 8);
     expect(store.getState().status).toBe("idle");

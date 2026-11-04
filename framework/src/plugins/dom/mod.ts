@@ -36,9 +36,13 @@ export type DomEffect =
       plugin: "dom";
       type: "update";
       /**
-       * Repaint one mount: the view is re-diffed against the current state.
-       * Without `target`, every mount is repainted.
+       * Repaint between `prev` and `next`: the view is re-diffed against the
+       * state the mount was last painted with and the state to show now —
+       * the pair a store write's answer carries. Without `target`, every
+       * mount is repainted.
        */
+      prev: unknown;
+      next: unknown;
       target?: string | Element;
     }
   | { plugin: "dom"; type: "focus"; selector: string }
@@ -72,6 +76,7 @@ interface Instance {
   start: Comment;
   end: Comment;
   view: View;
+  /** The state the mount was last painted with; a diff starts from it. */
   state: unknown;
   /** Re-diffed on `onState` (mounted with `followState`). */
   follow: boolean;
@@ -83,8 +88,9 @@ interface Instance {
  * patches `view.diff` produces, and owns every event listener it adds. A
  * mount follows the application state only when mounted with `followState`
  * (the root of an app whose component sets `updateDomOnStateChange`); every
- * other mount is repainted when the application sends it `update` — a state
- * change alone never touches the DOM.
+ * other mount is repainted when the application sends it `update` with the
+ * `{ prev, next }` pair it wants diffed — a state change alone never touches
+ * the DOM.
  */
 export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin {
   const doc = opts.document ?? globalThis.document;
@@ -263,20 +269,24 @@ export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin {
     return n;
   }
 
-  /** Re-diffs a mount against `state` and patches the DOM (no-op if equal). */
-  function repaint(inst: Instance, state: unknown): void {
-    if (inst.state === state) return;
-    const patches = inst.view.diff(inst.state, state);
-    inst.state = state;
+  /** Re-diffs a mount between `prev` and `next` and patches (no-op if equal). */
+  function repaint(inst: Instance, prev: unknown, next: unknown): void {
+    if (prev === next) return;
+    const patches = inst.view.diff(prev, next);
+    inst.state = next;
     apply(patches, inst);
   }
 
-  function repaintAt(target: string | Element, state: unknown): void {
+  function repaintAt(
+    target: string | Element,
+    prev: unknown,
+    next: unknown,
+  ): void {
     const el = typeof target === "string" ? doc.querySelector(target) : target;
     const inst = el ? instances.get(el) : undefined;
     if (!inst)
       throw new Error(`pavlus/dom: nothing mounted at "${String(target)}"`);
-    repaint(inst, state);
+    repaint(inst, prev, next);
   }
 
   function apply(patches: Patch[], inst: Instance): void {
@@ -399,11 +409,11 @@ export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin {
           return unmount(effect.target);
         case "update":
           if (effect.target === undefined) {
-            const state = c.getState();
-            for (const inst of instances.values()) repaint(inst, state);
+            for (const inst of instances.values())
+              repaint(inst, effect.prev, effect.next);
             return;
           }
-          return repaintAt(effect.target, c.getState());
+          return repaintAt(effect.target, effect.prev, effect.next);
         case "focus":
           return (
             doc.querySelector(effect.selector) as HTMLElement | null
@@ -417,7 +427,7 @@ export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin {
     onState(state) {
       for (const inst of instances.values()) {
         if (!inst.follow) continue;
-        repaint(inst, state);
+        repaint(inst, inst.state, state);
       }
     },
     dispose() {

@@ -4,9 +4,9 @@
  * in-process, until its data is in. Then its view is rendered to HTML and
  * its state to JSON, and the browser hydrates both (frontend/main.ts).
  *
- * The app's `dom.update()` effects land on an inert plugin: on the server
- * there is nothing to repaint along the way — the whole page is rendered
- * once, from the final state.
+ * The app's paint effects (`dom.update`) land on an inert plugin: on the
+ * server there is nothing to repaint along the way — the whole page is
+ * rendered once, from the final state.
  */
 import {
   type Component,

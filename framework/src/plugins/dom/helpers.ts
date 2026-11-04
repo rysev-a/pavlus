@@ -20,11 +20,12 @@ export interface DomEffector {
   /** Removes what was mounted into `target`, with all its listeners. */
   unmount(target: string | Element): Of<"unmount">;
   /**
-   * Repaints by re-diffing the view against the current application state.
-   * With `target`, that one mount (throws when nothing is mounted there);
-   * without it, every mount.
+   * Repaints by re-diffing the view between `prev` and `next` — the state
+   * the mount was painted with and the state to show now (a store write's
+   * answer carries exactly this pair). With `target`, that one mount
+   * (throws when nothing is mounted there); without it, every mount.
    */
-  update(target?: string | Element): Of<"update">;
+  update(prev: unknown, next: unknown, target?: string | Element): Of<"update">;
   /** Focuses the first element matching `selector`. */
   focus(selector: string): Of<"focus">;
   /** Removes focus from the first element matching `selector`. */
@@ -48,10 +49,10 @@ export const domEffector: DomEffector = {
     ...(options.followState === true && { followState: true }),
   }),
   unmount: (target) => ({ plugin: "dom", type: "unmount", target }),
-  update: (target) =>
+  update: (prev, next, target) =>
     target === undefined
-      ? { plugin: "dom", type: "update" }
-      : { plugin: "dom", type: "update", target },
+      ? { plugin: "dom", type: "update", prev, next }
+      : { plugin: "dom", type: "update", prev, next, target },
   focus: (selector) => ({ plugin: "dom", type: "focus", selector }),
   blur: (selector) => ({ plugin: "dom", type: "blur", selector }),
 };
