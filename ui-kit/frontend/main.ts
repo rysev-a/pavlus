@@ -1,4 +1,5 @@
 import "../../admin-app/frontend/styles.css";
+import "./design.css";
 import "./kit.css";
 import "./docs/docs.css";
 // the stylesheet of a block or a template sits in its folder: `<slug>.css`
@@ -15,6 +16,7 @@ import { app as shell, type AppState, initialState } from "./app.ts";
 import { rootOf, windowAt } from "./base-window.ts";
 import { createDocsPlugin } from "./docs/plugin.ts";
 import { initialLang } from "./docs/pages.ts";
+import { createExportPlugin } from "./export.ts";
 import { createRandomPlugin } from "./random.ts";
 import { createSourcePlugin } from "./source.ts";
 import { createThemePlugin, initialLook } from "./theme.ts";
@@ -45,6 +47,7 @@ export const app = createApp<AppState>({
     createTimePlugin(),
     createRandomPlugin(),
     createSourcePlugin(),
+    createExportPlugin(),
     createDocsPlugin(),
     createThemePlugin(),
   ],

@@ -58,6 +58,16 @@ section.theming
           span {sw.name}
 
   section.k-demo
+    h2.k-demo__title Corners
+    p.k-demo__note The roundness of buttons, fields, cards and badges. "From the style" keeps what the style says; any other choice wins over it until you pick another style.
+    div.k-size-rows
+      div.k-size-row
+        span.k-size-row__label Radius
+        div.ui-button-group.ui-button-group-horizontal(role="group")
+          for r in catalog.radii key r.id
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" class:ui-button-secondary={look.radius === r.id} aria-pressed={look.radius === r.id ? "true" : "false"} @click=choose("radius", r.id)) {r.name}
+
+  section.k-demo
     h2.k-demo__title Sizes
     p.k-demo__note Three scales: the controls (buttons, inputs, rows), the text, and the blocks (padding and gaps of cards, forms and pages).
     div.k-size-rows
@@ -126,5 +136,10 @@ section.theming
 
   section.k-demo
     h2.k-demo__title Export
-    p.k-demo__note The variables of your look, to paste into a stylesheet.
+    p.k-demo__note The variables of your look, to paste into a stylesheet. The buttons save a whole stylesheet: the variables, the component tokens and what reads them, and the rules of the style (or of every style).
+    div.k-row
+      button.ui-button.ui-button-default.ui-button-sm(type="button" @click=export("current")) Export this style
+      button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=export("all")) Export all styles
+    if exportNote
+      p.k-hint {exportNote}
     pre.k-code-block {css}

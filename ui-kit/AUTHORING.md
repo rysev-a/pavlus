@@ -223,3 +223,26 @@ CSS:
 - A table inside a grid or flex child overflows a 390px screen unless the child (and
   the template's stack container) has `min-width: 0`; use
   `minmax(min(150px, 100%), 1fr)` for card grids.
+
+## Designs are variables (`frontend/design.css`)
+
+A design system (Ant Design, Material...) is a block of CSS variables selected
+by `<html data-style="...">`, not a pile of overrides. `design.css` asks the
+questions once (how tall is a button, how round, what does hover do, where is
+the border of a field...) and wires them to the components once; the file's
+header lists every variable. To add a design, copy the `ant` block at the
+bottom and answer them. Rules of the house:
+
+- Every variable has a fallback equal to the admin-app's value, so with nothing
+  set the kit looks as before. Sizes are plain pixel numbers: the consumers
+  scale them with `--k-ui` (controls) and `--k-text` (type).
+- Colours that the admin-app restates for dark mode (outline, ghost, fields,
+  the switch) are tokens defined under `:root` and `.dark`, and their consumers
+  use `:root:root` to outrank the admin-app's own dark rules.
+- A new component joins in by reading tokens (`var(--card-radius, ...)`), not
+  by getting a rule per design. A test fails if a design sets a variable no
+  component reads.
+- The corner radius the visitor picks (Theming) overrides `--radius`,
+  `--btn-radius`, `--chip-radius`, `--field-radius` and `--card-radius`.
+- Export (the panel and Theming) saves `design.css` above the `/*@designs*/`
+  marker, the look's variables and every `[data-style=...]` rule the page has.

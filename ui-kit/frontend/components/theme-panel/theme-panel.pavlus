@@ -43,6 +43,11 @@ aside.k-themepanel(class:k-themepanel--open={open} aria-label="Theming" aria-hid
         for st in catalog.styles key st.id
           option(value=st.id selected={look.style === st.id}) {st.name}
     div.k-themepanel__group
+      span.k-themepanel__label Corners
+      select.ui-select-control(aria-label="Corner radius" @change=pick("radius"))
+        for r in catalog.radii key r.id
+          option(value=r.id selected={look.radius === r.id}) {r.name}
+    div.k-themepanel__group
       span.k-themepanel__label Sizes
       div.k-themepanel__sizes
         label.k-themepanel__size
@@ -60,3 +65,10 @@ aside.k-themepanel(class:k-themepanel--open={open} aria-label="Theming" aria-hid
           select.ui-select-control(aria-label="Size of blocks" @change=pick("block"))
             for z in catalog.block key z.id
               option(value=z.id selected={look.block === z.id}) {z.name}
+    div.k-themepanel__group
+      span.k-themepanel__label Export
+      div.k-row
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=export("current")) This style
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=export("all")) All styles
+      if exportNote
+        span.k-hint {exportNote}

@@ -34,6 +34,7 @@ import {
   sectionOf,
   templates,
 } from "./registry.ts";
+import { type Exported, exportEffector } from "./export.ts";
 import { randomEffector } from "./random.ts";
 import {
   filesOf,
@@ -82,6 +83,8 @@ export interface AppState {
   /** The configurator's catalogs, and the CSS of the visitor's look. */
   catalog: Catalog;
   css: string;
+  /** What the last export did, for the panel and the Theming page. */
+  exportNote: string;
   /** The sections menu on a narrow screen (the burger). */
   menuOpen: boolean;
   /** The fixed theming panel on the right. */
@@ -138,6 +141,7 @@ export function initialState(env: Environment): AppState {
     css: cssOf(env.look),
     panelOpen: false,
     menuOpen: false,
+    exportNote: "",
     tab: "preview",
     srcFiles: [],
     srcName: "",
@@ -222,6 +226,7 @@ export class AppShell extends Component<AppState> {
         css: s.css,
         family: s.family,
         shown: s.shown,
+        exportNote: s.exportNote,
       }),
     },
     "/engine": { component: enginePage, key: "engine" },
@@ -385,6 +390,29 @@ export class AppShell extends Component<AppState> {
 
   "themepanel.random"(): Effect[] {
     return this["theming.random"]();
+  }
+
+  /** Export the look as a stylesheet: this style only, or all of them. */
+  "themepanel.export"(msg: Message, state: AppState): Effect[] {
+    return [
+      store.set("exportNote", ""),
+      exportEffector.css(state.css, state.look.style, msg.payload === "all" ? "all" : "current", "exported"),
+    ];
+  }
+
+  "theming.export"(msg: Message, state: AppState): Effect[] {
+    return this["themepanel.export"](msg, state);
+  }
+
+  exported(msg: Message): Effect[] {
+    const r = msg.payload as Exported;
+    const kb = Math.max(1, Math.round(r.bytes / 1024));
+    return [
+      store.set(
+        "exportNote",
+        `Saved ${r.file} (${kb} kB)${r.copied ? " and copied to the clipboard" : ""}.`,
+      ),
+    ];
   }
 
   "themepanel.reset"(msg: Message, state: AppState): Effect[] {

@@ -54,4 +54,4 @@ div.app.ui-shell(data-sidebar={hasNav ? sidebar : "closed"} class:k-with-panel={
           if srcCut
             p.k-hint Only the first lines are shown: the whole file is on GitHub.
     +Footer#footer(current=current source=source)
-  +ThemePanel#themepanel(look=look catalog=catalog family=family shown=shown open=panelOpen)
+  +ThemePanel#themepanel(look=look catalog=catalog family=family shown=shown open=panelOpen exportNote=exportNote)
