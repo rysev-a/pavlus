@@ -1,0 +1,5 @@
+// STUB of the "blog" view: replace it. State = the props: the module's slice, spread.
+div.ui-card
+  div.ui-card-header
+    h3.ui-card-title {title}
+    p.ui-card-description Coming soon.
