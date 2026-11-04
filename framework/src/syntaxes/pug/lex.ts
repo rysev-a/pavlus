@@ -119,19 +119,21 @@ export type Stmt = Base &
   );
 
 /** Pug constructs with no counterpart in a pure render template. */
-const UNSUPPORTED = new Map<string, string>(Object.entries({
-  mixin:
-    "Mixin definitions are not supported: a component is its own file, " +
-    "import it and call it with `+Name`",
-  include: "`include` is not supported: import a component instead",
-  extends: "`extends` is not supported: use components and `+outlet`",
-  block: "`block` is not supported: use components and `+outlet`",
-  append: "`append` is not supported",
-  prepend: "`prepend` is not supported",
-  yield: "`yield` is not supported",
-  doctype: "`doctype` is not supported: a template renders a fragment",
-  while: "`while` is not supported: use `each`",
-}));
+const UNSUPPORTED = new Map<string, string>(
+  Object.entries({
+    mixin:
+      "Mixin definitions are not supported: a component is its own file, " +
+      "import it and call it with `+Name`",
+    include: "`include` is not supported: import a component instead",
+    extends: "`extends` is not supported: use components and `+outlet`",
+    block: "`block` is not supported: use components and `+outlet`",
+    append: "`append` is not supported",
+    prepend: "`prepend` is not supported",
+    yield: "`yield` is not supported",
+    doctype: "`doctype` is not supported: a template renders a fragment",
+    while: "`while` is not supported: use `each`",
+  }),
+);
 
 const isLetter = (c: string | undefined): boolean =>
   c !== undefined && /[A-Za-z]/.test(c);
@@ -145,8 +147,7 @@ const isWs = (c: string | undefined): boolean =>
   c === " " || c === "\t" || c === "\n";
 
 /** Characters that, next to whitespace, mean an expression goes on. */
-const OPERATOR_START =
-  /^(?:===|!==|==|!=|<=|>=|&&|\|\||\?\?|\?\.|[-+*/%<>?:])/;
+const OPERATOR_START = /^(?:===|!==|==|!=|<=|>=|&&|\|\||\?\?|\?\.|[-+*/%<>?:])/;
 
 export function lex(source: string): Stmt[] {
   return new Lexer(source).run();
@@ -216,7 +217,7 @@ class Lexer {
   /** Index after the string literal starting at `at`. */
   private skipString(at: number): number {
     const q = this.src[at];
-    for (let k = at + 1; k < this.src.length; ) {
+    for (let k = at + 1; k < this.src.length;) {
       if (this.src[k] === "\\") k += 2;
       else if (this.src[k] === q) return k + 1;
       else k++;
@@ -332,7 +333,11 @@ class Lexer {
     if (c === "-") return this.code(base);
     if (c === "=") {
       this.i++;
-      return { ...base, kind: "code", expr: this.exprToEol("Expected an expression after =") };
+      return {
+        ...base,
+        kind: "code",
+        expr: this.exprToEol("Expected an expression after ="),
+      };
     }
     if (c === "!" && src[start + 1] === "=") this.failUnescaped(start);
 
@@ -348,7 +353,10 @@ class Lexer {
     if (c === "+" || c === "." || c === "#" || isLetter(c)) {
       return { ...base, kind: "chain", chain: this.chain() };
     }
-    return this.fail(`Cannot parse line "${src.slice(start, this.eol()).trim()}"`, start);
+    return this.fail(
+      `Cannot parse line "${src.slice(start, this.eol()).trim()}"`,
+      start,
+    );
   }
 
   private failUnescaped(at: number): never {
@@ -374,7 +382,8 @@ class Lexer {
     this.i += 6;
     this.skipSpaces();
     const local = this.ident();
-    if (local === null) this.fail("Expected a component name after `import`", this.i);
+    if (local === null)
+      this.fail("Expected a component name after `import`", this.i);
     this.skipSpaces();
     if (this.peekWord() !== "from") this.fail('Expected `from "path"`', this.i);
     this.i += 4;
@@ -382,7 +391,8 @@ class Lexer {
     const q = src[this.i];
     if (q !== '"' && q !== "'") this.fail("Expected a quoted path", this.i);
     const close = src.indexOf(q, this.i + 1);
-    if (close < 0 || close > this.eol()) this.fail("Unterminated string", this.i);
+    if (close < 0 || close > this.eol())
+      this.fail("Unterminated string", this.i);
     const from = src.slice(this.i + 1, close);
     this.i = close + 1;
     this.skipSpaces();
@@ -391,7 +401,10 @@ class Lexer {
   }
 
   /** Statements that start with a keyword; `undefined`: it is a tag after all. */
-  private keyword(word: string, base: { indent: number; pos: Pos }): Stmt | undefined {
+  private keyword(
+    word: string,
+    base: { indent: number; pos: Pos },
+  ): Stmt | undefined {
     const at = this.i;
     const unsupported = UNSUPPORTED.get(word);
     if (unsupported) this.fail(unsupported, at);
@@ -413,7 +426,10 @@ class Lexer {
           const test = this.exprToEol("`else if` needs a condition");
           return { ...base, kind: "elseif", test };
         }
-        return this.fail("Expected `if` or the end of the line after `else`", this.i);
+        return this.fail(
+          "Expected `if` or the end of the line after `else`",
+          this.i,
+        );
       }
       case "each":
       case "for":
@@ -483,7 +499,8 @@ class Lexer {
       };
     }
     const keySrc = rest.slice(k.keyStart);
-    if (!keySrc.trim()) this.fail("`key` needs an expression", start + k.end);
+    if (!keySrc.trim())
+      this.fail("`key` needs an expression", start + k.keyStart - 3);
     return {
       ...base,
       kind: "each",
@@ -561,7 +578,8 @@ class Lexer {
         this.fail(`Unexpected "${src[at]}"`, at);
       }
       if (c === "/") return { selfClosing: true, body: { kind: "none" } };
-      if (item.kind !== "tag") this.fail("Unexpected \".\" after a component", at);
+      if (item.kind !== "tag")
+        this.fail('Unexpected "." after a component', at);
       // Dot block: every deeper line is raw text (interpolation still works).
       const lines = this.blockLines(indent);
       const out: { pieces: Piece[]; line: number }[] = [];
@@ -577,7 +595,7 @@ class Lexer {
     if (c === "!" && src[this.i + 1] === "=") this.failUnescaped(this.i);
     if (c === "=") {
       if (item.kind !== "tag") {
-        this.fail("Unexpected \"=\" after a component", this.i);
+        this.fail('Unexpected "=" after a component', this.i);
       }
       this.i++;
       const expr = this.exprToEol("Expected an expression after =");
@@ -612,7 +630,10 @@ class Lexer {
     }
     const items = this.headItems(true);
     if (this.i === start) {
-      this.fail(`Cannot parse line "${src.slice(start, this.eol()).trim()}"`, start);
+      this.fail(
+        `Cannot parse line "${src.slice(start, this.eol()).trim()}"`,
+        start,
+      );
     }
     return { kind: "tag", tag, pos: this.pos(start), items };
   }
@@ -626,7 +647,11 @@ class Lexer {
     const items: HeadItem[] = [];
     for (;;) {
       const c = src[this.i];
-      if (allowNames && (c === "." || c === "#") && isNameChar(src[this.i + 1])) {
+      if (
+        allowNames &&
+        (c === "." || c === "#") &&
+        isNameChar(src[this.i + 1])
+      ) {
         const pos = this.pos(this.i);
         const start = ++this.i;
         while (isNameChar(src[this.i])) this.i++;
@@ -668,10 +693,7 @@ class Lexer {
     const namePos = this.pos(this.i);
     if (src[this.i] === "#" && src[this.i + 1] === "{") {
       const close = this.matchBrace(this.i + 1, this.i);
-      dynamic = parseExpr(
-        src.slice(this.i + 2, close),
-        this.pos(this.i + 2),
-      );
+      dynamic = parseExpr(src.slice(this.i + 2, close), this.pos(this.i + 2));
       this.i = close + 1;
     } else {
       const name = this.ident();
@@ -754,6 +776,11 @@ class Lexer {
         } else j++;
       }
       if (j >= src.length) this.fail("Unterminated string", this.i);
+      // `"a" + b`: an operator after the closing quote makes it an expression.
+      const after = this.skipWs(j + 1);
+      if (OPERATOR_START.test(src.slice(after, after + 3))) {
+        return this.exprValue(name, pos);
+      }
       const from = this.i + 1;
       const parts = this.attrParts(from, j, c);
       this.i = j + 1;
@@ -765,6 +792,17 @@ class Lexer {
         inner: { text: src.slice(from, j), at: this.pos(from) },
       };
     }
+    return this.exprValue(name, pos);
+  }
+
+  private skipWs(from: number): number {
+    while (isWs(this.src[from])) from++;
+    return from;
+  }
+
+  /** An unquoted attribute value: a JS expression. */
+  private exprValue(name: string, pos: Pos): RawAttr {
+    const src = this.src;
     const end = this.valueEnd(this.i);
     if (end === this.i) this.fail(`Expected a value after "${name}="`, this.i);
     const expr = parseExpr(src.slice(this.i, end), this.pos(this.i));
@@ -813,7 +851,7 @@ class Lexer {
     const src = this.src;
     const parts: Part[] = [];
     let lit = "";
-    for (let j = from; j < to; ) {
+    for (let j = from; j < to;) {
       const c = src[j];
       if (c === "\\" && (src[j + 1] === quote || src[j + 1] === "\\")) {
         lit += src[j + 1];
@@ -859,7 +897,11 @@ class Lexer {
         if (open !== null) this.fail("Unclosed #[", open);
         break;
       }
-      if (c === "\\" && src[this.i + 1] === "#" && "{[".includes(src[this.i + 2] ?? "")) {
+      if (
+        c === "\\" &&
+        src[this.i + 1] === "#" &&
+        "{[".includes(src[this.i + 2] ?? "")
+      ) {
         lit += src.slice(this.i + 1, this.i + 3);
         this.i += 3;
       } else if (c === "#" && src[this.i + 1] === "{") {
@@ -933,7 +975,10 @@ function findKey(src: string): { end: number; keyStart: number } | null {
     else if (depth === 0 && isWs(c)) {
       let n = k;
       while (isWs(src[n])) n++;
-      if (src.startsWith("key", n) && (n + 3 >= src.length || isWs(src[n + 3]))) {
+      if (
+        src.startsWith("key", n) &&
+        (n + 3 >= src.length || isWs(src[n + 3]))
+      ) {
         return { end: k, keyStart: n + 3 };
       }
     }
@@ -954,7 +999,12 @@ function findBlockColon(src: string): number {
       for (k++; k < src.length && src[k] !== c; k++) if (src[k] === "\\") k++;
     } else if (c === "(" || c === "[" || c === "{") depth++;
     else if (c === ")" || c === "]" || c === "}") depth--;
-    else if (depth === 0 && c === "?" && src[k + 1] !== "." && src[k + 1] !== "?") {
+    else if (
+      depth === 0 &&
+      c === "?" &&
+      src[k + 1] !== "." &&
+      src[k + 1] !== "?"
+    ) {
       pending++;
     } else if (depth === 0 && c === ":") {
       if (pending > 0) pending--;
