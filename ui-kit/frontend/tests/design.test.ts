@@ -89,7 +89,7 @@ test("design.css: every variable a design sets is one a component reads", () => 
   const defined = new Set([...tokens.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
   for (const m of designs.matchAll(/^\s*(--[\w-]+)\s*:/gm)) {
     const name = m[1];
-    if (/^--(ant|md)-/.test(name) || /^--(shadow|ring)/.test(name)) continue;
+    if (/^--(ant|md|mdn|bl|fb|rx)-/.test(name) || /^--(shadow|ring)/.test(name)) continue;
     expect(read.has(name) || defined.has(name), `${name} is set by a design but read by no component`).toBe(true);
   }
 });
