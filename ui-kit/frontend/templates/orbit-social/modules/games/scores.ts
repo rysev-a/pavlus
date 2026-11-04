@@ -39,9 +39,19 @@ function tableOf(scores: Score[], game: GameName): Table {
       if (s.game !== game) continue;
       const cur = byUser.get(s.userId);
       // a higher score wins; the same score stays with who made it first
-      if (!cur || s.score > cur.score || (s.score === cur.score && s.at < cur.at)) byUser.set(s.userId, { userId: s.userId, score: s.score, at: s.at });
+      if (
+        !cur ||
+        s.score > cur.score ||
+        (s.score === cur.score && s.at < cur.at)
+      )
+        byUser.set(s.userId, { userId: s.userId, score: s.score, at: s.at });
     }
-    const list = [...byUser.values()].sort((a, b) => b.score - a.score || (a.at < b.at ? -1 : a.at > b.at ? 1 : 0) || a.userId - b.userId);
+    const list = [...byUser.values()].sort(
+      (a, b) =>
+        b.score - a.score ||
+        (a.at < b.at ? -1 : a.at > b.at ? 1 : 0) ||
+        a.userId - b.userId,
+    );
     t = { list, byUser };
     games.set(game, t);
   }
@@ -56,7 +66,14 @@ export function topScores(db: Db, game: GameName, n: number): ScoreRow[] {
     if (out.length >= n) break;
     const u = users.get(b.userId);
     if (!u) continue;
-    out.push({ rank: out.length + 1, userId: b.userId, name: u.name, avatar: u.avatar, score: b.score, at: b.at });
+    out.push({
+      rank: out.length + 1,
+      userId: b.userId,
+      name: u.name,
+      avatar: u.avatar,
+      score: b.score,
+      at: b.at,
+    });
   }
   return out;
 }
@@ -73,6 +90,12 @@ export function rankOf(db: Db, userId: number, game: GameName): number {
 }
 
 /** What a leaderboard row needs to draw an avatar. */
-export function avatarOf(avatar: string, name: string): { style: string; glyph: string } {
-  return { style: pictureStyle(avatar), glyph: glyphOf(avatar) || initialsOf(name) };
+export function avatarOf(
+  avatar: string,
+  name: string,
+): { style: string; glyph: string } {
+  return {
+    style: pictureStyle(avatar),
+    glyph: glyphOf(avatar) || initialsOf(name),
+  };
 }

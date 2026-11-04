@@ -33,10 +33,20 @@ export const MAZE: string[] = [
 export const W = MAZE[0].length;
 export const H = MAZE.length;
 
-const VEC: Record<Dir, { x: number; y: number }> = { up: { x: 0, y: -1 }, left: { x: -1, y: 0 }, down: { x: 0, y: 1 }, right: { x: 1, y: 0 } };
+const VEC: Record<Dir, { x: number; y: number }> = {
+  up: { x: 0, y: -1 },
+  left: { x: -1, y: 0 },
+  down: { x: 0, y: 1 },
+  right: { x: 1, y: 0 },
+};
 /** The order ghosts break ties in. */
 const DIRS: Dir[] = ["up", "left", "down", "right"];
-const OPPOSITE: Record<Dir, Dir> = { up: "down", down: "up", left: "right", right: "left" };
+const OPPOSITE: Record<Dir, Dir> = {
+  up: "down",
+  down: "up",
+  left: "right",
+  right: "left",
+};
 
 const DOOR = { x: 9, y: 8 };
 const EXIT = { x: 9, y: 7 };
@@ -80,24 +90,61 @@ export interface PacState {
   seed: number;
 }
 
-export const tickMs = (level: number): number => Math.max(90, 150 - (level - 1) * 8);
-const frightTicks = (level: number): number => Math.max(14, 44 - (level - 1) * 6);
-const ghostPeriod = (level: number): number => (level < 3 ? 4 : level < 5 ? 6 : 9);
+export const tickMs = (level: number): number =>
+  Math.max(90, 150 - (level - 1) * 8);
+const frightTicks = (level: number): number =>
+  Math.max(14, 44 - (level - 1) * 6);
+const ghostPeriod = (level: number): number =>
+  level < 3 ? 4 : level < 5 ? 6 : 9;
 
 const tileAt = (x: number, y: number): string => MAZE[y]?.[x] ?? "#";
 
 function freshFood(): number[] {
   const out: number[] = [];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) out.push(tileAt(x, y) === "." ? 1 : tileAt(x, y) === "o" ? 2 : 0);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++)
+      out.push(tileAt(x, y) === "." ? 1 : tileAt(x, y) === "o" ? 2 : 0);
   return out;
 }
 
 function startGhosts(tick: number): Ghost[] {
   return [
-    { id: 0, x: EXIT.x, y: EXIT.y, dir: "left", mode: "normal", frightened: false, release: 0 },
-    { id: 1, x: 9, y: 9, dir: "up", mode: "house", frightened: false, release: tick + 8 },
-    { id: 2, x: 8, y: 9, dir: "up", mode: "house", frightened: false, release: tick + 24 },
-    { id: 3, x: 10, y: 9, dir: "up", mode: "house", frightened: false, release: tick + 40 },
+    {
+      id: 0,
+      x: EXIT.x,
+      y: EXIT.y,
+      dir: "left",
+      mode: "normal",
+      frightened: false,
+      release: 0,
+    },
+    {
+      id: 1,
+      x: 9,
+      y: 9,
+      dir: "up",
+      mode: "house",
+      frightened: false,
+      release: tick + 8,
+    },
+    {
+      id: 2,
+      x: 8,
+      y: 9,
+      dir: "up",
+      mode: "house",
+      frightened: false,
+      release: tick + 24,
+    },
+    {
+      id: 3,
+      x: 10,
+      y: 9,
+      dir: "up",
+      mode: "house",
+      frightened: false,
+      release: tick + 40,
+    },
   ];
 }
 
@@ -128,16 +175,25 @@ export function turn(s: PacState, dir: Dir): PacState {
 }
 
 /** The cell one step from (x, y), wrapping through the tunnel; null off the maze. */
-function stepFrom(x: number, y: number, dir: Dir): { x: number; y: number } | null {
+function stepFrom(
+  x: number,
+  y: number,
+  dir: Dir,
+): { x: number; y: number } | null {
   const v = VEC[dir];
   const ny = y + v.y;
   if (ny < 0 || ny >= H) return null;
   return { x: (x + v.x + W) % W, y: ny };
 }
 
-const inHouse = (g: { x: number; y: number }): boolean => g.y === HOME.y && g.x >= 8 && g.x <= 10;
+const inHouse = (g: { x: number; y: number }): boolean =>
+  g.y === HOME.y && g.x >= 8 && g.x <= 10;
 
-function pacCanGo(x: number, y: number, dir: Dir): { x: number; y: number } | null {
+function pacCanGo(
+  x: number,
+  y: number,
+  dir: Dir,
+): { x: number; y: number } | null {
   const n = stepFrom(x, y, dir);
   if (!n) return null;
   const t = tileAt(n.x, n.y);
@@ -154,7 +210,10 @@ function ghostCanGo(g: Ghost, dir: Dir): { x: number; y: number } | null {
   return n;
 }
 
-const dist2 = (a: { x: number; y: number }, b: { x: number; y: number }): number => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+const dist2 = (
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+): number => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 const CORNERS = [
   { x: W - 1, y: 0 },
   { x: 0, y: 0 },
@@ -181,8 +240,11 @@ function targetOf(s: PacState, g: Ghost): { x: number; y: number } {
 
 /** Moves one ghost a cell: the way that gets closest to the target (a random way when frightened). */
 function moveGhost(s: PacState, g: Ghost): { ghost: Ghost; seed: number } {
-  let options = DIRS.filter((d) => d !== OPPOSITE[g.dir] && ghostCanGo(g, d) !== null);
-  if (options.length === 0) options = DIRS.filter((d) => ghostCanGo(g, d) !== null);
+  let options = DIRS.filter(
+    (d) => d !== OPPOSITE[g.dir] && ghostCanGo(g, d) !== null,
+  );
+  if (options.length === 0)
+    options = DIRS.filter((d) => ghostCanGo(g, d) !== null);
   if (options.length === 0) return { ghost: g, seed: s.seed };
   let dir = options[0];
   let seed = s.seed;
@@ -204,12 +266,22 @@ function moveGhost(s: PacState, g: Ghost): { ghost: Ghost; seed: number } {
   }
   const n = ghostCanGo(g, dir)!;
   let ghost: Ghost = { ...g, x: n.x, y: n.y, dir };
-  if (ghost.mode === "eyes" && ghost.x === HOME.x && ghost.y === HOME.y) ghost = { ...ghost, mode: "normal", frightened: false };
+  if (ghost.mode === "eyes" && ghost.x === HOME.x && ghost.y === HOME.y)
+    ghost = { ...ghost, mode: "normal", frightened: false };
   return { ghost, seed };
 }
 
 function resetPositions(s: PacState): PacState {
-  return { ...s, ...PAC_START, dir: "left", want: "left", ghosts: startGhosts(s.tick), fright: 0, combo: 0, ready: 8 };
+  return {
+    ...s,
+    ...PAC_START,
+    dir: "left",
+    want: "left",
+    ghosts: startGhosts(s.tick),
+    fright: 0,
+    combo: 0,
+    ready: 8,
+  };
 }
 
 /** Pac-Man meets the ghosts that share its cell: eats a frightened one, or loses a life. */
@@ -221,10 +293,17 @@ function collide(s: PacState): PacState {
     if (g.x !== cur.x || g.y !== cur.y || g.mode !== "normal") continue;
     if (g.frightened) {
       ghosts[i] = { ...g, mode: "eyes", frightened: false };
-      cur = { ...cur, score: cur.score + 200 * 2 ** cur.combo, combo: cur.combo + 1, ghosts };
+      cur = {
+        ...cur,
+        score: cur.score + 200 * 2 ** cur.combo,
+        combo: cur.combo + 1,
+        ghosts,
+      };
     } else {
       const lives = cur.lives - 1;
-      return lives <= 0 ? { ...cur, lives: 0, over: true } : resetPositions({ ...cur, lives });
+      return lives <= 0
+        ? { ...cur, lives: 0, over: true }
+        : resetPositions({ ...cur, lives });
     }
   }
   return cur;
@@ -247,14 +326,25 @@ export function step(s0: PacState): PacState {
     if (f > 0) {
       const food = s.food.slice();
       food[i] = 0;
-      s = { ...s, food, left: s.left - 1, score: s.score + (f === 2 ? 50 : 10) };
+      s = {
+        ...s,
+        food,
+        left: s.left - 1,
+        score: s.score + (f === 2 ? 50 : 10),
+      };
       if (f === 2) {
         s = {
           ...s,
           fright: frightTicks(s.level),
           combo: 0,
           ghosts: s.ghosts.map((g) =>
-            g.mode === "normal" ? { ...g, frightened: true, dir: inHouse(g) ? g.dir : OPPOSITE[g.dir] } : g,
+            g.mode === "normal"
+              ? {
+                  ...g,
+                  frightened: true,
+                  dir: inHouse(g) ? g.dir : OPPOSITE[g.dir],
+                }
+              : g,
           ),
         };
       }
@@ -267,7 +357,14 @@ export function step(s0: PacState): PacState {
   if (s.left === 0) {
     const level = s.level + 1;
     const food = freshFood();
-    return resetPositions({ ...s, level, food, left: food.filter((x) => x > 0).length, score: s.score + 500, ghosts: startGhosts(s.tick) });
+    return resetPositions({
+      ...s,
+      level,
+      food,
+      left: food.filter((x) => x > 0).length,
+      score: s.score + 500,
+      ghosts: startGhosts(s.tick),
+    });
   }
 
   s = collide(s);
@@ -276,7 +373,14 @@ export function step(s0: PacState): PacState {
   // the ghosts
   if (s.fright > 0) {
     const fright = s.fright - 1;
-    s = { ...s, fright, ghosts: fright === 0 ? s.ghosts.map((g) => ({ ...g, frightened: false })) : s.ghosts };
+    s = {
+      ...s,
+      fright,
+      ghosts:
+        fright === 0
+          ? s.ghosts.map((g) => ({ ...g, frightened: false }))
+          : s.ghosts,
+    };
   }
   const period = ghostPeriod(s.level);
   const flip = s.tick % 100 === 0 || s.tick % 100 === 25;
@@ -290,8 +394,14 @@ export function step(s0: PacState): PacState {
         continue;
       }
     }
-    if (flip && g.mode === "normal" && !g.frightened && !inHouse(g)) g = { ...g, dir: OPPOSITE[g.dir] };
-    const moves = g.mode === "eyes" ? true : g.frightened ? s.tick % 2 === 0 : s.tick % period !== period - 1;
+    if (flip && g.mode === "normal" && !g.frightened && !inHouse(g))
+      g = { ...g, dir: OPPOSITE[g.dir] };
+    const moves =
+      g.mode === "eyes"
+        ? true
+        : g.frightened
+          ? s.tick % 2 === 0
+          : s.tick % period !== period - 1;
     if (!moves) {
       ghosts.push(g);
       continue;
@@ -310,11 +420,20 @@ export function cellKinds(s: PacState): string[] {
     for (let x = 0; x < W; x++) {
       const t = tileAt(x, y);
       const f = s.food[y * W + x];
-      out.push(t === "#" ? "w" : t === "=" ? "d" : f === 1 ? "p" : f === 2 ? "o" : "e");
+      out.push(
+        t === "#" ? "w" : t === "=" ? "d" : f === 1 ? "p" : f === 2 ? "o" : "e",
+      );
     }
   }
   for (const g of s.ghosts) {
-    out[g.y * W + g.x] = g.mode === "eyes" ? "ge" : g.frightened ? (s.fright <= 8 && s.fright % 2 === 0 ? "gw" : "gf") : `g${g.id}`;
+    out[g.y * W + g.x] =
+      g.mode === "eyes"
+        ? "ge"
+        : g.frightened
+          ? s.fright <= 8 && s.fright % 2 === 0
+            ? "gw"
+            : "gf"
+          : `g${g.id}`;
   }
   out[s.y * W + s.x] = "P";
   return out;

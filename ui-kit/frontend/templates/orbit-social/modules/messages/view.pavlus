@@ -67,7 +67,7 @@ div.orbm
           button.ui-button.ui-button-default(type="button" @click=createChat) Create chat
       else
         div.orbm__sidehead
-          h2.orbm__h Conversations
+          h2.orbm__h Chats
           div.orbm__tools
             button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=openDmPanel)
               span.k-icon.k-icon-plus

@@ -26,7 +26,9 @@ export const ROTATIONS: Cell[][][] = PIECES.map((name) => {
   const rows = SHAPES[name];
   const n = rows.length;
   let cells: Cell[] = [];
-  rows.forEach((row, y) => [...row].forEach((c, x) => c === "X" && cells.push([x, y])));
+  rows.forEach((row, y) =>
+    [...row].forEach((c, x) => c === "X" && cells.push([x, y])),
+  );
   const out: Cell[][] = [];
   for (let r = 0; r < 4; r++) {
     out.push(cells);
@@ -35,7 +37,8 @@ export const ROTATIONS: Cell[][][] = PIECES.map((name) => {
   return out;
 });
 
-export const cellsOf = (kind: number, rot: number): Cell[] => ROTATIONS[kind - 1][((rot % 4) + 4) % 4];
+export const cellsOf = (kind: number, rot: number): Cell[] =>
+  ROTATIONS[kind - 1][((rot % 4) + 4) % 4];
 const sizeOf = (kind: number): number => SHAPES[PIECES[kind - 1]].length;
 
 export interface Piece {
@@ -64,9 +67,13 @@ export interface TetrisState {
 export const LINE_POINTS = [0, 100, 300, 500, 800];
 export const levelOf = (lines: number): number => 1 + Math.floor(lines / 10);
 /** Milliseconds per gravity tick: faster with the level. */
-export const tickMs = (level: number): number => Math.max(100, 800 - (level - 1) * 70);
+export const tickMs = (level: number): number =>
+  Math.max(100, 800 - (level - 1) * 70);
 
-function draw(bag: number[], seed: number): { kind: number; bag: number[]; seed: number } {
+function draw(
+  bag: number[],
+  seed: number,
+): { kind: number; bag: number[]; seed: number } {
   let rest = bag;
   let sd = seed;
   if (rest.length === 0) {
@@ -82,7 +89,12 @@ function draw(bag: number[], seed: number): { kind: number; bag: number[]; seed:
   return { kind: rest[0], bag: rest.slice(1), seed: sd };
 }
 
-export const spawn = (kind: number): Piece => ({ kind, rot: 0, x: Math.floor((COLS - sizeOf(kind)) / 2), y: kind === 1 ? -1 : 0 });
+export const spawn = (kind: number): Piece => ({
+  kind,
+  rot: 0,
+  x: Math.floor((COLS - sizeOf(kind)) / 2),
+  y: kind === 1 ? -1 : 0,
+});
 
 /** Does the piece fit on the board (cells above the top are free)? */
 export function fits(board: number[], p: Piece): boolean {
@@ -98,7 +110,17 @@ export function fits(board: number[], p: Piece): boolean {
 export function initial(seed: number): TetrisState {
   const a = draw([], seed);
   const b = draw(a.bag, a.seed);
-  return { board: new Array<number>(COLS * ROWS).fill(0), piece: spawn(a.kind), next: b.kind, bag: b.bag, score: 0, lines: 0, level: 1, over: false, seed: b.seed };
+  return {
+    board: new Array<number>(COLS * ROWS).fill(0),
+    piece: spawn(a.kind),
+    next: b.kind,
+    bag: b.bag,
+    score: 0,
+    lines: 0,
+    level: 1,
+    over: false,
+    seed: b.seed,
+  };
 }
 
 /** Puts the piece on the board, clears full rows, scores, and brings the next piece. */
@@ -114,7 +136,10 @@ function lock(s: TetrisState, extra = 0): TetrisState {
     if (row.some((c) => c === 0)) kept.push(row);
   }
   const cleared = ROWS - kept.length;
-  const rows = [...Array.from({ length: cleared }, () => new Array<number>(COLS).fill(0)), ...kept];
+  const rows = [
+    ...Array.from({ length: cleared }, () => new Array<number>(COLS).fill(0)),
+    ...kept,
+  ];
   const lines = s.lines + cleared;
   const nb = draw(s.bag, s.seed);
   const piece = spawn(s.next);

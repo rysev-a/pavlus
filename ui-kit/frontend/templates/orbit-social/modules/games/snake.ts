@@ -30,18 +30,35 @@ export interface SnakeState {
   seed: number;
 }
 
-const VEC: Record<Dir, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
-const OPPOSITE: Record<Dir, Dir> = { up: "down", down: "up", left: "right", right: "left" };
+const VEC: Record<Dir, Point> = {
+  up: { x: 0, y: -1 },
+  down: { x: 0, y: 1 },
+  left: { x: -1, y: 0 },
+  right: { x: 1, y: 0 },
+};
+const OPPOSITE: Record<Dir, Dir> = {
+  up: "down",
+  down: "up",
+  left: "right",
+  right: "left",
+};
 
 export const levelOf = (eaten: number): number => 1 + Math.floor(eaten / 5);
 /** Milliseconds per tick: faster with the level. */
-export const tickMs = (level: number): number => Math.max(60, 150 - (level - 1) * 10);
+export const tickMs = (level: number): number =>
+  Math.max(60, 150 - (level - 1) * 10);
 
 /** A free cell for the food (never on the snake), or null when the board is full. */
-export function placeFood(body: Point[], w: number, h: number, seed: number): { food: Point | null; seed: number } {
+export function placeFood(
+  body: Point[],
+  w: number,
+  h: number,
+  seed: number,
+): { food: Point | null; seed: number } {
   const taken = new Set(body.map((p) => p.y * w + p.x));
   const free: Point[] = [];
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!taken.has(y * w + x)) free.push({ x, y });
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) if (!taken.has(y * w + x)) free.push({ x, y });
   if (free.length === 0) return { food: null, seed };
   const r = randInt(seed, free.length);
   return { food: free[r.value], seed: r.seed };
@@ -56,7 +73,20 @@ export function initial(seed: number, w = SNAKE_W, h = SNAKE_H): SnakeState {
     { x: cx - 2, y: cy },
   ];
   const f = placeFood(body, w, h, seed);
-  return { w, h, body, dir: "right", queue: [], food: f.food, score: 0, eaten: 0, level: 1, over: false, won: false, seed: f.seed };
+  return {
+    w,
+    h,
+    body,
+    dir: "right",
+    queue: [],
+    food: f.food,
+    score: 0,
+    eaten: 0,
+    level: 1,
+    over: false,
+    won: false,
+    seed: f.seed,
+  };
 }
 
 /** Queues a turn. A reverse (or the same direction) is ignored. */
@@ -74,11 +104,13 @@ export function step(s: SnakeState): SnakeState {
   const queue = s.queue.slice(1);
   const v = VEC[dir];
   const head = { x: s.body[0].x + v.x, y: s.body[0].y + v.y };
-  if (head.x < 0 || head.y < 0 || head.x >= s.w || head.y >= s.h) return { ...s, dir, queue, over: true };
+  if (head.x < 0 || head.y < 0 || head.x >= s.w || head.y >= s.h)
+    return { ...s, dir, queue, over: true };
   const eats = s.food !== null && s.food.x === head.x && s.food.y === head.y;
   // the tail moves away in the same tick, so its cell is free unless the snake grows
   const kept = eats ? s.body : s.body.slice(0, -1);
-  if (kept.some((p) => p.x === head.x && p.y === head.y)) return { ...s, dir, queue, over: true };
+  if (kept.some((p) => p.x === head.x && p.y === head.y))
+    return { ...s, dir, queue, over: true };
   const body = [head, ...kept];
   if (!eats) return { ...s, body, dir, queue };
   const eaten = s.eaten + 1;

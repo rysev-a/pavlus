@@ -1,0 +1,24 @@
+/* Orbit, Posts (the blog): only the layout of the page; the cards come from the blocks. */
+.orbb { display: grid; gap: calc(16px * var(--k-block, 1)); min-width: 0; align-content: start; }
+.orbb > * { min-width: 0; }
+.orbb__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.orbb__search { display: flex; flex: 1 1 220px; align-items: center; gap: 8px; min-width: 0; }
+.orbb__search .ui-input { flex: 1; min-width: 0; }
+.orbb .ui-button.is-active { background: var(--secondary); color: var(--secondary-foreground); }
+.orbb__chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.orbb__chip { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--muted-foreground); font: inherit; font-size: 13px; cursor: pointer; }
+.orbb__chip:hover { color: var(--foreground); background: var(--accent); }
+.orbb__chip.is-on { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+.orbb__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: calc(16px * var(--k-block, 1)); min-width: 0; }
+.orbb__grid > * { min-width: 0; }
+.orbb__empty { margin: 0; padding: calc(24px * var(--k-block, 1)); border: 1px dashed var(--border); border-radius: var(--radius-lg); color: var(--muted-foreground); text-align: center; }
+.orbb__formhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.orbb__heading { margin: 0; font-size: 20px; font-weight: 700; }
+.ui-card.orbb__form { gap: calc(16px * var(--k-block, 1)); padding: calc(20px * var(--k-block, 1)); min-width: 0; }
+.orbb__req { color: var(--destructive); }
+.orbb__covers { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+.orbb__cover { display: grid; place-items: center; aspect-ratio: 1; padding: 0; border: 2px solid transparent; border-radius: var(--radius-md); font-size: 24px; cursor: pointer; }
+.orbb__cover.is-on { border-color: var(--foreground); box-shadow: var(--ring-shadow); }
+.orbb__body { width: 100%; min-width: 0; resize: vertical; }
+.orbb__formfoot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.orbb__spacer { flex: 1; }

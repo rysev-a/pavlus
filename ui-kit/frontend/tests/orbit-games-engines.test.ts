@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 import * as pacman from "../templates/orbit-social/modules/games/pacman.ts";
-import { nextRand, randInt } from "../templates/orbit-social/modules/games/rng.ts";
+import {
+  nextRand,
+  randInt,
+} from "../templates/orbit-social/modules/games/rng.ts";
 import * as snake from "../templates/orbit-social/modules/games/snake.ts";
 import * as tetris from "../templates/orbit-social/modules/games/tetris.ts";
 
@@ -26,7 +29,9 @@ describe("snake", () => {
     const s = snake.initial(1);
     expect(s.body).toHaveLength(3);
     expect(s.food).not.toBeNull();
-    expect(s.body.some((p) => p.x === s.food!.x && p.y === s.food!.y)).toBe(false);
+    expect(s.body.some((p) => p.x === s.food!.x && p.y === s.food!.y)).toBe(
+      false,
+    );
   });
 
   test("moves one cell a tick in its direction", () => {
@@ -44,7 +49,9 @@ describe("snake", () => {
     expect(n.score).toBe(10);
     expect(n.eaten).toBe(1);
     expect(n.food).not.toEqual({ x: at(s).x + 1, y: at(s).y });
-    expect(n.body.some((p) => p.x === n.food!.x && p.y === n.food!.y)).toBe(false);
+    expect(n.body.some((p) => p.x === n.food!.x && p.y === n.food!.y)).toBe(
+      false,
+    );
   });
 
   test("the level rises every five foods and the tick gets shorter", () => {
@@ -56,10 +63,34 @@ describe("snake", () => {
 
   test("hitting a wall ends the game, on every side", () => {
     for (const [dir, body] of [
-      ["right", [{ x: 19, y: 5 }, { x: 18, y: 5 }]],
-      ["left", [{ x: 0, y: 5 }, { x: 1, y: 5 }]],
-      ["up", [{ x: 5, y: 0 }, { x: 5, y: 1 }]],
-      ["down", [{ x: 5, y: 19 }, { x: 5, y: 18 }]],
+      [
+        "right",
+        [
+          { x: 19, y: 5 },
+          { x: 18, y: 5 },
+        ],
+      ],
+      [
+        "left",
+        [
+          { x: 0, y: 5 },
+          { x: 1, y: 5 },
+        ],
+      ],
+      [
+        "up",
+        [
+          { x: 5, y: 0 },
+          { x: 5, y: 1 },
+        ],
+      ],
+      [
+        "down",
+        [
+          { x: 5, y: 19 },
+          { x: 5, y: 18 },
+        ],
+      ],
     ] as [snake.Dir, snake.Point[]][]) {
       const s = { ...snake.initial(1), body, dir, food: { x: 10, y: 10 } };
       expect(snake.step(s).over).toBe(true);
@@ -126,25 +157,64 @@ describe("snake", () => {
 
   test("food never lands on the snake, over a long game steered by a bot", () => {
     let s = snake.initial(42);
-    const vec = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] } as const;
+    const vec = {
+      up: [0, -1],
+      down: [0, 1],
+      left: [-1, 0],
+      right: [1, 0],
+    } as const;
     for (let i = 0; i < 3000 && !s.over; i++) {
       // a bot: of the safe moves, the one that gets closest to the food
       const h = at(s);
       const f = s.food!;
       const safe = (["up", "left", "down", "right"] as snake.Dir[])
-        .filter((d) => !(d === "up" && s.dir === "down") && !(d === "down" && s.dir === "up") && !(d === "left" && s.dir === "right") && !(d === "right" && s.dir === "left"))
+        .filter(
+          (d) =>
+            !(d === "up" && s.dir === "down") &&
+            !(d === "down" && s.dir === "up") &&
+            !(d === "left" && s.dir === "right") &&
+            !(d === "right" && s.dir === "left"),
+        )
         .map((d) => ({ d, x: h.x + vec[d][0], y: h.y + vec[d][1] }))
-        .filter((m) => m.x >= 0 && m.y >= 0 && m.x < s.w && m.y < s.h && !s.body.slice(0, -1).some((p) => p.x === m.x && p.y === m.y));
+        .filter(
+          (m) =>
+            m.x >= 0 &&
+            m.y >= 0 &&
+            m.x < s.w &&
+            m.y < s.h &&
+            !s.body.slice(0, -1).some((p) => p.x === m.x && p.y === m.y),
+        );
       if (safe.length === 0) break;
-      safe.sort((a, b) => Math.abs(a.x - f.x) + Math.abs(a.y - f.y) - (Math.abs(b.x - f.x) + Math.abs(b.y - f.y)));
+      safe.sort(
+        (a, b) =>
+          Math.abs(a.x - f.x) +
+          Math.abs(a.y - f.y) -
+          (Math.abs(b.x - f.x) + Math.abs(b.y - f.y)),
+      );
       s = snake.step(snake.turn(s, safe[0].d));
-      if (s.food) expect(s.body.some((p) => p.x === s.food!.x && p.y === s.food!.y)).toBe(false);
+      if (s.food)
+        expect(s.body.some((p) => p.x === s.food!.x && p.y === s.food!.y)).toBe(
+          false,
+        );
     }
     expect(s.eaten).toBeGreaterThan(3);
   });
 
   test("a full board is a win", () => {
-    const s: snake.SnakeState = { ...snake.initial(1, 3, 2), w: 3, h: 2, body: [{ x: 1, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }], dir: "right", food: { x: 2, y: 0 } };
+    const s: snake.SnakeState = {
+      ...snake.initial(1, 3, 2),
+      w: 3,
+      h: 2,
+      body: [
+        { x: 1, y: 0 },
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+        { x: 1, y: 1 },
+        { x: 2, y: 1 },
+      ],
+      dir: "right",
+      food: { x: 2, y: 0 },
+    };
     const n = snake.step(s);
     expect(n.body).toHaveLength(6);
     expect(n.won).toBe(true);
@@ -158,7 +228,10 @@ describe("snake", () => {
     expect(snake.turn(over, "up")).toBe(over);
     const run = () => {
       let s = snake.initial(9);
-      for (let i = 0; i < 30; i++) s = snake.step(snake.turn(s, i % 7 === 3 ? "up" : i % 7 === 5 ? "left" : "right"));
+      for (let i = 0; i < 30; i++)
+        s = snake.step(
+          snake.turn(s, i % 7 === 3 ? "up" : i % 7 === 5 ? "left" : "right"),
+        );
       return s;
     };
     expect(run()).toEqual(run());
@@ -176,24 +249,27 @@ describe("snake", () => {
 });
 
 describe("tetris", () => {
-
   test("seven pieces of four cells, four rotations each", () => {
     expect(tetris.PIECES).toHaveLength(7);
     for (let kind = 1; kind <= 7; kind++) {
-      for (let rot = 0; rot < 4; rot++) expect(tetris.cellsOf(kind, rot)).toHaveLength(4);
+      for (let rot = 0; rot < 4; rot++)
+        expect(tetris.cellsOf(kind, rot)).toHaveLength(4);
       // four quarter turns come back
       expect(tetris.cellsOf(kind, 4)).toEqual(tetris.cellsOf(kind, 0));
     }
   });
 
   test("rotations: I is flat then upright, O never changes, T has four faces", () => {
-    const ys = (k: number, r: number) => new Set(tetris.cellsOf(k, r).map((c) => c[1])).size;
-    const xs = (k: number, r: number) => new Set(tetris.cellsOf(k, r).map((c) => c[0])).size;
+    const ys = (k: number, r: number) =>
+      new Set(tetris.cellsOf(k, r).map((c) => c[1])).size;
+    const xs = (k: number, r: number) =>
+      new Set(tetris.cellsOf(k, r).map((c) => c[0])).size;
     expect(ys(1, 0)).toBe(1);
     expect(xs(1, 0)).toBe(4);
     expect(xs(1, 1)).toBe(1);
     expect(ys(1, 1)).toBe(4);
-    const key = (k: number, r: number) => JSON.stringify([...tetris.cellsOf(k, r)].sort());
+    const key = (k: number, r: number) =>
+      JSON.stringify([...tetris.cellsOf(k, r)].sort());
     expect(key(2, 0)).toBe(key(2, 1));
     expect(new Set([0, 1, 2, 3].map((r) => key(3, r))).size).toBe(4);
     // S, Z, I have two distinct faces for the shape; J and L four
@@ -204,7 +280,9 @@ describe("tetris", () => {
   test("every piece spawns on an empty board, inside it", () => {
     for (let kind = 1; kind <= 7; kind++) {
       const p = tetris.spawn(kind);
-      expect(tetris.fits(new Array<number>(tetris.COLS * tetris.ROWS).fill(0), p)).toBe(true);
+      expect(
+        tetris.fits(new Array<number>(tetris.COLS * tetris.ROWS).fill(0), p),
+      ).toBe(true);
     }
   });
 
@@ -229,10 +307,18 @@ describe("tetris", () => {
   test("move stops at the walls and at blocks", () => {
     let s = tetris.initial(3);
     for (let i = 0; i < 12; i++) s = tetris.move(s, -1);
-    const left = Math.min(...tetris.cellsOf(s.piece.kind, s.piece.rot).map(([dx]) => s.piece.x + dx));
+    const left = Math.min(
+      ...tetris
+        .cellsOf(s.piece.kind, s.piece.rot)
+        .map(([dx]) => s.piece.x + dx),
+    );
     expect(left).toBe(0);
     for (let i = 0; i < 20; i++) s = tetris.move(s, 1);
-    const right = Math.max(...tetris.cellsOf(s.piece.kind, s.piece.rot).map(([dx]) => s.piece.x + dx));
+    const right = Math.max(
+      ...tetris
+        .cellsOf(s.piece.kind, s.piece.rot)
+        .map(([dx]) => s.piece.x + dx),
+    );
     expect(right).toBe(tetris.COLS - 1);
   });
 
@@ -250,21 +336,33 @@ describe("tetris", () => {
   test("a full row clears, scores, and the rows above fall", () => {
     // the bottom row is full but for four cells in the middle; the I lands there
     const board = new Array<number>(tetris.COLS * tetris.ROWS).fill(0);
-    for (let x = 0; x < tetris.COLS; x++) if (x < 3 || x > 6) board[19 * tetris.COLS + x] = 3;
+    for (let x = 0; x < tetris.COLS; x++)
+      if (x < 3 || x > 6) board[19 * tetris.COLS + x] = 3;
     board[18 * tetris.COLS + 0] = 5; // a block above, must fall one row
-    const s: tetris.TetrisState = { ...tetris.initial(1), board, piece: { kind: 1, rot: 0, x: 3, y: 0 } };
+    const s: tetris.TetrisState = {
+      ...tetris.initial(1),
+      board,
+      piece: { kind: 1, rot: 0, x: 3, y: 0 },
+    };
     const n = tetris.hardDrop(s);
     expect(n.lines).toBe(1);
     // 100 for the line at level 1 plus 2 per row of the drop
     expect(n.score).toBe(100 + 2 * tetris.dropDistance(s));
     expect(n.board[19 * tetris.COLS + 0]).toBe(5);
-    expect(n.board.slice(18 * tetris.COLS, 19 * tetris.COLS).every((c) => c === 0)).toBe(true);
+    expect(
+      n.board.slice(18 * tetris.COLS, 19 * tetris.COLS).every((c) => c === 0),
+    ).toBe(true);
   });
 
   test("four rows at once is a Tetris: 800 times the level", () => {
     const board = new Array<number>(tetris.COLS * tetris.ROWS).fill(0);
-    for (let y = 16; y < 20; y++) for (let x = 0; x < tetris.COLS - 1; x++) board[y * tetris.COLS + x] = 2;
-    const s: tetris.TetrisState = { ...tetris.initial(1), board, piece: { kind: 1, rot: 1, x: 7, y: 0 } }; // upright I over column 9
+    for (let y = 16; y < 20; y++)
+      for (let x = 0; x < tetris.COLS - 1; x++) board[y * tetris.COLS + x] = 2;
+    const s: tetris.TetrisState = {
+      ...tetris.initial(1),
+      board,
+      piece: { kind: 1, rot: 1, x: 7, y: 0 },
+    }; // upright I over column 9
     const d = tetris.dropDistance(s);
     const n = tetris.hardDrop(s);
     expect(n.lines).toBe(4);
@@ -282,7 +380,12 @@ describe("tetris", () => {
     // clearing a row on line 9 reaches level 2 and the next clear pays double
     const board = new Array<number>(tetris.COLS * tetris.ROWS).fill(0);
     for (let x = 0; x < tetris.COLS - 1; x++) board[19 * tetris.COLS + x] = 2;
-    const s: tetris.TetrisState = { ...tetris.initial(1), board, lines: 9, piece: { kind: 1, rot: 1, x: 7, y: 0 } };
+    const s: tetris.TetrisState = {
+      ...tetris.initial(1),
+      board,
+      lines: 9,
+      piece: { kind: 1, rot: 1, x: 7, y: 0 },
+    };
     const n = tetris.hardDrop(s);
     expect(n.lines).toBe(10);
     expect(n.level).toBe(2);
@@ -300,14 +403,23 @@ describe("tetris", () => {
   test("soft drop: a point a row, nothing at the bottom", () => {
     const s = tetris.initial(4);
     expect(tetris.softDrop(s).score).toBe(1);
-    const low = { ...s, piece: { ...s.piece, y: s.piece.y + tetris.dropDistance(s) } };
+    const low = {
+      ...s,
+      piece: { ...s.piece, y: s.piece.y + tetris.dropDistance(s) },
+    };
     expect(tetris.softDrop(low)).toBe(low);
   });
 
   test("the game is over when the next piece cannot spawn", () => {
     const board = new Array<number>(tetris.COLS * tetris.ROWS).fill(0);
-    for (let y = 0; y < 3; y++) for (let x = 0; x < tetris.COLS; x++) if (x !== 9) board[y * tetris.COLS + x] = 4;
-    const s: tetris.TetrisState = { ...tetris.initial(1), board, piece: { kind: 2, rot: 0, x: 0, y: 3 } };
+    for (let y = 0; y < 3; y++)
+      for (let x = 0; x < tetris.COLS; x++)
+        if (x !== 9) board[y * tetris.COLS + x] = 4;
+    const s: tetris.TetrisState = {
+      ...tetris.initial(1),
+      board,
+      piece: { kind: 2, rot: 0, x: 0, y: 3 },
+    };
     const n = tetris.hardDrop(s);
     expect(n.over).toBe(true);
     // nothing moves once over
@@ -328,14 +440,19 @@ describe("tetris", () => {
   test("same seed, same game", () => {
     const run = () => {
       let s = tetris.initial(21);
-      for (let i = 0; i < 40; i++) s = tetris.step(i % 5 === 0 ? tetris.rotate(s) : i % 3 === 0 ? tetris.move(s, 1) : s);
+      for (let i = 0; i < 40; i++)
+        s = tetris.step(
+          i % 5 === 0 ? tetris.rotate(s) : i % 3 === 0 ? tetris.move(s, 1) : s,
+        );
       return s;
     };
     expect(run()).toEqual(run());
   });
 
   test("cell kinds: a flat board, the falling piece and its ghost; a 4x4 preview", () => {
-    expect(tetris.fits(new Array<number>(200).fill(0), tetris.spawn(1))).toBe(true);
+    expect(tetris.fits(new Array<number>(200).fill(0), tetris.spawn(1))).toBe(
+      true,
+    );
     const s = tetris.initial(2);
     const k = tetris.cellKinds(s);
     expect(k).toHaveLength(200);
@@ -371,15 +488,28 @@ describe("pacman", () => {
     seen.add("9,13");
     while (queue.length > 0) {
       const p = queue.shift()!;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
         const x = (p.x + dx + pacman.W) % pacman.W;
         const y = p.y + dy;
-        if (y < 0 || y >= pacman.H || "#=".includes(tile(x, y)) || seen.has(`${x},${y}`)) continue;
+        if (
+          y < 0 ||
+          y >= pacman.H ||
+          "#=".includes(tile(x, y)) ||
+          seen.has(`${x},${y}`)
+        )
+          continue;
         seen.add(`${x},${y}`);
         queue.push({ x, y });
       }
     }
-    for (let y = 0; y < pacman.H; y++) for (let x = 0; x < pacman.W; x++) if (".o".includes(tile(x, y))) expect(seen.has(`${x},${y}`)).toBe(true);
+    for (let y = 0; y < pacman.H; y++)
+      for (let x = 0; x < pacman.W; x++)
+        if (".o".includes(tile(x, y))) expect(seen.has(`${x},${y}`)).toBe(true);
   });
 
   test("starts with three lives, four ghosts and every pellet", () => {
@@ -410,7 +540,14 @@ describe("pacman", () => {
     s = pacman.step(pacman.turn(s, "down"));
     expect(s.x).toBe(7);
     // a wall right ahead: he stays
-    const w = free({ ...pacman.initial(1), ghosts: [], x: 4, y: 13, dir: "left", want: "left" });
+    const w = free({
+      ...pacman.initial(1),
+      ghosts: [],
+      x: 4,
+      y: 13,
+      dir: "left",
+      want: "left",
+    });
     // (3,13) is a wall
     const stay = pacman.step(w);
     expect(stay.x).toBe(4);
@@ -431,7 +568,14 @@ describe("pacman", () => {
   });
 
   test("the tunnel wraps from one side to the other", () => {
-    let s = free({ ...pacman.initial(1), ghosts: [], x: 0, y: 9, dir: "left", want: "left" });
+    let s = free({
+      ...pacman.initial(1),
+      ghosts: [],
+      x: 0,
+      y: 9,
+      dir: "left",
+      want: "left",
+    });
     s = pacman.step(s);
     expect(s.x).toBe(pacman.W - 1);
     s = pacman.turn(s, "right");
@@ -442,42 +586,108 @@ describe("pacman", () => {
   test("a power pellet frightens the ghosts; eating them pays 200, 400...", () => {
     let s = free(pacman.initial(1));
     // Pac-Man next to the power pellet at (1,13)
-    s = { ...s, x: 2, y: 13, dir: "left", want: "left", ghosts: [{ id: 0, x: 8, y: 1, dir: "left", mode: "normal", frightened: false, release: 0 }, { id: 1, x: 9, y: 1, dir: "left", mode: "normal", frightened: false, release: 0 }] };
+    s = {
+      ...s,
+      x: 2,
+      y: 13,
+      dir: "left",
+      want: "left",
+      ghosts: [
+        {
+          id: 0,
+          x: 8,
+          y: 1,
+          dir: "left",
+          mode: "normal",
+          frightened: false,
+          release: 0,
+        },
+        {
+          id: 1,
+          x: 9,
+          y: 1,
+          dir: "left",
+          mode: "normal",
+          frightened: false,
+          release: 0,
+        },
+      ],
+    };
     s = pacman.step(s);
     expect(s.score).toBe(50);
     expect(s.fright).toBeGreaterThan(0);
     expect(s.ghosts.every((g) => g.frightened)).toBe(true);
     // a frightened ghost on the next cell is eaten
     const eat = (st: pacman.PacState, gx: number): pacman.PacState =>
-      pacman.step({ ...st, x: 4, y: 13, dir: "left", want: "left", ghosts: st.ghosts.map((g, i) => (i === 0 ? { ...g, x: gx, y: 13, mode: "normal", frightened: true } : g)) });
+      pacman.step({
+        ...st,
+        x: 4,
+        y: 13,
+        dir: "left",
+        want: "left",
+        ghosts: st.ghosts.map((g, i) =>
+          i === 0
+            ? { ...g, x: gx, y: 13, mode: "normal", frightened: true }
+            : g,
+        ),
+      });
     let e = eat({ ...s, score: 0, combo: 0 }, 3);
     expect(e.ghosts[0].mode).toBe("eyes");
     expect(e.score).toBeGreaterThanOrEqual(200);
     e = { ...e, score: 0 };
-    e = pacman.step({ ...e, x: 6, y: 13, dir: "left", want: "left", ghosts: e.ghosts.map((g, i) => (i === 1 ? { ...g, x: 5, y: 13, mode: "normal", frightened: true } : g)) });
+    e = pacman.step({
+      ...e,
+      x: 6,
+      y: 13,
+      dir: "left",
+      want: "left",
+      ghosts: e.ghosts.map((g, i) =>
+        i === 1 ? { ...g, x: 5, y: 13, mode: "normal", frightened: true } : g,
+      ),
+    });
     expect(e.ghosts[1].mode).toBe("eyes");
     expect(e.score).toBeGreaterThanOrEqual(400);
   });
 
   test("the frightened time runs out", () => {
-    let s = free({ ...pacman.initial(1), ghosts: pacman.initial(1).ghosts.slice(0, 1), x: 2, y: 13, dir: "left", want: "left" });
+    let s = free({
+      ...pacman.initial(1),
+      ghosts: pacman.initial(1).ghosts.slice(0, 1),
+      x: 2,
+      y: 13,
+      dir: "left",
+      want: "left",
+    });
     s = pacman.step(s);
     let guard = 0;
-    while (s.fright > 0 && guard++ < 100) s = pacman.step(pacman.turn(s, "right"));
+    while (s.fright > 0 && guard++ < 100)
+      s = pacman.step(pacman.turn(s, "right"));
     expect(s.fright).toBe(0);
     expect(s.ghosts.every((g) => !g.frightened)).toBe(true);
   });
 
   test("meeting a ghost costs a life and puts everyone back; no lives is game over", () => {
     let s = free(pacman.initial(1));
-    const ghost = { id: 0, x: 8, y: 13, dir: "right" as const, mode: "normal" as const, frightened: false, release: 0 };
+    const ghost = {
+      id: 0,
+      x: 8,
+      y: 13,
+      dir: "right" as const,
+      mode: "normal" as const,
+      frightened: false,
+      release: 0,
+    };
     s = pacman.step({ ...s, ghosts: [ghost] });
     expect(s.lives).toBe(2);
     expect(s.x).toBe(9);
     expect(s.y).toBe(13);
     expect(s.ready).toBeGreaterThan(0);
     expect(s.ghosts).toHaveLength(4);
-    const last = pacman.step({ ...free(pacman.initial(1)), lives: 1, ghosts: [ghost] });
+    const last = pacman.step({
+      ...free(pacman.initial(1)),
+      lives: 1,
+      ghosts: [ghost],
+    });
     expect(last.lives).toBe(0);
     expect(last.over).toBe(true);
     expect(pacman.step(last)).toBe(last);
@@ -525,7 +735,8 @@ describe("pacman", () => {
     const dirs: pacman.Dir[] = ["left", "up", "right", "down"];
     const run = () => {
       let s = pacman.initial(77);
-      for (let i = 0; i < 500 && !s.over; i++) s = pacman.step(pacman.turn(s, dirs[(i >> 2) % 4]));
+      for (let i = 0; i < 500 && !s.over; i++)
+        s = pacman.step(pacman.turn(s, dirs[(i >> 2) % 4]));
       return s;
     };
     const a = run();

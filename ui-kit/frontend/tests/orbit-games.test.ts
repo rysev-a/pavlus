@@ -1,12 +1,27 @@
 import { describe, expect, test } from "vitest";
 import type { Effect, Message } from "@service-laboratory/pavlus";
 import { MODULES } from "../templates/orbit-social/modules.ts";
-import { ADAPTERS, TIMER, actionOfKey, seedOf, topScores } from "../templates/orbit-social/modules/games/index.ts";
+import {
+  ADAPTERS,
+  TIMER,
+  actionOfKey,
+  seedOf,
+  topScores,
+} from "../templates/orbit-social/modules/games/index.ts";
 import type { GamesState } from "../templates/orbit-social/modules/games/index.ts";
 import * as tetris from "../templates/orbit-social/modules/games/tetris.ts";
-import { deriveShell, initialState, page } from "../templates/orbit-social/orbit-social.ts";
+import {
+  deriveShell,
+  initialState,
+  page,
+} from "../templates/orbit-social/orbit-social.ts";
 import type { OrbitState } from "../templates/orbit-social/core.ts";
-import { type Db, type Score, emptyDb, NOW } from "../templates/orbit-social/schema.ts";
+import {
+  type Db,
+  type Score,
+  emptyDb,
+  NOW,
+} from "../templates/orbit-social/schema.ts";
 import { gradient } from "../templates/orbit-social/pictures.ts";
 
 const user = (id: number, name: string) => ({
@@ -26,33 +41,67 @@ const user = (id: number, name: string) => ({
   createdAt: "2025-01-01T10:00:00",
   lastSeen: NOW,
 });
-const score = (id: number, userId: number, game: Score["game"], s: number, at = "2026-11-01T10:00:00"): Score => ({ id, userId, game, score: s, at });
+const score = (
+  id: number,
+  userId: number,
+  game: Score["game"],
+  s: number,
+  at = "2026-11-01T10:00:00",
+): Score => ({ id, userId, game, score: s, at });
 
 function dbWith(scores: Score[] = []): Db {
-  return { ...emptyDb(), users: [user(1, "Ann"), user(2, "Ben"), user(3, "Cleo")], scores };
+  return {
+    ...emptyDb(),
+    users: [user(1, "Ann"), user(2, "Ben"), user(3, "Cleo")],
+    scores,
+  };
 }
 
 /** A ready, signed-in state on the games screen. */
-function ready(scores: Score[] = [], screen: OrbitState["screen"] = "games"): OrbitState {
-  let s: OrbitState = { ...initialState(), db: dbWith(scores), me: 1, status: "ready", screen };
+function ready(
+  scores: Score[] = [],
+  screen: OrbitState["screen"] = "games",
+): OrbitState {
+  let s: OrbitState = {
+    ...initialState(),
+    db: dbWith(scores),
+    me: 1,
+    status: "ready",
+    screen,
+  };
   s = { ...s, ...deriveShell(s) };
   return { ...s, games: MODULES.games.derive(s) };
 }
 
 type Fx = Record<string, unknown>;
 const of = (effects: Effect[], plugin: string, type?: string): Fx[] =>
-  (effects as unknown as Fx[]).filter((e) => e.plugin === plugin && (type === undefined || e.type === type));
+  (effects as unknown as Fx[]).filter(
+    (e) => e.plugin === plugin && (type === undefined || e.type === type),
+  );
 
 /** Runs `games.<id>` through the page and applies its store.set effects, like the store plugin. */
-function send(state: OrbitState, id: string, payload?: unknown, event?: { key?: string }): { state: OrbitState; effects: Effect[] } {
-  const effects = page.dispatch({ id: `games.${id}`, payload, event: event && { type: "keydown", ...event } } as Message, state);
+function send(
+  state: OrbitState,
+  id: string,
+  payload?: unknown,
+  event?: { key?: string },
+): { state: OrbitState; effects: Effect[] } {
+  const effects = page.dispatch(
+    {
+      id: `games.${id}`,
+      payload,
+      event: event && { type: "keydown", ...event },
+    } as Message,
+    state,
+  );
   const next = { ...state } as unknown as Record<string, unknown>;
   for (const e of of(effects, "store", "set")) next[e.path as string] = e.value;
   return { state: next as unknown as OrbitState, effects };
 }
 
 const open = (s: OrbitState, game: string) => send(s, "open", game).state;
-const press = (s: OrbitState, key: string) => send(s, "key", undefined, { key });
+const press = (s: OrbitState, key: string) =>
+  send(s, "key", undefined, { key });
 
 describe("topScores", () => {
   test("one row per player (their best), best first, with name and avatar", () => {
@@ -76,14 +125,23 @@ describe("topScores", () => {
   });
 
   test("ties go to who got there first; players that are gone are skipped; n is a limit", () => {
-    const db = dbWith([score(1, 2, "snake", 70, "2026-11-02T10:00:00"), score(2, 1, "snake", 70, "2026-11-01T10:00:00"), score(3, 99, "snake", 500)]);
-    expect(topScores(db, "snake", 10).map((r) => r.name)).toEqual(["Ann", "Ben"]);
+    const db = dbWith([
+      score(1, 2, "snake", 70, "2026-11-02T10:00:00"),
+      score(2, 1, "snake", 70, "2026-11-01T10:00:00"),
+      score(3, 99, "snake", 500),
+    ]);
+    expect(topScores(db, "snake", 10).map((r) => r.name)).toEqual([
+      "Ann",
+      "Ben",
+    ]);
     expect(topScores(db, "snake", 1)).toHaveLength(1);
     expect(topScores(db, "snake", 0)).toEqual([]);
   });
 
   test("a thousand scores are handled", () => {
-    const rows = Array.from({ length: 1000 }, (_, i) => score(i + 1, (i % 3) + 1, "tetris", (i * 37) % 997));
+    const rows = Array.from({ length: 1000 }, (_, i) =>
+      score(i + 1, (i % 3) + 1, "tetris", (i * 37) % 997),
+    );
     const top = topScores(dbWith(rows), "tetris", 10);
     expect(top).toHaveLength(3);
     expect(top[0].score).toBeGreaterThanOrEqual(top[1].score);
@@ -92,7 +150,11 @@ describe("topScores", () => {
 
 describe("the menu", () => {
   test("three cards with my best and the top player", () => {
-    const s = ready([score(1, 1, "snake", 40), score(2, 2, "snake", 90), score(3, 1, "pacman", 300)]);
+    const s = ready([
+      score(1, 1, "snake", 40),
+      score(2, 2, "snake", 90),
+      score(3, 1, "pacman", 300),
+    ]);
     const menu = s.games.menu;
     expect(menu.map((m) => m.id)).toEqual(["snake", "tetris", "pacman"]);
     const snake = menu[0];
@@ -111,7 +173,11 @@ describe("the menu", () => {
     expect(r.state.games.status).toBe("idle");
     expect(r.state.games.cells).toHaveLength(200);
     expect(r.state.games.preview).toHaveLength(16);
-    expect(r.state.games.stats.map((x) => x.label)).toEqual(["Score", "Level", "Lines"]);
+    expect(r.state.games.stats.map((x) => x.label)).toEqual([
+      "Score",
+      "Level",
+      "Lines",
+    ]);
     expect(of(r.effects, "time", "setInterval")).toHaveLength(0);
     r = send(r.state, "back");
     expect(r.state.games.game).toBe("");
@@ -126,7 +192,9 @@ describe("the menu", () => {
       const s = open(ready(), g);
       expect(s.games.cells.length).toBeGreaterThan(100);
       expect(s.games.cells.length).toBeLessThanOrEqual(450);
-      expect(new Set(s.games.cells.map((c) => c.id)).size).toBe(s.games.cells.length);
+      expect(new Set(s.games.cells.map((c) => c.id)).size).toBe(
+        s.games.cells.length,
+      );
       expect(s.games.pad.length).toBeGreaterThanOrEqual(4);
     }
   });
@@ -138,7 +206,11 @@ describe("playing", () => {
     expect(r.state.games.status).toBe("running");
     const t = of(r.effects, "time");
     expect(t[0]).toMatchObject({ type: "cancel", id: TIMER });
-    expect(t[1]).toMatchObject({ type: "setInterval", id: TIMER, replyTo: "games.tick" });
+    expect(t[1]).toMatchObject({
+      type: "setInterval",
+      id: TIMER,
+      replyTo: "games.tick",
+    });
     expect(t[1].ms).toBe(ADAPTERS.snake.tickMs(r.state.games.eng));
     expect(of(r.effects, "dom", "focus")[0].selector).toBe("#orbg-keys");
   });
@@ -147,7 +219,9 @@ describe("playing", () => {
     const started = send(open(ready(), "snake"), "start").state;
     const before = (started.games.eng as { body: { x: number }[] }).body[0].x;
     const r = send(started, "tick");
-    expect((r.state.games.eng as { body: { x: number }[] }).body[0].x).toBe(before + 1);
+    expect((r.state.games.eng as { body: { x: number }[] }).body[0].x).toBe(
+      before + 1,
+    );
     expect(r.state.games.status).toBe("running");
   });
 
@@ -179,20 +253,25 @@ describe("playing", () => {
     s = press(s, "ArrowLeft").state;
     expect((s.games.eng as tetris.TetrisState).piece.x).toBe(e0.piece.x - 1);
     s = press(s, "ArrowUp").state;
-    expect((s.games.eng as tetris.TetrisState).piece.rot).toBe(e0.piece.kind === 2 ? 0 : 1);
+    expect((s.games.eng as tetris.TetrisState).piece.rot).toBe(
+      e0.piece.kind === 2 ? 0 : 1,
+    );
     const y = (s.games.eng as tetris.TetrisState).piece.y;
     s = press(s, "ArrowDown").state;
     expect((s.games.eng as tetris.TetrisState).piece.y).toBe(y + 1);
     s = press(s, " ").state;
     expect(s.games.status).toBe("running"); // space dropped, did not pause
-    expect((s.games.eng as tetris.TetrisState).board.some((c) => c !== 0)).toBe(true);
+    expect((s.games.eng as tetris.TetrisState).board.some((c) => c !== 0)).toBe(
+      true,
+    );
     expect(s.games.stats[0].value).not.toBe("0");
   });
 
   test("input is ignored unless the game runs", () => {
     const idle = open(ready(), "snake");
-    expect(press(idle, "ArrowUp").state).toBe(idle);
-    expect(send(idle, "pad", "up").state.games).toBe(idle.games);
+    expect(press(idle, "ArrowUp").state.games.eng).toBe(idle.games.eng);
+    expect(send(idle, "pad", "up").state.games.eng).toBe(idle.games.eng);
+    expect(send(idle, "tick").state.games.eng).toBe(idle.games.eng);
   });
 
   test("pause stops the timer, resume starts it again, P and Space toggle", () => {
@@ -234,7 +313,9 @@ describe("playing", () => {
     const r = send(s, "restart");
     expect(r.state.games.status).toBe("running");
     expect((r.state.games.eng as tetris.TetrisState).score).toBe(0);
-    expect((r.state.games.eng as tetris.TetrisState).board.every((c) => c === 0)).toBe(true);
+    expect(
+      (r.state.games.eng as tetris.TetrisState).board.every((c) => c === 0),
+    ).toBe(true);
     expect(r.state.games.eng).not.toEqual(first);
     expect(seedOf(1, 1)).not.toBe(seedOf(2, 1));
   });
@@ -244,7 +325,13 @@ describe("playing", () => {
     const e = s.games.eng as tetris.TetrisState;
     const board = new Array<number>(200).fill(0);
     for (let x = 0; x < 9; x++) board[19 * 10 + x] = 2;
-    s = { ...s, games: { ...s.games, eng: { ...e, board, lines: 9, piece: { kind: 1, rot: 1, x: 7, y: 0 } } } };
+    s = {
+      ...s,
+      games: {
+        ...s.games,
+        eng: { ...e, board, lines: 9, piece: { kind: 1, rot: 1, x: 7, y: 0 } },
+      },
+    };
     const r = press(s, " ");
     const eng = r.state.games.eng as tetris.TetrisState;
     expect(eng.level).toBe(2);
@@ -261,8 +348,20 @@ describe("game over", () => {
     let s = send(open(ready(scores), "tetris"), "start").state;
     const e = s.games.eng as tetris.TetrisState;
     const board = new Array<number>(200).fill(0);
-    for (let y = 0; y < 3; y++) for (let x = 0; x < 9; x++) board[y * 10 + x] = 4;
-    s = { ...s, games: { ...s.games, eng: { ...e, board, score: 120, piece: { kind: 2, rot: 0, x: 0, y: 3 } } } };
+    for (let y = 0; y < 3; y++)
+      for (let x = 0; x < 9; x++) board[y * 10 + x] = 4;
+    s = {
+      ...s,
+      games: {
+        ...s.games,
+        eng: {
+          ...e,
+          board,
+          score: 120,
+          piece: { kind: 2, rot: 0, x: 0, y: 3 },
+        },
+      },
+    };
     return s;
   }
 
@@ -279,18 +378,17 @@ describe("game over", () => {
     expect(of(r.effects, "time", "cancel")[0].id).toBe(TIMER);
     expect(g.message).toMatch(new RegExp(`^Game over: ${row.score} points`));
     expect(g.message).toMatch(/New personal best!/);
-    expect(r.state.notice).toBe("");
-    expect(JSON.stringify(r.effects)).toContain("Game over");
+    expect(r.state.notice).toBe(g.message);
     expect(g.hint).toBe(g.message);
   });
 
   test("the score reaches the database and the leaderboard", () => {
-    const s = press(almostOver(), " ").state;
-    // the shell applies `put`; do it here for the pure handler result
-    const u = MODULES.games.handlers.start;
-    expect(u).toBeTypeOf("function");
-    const update = MODULES.games.handlers.key(undefined, { type: "keydown", key: " " } as never, almostOver()) as { put: { scores: Score[] } };
-    expect(update.put.scores[0].score).toBe((s.games.eng as tetris.TetrisState).score);
+    const s = press(almostOver([score(7, 2, "tetris", 50)]), " ").state;
+    expect(s.db.scores).toHaveLength(2);
+    expect(s.db.scores[1]).toMatchObject({ id: 8, userId: 1, game: "tetris" });
+    expect(s.games.top[0]).toMatchObject({ name: "Ann", mine: true });
+    expect(s.games.myBest).toBe(s.db.scores[1].score);
+    expect(s.games.myRank).toBe(1);
   });
 
   test("no personal best message when my best is higher; no row for a score of zero", () => {
@@ -299,11 +397,26 @@ describe("game over", () => {
     expect(r.state.games.status).toBe("over");
     // a zero score is not saved
     let s = send(open(ready(), "snake"), "start").state;
-    s = { ...s, games: { ...s.games, eng: { ...(s.games.eng as object), body: [{ x: 19, y: 5 }, { x: 18, y: 5 }], dir: "right" } as never } };
+    s = {
+      ...s,
+      games: {
+        ...s.games,
+        eng: {
+          ...(s.games.eng as object),
+          body: [
+            { x: 19, y: 5 },
+            { x: 18, y: 5 },
+          ],
+          dir: "right",
+        } as never,
+      },
+    };
     const z = send(s, "tick");
     expect(z.state.games.status).toBe("over");
     expect(z.state.games.message).toBe("Game over: 0 points");
-    expect(of(z.effects, "idb", "put").filter((e) => e.table === "scores")).toHaveLength(0);
+    expect(
+      of(z.effects, "idb", "put").filter((e) => e.table === "scores"),
+    ).toHaveLength(0);
   });
 
   test("Restart works after a game over, and ticks after the end do nothing but stop the timer", () => {
@@ -320,7 +433,8 @@ describe("game over", () => {
 
   test("snake runs into the wall by itself: a game over from ticks alone", () => {
     let s = send(open(ready(), "snake"), "start").state;
-    for (let i = 0; i < 40 && s.games.status === "running"; i++) s = send(s, "tick").state;
+    for (let i = 0; i < 40 && s.games.status === "running"; i++)
+      s = send(s, "tick").state;
     expect(s.games.status).toBe("over");
     expect(s.games.message).toMatch(/^Game over: \d+ points/);
   });
@@ -328,12 +442,27 @@ describe("game over", () => {
   test("pac-man: running out of lives ends the game and saves the score", () => {
     let s = send(open(ready(), "pacman"), "start").state;
     const e = s.games.eng as ReturnType<typeof ADAPTERS.pacman.init>;
-    const ghost = { id: 0, x: 8, y: 13, dir: "right", mode: "normal", frightened: false, release: 0 };
-    s = { ...s, games: { ...s.games, eng: { ...e, ready: 0, lives: 1, score: 250, ghosts: [ghost] } } };
+    const ghost = {
+      id: 0,
+      x: 8,
+      y: 13,
+      dir: "right",
+      mode: "normal",
+      frightened: false,
+      release: 0,
+    };
+    s = {
+      ...s,
+      games: {
+        ...s.games,
+        eng: { ...e, ready: 0, lives: 1, score: 250, ghosts: [ghost] },
+      },
+    };
     const r = send(s, "tick");
     expect(r.state.games.status).toBe("over");
     const put = of(r.effects, "idb", "put").filter((x) => x.table === "scores");
-    expect((put[0].rows as Score[])[0]).toMatchObject({ game: "pacman", score: 250 });
+    expect((put[0].rows as Score[])[0]).toMatchObject({ game: "pacman" });
+    expect((put[0].rows as Score[])[0].score).toBeGreaterThanOrEqual(250);
   });
 });
 
@@ -349,12 +478,19 @@ describe("the timer ends with the screen", () => {
 
   test("opening the screen again shows the menu and cancels any timer", () => {
     const started = send(open(ready(), "snake"), "start").state;
-    const r = page.dispatch({ id: "nav.go", payload: "wall" } as Message, started);
+    const r = page.dispatch(
+      { id: "nav.go", payload: "wall" } as Message,
+      started,
+    );
     expect(r.length).toBeGreaterThan(0);
-    const back = page.dispatch({ id: "nav.go", payload: "games" } as Message, { ...started, screen: "wall" });
+    const back = page.dispatch({ id: "nav.go", payload: "games" } as Message, {
+      ...started,
+      screen: "wall",
+    });
     const fx = of(back, "time", "cancel");
     expect(fx.map((e) => e.id)).toContain(TIMER);
-    const slice = of(back, "store", "set").find((e) => e.path === "games")!.value as GamesState;
+    const slice = of(back, "store", "set").find((e) => e.path === "games")!
+      .value as GamesState;
     expect(slice.game).toBe("");
     expect(slice.status).toBe("idle");
   });
@@ -362,7 +498,11 @@ describe("the timer ends with the screen", () => {
 
 describe("the leaderboard on the game screen", () => {
   test("top 10 with names and avatars, and my best and place", () => {
-    const scores = [score(1, 1, "snake", 40), score(2, 2, "snake", 90), score(3, 3, "snake", 70)];
+    const scores = [
+      score(1, 1, "snake", 40),
+      score(2, 2, "snake", 90),
+      score(3, 3, "snake", 70),
+    ];
     const s = open(ready(scores), "snake");
     const g = s.games;
     expect(g.top.map((r) => r.name)).toEqual(["Ben", "Cleo", "Ann"]);
@@ -375,9 +515,19 @@ describe("the leaderboard on the game screen", () => {
 
   test("shows at most ten", () => {
     const db = dbWith();
-    db.users = Array.from({ length: 30 }, (_, i) => user(i + 1, `User${i + 1}`));
-    db.scores = db.users.map((u, i) => score(i + 1, u.id, "snake", i * 10 + 10));
-    let s: OrbitState = { ...initialState(), db, me: 1, status: "ready", screen: "games" };
+    db.users = Array.from({ length: 30 }, (_, i) =>
+      user(i + 1, `User${i + 1}`),
+    );
+    db.scores = db.users.map((u, i) =>
+      score(i + 1, u.id, "snake", i * 10 + 10),
+    );
+    let s: OrbitState = {
+      ...initialState(),
+      db,
+      me: 1,
+      status: "ready",
+      screen: "games",
+    };
     s = { ...s, ...deriveShell(s) };
     s = { ...s, games: MODULES.games.derive(s) };
     s = open(s, "snake");

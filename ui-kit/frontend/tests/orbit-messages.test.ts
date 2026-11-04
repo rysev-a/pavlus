@@ -532,3 +532,23 @@ test("a large database stays fast", () => {
   expect(m(x).moreRows).toBe(true);
   expect(m(run(x, "moreRows")).rows.length).toBeGreaterThan(40);
 });
+
+test("the real sample data: lists, opens and pages, without a duplicate dialogue", async () => {
+  const { seedDb } = await import("../templates/orbit-social/seed.ts");
+  const db = seedDb();
+  const me = db.conversations.find((c) => c.kind === "chat")?.memberIds[0] ?? 1;
+  let s = ready(db, me);
+  expect(m(s).rows.length).toBeGreaterThan(0);
+  expect(m(s).rows.length).toBeLessThanOrEqual(40);
+  const first = m(s).rows[0];
+  s = run(s, "openConv", first.id);
+  expect(m(s).thread?.messages.length).toBeLessThanOrEqual(PAGE_SIZE);
+  const dm = db.conversations.find(
+    (c) => c.kind === "dm" && c.memberIds.includes(me),
+  );
+  if (dm) {
+    const n = db.conversations.length;
+    const other = dm.memberIds.find((x) => x !== me)!;
+    expect(run(s, "startDm", other).db.conversations).toHaveLength(n);
+  }
+});

@@ -1,8 +1,17 @@
 // The "games" module of Orbit: SNAKE, TETRIS and PAC-MAN with leaderboards.
 // The engines (snake.ts, tetris.ts, pacman.ts) are pure; this file is the glue:
 // a tick timer of the time plugin, the keyboard and touch input, the leaderboard.
-import { domEffector as dom, timeEffector as time } from "@service-laboratory/pavlus/plugins";
-import { nextId, type Handler, type Module, type OrbitState, type Update } from "../../core.ts";
+import {
+  domEffector as dom,
+  timeEffector as time,
+} from "@service-laboratory/pavlus/plugins";
+import {
+  nextId,
+  type Handler,
+  type Module,
+  type OrbitState,
+  type Update,
+} from "../../core.ts";
 import { GAMES, type GameName } from "../../schema.ts";
 import * as pacman from "./pacman.ts";
 import { avatarOf, bestScore, rankOf, topScores } from "./scores.ts";
@@ -137,11 +146,20 @@ const tetrisGame: Adapter<tetris.TetrisState> = {
   name: "Tetris",
   blurb: "Drop the blocks, complete the rows, and keep up as it speeds up.",
   icon: "🧱",
-  controls: "Left and right move, up rotates, down drops one row, space drops to the bottom. P pauses.",
+  controls:
+    "Left and right move, up rotates, down drops one row, space drops to the bottom. P pauses.",
   init: tetris.initial,
   step: tetris.step,
   input: (s, a) =>
-    a === "left" ? tetris.move(s, -1) : a === "right" ? tetris.move(s, 1) : a === "up" ? tetris.rotate(s, 1) : a === "down" ? tetris.softDrop(s) : tetris.hardDrop(s),
+    a === "left"
+      ? tetris.move(s, -1)
+      : a === "right"
+        ? tetris.move(s, 1)
+        : a === "up"
+          ? tetris.rotate(s, 1)
+          : a === "down"
+            ? tetris.softDrop(s)
+            : tetris.hardDrop(s),
   over: (s) => s.over,
   score: (s) => s.score,
   stats: (s) => [
@@ -169,7 +187,8 @@ const pacmanGame: Adapter<pacman.PacState> = {
   name: "Pac-Man",
   blurb: "Eat every pellet, grab a power pellet, and chase the ghosts back.",
   icon: "👻",
-  controls: "Arrow keys or WASD steer. Eat every pellet, avoid the ghosts. P pauses.",
+  controls:
+    "Arrow keys or WASD steer. Eat every pellet, avoid the ghosts. P pauses.",
   init: pacman.initial,
   step: pacman.step,
   input: (s, a) => (a === "drop" ? s : pacman.turn(s, a)),
@@ -189,12 +208,19 @@ const pacmanGame: Adapter<pacman.PacState> = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const ADAPTERS: Record<GameName, Adapter<any>> = { snake: snakeGame, tetris: tetrisGame, pacman: pacmanGame };
+export const ADAPTERS: Record<GameName, Adapter<any>> = {
+  snake: snakeGame,
+  tetris: tetrisGame,
+  pacman: pacmanGame,
+};
 /** The order of the menu. */
-const MENU_ORDER: GameName[] = (["snake", "tetris", "pacman"] as GameName[]).filter((g) => GAMES.includes(g));
+const MENU_ORDER: GameName[] = (
+  ["snake", "tetris", "pacman"] as GameName[]
+).filter((g) => GAMES.includes(g));
 
 /** The seed of a game: the number of games started and the player (deterministic, no clock). */
-export const seedOf = (runs: number, me: number): number => (runs + 1) * 7919 + me * 104729;
+export const seedOf = (runs: number, me: number): number =>
+  (runs + 1) * 7919 + me * 104729;
 
 // ---- derive ----
 
@@ -223,15 +249,44 @@ export function derive(s: OrbitState): GamesState {
   const g = s.games;
   const menu = menuCards(s);
   if (!g.game || !g.eng) {
-    return { ...g, menu, title: "", blurb: "", hint: "", stats: [], cells: [], boardStyle: "", wrapStyle: "", preview: [], previewStyle: "", pad: [], top: [], myBest: 0, myRank: 0 };
+    return {
+      ...g,
+      menu,
+      title: "",
+      blurb: "",
+      hint: "",
+      stats: [],
+      cells: [],
+      boardStyle: "",
+      wrapStyle: "",
+      preview: [],
+      previewStyle: "",
+      pad: [],
+      top: [],
+      myBest: 0,
+      myRank: 0,
+    };
   }
   const a = ADAPTERS[g.game];
   const top: BoardRow[] = topScores(s.db, g.game, 10).map((r) => {
     const av = avatarOf(r.avatar, r.name);
-    return { rank: r.rank, name: r.name, avatar: av.style, glyph: av.glyph, score: r.score, mine: r.userId === s.me };
+    return {
+      rank: r.rank,
+      name: r.name,
+      avatar: av.style,
+      glyph: av.glyph,
+      score: r.score,
+      mine: r.userId === s.me,
+    };
   });
   const hint =
-    g.status === "paused" ? "Paused. Press Resume, P or Enter to go on." : g.status === "over" ? g.message : g.status === "idle" ? `Press Start or Enter. ${a.controls}` : a.controls;
+    g.status === "paused"
+      ? "Paused. Press Resume, P or Enter to go on."
+      : g.status === "over"
+        ? g.message
+        : g.status === "idle"
+          ? `Press Start or Enter. ${a.controls}`
+          : a.controls;
   return {
     ...g,
     menu,
@@ -243,7 +298,8 @@ export function derive(s: OrbitState): GamesState {
     boardStyle: `grid-template-columns: repeat(${a.cols}, minmax(0, 1fr)); aspect-ratio: ${a.cols} / ${a.rows}`,
     wrapStyle: `max-width: ${a.width}px`,
     preview: a.preview ? cellList(a.preview(g.eng)) : [],
-    previewStyle: "grid-template-columns: repeat(4, minmax(0, 1fr)); aspect-ratio: 1 / 1",
+    previewStyle:
+      "grid-template-columns: repeat(4, minmax(0, 1fr)); aspect-ratio: 1 / 1",
     pad: a.pad,
     top,
     myBest: bestScore(s.db, s.me, g.game),
@@ -285,14 +341,32 @@ function settle(state: OrbitState, before: Eng, eng: Eng): Update {
   const a = ADAPTERS[g.game as GameName];
   if (!a.over(eng)) {
     const fast = a.tickMs(eng) !== a.tickMs(before);
-    return { slice: { eng }, effects: fast ? [time.setInterval(TIMER, a.tickMs(eng), "games.tick")] : undefined };
+    return {
+      slice: { eng },
+      effects: fast
+        ? [time.setInterval(TIMER, a.tickMs(eng), "games.tick")]
+        : undefined,
+    };
   }
   const score = a.score(eng);
   const best = bestScore(state.db, state.me, a.id);
   const message = `Game over: ${score} points${score > best ? ". New personal best!" : ""}`;
   return {
     slice: { eng, status: "over", message },
-    put: score > 0 ? { scores: [{ id: nextId(state.db.scores), userId: state.me, game: a.id, score, at: state.now }] } : undefined,
+    put:
+      score > 0
+        ? {
+            scores: [
+              {
+                id: nextId(state.db.scores),
+                userId: state.me,
+                game: a.id,
+                score,
+                at: state.now,
+              },
+            ],
+          }
+        : undefined,
     notice: message,
     effects: stopTimer,
   };
@@ -306,18 +380,30 @@ function begin(state: OrbitState): Update {
   const eng = a.init(seedOf(g.runs, state.me));
   return {
     slice: { eng, status: "running", runs: g.runs + 1, message: "" },
-    effects: [time.cancel(TIMER), time.setInterval(TIMER, a.tickMs(eng), "games.tick"), dom.focus("#orbg-keys")],
+    effects: [
+      time.cancel(TIMER),
+      time.setInterval(TIMER, a.tickMs(eng), "games.tick"),
+      dom.focus("#orbg-keys"),
+    ],
   };
 }
 
 function resume(state: OrbitState): Update {
   const g = state.games;
   if (!g.game || !g.eng || g.status !== "paused") return {};
-  return { slice: { status: "running" }, effects: [time.setInterval(TIMER, ADAPTERS[g.game].tickMs(g.eng), "games.tick"), dom.focus("#orbg-keys")] };
+  return {
+    slice: { status: "running" },
+    effects: [
+      time.setInterval(TIMER, ADAPTERS[g.game].tickMs(g.eng), "games.tick"),
+      dom.focus("#orbg-keys"),
+    ],
+  };
 }
 
 function pause(state: OrbitState): Update {
-  return state.games.status === "running" ? { slice: { status: "paused" }, effects: stopTimer } : {};
+  return state.games.status === "running"
+    ? { slice: { status: "paused" }, effects: stopTimer }
+    : {};
 }
 
 function input(state: OrbitState, action: Action): Update {
@@ -333,18 +419,31 @@ const handlers: Record<string, Handler> = {
     const id = String(payload) as GameName;
     if (!(id in ADAPTERS)) return;
     const a = ADAPTERS[id];
-    return { slice: { game: id, status: "idle", eng: a.init(seedOf(state.games.runs, state.me)), message: "" }, effects: stopTimer };
+    return {
+      slice: {
+        game: id,
+        status: "idle",
+        eng: a.init(seedOf(state.games.runs, state.me)),
+        message: "",
+      },
+      effects: stopTimer,
+    };
   },
   /** Back to the menu. */
-  back: () => ({ slice: { game: "", status: "idle", eng: null, message: "" }, effects: stopTimer }),
-  start: (_p, _e, state) => (state.games.status === "paused" ? resume(state) : begin(state)),
+  back: () => ({
+    slice: { game: "", status: "idle", eng: null, message: "" },
+    effects: stopTimer,
+  }),
+  start: (_p, _e, state) =>
+    state.games.status === "paused" ? resume(state) : begin(state),
   restart: (_p, _e, state) => begin(state),
   pause: (_p, _e, state) => pause(state),
   resume: (_p, _e, state) => resume(state),
   /** The interval of the time plugin. The timer must end with the game, and with the screen. */
   tick(_p, _e, state) {
     const g = state.games;
-    if (state.screen !== "games" || g.status !== "running" || !g.game || !g.eng) return { effects: stopTimer };
+    if (state.screen !== "games" || g.status !== "running" || !g.game || !g.eng)
+      return { effects: stopTimer };
     return settle(state, g.eng, ADAPTERS[g.game].step(g.eng));
   },
   /** The keyboard (the payload is empty, the key is in the event). */
@@ -352,9 +451,25 @@ const handlers: Record<string, Handler> = {
     const g = state.games;
     if (!g.game) return;
     const key = e?.key ?? "";
-    if (key === "Enter") return g.status === "paused" ? resume(state) : g.status === "running" ? undefined : begin(state);
-    if (key === "p" || key === "P" || key === "Escape" || (key === " " && g.game !== "tetris")) {
-      return g.status === "running" ? pause(state) : g.status === "paused" ? resume(state) : key === " " ? begin(state) : undefined;
+    if (key === "Enter")
+      return g.status === "paused"
+        ? resume(state)
+        : g.status === "running"
+          ? undefined
+          : begin(state);
+    if (
+      key === "p" ||
+      key === "P" ||
+      key === "Escape" ||
+      (key === " " && g.game !== "tetris")
+    ) {
+      return g.status === "running"
+        ? pause(state)
+        : g.status === "paused"
+          ? resume(state)
+          : key === " "
+            ? begin(state)
+            : undefined;
     }
     if (key === " ") return input(state, "drop");
     const action = actionOfKey(key);
@@ -390,6 +505,9 @@ export const gamesModule: Module<GamesState> = {
   }),
   derive,
   /** Opening the screen shows the menu and makes sure no timer is left running. */
-  enter: () => ({ slice: { game: "", status: "idle", eng: null, message: "" }, effects: stopTimer }),
+  enter: () => ({
+    slice: { game: "", status: "idle", eng: null, message: "" },
+    effects: stopTimer,
+  }),
   handlers,
 };
