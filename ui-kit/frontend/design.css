@@ -212,3 +212,113 @@ html[data-style="material"] {
   --sw-w-sm: 40px; --sw-h-sm: 24px; --sw-thumb-sm: 12px; --sw-thumb-on-sm: 16px;
   --sw-off-thumb: var(--md-outline); --sw-on-thumb: var(--primary-foreground);
 }
+
+/* Bulma (v1): 40px buttons with a 1px grey border and semibold type, a darker hover, inset shadow
+   in fields, borderless "box" cards with a soft drop shadow, thin line tabs. */
+html[data-style="bulma"] {
+  --shadow-xs: none;
+  --shadow-sm: 0 .5em 1em -.125em rgb(10 10 10 / .1), 0 0 0 1px rgb(10 10 10 / .02);
+  --bl-line: color-mix(in srgb, var(--foreground) 14%, var(--background));
+  --bl-line-hover: color-mix(in srgb, var(--foreground) 30%, var(--background));
+
+  --btn-h: 40; --btn-h-xs: 24; --btn-h-sm: 32; --btn-h-lg: 48;
+  --btn-px: 16px; --btn-px-sm: 12px; --btn-px-lg: 20px; --btn-px-icon: 16px;
+  --btn-radius: .375rem; --btn-fs: 16; --btn-fw: 600;
+  --btn-hover-amt: 94%; --btn-hover-tint: #000; --btn-active-amt: 88%; --btn-active-tint: #000; --btn-hover-amt-secondary: 92%;
+  --btn-shadow-outline: none;
+  --btn-outline-bg: var(--card); --btn-outline-border: var(--bl-line); --btn-outline-hover-bg: var(--card);
+  --btn-outline-hover-border: var(--bl-line-hover); --btn-outline-hover-fg: var(--foreground);
+  --btn-ghost-hover-bg: color-mix(in srgb, var(--foreground) 6%, transparent);
+
+  --field-h: 40; --field-px: 12px; --field-radius: .375rem; --field-bg: var(--card); --field-border: var(--bl-line);
+  --field-border-hover: var(--bl-line-hover); --field-shadow: inset 0 .0625em .125em rgb(10 10 10 / .05);
+  --field-focus-border: var(--primary); --field-focus-ring: 0 0 0 .125em color-mix(in srgb, var(--primary) 25%, transparent);
+
+  --card-radius: .75rem; --card-border: transparent; --chip-radius: .375rem; --heading-fw: 600; --heading-ls: 0;
+  --tabs-bg: transparent; --tabs-radius: 0; --tabs-p: 0; --tabs-h: 40; --tabs-line: inset 0 -1px 0 var(--bl-line);
+  --tabs-trigger-radius: 0; --tabs-trigger-px: 16px; --tabs-active-bg: transparent; --tabs-active-fg: var(--primary);
+  --tabs-active-shadow: inset 0 -2px 0 var(--primary);
+  --check-radius: .25rem; --check-border: var(--bl-line-hover);
+  --sw-w: 40px; --sw-h: 22px; --sw-thumb: 18px; --sw-off-x: 1px; --sw-on-x: 1px; --sw-w-sm: 30px; --sw-h-sm: 16px; --sw-thumb-sm: 12px;
+}
+
+/* Flowbite (Tailwind): 40px buttons with 20px padding and rounded-lg, a darker hover and a wide
+   4px focus ring, grey-filled inputs, a thin card shadow, underline tabs, a 44x24 toggle. */
+html[data-style="flowbite"] {
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / .05);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / .1), 0 1px 2px rgb(0 0 0 / .06);
+  --ring-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 30%, transparent);
+  --fb-line: color-mix(in srgb, var(--foreground) 14%, var(--background));
+
+  --btn-h: 40; --btn-h-xs: 28; --btn-h-sm: 32; --btn-h-lg: 48;
+  --btn-px: 20px; --btn-px-sm: 12px; --btn-px-lg: 20px; --btn-px-icon: 20px;
+  --btn-radius: .5rem; --btn-fs: 14; --btn-fw: 500;
+  --btn-hover-amt: 88%; --btn-hover-tint: #000; --btn-hover-amt-secondary: 94%;
+  --btn-shadow-outline: none;
+  --btn-outline-bg: var(--card); --btn-outline-border: var(--fb-line); --btn-outline-hover-bg: color-mix(in srgb, var(--foreground) 5%, var(--card));
+  --btn-outline-hover-fg: var(--primary);
+  --btn-ghost-hover-bg: color-mix(in srgb, var(--foreground) 6%, transparent);
+
+  --field-h: 42; --field-px: 10px; --field-radius: .5rem; --field-bg: var(--muted);
+  --field-border: color-mix(in srgb, var(--foreground) 20%, var(--background)); --field-shadow: none;
+  --field-focus-border: var(--primary); --field-focus-ring: 0 0 0 1px var(--primary);
+
+  --card-radius: .5rem; --chip-radius: .25rem;
+  --tabs-bg: transparent; --tabs-radius: 0; --tabs-p: 0; --tabs-h: 44; --tabs-line: inset 0 -1px 0 var(--fb-line);
+  --tabs-trigger-radius: 0; --tabs-trigger-px: 16px; --tabs-active-bg: transparent; --tabs-active-fg: var(--primary);
+  --tabs-active-shadow: inset 0 -2px 0 var(--primary);
+  --check-radius: .25rem; --check-border: color-mix(in srgb, var(--foreground) 20%, var(--background));
+  --sw-w: 44px; --sw-h: 24px; --sw-thumb: 20px; --sw-off-x: 1px; --sw-on-x: 1px; --sw-w-sm: 36px; --sw-h-sm: 20px; --sw-thumb-sm: 16px;
+}
+
+/* Radix Themes: 32px solid buttons that darken, outline and ghost variants in the accent colour,
+   a two-ring focus, tinted surfaces with a hairline, underline tabs, a 36x20 switch. */
+html[data-style="radix"] {
+  --shadow-xs: none;
+  --shadow-sm: 0 0 0 1px color-mix(in srgb, var(--primary) 14%, transparent);
+  --ring-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--primary);
+  --rx-line: color-mix(in srgb, var(--primary) 22%, var(--border));
+
+  --btn-h: 32; --btn-h-xs: 24; --btn-h-sm: 28; --btn-h-lg: 40;
+  --btn-px: 12px; --btn-px-sm: 10px; --btn-px-lg: 16px; --btn-px-icon: 12px; --btn-px-xs: 8px;
+  --btn-radius: .375rem; --btn-fs: 14; --btn-fw: 500;
+  --btn-hover-amt: 90%; --btn-hover-tint: #000; --btn-hover-amt-secondary: 92%;
+  --btn-shadow-outline: none;
+  --btn-outline-bg: transparent; --btn-outline-border: var(--rx-line); --btn-outline-fg: var(--primary);
+  --btn-outline-hover-bg: color-mix(in srgb, var(--primary) 7%, transparent); --btn-outline-hover-fg: var(--primary);
+  --btn-ghost-fg: var(--primary); --btn-ghost-hover-bg: color-mix(in srgb, var(--primary) 10%, transparent);
+
+  --field-h: 32; --field-px: 8px; --field-radius: .375rem; --field-bg: color-mix(in srgb, var(--primary) 4%, var(--background));
+  --field-border: var(--rx-line); --field-shadow: none; --field-focus-border: var(--primary); --field-focus-ring: 0 0 0 1px var(--primary);
+
+  --card-radius: .5rem; --card-border: var(--rx-line); --card-bg: color-mix(in srgb, var(--primary) 3%, var(--card)); --chip-radius: .375rem;
+  --tabs-bg: transparent; --tabs-radius: 0; --tabs-p: 0; --tabs-h: 40; --tabs-line: inset 0 -1px 0 var(--rx-line);
+  --tabs-trigger-radius: 0; --tabs-trigger-px: 12px; --tabs-active-bg: transparent; --tabs-active-fg: var(--foreground);
+  --tabs-active-shadow: inset 0 -2px 0 var(--primary);
+  --check-radius: .1875rem; --check-border: var(--rx-line);
+  --sw-w: 36px; --sw-h: 20px; --sw-thumb: 16px; --sw-off-x: 1px; --sw-on-x: 1px; --sw-w-sm: 28px; --sw-h-sm: 16px; --sw-thumb-sm: 12px;
+  --sw-off-bg: color-mix(in srgb, var(--primary) 15%, var(--background));
+}
+
+/* MDN: plain documentation: 4px corners, bold type, no shadows, line tabs, a darker hover. */
+html[data-style="mdn"] {
+  --shadow-xs: none; --shadow-sm: none; --shadow-md: 0 1px 3px rgb(0 0 0 / .15);
+  --mdn-line: color-mix(in srgb, var(--foreground) 20%, var(--background));
+
+  --btn-h: 36; --btn-h-xs: 24; --btn-h-sm: 30; --btn-h-lg: 44;
+  --btn-px: 16px; --btn-px-sm: 12px; --btn-px-lg: 20px; --btn-px-icon: 14px;
+  --btn-radius: .25rem; --btn-fs: 14; --btn-fw: 600; --btn-ease: .1s;
+  --btn-hover-amt: 85%; --btn-hover-tint: #000; --btn-hover-amt-secondary: 92%;
+  --btn-shadow-outline: none;
+  --btn-outline-bg: var(--card); --btn-outline-border: var(--mdn-line); --btn-outline-hover-bg: color-mix(in srgb, var(--foreground) 6%, var(--card));
+  --btn-ghost-hover-bg: color-mix(in srgb, var(--foreground) 8%, transparent);
+
+  --field-h: 36; --field-px: 8px; --field-radius: .25rem; --field-bg: var(--card); --field-border: var(--mdn-line);
+  --field-shadow: none; --field-focus-border: var(--primary); --field-focus-ring: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
+
+  --card-radius: .25rem; --chip-radius: .25rem; --heading-fw: 700; --heading-ls: 0;
+  --tabs-bg: transparent; --tabs-radius: 0; --tabs-p: 0; --tabs-h: 40; --tabs-line: inset 0 -1px 0 var(--mdn-line);
+  --tabs-trigger-radius: 0; --tabs-trigger-px: 16px; --tabs-active-bg: transparent; --tabs-active-fg: var(--foreground);
+  --tabs-active-shadow: inset 0 -3px 0 var(--primary);
+  --check-radius: .125rem; --check-border: var(--mdn-line);
+}
