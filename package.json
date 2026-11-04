@@ -5,6 +5,8 @@
   "workspaces": [
     "framework",
     "admin-app",
+    "phone-crm-app",
+    "social-network-app",
     "ui-kit"
   ],
   "scripts": {
