@@ -770,7 +770,7 @@ class JsxParser {
         const parsed = this.element();
         const len = this.p - i;
         holes.set(m.length, { len, parsed });
-        m += HOLE + " ".repeat(len - 1);
+        m += HOLE + "\u0002".repeat(len - 1);
         i = this.p;
         last = HOLE;
       } else {
