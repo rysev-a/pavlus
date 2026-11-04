@@ -1,8 +1,12 @@
 /**
- * Server-side rendering of the frontend. The application is the same pure
- * code as in the browser; here it runs without a DOM, with the API answered
+ * Server-side rendering. The application is the same pure code as in the
+ * browser (app/); here it runs without a DOM, with the API answered
  * in-process, until its data is in. Then its view is rendered to HTML and
  * its state to JSON, and the browser hydrates both (frontend/main.ts).
+ *
+ * The app's `dom.update()` effects land on an inert plugin: on the server
+ * there is nothing to repaint along the way — the whole page is rendered
+ * once, from the final state.
  */
 import {
   type Component,
@@ -12,17 +16,15 @@ import {
 } from "@service-laboratory/pavlus";
 import {
   createHttpPlugin,
-  createLoggerPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
 import { renderToString, serializeState } from "@service-laboratory/pavlus/ssr";
 import { handleApi, type Query } from "./api.ts";
 
-/** What frontend/entry-server.ts exports. */
+/** What app/entry-server.ts exports. */
 export interface Frontend {
   app: Component;
   initialState: unknown;
-  components: Record<string, Component>;
 }
 
 export interface Page {
@@ -30,8 +32,6 @@ export interface Page {
   html: string;
   /** The state the page was rendered from, as JSON. */
   state: string;
-  /** The theme from the settings, put on `<html>` as a class. */
-  theme?: "light" | "dark";
 }
 
 /** The app's `fetch`, answered by the API handlers directly: no socket. */
@@ -59,51 +59,35 @@ function inProcess(query: Query): typeof fetch {
   };
 }
 
-/** A plugin that accepts its effects and does nothing: no DOM, no router here. */
+/** A plugin that accepts its effects and does nothing: no DOM on the server. */
 const inert = (name: string): Plugin => ({ name, handle() {} });
-const silent = { debug() {}, info() {}, warn() {}, error() {} };
 
 /**
- * Renders the page at `url`: the router's message goes in, the pages that
- * `enter` load their data through `query`, and the result is rendered.
+ * Renders the page: `mounted` goes in (the same message the browser's mount
+ * dispatches), the data loads through `query`, and the result is rendered.
  */
 export async function renderPage(
   frontend: Frontend,
-  url: URL,
   query: Query,
 ): Promise<Page> {
   const view = viewOf(frontend.app);
-  if (!view) throw new Error("ssr: the frontend's app has no view");
+  if (!view) throw new Error("ssr: the app has no view");
   const store = createStorePlugin(frontend.initialState);
   const http = createHttpPlugin({ fetch: inProcess(query) });
-  const app = createApp({
+  const instance = createApp({
     app: frontend.app,
-    plugins: [
-      store,
-      http,
-      createLoggerPlugin({ sink: silent }),
-      inert("dom"),
-      inert("router"),
-      inert("theme"),
-    ],
+    plugins: [store, http, inert("dom")],
   });
   try {
-    app.dispatch({
-      id: "routeChanged",
-      payload: { path: url.pathname, search: url.search, hash: "" },
-    });
+    instance.dispatch({ id: "mounted" });
     await http.settled();
   } finally {
-    app.dispose();
+    instance.dispose();
   }
   const state = store.getState();
-  const theme = await query<{ theme: "light" | "dark" }>(
-    `SELECT theme FROM settings WHERE id = 1`,
-  ).then((rows) => rows[0]?.theme ?? "light");
   return {
     html: renderToString(view, state),
-    state: serializeState(state, frontend.components),
-    theme,
+    state: serializeState(state),
   };
 }
 
@@ -120,11 +104,7 @@ export function renderDocument(template: string, page: Page): string {
   if (!template.includes(marker) || !template.includes("</head>")) {
     throw new Error('ssr: the template needs <div id="app"></div> and <head>');
   }
-  // The theme is a class on `<html>`: the CSS tokens pick it up before the app runs.
-  const themed = page.theme
-    ? template.replace("<html", `<html class="${page.theme}"`)
-    : template;
-  return themed
+  return template
     .replace("</head>", `  ${script}\n  </head>`)
     .replace(marker, `<div id="app">${page.html}</div>`);
 }

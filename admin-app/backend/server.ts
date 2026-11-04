@@ -3,10 +3,11 @@
  *
  * - `/api/*` answers JSON from Postgres (see api.ts).
  * - A page (a path without a file extension) is rendered on the server
- *   (ssr.ts) and hydrated in the browser. In development Vite runs inside
- *   this server (middleware mode: hot reload, templates compiled on the fly).
- *   In production (`NODE_ENV=production`) the build in `dist/` is used: its
- *   assets as static files, `dist/server/entry-server.js` to render.
+ *   (ssr.ts, from the same pure app/ code) and hydrated in the browser. In
+ *   development Vite runs inside this server (middleware mode: hot reload,
+ *   templates compiled on the fly). In production (`NODE_ENV=production`)
+ *   the build in `dist/` is used: its assets as static files,
+ *   `dist/server/entry-server.js` to render.
  *
  * Run with `node backend/server.ts` (Node strips the types itself).
  */
@@ -19,14 +20,13 @@ import { readFile, stat } from "node:fs/promises";
 import type { AddressInfo } from "node:net";
 import { dirname, extname, join, normalize } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type pg from "pg";
 import type { ViteDevServer } from "vite";
 import { handleApi, type Query } from "./api.ts";
 import { createPool } from "./db/pool.ts";
 import { type Frontend, renderDocument, renderPage } from "./ssr.ts";
 
 const PORT = Number(process.env.PORT ?? 3000);
-// Plain paths: under jsdom (the frontend tests) the global `URL` is not Node's.
+// Plain paths: under jsdom (the tests) the global `URL` is not Node's.
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = join(ROOT, "dist") + "/";
 
@@ -111,7 +111,7 @@ export type FrontendMode = "dev" | "dist" | "none";
 interface Pages {
   /** index.html for `url` (in development, with Vite's client script). */
   template(url: URL): Promise<string>;
-  /** frontend/entry-server.ts, loaded. */
+  /** app/entry-server.ts, loaded. */
   frontend(): Promise<Frontend>;
   /** Serves an asset; `false` when the request is not one. */
   asset(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean>;
@@ -166,9 +166,7 @@ async function devPages(quiet: boolean): Promise<Pages> {
     },
     async frontend() {
       try {
-        return (await vite.ssrLoadModule(
-          "/frontend/entry-server.ts",
-        )) as Frontend;
+        return (await vite.ssrLoadModule("/app/entry-server.ts")) as Frontend;
       } catch (e) {
         if (e instanceof Error) vite.ssrFixStacktrace(e);
         throw e;
@@ -187,7 +185,7 @@ async function devPages(quiet: boolean): Promise<Pages> {
 
 export interface ServerOptions {
   /** Defaults to a pool for `DATABASE_URL`; the server ends it when closed. */
-  pool?: pg.Pool;
+  pool?: import("pg").Pool;
   /** No log lines (tests). */
   quiet?: boolean;
   /**
@@ -227,7 +225,7 @@ export function startServer(
     try {
       html = renderDocument(
         template,
-        await renderPage(await p.frontend(), url, query),
+        await renderPage(await p.frontend(), query),
       );
     } catch (e) {
       console.error(`render ${url.pathname}:`, e);

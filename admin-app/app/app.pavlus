@@ -1,0 +1,43 @@
+// The whole app: one template. It paints only when the application tells it
+// to — a handler pairs its store writes with a `dom.update()` effect, so a
+// state change alone never touches the DOM.
+section.admin
+  header.top
+    h1 Users
+    button.new(@click=newUser) new user
+  if status === "loading"
+    p.status Loading...
+  else
+    if error
+      p.status.status--error {error}
+    if users.length == 0
+      p.empty No users yet — create the first one.
+    table.users
+      thead
+        tr
+          th Name
+          th Email
+          th Role
+          th
+      tbody
+        for user in users key user.id
+          tr
+            td {user.name}
+            td {user.email}
+            td {user.role}
+            td.actions
+              button.edit(@click=editUser(user)) edit
+              button.del(@click=removeUser(user.id)) delete
+  if form
+    form.card(@submit.prevent=submitForm)
+      h2 {form.id ? "Edit user" : "New user"}
+      div.fields
+        input.inp(value=form.name @input=formName placeholder="Name" autocomplete="off")
+        input.inp(type="email" value=form.email @input=formEmail placeholder="Email" autocomplete="off")
+        select.inp(value=form.roleId @change=formRole)
+          option(value="") Pick a role
+          for role in roles key role.id
+            option(value=role.id selected=(form.roleId == role.id)) {role.name}
+      div.actions
+        button.save(type="submit" disabled=(form.name == "" || form.email == "" || form.roleId == "")) Save
+        button.cancel(type="button" @click=cancelForm) Cancel

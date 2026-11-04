@@ -414,6 +414,9 @@ const menuLinks = (menu: MenuItem[]): MenuItem[] =>
  */
 export class AppShell extends Component<AppState> {
   view = view;
+  // The shell repaints on every state change — the opt-in keeps the previous
+  // behavior now that the dom plugin no longer follows the state by default.
+  updateDomOnStateChange = true;
 
   routing: Routing<AppState> = {
     "/": {

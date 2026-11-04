@@ -1,4 +1,4 @@
-import "../../admin-app/frontend/styles.css";
+import "./styles.css";
 import "./kit.css";
 import { createApp } from "@service-laboratory/pavlus";
 import {
