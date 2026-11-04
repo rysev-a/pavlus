@@ -1,0 +1,56 @@
+// The budget dashboard of the Phone Retail CRM, a part to embed. State = the
+// props from budgetDashboard() in stats.ts: `kpis`, `months`, `legend`,
+// `shares`, `rows`, `totals`. It sends no events.
+import Stats from "../../blocks/stat-cards/view.pavlus"
+import MoneyBars from "../../blocks/money-bars/view.pavlus"
+import Meters from "../../blocks/progress-list/view.pavlus"
+
+div.prcd
+  +Stats#kpis(cards=kpis)
+  div.prcd__cols
+    div.ui-card
+      div.ui-card-header
+        h3.ui-card-title Income and expenses
+        p.ui-card-description Expenses are salaries, supply and delivery; a loss grows down
+      div.ui-card-content
+        +MoneyBars#bars(months=months legend=legend height="280px")
+    div.ui-card
+      div.ui-card-header
+        h3.ui-card-title Where the money goes
+        p.ui-card-description Share of the expenses, twelve months
+      div.ui-card-content
+        +Meters#shares(items=shares)
+  div.ui-card
+    div.ui-card-header
+      h3.ui-card-title Last twelve months
+      p.ui-card-description Totals per month
+    div.ui-card-content
+      div.prcd__scroll
+        table.ui-table
+          thead.ui-table-header
+            tr.ui-table-row
+              th.ui-table-head Month
+              th.ui-table-head.prcd__num Income
+              th.ui-table-head.prcd__num Salaries
+              th.ui-table-head.prcd__num Supply
+              th.ui-table-head.prcd__num Delivery
+              th.ui-table-head.prcd__num Expenses
+              th.ui-table-head.prcd__num Profit
+          tbody.ui-table-body
+            for row in rows key row.id
+              tr.ui-table-row
+                td.ui-table-cell {row.label}
+                td.ui-table-cell.prcd__num {row.income}
+                td.ui-table-cell.prcd__num {row.salary}
+                td.ui-table-cell.prcd__num {row.supply}
+                td.ui-table-cell.prcd__num {row.delivery}
+                td.ui-table-cell.prcd__num {row.expenses}
+                td.ui-table-cell.prcd__num(class:prcd__loss={row.loss}) {row.profit}
+            tr.ui-table-row.prcd__total
+              td.ui-table-cell {totals.label}
+              td.ui-table-cell.prcd__num {totals.income}
+              td.ui-table-cell.prcd__num {totals.salary}
+              td.ui-table-cell.prcd__num {totals.supply}
+              td.ui-table-cell.prcd__num {totals.delivery}
+              td.ui-table-cell.prcd__num {totals.expenses}
+              td.ui-table-cell.prcd__num(class:prcd__loss={totals.loss}) {totals.profit}

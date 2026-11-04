@@ -1,0 +1,24 @@
+.k-cform { display: grid; gap: calc(14px * var(--k-block, 1)); min-width: 0; max-width: 760px; }
+.k-cform__head { display: grid; gap: 6px; justify-items: start; }
+.k-cform__titles { display: grid; gap: 2px; }
+.k-cform__title { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+.k-cform__desc { margin: 0; font-size: 14px; color: var(--muted-foreground); }
+.k-cform__body { display: grid; gap: calc(18px * var(--k-block, 1)); }
+.k-cform__req { color: var(--destructive); }
+.k-cform__foot { flex-wrap: wrap; }
+.k-cform__spacer { flex: 1; }
+.k-cform__delete { color: var(--destructive); }
+.k-cform__checks { display: grid; gap: 8px; min-width: 0; }
+.k-cform__checkbar { display: flex; align-items: center; gap: 6px; }
+.k-cform__count { margin-right: auto; font-size: 13px; color: var(--muted-foreground); }
+.k-cform__checklist { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 12px; max-height: 240px; overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.k-cform__check { min-width: 0; }
+.k-cform__check .ui-checkbox-label { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-cform__lines { display: grid; gap: 8px; min-width: 0; }
+.k-cform__line { display: grid; grid-template-columns: minmax(0, 1fr) 70px 100px 96px 32px; align-items: center; gap: 8px; }
+.k-cform__sum { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.k-cform__linebar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+@media (max-width: 640px) {
+  .k-cform__line { grid-template-columns: minmax(0, 1fr) 64px 84px; }
+  .k-cform__sum { text-align: left; }
+}

@@ -17,6 +17,8 @@ import { rootOf, windowAt } from "./base-window.ts";
 import { createDocsPlugin } from "./docs/plugin.ts";
 import { initialLang } from "./docs/pages.ts";
 import { createExportPlugin } from "./export.ts";
+import { createFilesPlugin } from "./files.ts";
+import { createIdbPlugin } from "./idb.ts";
 import { createRandomPlugin } from "./random.ts";
 import { createSourcePlugin } from "./source.ts";
 import { createThemePlugin, initialLook } from "./theme.ts";
@@ -48,6 +50,8 @@ export const app = createApp<AppState>({
     createRandomPlugin(),
     createSourcePlugin(),
     createExportPlugin(),
+    createIdbPlugin(),
+    createFilesPlugin(),
     createDocsPlugin(),
     createThemePlugin(),
   ],
