@@ -1,4 +1,4 @@
-import { compileTemplate } from "../compiler/mod.ts";
+import { compileTemplate, type Parser } from "../compiler/mod.ts";
 
 /** The part of a Vite plugin we use (avoids depending on Vite's types). */
 export interface PavlusVitePlugin {
@@ -12,6 +12,12 @@ export interface PavlusVitePlugin {
 }
 
 export interface PavlusPluginOptions {
+  /**
+   * More template syntaxes, by file extension (with the dot): each maps source
+   * text to the template AST, e.g. `{ ".pug": parsePug }` from
+   * `@service-laboratory/pavlus/syntaxes`. They compile exactly like `.pavlus`.
+   */
+  syntaxes?: Record<string, Parser>;
   /** File extension of templates. Default `.pavlus`. */
   extension?: string;
   /**
@@ -33,7 +39,8 @@ export function pavlus(opts: PavlusPluginOptions = {}): PavlusVitePlugin {
     enforce: "pre",
     transform(code, id) {
       const [file, query = ""] = id.split("?");
-      if (!file.endsWith(ext)) return null;
+      const alt = Object.keys(opts.syntaxes ?? {}).find((e) => file.endsWith(e));
+      if (!file.endsWith(ext) && !alt) return null;
       // `?raw`, `?url` and `?inline` want the file itself, not a compiled module.
       if (/(^|&)(raw|url|inline)(&|$)/.test(query)) return null;
       try {
@@ -45,6 +52,7 @@ export function pavlus(opts: PavlusPluginOptions = {}): PavlusVitePlugin {
           code: compileTemplate(code, {
             filename: file,
             runtime: opts.runtime,
+            parser: alt ? opts.syntaxes![alt] : undefined,
           }),
           map: { mappings: "" },
         };

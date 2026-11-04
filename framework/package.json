@@ -20,6 +20,7 @@
     "./plugins/time": "./src/plugins/time/mod.ts",
     "./plugins/logger": "./src/plugins/logger/mod.ts",
     "./plugins/router": "./src/plugins/router/mod.ts",
+    "./syntaxes": "./src/syntaxes/mod.ts",
     "./ssr": "./src/ssr/mod.ts"
   },
   "scripts": {
