@@ -1,19 +1,16 @@
 import type { SvgAttrValue, SvgHandler, SvgNode } from "./tree.ts";
 
 /** Attributes plus the two non-attribute node fields, for convenient building. */
-export type SvgProps = Record<string, SvgAttrValue | SvgNode["on"] | string | number> & {
+export type SvgProps = Record<
+  string,
+  SvgAttrValue | SvgNode["on"] | string | number
+> & {
   key?: string | number;
   on?: Record<string, SvgHandler>;
 };
 
 export type SvgChild =
-  | SvgNode
-  | string
-  | number
-  | null
-  | undefined
-  | false
-  | SvgChild[];
+  SvgNode | string | number | null | undefined | false | SvgChild[];
 
 /**
  * Builds a node. `key` and `on` in `attrs` become node fields; strings and

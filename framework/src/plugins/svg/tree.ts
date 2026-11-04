@@ -145,7 +145,10 @@ function checkHref(tag: string, name: string, value: string, path: string) {
     return;
   }
   if (u.startsWith("#") || u.startsWith("/") || u.startsWith("./")) return;
-  if (/^https?:/.test(u) || /^data:image\/(png|jpe?g|gif|webp|avif)[;,]/.test(u))
+  if (
+    /^https?:/.test(u) ||
+    /^data:image\/(png|jpe?g|gif|webp|avif)[;,]/.test(u)
+  )
     return;
   // relative reference with no scheme at all
   if (!/^[a-z][a-z0-9+.-]*:/.test(u)) return;
@@ -195,11 +198,13 @@ function cleanAttrs(
       value = String(raw);
     } else if (typeof raw === "string") value = raw;
     else throw new SvgTreeError(`${path}: attribute "${name}" has a bad value`);
-    if (name === "href" || name === "xlink:href") checkHref(tag, name, value, path);
+    if (name === "href" || name === "xlink:href")
+      checkHref(tag, name, value, path);
     else if (name === "xmlns") {
       if (value !== SVG_NS) throw new SvgTreeError(`${path}: bad xmlns`);
     } else if (name === "xmlns:xlink") {
-      if (value !== XLINK_NS) throw new SvgTreeError(`${path}: bad xmlns:xlink`);
+      if (value !== XLINK_NS)
+        throw new SvgTreeError(`${path}: bad xmlns:xlink`);
     } else checkValue(name, value, path);
     out[name] = value;
   }
@@ -238,12 +243,15 @@ export function cleanTree(node: unknown, path = "tree", depth = 0): CleanNode {
 
   const on: Record<string, SvgHandler> = {};
   if (node.on !== undefined) {
-    if (!isObj(node.on)) throw new SvgTreeError(`${here}: on must be an object`);
+    if (!isObj(node.on))
+      throw new SvgTreeError(`${here}: on must be an object`);
     for (const [ev, h] of Object.entries(node.on)) {
       if (!SVG_EVENTS.has(ev))
         throw new SvgTreeError(`${here}: event "${ev}" is not allowed`);
       if (!isObj(h) || typeof h.id !== "string")
-        throw new SvgTreeError(`${here}: handler for "${ev}" needs a string id`);
+        throw new SvgTreeError(
+          `${here}: handler for "${ev}" needs a string id`,
+        );
       const clean: SvgHandler = { id: h.id };
       if (h.payload !== undefined) clean.payload = h.payload;
       if (h.prevent) clean.prevent = true;
@@ -280,7 +288,10 @@ export function cleanTree(node: unknown, path = "tree", depth = 0): CleanNode {
 const escText = (s: string): string =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const escAttr = (s: string): string =>
-  escText(s).replace(/"/g, "&quot;").replace(/\n/g, "&#10;").replace(/\t/g, "&#9;");
+  escText(s)
+    .replace(/"/g, "&quot;")
+    .replace(/\n/g, "&#10;")
+    .replace(/\t/g, "&#9;");
 
 function usesXlink(n: CleanNode): boolean {
   return "xlink:href" in n.attrs || n.children.some(usesXlink);
@@ -302,7 +313,8 @@ export function serializeSvg(tree: unknown): string {
     const a = Object.entries(attrs)
       .map(([k, v]) => ` ${k}="${escAttr(v)}"`)
       .join("");
-    const inner = escText(n.text) + n.children.map((c) => out(c, false)).join("");
+    const inner =
+      escText(n.text) + n.children.map((c) => out(c, false)).join("");
     return inner ? `<${n.tag}${a}>${inner}</${n.tag}>` : `<${n.tag}${a}/>`;
   };
   return out(root, true);

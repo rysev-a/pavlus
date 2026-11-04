@@ -502,7 +502,7 @@ describe("canvas loadImage", () => {
       const p = createCanvasPlugin({});
       const msgs: Message[] = [];
       p.handle(canvas.loadImage("a", "x", "ok", "bad"), {
-        dispatch: (m) => msgs.push(m),
+        dispatch: (m: Message) => msgs.push(m),
       } as any);
       expect(msgs[0]).toMatchObject({
         id: "bad",
