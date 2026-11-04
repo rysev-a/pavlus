@@ -10,14 +10,14 @@ on:
     branches: [main]
     paths:
       - "ui-kit/**"
-      - "admin-app/frontend/styles.css"
+      - "admin-app/public/styles.css"
       - "framework/**"
       - "package-lock.json"
       - ".github/workflows/ui-kit-pages.yml"
   pull_request:
     paths:
       - "ui-kit/**"
-      - "admin-app/frontend/styles.css"
+      - "admin-app/public/styles.css"
       - "framework/**"
       - "package-lock.json"
       - ".github/workflows/ui-kit-pages.yml"
