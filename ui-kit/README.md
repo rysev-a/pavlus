@@ -1,10 +1,35 @@
 # ui-kit
 
 Every [shadcn/ui](https://ui.shadcn.com/docs/components) component, written as
-a [pavlus](../framework) template, in the style of the [admin-app](../admin-app).
-58 components, one page each, with live demos: the stateful ones (tabs, dialog,
-sheet, calendar, data table, toasts...) are pavlus components with pure
-handlers, the rest are templates without logic.
+a [pavlus](../framework) template, in the style of the [admin-app](../admin-app),
+and what is built from them. The top menu has four sections:
+
+- **Components**: 58 shadcn components, one page each, with live demos.
+- **Blocks**: 61 ready-made sections (sign in and register, credit card form, edit
+  profile form, user resume, music player, flight ticket booking, shop cart, hero,
+  pricing table, kanban board, piano keyboard...). Some are the parts the
+  templates are built from.
+- **Templates**: 20 whole sites and apps (portfolios, four shops, four admin
+  panels, landing pages, a docs wiki, a music practice tool, a quiz platform,
+  a classifieds board...), each built from blocks and each with **its own look**.
+- **A Source tab on every page**: Preview and Source (the pavlus template, its
+  logic, its stylesheet, highlighted; the page stays mounted underneath).
+- **A theming panel**, fixed on the right and opened from the top bar, with the same
+  choices as the Theming page, on any page, a template included.
+- **Theming**: a configurator for the whole kit: 10 fonts, 30 light and 30 dark
+  palettes, 20 dark and 20 light themes in the spirit of Visual Studio Code
+  (Dracula, Nord, Tokyo Night, Solarized, GitHub, Catppuccin...), 124 themes of
+  design systems (shadcn/ui, Radix Colors, Bulma, Flowbite, MDN, Material Design,
+  Ant Design) with their fonts and styles, three size scales (controls, text,
+  blocks) and twelve styles (default, official, casual, funny, computer science,
+  biology, Radix, Bulma, Flowbite, Material, Ant Design, MDN). Picking a theme also sets the font, sizes
+  and style it comes with (a switch turns that off), and a button picks a random
+  theme. It applies at once, is remembered in the browser and can be exported as
+  CSS.
+
+The stateful pages (tabs, dialog, calendar, data table, music player, carts,
+quizzes...) are pavlus components with pure handlers, the rest are templates
+without logic.
 
 Published on GitHub Pages: **https://rysev-a.github.io/pavlus/**
 
@@ -33,6 +58,18 @@ UI_KIT_BASE=/pavlus/ npm run build --workspace ui-kit   # what the workflow buil
 - **Adding a component** is adding that folder and a line in `registry.ts`
   (sidebar, home page, title and description). `tests/pages.test.ts` fails for
   an entry that has no page.
+- **Adding a block or a template** is adding a folder with a `meta.ts` (title,
+  group, description; a template also sets its `look`). Nothing else lists it.
+  See [AUTHORING.md](./AUTHORING.md): the conventions, the rule that templates are
+  built from blocks, and the traps of the template language.
+- **Theming** is data: `theming.ts` holds the catalogs and the pure functions that
+  turn a look into CSS variables (`vscode-themes.ts` the 40 editor themes, `brand-themes.ts` the design systems', `color.ts`
+  the contrast maths that keeps every one readable); the `theme` plugin (`theme.ts`)
+  is the only code that touches `<html>`, and the `random` plugin (`random.ts`) is
+  where the random button gets its number, because application code cannot call
+  `Math.random()`. A template's `look` is applied while its page is open.
+  Font sizes and control heights are scaled where the stylesheets are loaded
+  (`scaleSizes` in `vite.config.mjs`), so the admin-app stylesheet stays as it is.
 - **Plugins.** `main.ts` is the only file with side effects: the store, DOM,
   router and time plugins from the framework, and a small `theme` plugin
   (`theme.ts`) that sets the `dark` / `light` class on `<html>`. The toasts of
@@ -41,6 +78,11 @@ UI_KIT_BASE=/pavlus/ npm run build --workspace ui-kit   # what the workflow buil
   plugin takes a `window` option, so `base-window.ts` shows it a window
   without the base and puts it back on `pushState`; pages are routed as
   `/button` and the links are real `href`s (`{root}/button`).
+- **Source tab.** `source.ts` bundles every file of a page folder as a lazy raw
+  chunk (`import.meta.glob(..., { query: "?raw" })`); a `source` plugin loads the
+  one asked for and the pure `highlight` turns it into tokens. The pavlus
+  highlighter is a few regular expressions, tested by re-joining the tokens of every
+  file of the kit.
 - **Direct links.** Pages has no history fallback, so the build also emits
   `404.html` (a copy of `index.html`): opening `/pavlus/button` directly gets
   the app, which routes it. See `vite.config.mjs`.

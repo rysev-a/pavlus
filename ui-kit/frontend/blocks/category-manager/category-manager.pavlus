@@ -1,0 +1,8 @@
+import Manager from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Add, rename, recolour, remove
+    p.k-demo__note Click a colour dot to move to the next colour. A category with time logged (everything except Hobbies here) cannot be removed.
+    div.k-preview.k-preview--block
+      +Manager#cats(...manager)

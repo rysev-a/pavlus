@@ -1,0 +1,11 @@
+import Question from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Single and multiple choice
+    p.k-demo__note A round marker means one answer, a square one means several. Use the button to reveal the answers and the explanation.
+    div.k-preview.k-preview--column
+      div.k-row
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" aria-pressed={revealed ? "true" : "false"} @click=toggleReveal) {revealed ? "Hide the answers" : "Reveal the answers"}
+      +Question#qa(...a)
+      +Question#qb(...b)

@@ -1,0 +1,11 @@
+import Composer from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Composer
+    p.k-demo__note Type, pick a mood, attach a tile. The counter turns red past 280 characters and Post stays disabled.
+    div.k-preview.k-preview--block
+      div.k-narrow
+        +Composer#composer(...composer)
+    p.k-hint
+      | {last}

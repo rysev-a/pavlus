@@ -1,0 +1,31 @@
+// Tasks in groups, to embed. State = the props: `groups` (checklistOf() in
+// list.ts: { id, title, hint, done, total, pct, tone, items: [{ id, title,
+// owner, due, done, state, tag, tagTone }] }) and `layout` ("stack" or
+// "columns"). Events, with the name of the embed in front: `toggle` (the task
+// id) and `open` (the task id, from the title).
+div.k-chk(data-layout=layout)
+  for group in groups key group.id
+    section.ui-card.k-chk__group
+      header.k-chk__head
+        div.k-chk__heading
+          h3.k-chk__title {group.title}
+          if group.hint
+            p.k-chk__hint {group.hint}
+        span.k-chk__count {group.done}/{group.total}
+      div(class="ui-progress ui-progress-sm k-chk__bar k-adm-t-{group.tone}" role="progressbar" aria-valuenow={group.pct} aria-valuemin="0" aria-valuemax="100")
+        div.ui-progress-indicator(style="width: {group.pct}%")
+      ul.k-chk__list
+        for item in group.items key item.id
+          li.k-chk__item(class:is-done={item.done} data-state={item.state})
+            div.ui-checkbox.k-chk__check
+              input.ui-checkbox-input(id={"chk-" + item.id} type="checkbox" checked={item.done} @change=toggle(item.id))
+              label.ui-checkbox-label(for={"chk-" + item.id}) {item.title}
+            div.k-chk__meta
+              if item.tag
+                span(class="ui-pill ui-pill-{item.tagTone}") {item.tag}
+              if item.owner
+                span.k-chk__owner {item.owner}
+              if item.due
+                span.k-chk__due {item.state === "overdue" ? "Overdue, " : ""}{item.due}
+        if group.items.length === 0
+          li.k-chk__empty Nothing here yet.

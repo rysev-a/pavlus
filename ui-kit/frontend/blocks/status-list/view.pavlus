@@ -1,0 +1,43 @@
+// Rows with a status, facts, meters and actions, to embed (servers,
+// containers, check-ins, cleaning). State = the props: `rows` (statusRow()
+// from rows.ts: { id, name, sub, status, tone, facts, meters, actions,
+// choose, done }) and `empty` (the text when there are no rows). Events, with
+// the name of the embed in front: `act` (row id, action id), `choose` (row
+// id; the chosen value is in the event), `pick` (row id).
+ul.k-slist
+  for row in rows key row.id
+    li(class="k-slist__row k-adm-t-{row.tone}" class:k-slist__row--done={row.done} @click=pick(row.id))
+      div.k-slist__main
+        span.k-slist__dot
+        div.k-slist__text
+          strong {row.name}
+          if row.sub
+            small {row.sub}
+      if row.facts.length > 0
+        dl.k-slist__facts
+          for fact in row.facts key fact.label
+            div
+              dt {fact.label}
+              dd {fact.value}
+      if row.meters.length > 0
+        div.k-slist__meters
+          for meter in row.meters key meter.label
+            div.k-slist__meter
+              div.k-slist__meterhead
+                span {meter.label}
+                strong {meter.text}
+              div(class="ui-progress ui-progress-sm k-slist__bar k-adm-t-{meter.tone}")
+                div.ui-progress-indicator(style="width: {meter.pct}%")
+      div.k-slist__side
+        span(class="ui-pill ui-pill-{row.tone}") {row.status}
+        if row.choose
+          select.ui-select-control.k-slist__select(aria-label={row.choose.label} @click.stop=stay @change=choose(row.id))
+            for option in row.choose.options key option.value
+              option(value=option.value selected={option.selected}) {option.label}
+        for item in row.actions key item.id
+          button(type="button" class="ui-button ui-button-xs ui-button-{item.variant}" disabled={item.disabled} @click.stop=act(row.id, item.id))
+            if item.icon
+              span(class="k-icon {item.icon}")
+            | {item.label}
+  if rows.length === 0
+    li.k-slist__empty {empty}

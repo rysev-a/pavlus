@@ -1,0 +1,48 @@
+// A designer's portfolio, made of blocks: site navigation, hero, the project
+// grid (a child: filter chips, cards and the detail window), the timeline and
+// the link list.
+import SiteNav from "../../blocks/site-nav/view.pavlus"
+import Hero from "../../blocks/hero/view.pavlus"
+import ProjectGrid from "../../blocks/project-grid/view.pavlus"
+import Timeline from "../../blocks/timeline/view.pavlus"
+import LinkList from "../../blocks/link-list/view.pavlus"
+
+div.k-template.dp#top
+  div.dp__nav
+    div.dp__wrap
+      +SiteNav#nav(brand=brand links=nav ctaLabel="Let us talk" ctaHref="#contact")
+  main.dp__wrap
+    section.dp__hero
+      +Hero#hero(eyebrow="Independent designer, Copenhagen" title=headline text=bio primaryLabel="See the work" primaryHref="#work" secondaryLabel="About me" secondaryHref="#about")
+      ul.dp__numbers
+        for n in numbers key n.label
+          li
+            strong {n.value}
+            span {n.label}
+    section.dp__section#work
+      +ProjectGrid#projects(...projects)
+    section.dp__section.dp__about#about
+      div.dp__portrait
+        span.dp__portrait-emoji 🎨
+        span.dp__portrait-name {brand}
+      div.dp__about-text
+        p.dp__kicker About
+        h2.dp__title {aboutTitle}
+        for para in about key para
+          p.dp__text {para}
+        h3.dp__sub Services
+        div.dp__badges
+          for service in services key service
+            span.ui-badge.ui-badge-outline {service}
+      div.dp__timeline
+        +Timeline#recognition(items=recognition heading="Clients and recognition")
+    section.dp__section#contact
+      div.dp__contact
+        p.dp__kicker Contact
+        h2.dp__title Have a project in mind?
+        p.dp__text I take on three projects a quarter. Tell me what you are making, and when.
+        a.ui-button.ui-button-default.ui-button-lg(href="mailto:elena@marsh.studio") Write to Elena
+      +LinkList#contacts(links=contacts)
+    footer.dp__footer
+      span {brand}, independent design studio
+      span Built with pavlus

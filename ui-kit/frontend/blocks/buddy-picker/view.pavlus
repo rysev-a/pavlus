@@ -1,0 +1,14 @@
+// A list of colleagues to pick one from, to embed. State = the props from
+// buddyRows() in buddies.ts: `rows` ([{ id, name, initials, line, load, full,
+// chosen, away, label }]). Event, with the name of the embed in front:
+// `choose` (the id).
+ul.k-buddy
+  for row in rows key row.id
+    li.k-buddy__row(class:is-chosen={row.chosen} class:is-full={row.full})
+      span.ui-avatar
+        span.ui-avatar-fallback {row.initials}
+      div.k-buddy__who
+        strong {row.name}
+        small {row.line}
+      span.k-buddy__load {row.load}
+      button(type="button" class="ui-button ui-button-sm" class:ui-button-default={row.chosen} class:ui-button-outline={!row.chosen} disabled={row.full} @click=choose(row.id)) {row.label}

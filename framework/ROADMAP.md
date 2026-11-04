@@ -20,6 +20,8 @@
 
 Not implemented yet:
 
+- **Lazy components loaded from the server, and pattern matching in templates**:
+  designs and an order of work in [../roadmap.md](../roadmap.md).
 - **Slots** (content passed into a child, and `{tab.content()}` as an element). Child views themselves are done: [docs/child-views.md](./docs/child-views.md).
 - Language server (diagnostics from the compiler's `line:col` errors, hover, completion). Highlighting is tree-sitter and does not need it.
 - Replay / time-travel UI on top of store history.

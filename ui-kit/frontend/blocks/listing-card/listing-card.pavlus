@@ -1,0 +1,12 @@
+import Card from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Listing cards
+    p.k-demo__note A picture from a gradient and an emoji, the price first, a badge and a heart that saves the listing.
+    div.k-preview.k-preview--block
+      div.k-listing-grid
+        for card in cards key card.id
+          +Card#card(...card)
+    p.k-hint
+      | {opened}

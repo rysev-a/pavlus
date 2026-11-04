@@ -1,0 +1,26 @@
+// A terminal pane, to embed. State = the props: `lines` (from session.ts:
+// { id, kind: cmd | out | err | info, prompt, text }), `prompt`, `value` (the
+// input), `inputId` (a unique id, so the host can focus it), `title`. Events,
+// with the name of the embed in front: `type` (the input), `submit` (Enter),
+// `key` (the key is in the event: the arrows walk the history), `focus` (a
+// click on the screen). The newest line stays at the bottom by itself (a
+// reversed column).
+div.k-tsim(@click=focus)
+  div.k-tsim__bar
+    span.k-tsim__dots
+      span
+      span
+      span
+    span.k-tsim__title {title}
+  div.k-tsim__screen(role="log" aria-live="polite")
+    div.k-tsim__lines
+      for line in lines key line.id
+        div(class="k-tsim__line k-tsim__line--{line.kind}")
+          if line.kind === "cmd"
+            span.k-tsim__prompt {line.prompt}
+            span.k-tsim__cmd {line.text}
+          else
+            | {line.text}
+      form.k-tsim__form(@submit.prevent=submit)
+        span.k-tsim__prompt {prompt}
+        input.k-tsim__input(id=inputId type="text" value=value autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Terminal input" @input=type @keydown=key)

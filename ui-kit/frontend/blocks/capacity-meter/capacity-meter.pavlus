@@ -1,0 +1,18 @@
+import Meter from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A gym floor, as a ring
+    div.k-preview.k-preview--block
+      div.k-row
+        +Meter#gym(...gym)
+        button.ui-button.ui-button-default.ui-button-sm(type="button" @click=enterOne) Check one in
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=leaveOne) Check one out
+    p.k-demo__note The ring and the pill change colour at 75% and at 90%. Nobody gets in when the floor is full.
+  section.k-demo
+    h2.k-demo__title As a bar, for a small card
+    div.k-preview.k-preview--block
+      div(style="width: min(100%, 26rem); display: grid; gap: 16px")
+        +Meter#room(...room compact=true)
+        +Meter#dock(...dock compact=true)
+        +Meter#full(...full compact=true)

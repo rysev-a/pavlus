@@ -1,0 +1,27 @@
+// A list of notifications, to embed: `+Notes#notes(...notes)`. State = title,
+// unread (how many), items ({ id, name, initials, tone, glyph (a glyph name:
+// heart, message, user, star...), text, ago, unread }). Messages (`<name>.open`
+// ...): open(id), readAll.
+section.ui-card.k-notes
+  header.k-notes__head
+    h3.k-notes__title {title}
+    if unread
+      span.ui-badge.ui-badge-default {unread}
+    button.ui-button.ui-button-ghost.ui-button-sm.k-notes__all(type="button" disabled={unread === 0} @click=readAll) Mark all read
+  if items.length === 0
+    p.k-notes__empty Nothing new. Check back later.
+  ul.k-notes__list
+    for n in items key n.id
+      li
+        button.k-notes__row(type="button" class:is-unread={n.unread} @click=open(n.id))
+          span.k-notes__av(style="--t: var(--chart-{n.tone})") {n.initials}
+          span.k-notes__text
+            span.k-notes__line
+              strong {n.name}
+              |
+              | {n.text}
+            span.k-notes__ago
+              span.k-icon.k-glyph(data-glyph={n.glyph})
+              | {n.ago}
+          if n.unread
+            span.k-notes__dot(aria-label="Unread")

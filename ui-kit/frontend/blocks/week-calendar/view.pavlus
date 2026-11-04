@@ -1,0 +1,29 @@
+// A week as a day by hour grid, to embed. State = the props: `days`,
+// `hours` and `rows` from weekView() in week.ts. A day is { iso, name, num,
+// today, items: [{ id, title, tone, time, top, height, left, width, short }],
+// cells: [{ key, hour, label }], nowTop }. `tone` is one of c1..c5, pr, de
+// (the class k-wcal-c-<tone> sets --cat, which other planner blocks reuse).
+// Events, with the name of the embed in front: `pick` (the block id), `slot`
+// (the day and the hour of an empty cell), `pickday` (the day header).
+div.k-wcal
+  div.k-wcal__scroll
+    div.k-wcal__grid(style="--days: {days.length}; --rows: {rows}")
+      div.k-wcal__corner
+      for head in days key head.iso
+        button.k-wcal__dayhead(type="button" class:is-today={head.today} @click=pickday(head.iso))
+          small {head.name}
+          strong {head.num}
+      div.k-wcal__hours
+        for mark in hours key mark.label
+          span.k-wcal__hour(style="top: {mark.top}%") {mark.label}
+      for day in days key day.iso
+        div.k-wcal__col(class:is-today={day.today})
+          for cell in day.cells key cell.key
+            button.k-wcal__cell(type="button" aria-label={"Add at " + cell.label + " on " + day.name + " " + day.num} @click=slot(day.iso, cell.hour))
+          for item in day.items key item.id
+            button(type="button" class="k-wcal__block k-wcal-c-{item.tone}" class:is-short={item.short} style="top: {item.top}%; height: {item.height}%; left: {item.left}%; width: {item.width}%" @click.stop=pick(item.id))
+              strong {item.title}
+              if !item.short
+                small {item.time}
+          if day.nowTop >= 0
+            div.k-wcal__now(style="top: {day.nowTop}%")

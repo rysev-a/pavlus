@@ -1,0 +1,2 @@
+.k-auth { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: calc(24px * var(--k-block, 1)); align-items: start; }
+.k-auth .ui-card-content { padding: calc(24px * var(--k-block, 1)); }

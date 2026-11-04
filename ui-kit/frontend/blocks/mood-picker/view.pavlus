@@ -1,0 +1,8 @@
+// A row of moods to choose from, to embed. State = the props: `moods`, a list
+// of { id, emoji, label, active } from `pickerMoods()` in moods.ts. A click
+// sends `<name>.pick` with the mood id (the same one again clears it).
+div.k-mood(role="radiogroup" aria-label="Mood")
+  for mood in moods key mood.id
+    button.k-mood__item(type="button" role="radio" aria-checked={mood.active ? "true" : "false"} data-active={mood.active ? "true" : null} @click=pick(mood.id))
+      span.k-mood__emoji {mood.emoji}
+      span.k-mood__label {mood.label}

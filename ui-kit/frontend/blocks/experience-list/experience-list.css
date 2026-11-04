@@ -1,0 +1,14 @@
+.ui-card.k-expl { gap: calc(12px * var(--k-block, 1)); padding: calc(18px * var(--k-block, 1)); min-width: 0; }
+.k-expl__title { margin: 0; font-size: 16px; }
+.k-expl__list { display: grid; gap: calc(18px * var(--k-block, 1)); margin: 0; padding: 0; list-style: none; }
+.k-expl__item { position: relative; display: flex; gap: 14px; min-width: 0; }
+.k-expl__item:not(:last-child)::before { content: ""; position: absolute; left: 21px; top: 48px; bottom: calc(-18px * var(--k-block, 1)); width: 2px; background: var(--border); }
+.k-expl__logo { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: var(--radius-lg); background: linear-gradient(135deg, color-mix(in srgb, var(--t) 40%, var(--card)), color-mix(in srgb, var(--t) 15%, var(--card))); font-size: 22px; }
+.k-expl__body { display: grid; gap: 2px; min-width: 0; }
+.k-expl__role { font-size: 15px; }
+.k-expl__company { justify-self: start; padding: 0; border: 0; background: transparent; color: var(--primary); font: inherit; font-size: 14px; cursor: pointer; }
+.k-expl__company:hover { text-decoration: underline; text-underline-offset: 3px; }
+.k-expl__company:focus-visible { outline: none; box-shadow: var(--ring-shadow); border-radius: var(--radius-sm); }
+.k-expl__when { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted-foreground); }
+.k-expl__text { margin: 6px 0 0; line-height: 1.55; overflow-wrap: anywhere; }
+.k-wide-demo { width: min(100%, 40rem); }

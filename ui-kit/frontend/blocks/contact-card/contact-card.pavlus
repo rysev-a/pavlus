@@ -1,0 +1,17 @@
+import Contacts from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A grid of contacts
+    div.k-preview.k-preview--block
+      +Contacts#grid(contacts=contacts empty="No contact matches." single=false)
+    p.k-demo__note {message}
+  section.k-demo
+    h2.k-demo__title One card
+    div.k-preview.k-preview--block
+      div.k-ccard__demo
+        +Contacts#one(contacts=first empty="" single=true)
+  section.k-demo
+    h2.k-demo__title Empty
+    div.k-preview.k-preview--block
+      +Contacts#none(contacts=none empty="No contact matches your search." single=false)

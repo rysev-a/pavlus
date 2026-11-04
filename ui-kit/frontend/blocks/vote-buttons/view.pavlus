@@ -1,0 +1,10 @@
+// Up / down arrows around a score, to embed: `+Vote#vote(id=item.id score=item.score vote=item.vote)`.
+// State = id, score (the total, own vote included), vote (-1, 0 or 1), row
+// (true: arrows beside the score). A click sends `vote(id, 1)` or `vote(id, -1)`
+// (`<name>.vote` in a parent; the payload is `[id, direction]`).
+div.k-vote(class:k-vote--row={row})
+  button.k-vote__btn(type="button" aria-label="Upvote" aria-pressed={vote === 1 ? "true" : "false"} class:is-on={vote === 1} @click=vote(id, 1))
+    span.k-icon.k-vote-up
+  strong.k-vote__score(class:is-up={vote === 1} class:is-down={vote === -1}) {score}
+  button.k-vote__btn(type="button" aria-label="Downvote" aria-pressed={vote === -1 ? "true" : "false"} class:is-down={vote === -1} @click=vote(id, -1))
+    span.k-icon.k-vote-down

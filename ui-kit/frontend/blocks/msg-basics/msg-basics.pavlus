@@ -1,0 +1,26 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Icons
+    p.k-demo__note Line icons as CSS masks: span.k-icon.k-mi-name. They take the colour of the text.
+    div.k-preview
+      div.k-mbasics__icons
+        for name in icons key name
+          div.k-mbasics__icon
+            span.k-icon.k-icon-lg(class="k-mi-{name}")
+            code {name}
+  section.k-demo
+    h2.k-demo__title Avatars
+    p.k-demo__note Initials on a tint of a hue taken from the name, in three sizes, with a presence dot.
+    div.k-preview
+      for p in people key p.name
+        span.k-mavatar(style="--k-hue: {p.hue}" data-online={p.online ? "true" : null}) {p.initials}
+      for p in people key p.name
+        span.k-mavatar.k-mavatar--sm(style="--k-hue: {p.hue}") {p.initials}
+      span.k-mavatar.k-mavatar--lg(style="--k-hue: 210" data-online="true") DO
+  section.k-demo
+    h2.k-demo__title Unread badge
+    div.k-preview
+      span.k-mbadge 3
+      span.k-mbadge 12
+      span.k-mbadge.k-mbadge--quiet 99+
+      span.k-mbadge.k-mbadge--dot

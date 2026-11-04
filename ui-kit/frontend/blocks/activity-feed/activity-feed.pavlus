@@ -1,0 +1,13 @@
+import Feed from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A deal's history
+    div.k-preview.k-preview--block
+      div.k-feed__demo
+        +Feed#feed(items=items empty="Nothing yet.")
+  section.k-demo
+    h2.k-demo__title Empty
+    div.k-preview.k-preview--block
+      div.k-feed__demo
+        +Feed#none(items=none empty="Nothing has happened to this deal yet.")

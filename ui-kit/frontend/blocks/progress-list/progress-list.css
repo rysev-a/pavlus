@@ -1,0 +1,8 @@
+.k-plist { display: grid; gap: calc(14px * var(--k-block, 1)); margin: 0; padding: 0; list-style: none; }
+.k-plist__item { display: grid; gap: 6px; }
+.k-plist__item--pick { cursor: pointer; }
+.k-plist__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13.5px; }
+.k-plist__label { font-weight: 500; }
+.k-plist__text { color: var(--muted-foreground); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.k-plist .k-plist__bar { --progress: var(--t); }
+.k-plist__sub { color: var(--muted-foreground); font-size: 12px; }

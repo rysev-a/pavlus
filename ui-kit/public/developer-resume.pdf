@@ -1,0 +1,83 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 3410 >>
+stream
+BT /F2 26 Tf 0 g 50 791.89 Td (Daniel Voss) Tj ET
+BT /F1 13 Tf 0.25 g 50 751.59 Td (Senior full-stack developer) Tj ET
+BT /F1 9.5 Tf 0.35 g 50 731.44 Td (Berlin, Germany  |  daniel@voss.dev  |  github.com/dvoss  |  linkedin.com/in/dvoss) Tj ET
+BT /F2 9 Tf 0.35 g 50 708.72 Td (PROFILE) Tj ET
+0.82 g 50 694.76 495.28 0.6 re f 0 g
+BT /F1 10 Tf 0 g 50 682.76 Td (Full-stack developer with nine years of experience building payment, analytics and developer) Tj ET
+BT /F1 10 Tf 0 g 50 667.26 Td (tools. I write TypeScript on both sides of the wire, keep business logic in small pure functions) Tj ET
+BT /F1 10 Tf 0 g 50 651.76 Td (and care about tests, readable code and boring, reliable infrastructure.) Tj ET
+BT /F2 9 Tf 0.35 g 50 628.26 Td (EXPERIENCE) Tj ET
+0.82 g 50 614.31 495.28 0.6 re f 0 g
+BT /F2 11 Tf 0 g 50 602.31 Td (Staff engineer, Northwind Labs) Tj ET
+BT /F1 9.5 Tf 0.35 g 455.28 602.31 Td (2023 - now) Tj ET
+BT /F1 9.5 Tf 0.35 g 50 587.31 Td (Berlin  |  payments platform) Tj ET
+BT /F1 10 Tf 0 g 56 572.59 Td (-  Led the move of the checkout to a typed, pure-function core used by 1,200 merchants.) Tj ET
+BT /F1 10 Tf 0 g 56 557.09 Td (-  Cut the bundle by 38% and the time to interactive to 1.4 s.) Tj ET
+BT /F1 10 Tf 0 g 56 541.59 Td (-  Mentor for six engineers; owner of the engineering handbook.) Tj ET
+BT /F2 11 Tf 0 g 50 520.09 Td (Senior engineer, Brightside) Tj ET
+BT /F1 9.5 Tf 0.35 g 455.28 520.09 Td (2020 - 2023) Tj ET
+BT /F1 9.5 Tf 0.35 g 50 505.09 Td (Remote  |  realtime dashboards) Tj ET
+BT /F1 10 Tf 0 g 56 490.36 Td (-  Built the streaming pipeline and the dashboard used by 40,000 merchants.) Tj ET
+BT /F1 10 Tf 0 g 56 474.86 Td (-  Introduced contract tests between services: incidents down by a third.) Tj ET
+BT /F2 11 Tf 0 g 50 453.36 Td (Software engineer, Pixel Barn) Tj ET
+BT /F1 9.5 Tf 0.35 g 455.28 453.36 Td (2017 - 2020) Tj ET
+BT /F1 9.5 Tf 0.35 g 50 438.36 Td (Berlin  |  web agency) Tj ET
+BT /F1 10 Tf 0 g 56 423.64 Td (-  Shipped 20+ sites and web apps for local businesses, from design to deployment.) Tj ET
+BT /F2 9 Tf 0.35 g 50 394.14 Td (SELECTED PROJECTS) Tj ET
+0.82 g 50 380.19 495.28 0.6 re f 0 g
+BT /F2 10 Tf 0 g 50 368.19 Td (Lattice) Tj ET
+BT /F1 10 Tf 0 g 130 368.19 Td (Open-source state machine library for TypeScript, 2.1k stars on GitHub.) Tj ET
+BT /F2 10 Tf 0 g 50 352.69 Td (Pulse Board) Tj ET
+BT /F1 10 Tf 0 g 130 352.69 Td (Realtime operations dashboard with offline support, in production at three companies.) Tj ET
+BT /F2 10 Tf 0 g 50 337.19 Td (Tidepool) Tj ET
+BT /F1 10 Tf 0 g 130 337.19 Td (Command-line log analyser written in Rust; processes 1 GB in under four seconds.) Tj ET
+BT /F2 9 Tf 0.35 g 50 313.69 Td (SKILLS) Tj ET
+0.82 g 50 299.74 495.28 0.6 re f 0 g
+BT /F1 10 Tf 0 g 50 287.74 Td (Languages:  TypeScript, JavaScript, Go, SQL, some Rust) Tj ET
+BT /F1 10 Tf 0 g 50 272.24 Td (Frontend:  React, Vite, CSS, accessibility, design systems) Tj ET
+BT /F1 10 Tf 0 g 50 256.74 Td (Backend:  Node.js, PostgreSQL, Redis, REST and WebSockets) Tj ET
+BT /F1 10 Tf 0 g 50 241.24 Td (Tooling:  Docker, GitHub Actions, Kubernetes basics, OpenTelemetry) Tj ET
+BT /F2 9 Tf 0.35 g 50 217.74 Td (EDUCATION AND LANGUAGES) Tj ET
+0.82 g 50 203.79 495.28 0.6 re f 0 g
+BT /F1 10 Tf 0 g 50 191.79 Td (BSc Computer Science, TU Berlin, 2011 - 2015) Tj ET
+BT /F1 10 Tf 0 g 50 176.29 Td (German \(native\), English \(fluent\), Spanish \(conversational\)) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+7 0 obj
+<< /Title (Daniel Voss - Resume) /Author (Daniel Voss) /Subject (Senior full-stack developer) /Producer (pavlus ui-kit) >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000263 00000 n 
+0000003725 00000 n 
+0000003822 00000 n 
+0000003924 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R /Info 7 0 R >>
+startxref
+4062
+%%EOF

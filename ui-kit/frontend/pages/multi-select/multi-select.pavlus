@@ -1,0 +1,23 @@
+import Select from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Synchronous options
+    p.k-demo__note Every option is on the page and filtered as you type. Arrow keys move, Enter picks, Escape closes, Backspace on an empty box removes the last chip.
+    div.k-preview.k-preview--block
+      div.k-narrow
+        +Select#sync(...sync)
+        p.k-hint Selected: {sync.selectedText}
+  section.k-demo
+    h2.k-demo__title Asynchronous options
+    p.k-demo__note The options are requested when the list opens and again after you stop typing for a moment (the previous request is cancelled). The server is a static file, filtered in the browser, so it answers in the same few milliseconds every time; a failed request offers "Try again". Your picks stay when the search changes.
+    div.k-preview.k-preview--block
+      div.k-narrow
+        +Select#remote(...remote)
+        p.k-hint Selected: {remote.selectedText}
+  section.k-demo
+    h2.k-demo__title A limit and a small size
+    div.k-preview.k-preview--block
+      div.k-narrow
+        +Select#limited(...limited)
+        p.k-hint Selected: {limited.selectedText}

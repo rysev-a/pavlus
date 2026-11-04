@@ -1,0 +1,38 @@
+// A product card, to embed. State = the props (see `cardOf` in product-card.ts):
+// id, title, blurb, emoji, hue, kicker, priceLabel, wasLabel, badge, badgeTone,
+// hasRating, stars, ratingLabel, chips, addLabel, previewLabel, disabled, note.
+// Messages: add(id), open(id), preview(id).
+article.k-pcard(class:is-sold={disabled})
+  div.k-pcard__cover(style="--hue: {hue}")
+    span.k-pcard__emoji {emoji}
+    if badge
+      span.k-pcard__badge(class="ui-badge ui-badge-{badgeTone}") {badge}
+    if previewLabel
+      button.ui-button.ui-button-secondary.ui-button-sm.k-pcard__preview(type="button" @click=preview(id))
+        span.k-icon.k-icon-search
+        | {previewLabel}
+  div.k-pcard__body
+    if kicker
+      span.k-pcard__kicker {kicker}
+    h3.k-pcard__title
+      if openable
+        button.k-pcard__link(type="button" @click=open(id)) {title}
+      else
+        | {title}
+    p.k-pcard__blurb {blurb}
+    if chips.length > 0
+      div.k-pcard__chips
+        for chip in chips key chip
+          span.ui-badge.ui-badge-outline {chip}
+    if hasRating
+      div.k-pcard__rating
+        span.k-pcard__stars(aria-hidden="true") {stars}
+        span.k-pcard__rating-label {ratingLabel}
+    div.k-pcard__foot
+      div.k-pcard__price
+        strong {priceLabel}
+        if wasLabel
+          s {wasLabel}
+      button.ui-button.ui-button-default.ui-button-sm(type="button" disabled={disabled} @click=add(id)) {addLabel}
+    if note
+      span.k-pcard__note {note}

@@ -1,0 +1,97 @@
+// An HR admin for new employees: the shell, and one view at a time (`screen`),
+// all made of blocks.
+import Nav from "../../blocks/admin-shell/view.pavlus"
+import Top from "../../blocks/admin-shell/topbar.pavlus"
+import Stats from "../../blocks/stat-cards/view.pavlus"
+import DataGrid from "../../blocks/data-grid/view.pavlus"
+import FilterBar from "../../blocks/list-filter/view.pavlus"
+import Checklist from "../../blocks/checklist/view.pavlus"
+import Agenda from "../../blocks/day-agenda/view.pavlus"
+import Picker from "../../blocks/buddy-picker/view.pavlus"
+import Composer from "../../blocks/message-composer/view.pavlus"
+import Sheet from "../../blocks/record-sheet/view.pavlus"
+
+div.k-template.k-ashell.hr(data-nav={navOpen ? "open" : "closed"})
+  aside.k-ashell__side
+    +Nav#nav(brand="Northwind" tagline="People & onboarding" groups=groups active=screen user=user)
+  div.k-ashell__scrim(@click=closeNav)
+  div.k-ashell__main
+    +Top#top(title=title subtitle="Tuesday, 3 November 2026" notice=notice actions=actions user=user)
+    main.k-ashell__content
+      if screen === "checklist" || screen === "plan" || screen === "buddies" || screen === "message" || screen === "newhire"
+        div.hr__picker
+          label.ui-label(for="hr-hire") New hire
+          select.ui-select-control#hr-hire(@change=pickHire)
+            for opt in options key opt.value
+              option(value=opt.value selected={opt.selected}) {opt.label}
+          p.hr__pickerline {pickerLine}
+      if screen === "hires"
+        +Stats#hirestats(cards=listStats)
+        +FilterBar#hirefilter(filters=listFilters query=query placeholder="Search a name, role or team" actions=none)
+        +DataGrid#hires(columns=listCols rows=listRows empty="No new hire matches." footer=listFooter pickable=true)
+      else if screen === "checklist"
+        p.hr__hint {checklistLine}. Tick a task when it is done; a task past its day and not done is overdue.
+        +Checklist#checklist(groups=checklist layout="columns")
+      else if screen === "plan"
+        p.hr__hint {planLine}. The plan gives the newcomer three goals to grow into the role: learn, contribute, own.
+        +Checklist#plan(groups=plan layout="columns")
+      else if screen === "documents"
+        +Stats#docstats(cards=docStats)
+        +FilterBar#docfilter(filters=docFilters query="" placeholder="" actions=none)
+        +DataGrid#docs(columns=docCols rows=docRows empty="No documents here." footer="" pickable=false)
+      else if screen === "equipment"
+        +Stats#eqstats(cards=eqStats)
+        +FilterBar#eqfilter(filters=eqFilters query="" placeholder="" actions=eqActions)
+        +DataGrid#equipment(columns=eqCols rows=eqRows empty="No requests here." footer="" pickable=false)
+      else if screen === "buddies"
+        div.hr__cols
+          div.ui-card.hr__card
+            h3 Choose a buddy
+            p.hr__hint {buddyLine}
+            +Picker#buddies(rows=buddies)
+          div.ui-card.hr__card
+            h3 What a buddy does
+            ul.hr__tips
+              li Meets the newcomer on day one and shows the office or the tools.
+              li Has a coffee every week for the first month.
+              li Answers the small questions nobody wants to ask a manager.
+              li Looks after at most two newcomers at a time.
+      else if screen === "message"
+        +Composer#composer(...composer)
+      else if screen === "newhire"
+        p.hr__note This is what the newcomer sees when they sign in: only their own tasks and their first week.
+        div.hr__hero
+          h2 {hero.greeting}
+          p {hero.line}
+          div.ui-progress.ui-progress-sm(role="progressbar" aria-valuenow={hero.pct} aria-valuemin="0" aria-valuemax="100")
+            div.ui-progress-indicator(style="width: {hero.pct}%")
+          p {hero.doneText}
+        div.hr__cols
+          div.hr__stack
+            +Checklist#mine(groups=mine layout="stack")
+          div.hr__stack
+            div.ui-card.hr__card
+              h3 Your first week
+              +Agenda#agenda(days=agenda empty="Your agenda will appear here.")
+            div.ui-card.hr__card
+              h3 Who to ask
+              ul.hr__contacts
+                li
+                  span.ui-avatar
+                    span.ui-avatar-fallback M
+                  div
+                    strong {hero.manager}
+                    small Your manager
+                li
+                  span.ui-avatar
+                    span.ui-avatar-fallback B
+                  div
+                    strong {hero.buddy}
+                    small Your buddy
+                li
+                  span.ui-avatar
+                    span.ui-avatar-fallback O
+                  div
+                    strong {hero.office} office
+                    small Reception, 8:30 to 18:00
+  +Sheet#sheet(open=sheet.open title=sheet.title description=sheet.description details=none fields=sheet.fields buttons=sheet.buttons)

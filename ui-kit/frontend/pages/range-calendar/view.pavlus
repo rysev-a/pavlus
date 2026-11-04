@@ -1,0 +1,43 @@
+// A calendar for a range of dates, to embed. State = a RangeState (range.ts):
+// `left` and `right` (the two months with the class of every day button),
+// `summary`, `days`, `presets`, `weekdays`. Messages: prev, next, pick(iso),
+// hover(iso), leave, preset(id), clear.
+div.k-range
+  div.k-range__presets(role="group" aria-label="Quick ranges")
+    for p in presets key p.id
+      button.ui-button.ui-button-sm(type="button" class:ui-button-secondary={p.active} class:ui-button-outline={!p.active} @click=preset(p.id)) {p.label}
+  div.ui-calendar.ui-calendar-range
+    div.ui-calendar-range-panels(@mouseleave=leave)
+      div.ui-calendar-range-month
+        div.ui-calendar-header
+          button.ui-calendar-nav(type="button" aria-label="Previous month" @click=prev)
+            span.k-icon.k-icon-chevron-left
+          h3.ui-calendar-title {left.title}
+          button.ui-calendar-nav.ui-calendar-nav-inner(type="button" tabindex="-1" aria-hidden="true")
+            span.k-icon.k-icon-chevron-right
+        div.ui-calendar-grid
+          for name in weekdays key name
+            span.ui-calendar-weekday {name}
+          for cell in left.cells key cell.key
+            if cell.day
+              button(type="button" class={cell.cls} @click=pick(cell.iso) @mouseenter=hover(cell.iso)) {cell.day}
+            else
+              span.ui-calendar-empty
+      div.ui-calendar-range-month
+        div.ui-calendar-header
+          button.ui-calendar-nav.ui-calendar-nav-inner(type="button" tabindex="-1" aria-hidden="true")
+            span.k-icon.k-icon-chevron-left
+          h3.ui-calendar-title {right.title}
+          button.ui-calendar-nav(type="button" aria-label="Next month" @click=next)
+            span.k-icon.k-icon-chevron-right
+        div.ui-calendar-grid
+          for name in weekdays key name
+            span.ui-calendar-weekday {name}
+          for cell in right.cells key cell.key
+            if cell.day
+              button(type="button" class={cell.cls} @click=pick(cell.iso) @mouseenter=hover(cell.iso)) {cell.day}
+            else
+              span.ui-calendar-empty
+  div.k-range__foot
+    span.k-range__summary {summary}
+    button.ui-button.ui-button-ghost.ui-button-xs(type="button" disabled={days === 0 && summary === "Pick a start date"} @click=clear) Clear

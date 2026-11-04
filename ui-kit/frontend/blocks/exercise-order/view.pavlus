@@ -1,0 +1,15 @@
+// An order-the-lines exercise, to embed. State = the props (from `orderProps`
+// in order.ts): prompt, mono, locked and rows ({ id, text, pos, first, last,
+// mark }). Sends `move(lineId, -1 | 1)` from the up and down buttons.
+div.k-exo
+  p.k-exo__prompt {prompt}
+  ol.k-exo__list
+    for row in rows key row.id
+      li.k-exo__row(data-mark={row.mark || null})
+        span.k-exo__pos {row.pos}
+        span(class="k-exo__text" class:is-mono={mono}) {row.text}
+        span.k-exo__moves
+          button.ui-button.ui-button-outline.ui-button-icon.ui-button-sm(type="button" aria-label="Move up" disabled={row.first || locked} @click=move(row.id, -1))
+            span.k-icon.k-ai-arrow-down.k-exo__up
+          button.ui-button.ui-button-outline.ui-button-icon.ui-button-sm(type="button" aria-label="Move down" disabled={row.last || locked} @click=move(row.id, 1))
+            span.k-icon.k-ai-arrow-down

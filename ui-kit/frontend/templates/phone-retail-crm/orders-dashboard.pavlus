@@ -1,0 +1,36 @@
+// The sales dashboard of the Phone Retail CRM, a part to embed. State = the
+// props from ordersDashboard() in stats.ts: `kpis`, `revenue`, `ordersCols`,
+// `statuses`, `top`. It sends no events.
+import Stats from "../../blocks/stat-cards/view.pavlus"
+import Area from "../../blocks/area-chart/view.pavlus"
+import BarChart from "../../blocks/bar-chart/view.pavlus"
+import Meters from "../../blocks/progress-list/view.pavlus"
+
+div.prcd
+  +Stats#kpis(cards=kpis)
+  div.prcd__cols
+    div.ui-card
+      div.ui-card-header
+        h3.ui-card-title Revenue by month
+        p.ui-card-description Paid, shipped and delivered orders, the last twelve months
+      div.ui-card-content
+        +Area#revenue(chart=revenue height="240px")
+    div.ui-card
+      div.ui-card-header
+        h3.ui-card-title Orders per month
+        p.ui-card-description Every order created in the month
+      div.ui-card-content
+        +BarChart#orders(columns=ordersCols height="240px")
+  div.prcd__cols.prcd__cols--even
+    div.ui-card
+      div.ui-card-header
+        h3.ui-card-title Orders by status
+        p.ui-card-description Share of all orders
+      div.ui-card-content
+        +Meters#statuses(items=statuses)
+    div.ui-card
+      div.ui-card-header
+        h3.ui-card-title Top 5 shops
+        p.ui-card-description By revenue
+      div.ui-card-content
+        +Meters#top(items=top)

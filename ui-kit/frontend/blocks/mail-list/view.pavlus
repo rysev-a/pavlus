@@ -1,0 +1,35 @@
+// The message list of a mail client, to embed. State = the props: `rows`
+// (from `rowsOf` in mail-list.ts), `emptyTitle` and `emptyText` (shown when
+// there are no rows). Events, with the name of the embed in front: `open`,
+// `check` and `star` (all with the thread id).
+div.k-mlist
+  if rows.length === 0
+    div.k-mlist__empty
+      span.k-icon.k-icon-lg.k-mi-inbox
+      strong {emptyTitle}
+      p {emptyText}
+  else
+    ul.k-mlist__rows
+      for r in rows key r.id
+        li.k-mlist__row(class:is-unread={r.unread} class:is-selected={r.selected} class:is-open={r.open})
+          input.ui-checkbox-input.k-mlist__check(type="checkbox" aria-label={"Select " + r.subject} checked={r.selected} @change=check(r.id))
+          button.k-mlist__star(type="button" aria-label={r.starred ? "Remove the star" : "Star this conversation"} aria-pressed={r.starred ? "true" : "false"} @click=star(r.id))
+            span.k-icon(class="{r.starIcon}")
+          button.k-mlist__main(type="button" @click=open(r.id))
+            span.k-mlist__top
+              span.k-mlist__from
+                | {r.from}
+                if r.count > 1
+                  span.k-mlist__count {r.count}
+              span.k-mlist__date {r.date}
+            span.k-mlist__subject
+              if r.draft
+                span.k-mlist__draft Draft
+              | {r.subject}
+              if r.attachment
+                span.k-icon.k-mi-clip.k-mlist__clip
+            span.k-mlist__snippet {r.snippet}
+            if r.labels.length > 0
+              span.k-mlist__labels
+                for l in r.labels key l.name
+                  span.k-mlist__label(style="--k-hue: {l.hue}") {l.name}

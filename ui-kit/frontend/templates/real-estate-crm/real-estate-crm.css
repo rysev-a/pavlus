@@ -1,0 +1,4 @@
+.estate__hint { margin: 0; font-size: 13px; color: var(--muted-foreground); }
+.estate__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.estate__toggle { display: flex; gap: 6px; }
+.estate__bar .ui-select-control { width: auto; min-width: 12rem; }

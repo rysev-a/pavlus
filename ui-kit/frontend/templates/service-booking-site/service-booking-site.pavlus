@@ -1,0 +1,151 @@
+// A barbershop that takes bookings online. Built from the blocks site-nav, hero,
+// service-list, worker-picker, day-picker and time-slots; the page holds the
+// steps and the list of bookings.
+import SiteNav from "../../blocks/site-nav/view.pavlus"
+import Hero from "../../blocks/hero/view.pavlus"
+import Services from "../../blocks/service-list/view.pavlus"
+import Workers from "../../blocks/worker-picker/view.pavlus"
+import Days from "../../blocks/day-picker/view.pavlus"
+import Slots from "../../blocks/time-slots/view.pavlus"
+
+div.k-template.sbs
+  +SiteNav#nav(brand="Old Oak Barbers" links=links ctaLabel="Book now" ctaHref="#book")
+  +Hero#hero(eyebrow="Est. 1962" title="A proper shave and a sharp cut" text="Three chairs, hot towels and no rush. Pick a service, choose your barber and take the time that suits you." primaryLabel="Book a chair" primaryHref="#book" secondaryLabel="My bookings" secondaryHref="#mine")
+  section.sbs__book#book
+    div.sbs__head
+      h2.sbs__title Book your visit
+      p.k-muted Four quick steps. You can cancel any time below.
+    if done
+      div.ui-card.sbs__done
+        div.ui-card-header
+          div.ui-alert.ui-alert-success
+            span.ui-alert-icon
+              span.k-icon.k-icon-check
+            div.ui-alert-body
+              p.ui-alert-title You are booked in
+              div.ui-alert-description We sent a confirmation to {form.email}. See you soon!
+        div.ui-card-content
+          if confirmed
+            div.ui-detail-list
+              div.ui-detail-row
+                span.k-muted Booking number
+                strong {confirmed.code}
+              div.ui-detail-row
+                span.k-muted Service
+                strong {confirmed.service}
+              div.ui-detail-row
+                span.k-muted Barber
+                strong {confirmed.worker}
+              div.ui-detail-row
+                span.k-muted When
+                strong {confirmed.when}
+              div.ui-detail-row
+                span.k-muted Pay at the shop
+                strong {confirmed.price}
+        div.ui-card-footer.sbs__actions
+          button.ui-button.ui-button-default(type="button" @click=another) Book another visit
+          a.ui-button.ui-button-outline(href="#mine") View my bookings
+    else
+      div.sbs__layout
+        div.sbs__main
+          ol.sbs__steps
+            for step in steps key step.n
+              li.sbs__step(class:is-current={step.current} class:is-done={step.done})
+                button.sbs__step-btn(type="button" aria-current={step.current ? "step" : null} @click=goStep(step.n))
+                  span.sbs__step-n {step.n}
+                  span.sbs__step-title {step.title}
+          div.ui-card
+            div.ui-card-content.sbs__panel
+              if step === 1
+                h3.sbs__panel-title What would you like?
+                +Services#services(rows=rows)
+              else if step === 2
+                h3.sbs__panel-title Who should do it?
+                +Workers#workers(workers=workers)
+              else if step === 3
+                h3.sbs__panel-title Pick a day and a time
+                div.sbs__when
+                  +Days#days(...days)
+                  div.sbs__times
+                    p.sbs__times-title {dayLabel}
+                    p.k-muted {free} free times. Crossed out ones are taken.
+                    +Slots#slots(slots=slots empty="This barber is off that day: pick another date.")
+              else
+                h3.sbs__panel-title Your details
+                form.ui-form(novalidate @submit.prevent=confirm)
+                  div.ui-field(data-invalid={errors.name ? "true" : null})
+                    label.ui-label(for="sbs-name") Full name
+                    input.ui-input#sbs-name(type="text" autocomplete="name" placeholder="Ann Lee" value=form.name @input=setField("name"))
+                    if errors.name
+                      p.ui-field-error {errors.name}
+                  div.sbs__two
+                    div.ui-field(data-invalid={errors.phone ? "true" : null})
+                      label.ui-label(for="sbs-phone") Phone
+                      input.ui-input#sbs-phone(type="tel" autocomplete="tel" placeholder="+1 555 0100" value=form.phone @input=setField("phone"))
+                      if errors.phone
+                        p.ui-field-error {errors.phone}
+                    div.ui-field(data-invalid={errors.email ? "true" : null})
+                      label.ui-label(for="sbs-email") Email
+                      input.ui-input#sbs-email(type="email" autocomplete="email" placeholder="ann@example.com" value=form.email @input=setField("email"))
+                      if errors.email
+                        p.ui-field-error {errors.email}
+                  div.ui-field(data-invalid={errors.notes ? "true" : null})
+                    label.ui-label(for="sbs-notes") Anything we should know?
+                    textarea.ui-textarea-control#sbs-notes(rows="3" placeholder="Allergies, a photo reference, a quiet chair..." value=form.notes @input=setField("notes"))
+                    if errors.notes
+                      p.ui-field-error {errors.notes}
+                  button.ui-button.ui-button-default(type="submit") Confirm booking
+            div.ui-card-footer.sbs__nav
+              button.ui-button.ui-button-outline(type="button" disabled={step === 1} @click=back) Back
+              if last
+                span.k-muted Pay at the shop, cancel for free.
+              else
+                button.ui-button.ui-button-default(type="button" disabled={!canNext} @click=next) Continue
+        aside.ui-card.sbs__summary
+          div.ui-card-header
+            h3.ui-card-title Your booking
+            p.ui-card-description Updated as you choose.
+          div.ui-card-content
+            div.ui-detail-list
+              div.ui-detail-row
+                span.k-muted Service
+                strong {summary.service}
+              div.ui-detail-row
+                span.k-muted Barber
+                strong {summary.worker}
+              div.ui-detail-row
+                span.k-muted When
+                strong {summary.when}
+              div.ui-detail-row
+                span.k-muted Takes
+                strong {summary.duration}
+              div.ui-detail-row
+                span.k-muted Ends about
+                strong {summary.ends}
+              div.ui-detail-row.sbs__total
+                span Total
+                strong {summary.price}
+  section.sbs__mine#mine
+    div.sbs__head
+      h2.sbs__title My bookings
+      span.ui-badge.ui-badge-secondary {activeCount} upcoming
+    if mine.length === 0
+      div.ui-empty-state
+        p.k-muted You have no bookings yet.
+    else
+      ul.sbs__list
+        for item in mine key item.id
+          li.ui-card.sbs__item(class:is-cancelled={item.cancelled})
+            div.sbs__item-main
+              strong {item.service}
+              span.k-muted with {item.worker}
+              span {item.when}
+            div.sbs__item-side
+              span.ui-badge.ui-badge-outline {item.code}
+              if item.cancelled
+                span.ui-badge.ui-badge-destructive Cancelled
+              else
+                strong {item.price}
+                button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=cancel(item.id)) Cancel
+  footer.sbs__foot
+    p Old Oak Barbers, 14 Mill Lane. Tuesday to Sunday. Walk-ins welcome when a chair is free.

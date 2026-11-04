@@ -1,0 +1,17 @@
+// A live preview of a text with light markup, to embed: `+Preview#preview(...preview)`.
+// State = blocks (from `parseMarkup` in markup-preview.ts): { id, kind ("h", "p",
+// "li", "quote", "code"), parts: { id, text, style ("", "b", "i", "c") } }.
+div.k-mkp(aria-live="polite")
+  if blocks.length === 0
+    p.k-mkp__empty Start typing to see a preview.
+  for b in blocks key b.id
+    div.k-mkp__block(data-kind={b.kind})
+      for s in b.parts key s.id
+        if s.style === "b"
+          strong {s.text}
+        else if s.style === "i"
+          em {s.text}
+        else if s.style === "c"
+          code.k-mkp__code {s.text}
+        else
+          span {s.text}

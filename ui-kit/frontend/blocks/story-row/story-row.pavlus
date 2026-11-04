@@ -1,0 +1,10 @@
+import Stories from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Stories
+    p.k-demo__note Open a story: its ring fades and the viewer opens under the row.
+    div.k-preview.k-preview--block
+      +Stories#stories(...stories)
+    p.k-hint
+      | {seenCount} of {total} seen.

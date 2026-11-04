@@ -1,0 +1,9 @@
+import Form from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Create and update
+    p.k-demo__note Leave a required field empty and press Save to see the messages. The role is a select, the permissions a list of checks, the lines a small order editor.
+    div.k-preview.k-preview--block
+      +Form#form(...shape)
+    p.k-demo__note {saved}

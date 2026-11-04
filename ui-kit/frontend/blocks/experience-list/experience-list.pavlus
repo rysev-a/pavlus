@@ -1,0 +1,11 @@
+import Jobs from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Experience
+    p.k-demo__note The newest job is first; a click on a company reports which one.
+    div.k-preview.k-preview--block
+      div.k-wide-demo
+        +Jobs#jobs(...jobs)
+    p.k-hint
+      | {last}

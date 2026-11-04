@@ -1,0 +1,8 @@
+import Contact from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Contact form
+    div.k-preview.k-preview--block
+      div.k-contact-wrap
+        +Contact#contact(...contact)

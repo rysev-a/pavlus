@@ -1,0 +1,14 @@
+.k-remind { display: grid; gap: calc(12px * var(--k-block, 1)); }
+.k-remind__summary { margin: 0; color: var(--muted-foreground); font-size: .92em; }
+.k-remind__list { display: grid; gap: calc(8px * var(--k-block, 1)); margin: 0; padding: 0; list-style: none; }
+.k-remind__row { display: grid; grid-template-columns: auto minmax(0, 1fr) 6.5rem auto; align-items: center; gap: 12px; padding: calc(10px * var(--k-block, 1)) calc(14px * var(--k-block, 1)); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); color: var(--card-foreground); }
+.k-remind__row--off .k-remind__name, .k-remind__row--off .k-remind__icon { opacity: .55; }
+.k-remind__icon { font-size: 20px; line-height: 1; }
+.k-remind__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.k-remind .k-remind__time { width: 100%; }
+.k-remind__empty { margin: 0; padding: 16px; text-align: center; color: var(--muted-foreground); }
+@media (max-width: 480px) {
+  .k-remind__row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .k-remind .k-remind__time { grid-column: 2; grid-row: 2; }
+  .k-remind__row .ui-switch { grid-column: 3; grid-row: 1 / 3; }
+}

@@ -1,0 +1,16 @@
+.k-funnel { display: grid; gap: calc(12px * var(--k-block, 1)); min-width: 0; }
+.k-funnel__list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.k-funnel__row { display: grid; grid-template-columns: 86px minmax(0, 1fr) 54px; align-items: center; gap: 10px; }
+.k-funnel__label { font-size: 13px; color: var(--muted-foreground); }
+.k-funnel__track { display: flex; justify-content: center; }
+.k-funnel__bar { display: flex; align-items: center; justify-content: center; min-height: 34px; border-radius: var(--radius-md); background: var(--primary); color: var(--primary-foreground); font-size: 14px; transition: width .3s; }
+.k-funnel__bar[data-step="1"] { background: color-mix(in srgb, var(--primary) 86%, var(--card)); }
+.k-funnel__bar[data-step="2"] { background: color-mix(in srgb, var(--primary) 72%, var(--card)); }
+.k-funnel__bar[data-step="3"] { background: color-mix(in srgb, var(--primary) 58%, var(--card)); }
+.k-funnel__bar[data-step="4"] { background: color-mix(in srgb, var(--primary) 44%, var(--card)); }
+.k-funnel__bar[data-step="5"] { background: color-mix(in srgb, var(--primary) 34%, var(--card)); }
+.k-funnel__kept { display: grid; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.2; }
+.k-funnel__kept small { font-size: 11px; font-weight: 400; color: var(--muted-foreground); }
+.k-funnel__foot { margin: 0; font-size: 13px; color: var(--muted-foreground); }
+.k-funnel__foot strong { margin-right: 6px; color: var(--foreground); font-size: 15px; }
+@media (max-width: 520px) { .k-funnel__row { grid-template-columns: 70px minmax(0, 1fr) 46px; gap: 6px; } }

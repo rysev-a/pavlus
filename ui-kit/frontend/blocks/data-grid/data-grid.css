@@ -1,0 +1,15 @@
+.k-grid .ui-data-scroll { overflow-x: auto; }
+.k-grid td, .k-grid th { padding: calc(10px * var(--k-block, 1)) calc(14px * var(--k-block, 1)); white-space: nowrap; }
+.k-grid th { font-size: 12px; }
+.k-grid__pick { cursor: pointer; }
+.k-grid__strong { display: grid; line-height: 1.3; }
+.k-grid__strong small { color: var(--muted-foreground); font-size: 12px; }
+.k-grid__mono { font-family: var(--font-mono); font-size: 12.5px; }
+.k-grid__num { font-variant-numeric: tabular-nums; }
+.k-grid__meter { display: flex; align-items: center; gap: 8px; min-width: 130px; }
+.k-grid .k-grid__bar { --progress: var(--t); flex: 1; min-width: 56px; }
+.k-grid__meterlabel { min-width: 36px; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted-foreground); text-align: right; }
+.k-grid__actionhead { width: 1%; }
+.k-grid__actions { text-align: right; white-space: nowrap; }
+.k-grid__actions .ui-button + .ui-button { margin-left: 6px; }
+.k-grid .ui-button .k-icon { width: 12px; height: 12px; }

@@ -1,0 +1,15 @@
+import Picks from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Column
+    p.k-demo__note Counts follow the filter in the other demo; the active choice is highlighted.
+    div.k-preview.k-preview--block
+      div.k-narrow
+        +Picks#cats(...cats)
+  section.k-demo
+    h2.k-demo__title Chips
+    div.k-preview.k-preview--block
+      +Picks#chips(...chips)
+    p.k-hint
+      | Picked: {picked}

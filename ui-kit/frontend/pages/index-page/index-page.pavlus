@@ -1,0 +1,17 @@
+// The `/blocks` and `/templates` pages: a template without logic, a grid of
+// cards by group. State = the props passed by the shell (`heading`, `intro`,
+// `nav`, `root`).
+section.home
+  div.ui-page-header
+    div
+      h1.ui-page-title {heading}
+      p.ui-page-description {intro}
+  for group in nav key group.title
+    div.home__group
+      h2.home__heading {group.title}
+      div.home__grid.home__grid--wide
+        for item in group.items key item.path
+          a.ui-card.home__card(href={root + item.path} @click.prevent=navigate(item.path))
+            div.ui-card-header
+              h3.ui-card-title {item.title}
+              p.ui-card-description {item.description}

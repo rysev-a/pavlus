@@ -1,0 +1,8 @@
+.k-repb { --r: var(--muted-foreground); display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px 2px 6px; border: 1px solid color-mix(in srgb, var(--r) 45%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--r) 10%, var(--card)); color: var(--foreground); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.k-repb[data-tier="1"] { --r: var(--chart-2); }
+.k-repb[data-tier="2"] { --r: var(--chart-1); }
+.k-repb[data-tier="3"] { --r: var(--chart-4); }
+.k-repb[data-tier="4"] { --r: var(--chart-5); }
+.k-repb[data-tier="5"] { --r: var(--chart-3); }
+.k-repb[data-tier="6"] { --r: var(--primary); background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+.k-repb__points { font-weight: 400; opacity: .75; font-variant-numeric: tabular-nums; }

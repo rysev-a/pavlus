@@ -1,0 +1,8 @@
+import Table from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title People
+    p.k-demo__note Type in the search box, filter by role, sort a column, tick rows, change the page size, edit a row (its name gets a mark) or delete it.
+    div.k-preview.k-preview--block
+      +Table#table(...grid)

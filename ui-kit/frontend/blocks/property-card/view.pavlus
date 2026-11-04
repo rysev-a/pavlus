@@ -1,0 +1,19 @@
+// Listing cards, to embed. State = the props: `properties` (propertyViews():
+// { id, title, address, price, facts, status, tone, art, emoji, selected,
+// match }) and `empty`. Events, with the name of the embed in front: `pick`
+// (property id).
+div.k-prop
+  for p in properties key p.id
+    article.k-prop__card(class:k-prop__card--sel={p.selected} @click=pick(p.id))
+      div.k-prop__art(data-art={p.art})
+        span.k-prop__emoji {p.emoji}
+        span(class="ui-pill ui-pill-{p.tone} k-prop__status") {p.status}
+        if p.match
+          span.k-prop__match {p.match}
+      div.k-prop__body
+        strong.k-prop__price {p.price}
+        span.k-prop__title {p.title}
+        small.k-prop__address {p.address}
+        small.k-prop__facts {p.facts}
+  if properties.length === 0
+    p.k-prop__empty {empty}

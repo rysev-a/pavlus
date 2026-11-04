@@ -1,0 +1,10 @@
+import Tree from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Replies, nested
+    p.k-demo__note Children sit under their parent, the accepted answer first and then by score. Vote, reply, or accept an answer.
+    div.k-preview.k-preview--block
+      +Tree#tree(...tree)
+    p.k-hint
+      | {replies.length} replies, {total} points in all.

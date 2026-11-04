@@ -1,0 +1,23 @@
+// A scorecard with one to five ratings per skill, to embed. State = the
+// props from scoreView() in score.ts: `rows` ([{ id, label, hint, value,
+// dots: [{ n, on }] }]), `average`, `pct`, `rated`, `verdict`, `tone`.
+// Event, with the name of the embed in front: `rate` (skill id, rating).
+div.ui-card.k-score
+  div.k-score__summary
+    div.k-score__avg
+      strong {average}
+      small / 5
+    div.k-score__text
+      span(class="ui-pill ui-pill-{tone}") {verdict}
+      small {rated}
+    div(class="ui-progress ui-progress-sm k-score__bar k-adm-t-{tone}")
+      div.ui-progress-indicator(style="width: {pct}%")
+  ul.k-score__rows
+    for row in rows key row.id
+      li.k-score__row
+        div.k-score__what
+          strong {row.label}
+          small {row.hint}
+        div.k-score__dots(role="group" aria-label={"Rating for " + row.label})
+          for dot in row.dots key dot.n
+            button.k-score__dot(type="button" class:is-on={dot.on} aria-pressed={dot.on ? "true" : "false"} aria-label={dot.n + " of 5"} @click=rate(row.id, dot.n)) {dot.n}

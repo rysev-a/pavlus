@@ -1,5 +1,5 @@
 // The side navigation: every component, by group. State = the props passed by
-// the shell (`nav`, `route`, `root`). A link is a real href (copy, middle
+// the shell (`nav`, `route`, `root`, `section`). A link is a real href (copy, middle
 // click) whose click goes through the router: `sidebar.navigate`.
 nav.ui-sidebar(aria-label="Components")
   div.ui-sidebar-header

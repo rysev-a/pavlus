@@ -1,0 +1,44 @@
+// A multi-select, to embed. State = a SelectState (select.ts): `selected` (the
+// chips), `rows` (the menu), `query`, `open`, `loading`, `failed`, `note`,
+// `message`... Messages: openList, close, type, key, toggle(id), remove(id),
+// clear, hoverRow(id), retry.
+div.ui-multi-select(data-open={open ? "true" : null} data-invalid={message ? "true" : null} class:ui-multi-select-sm={size === "sm"} class:ui-multi-select-lg={size === "lg"})
+  label.ui-multi-select-label(for=uid) {label}
+  div.ui-multi-select-control(@click=openList)
+    div.ui-multi-select-values
+      for chip in selected key chip.id
+        span.ui-multi-select-chip
+          span.ui-multi-select-chip-label {chip.label}
+          button.ui-multi-select-chip-remove(type="button" aria-label="Remove {chip.label}" @click.stop=remove(chip.id))
+            span.k-icon.k-ms-x
+      input.ui-multi-select-input(id=uid type="text" role="combobox" autocomplete="off" aria-expanded={open ? "true" : "false"} placeholder={hasSelection ? "" : placeholder} value=query @input=type @keydown=key @focus=openList)
+    div.ui-multi-select-indicators
+      if loading
+        span.ui-multi-select-spinner
+          span.k-icon.k-icon-loader
+      if hasSelection
+        button.ui-multi-select-clear(type="button" aria-label="Clear all" @click.stop=clear)
+          span.k-icon.k-ms-x
+      span.ui-multi-select-chevron
+        span.k-icon.k-icon-chevron-down
+  if open
+    div.k-dismiss(@click=close)
+    ul.ui-multi-select-menu(role="listbox" aria-multiselectable="true")
+      for row in rows key row.id
+        li.ui-multi-select-option(role="option" data-active={row.active ? "true" : null} aria-selected={row.selected ? "true" : "false"} aria-disabled={row.disabled ? "true" : null} @click=toggle(row.id) @mouseenter=hoverRow(row.id))
+          span.k-ms-option
+            span.k-ms-option__text
+              span {row.label}
+              if row.hint
+                span.k-ms-option__hint {row.hint}
+            if row.selected
+              span.k-icon.k-icon-check
+      if empty
+        li.ui-multi-select-empty {emptyText}
+      if failed
+        li.k-ms-retry
+          button.ui-button.ui-button-outline.ui-button-xs(type="button" @click=retry) Try again
+      if note
+        li.k-ms-note {note}
+  if message
+    p.ui-field-error {message}

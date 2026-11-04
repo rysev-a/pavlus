@@ -1,0 +1,11 @@
+import Composer from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Compose window
+    p.k-demo__note Recipients are checked as you type (bad addresses turn red). Send validates; typing saves a draft a moment later; Attach opens a menu of files with a 25 MB limit.
+    div.k-preview.k-preview--block
+      div.k-mcomp-demo
+        +Composer#comp(draft=draft ui=ui files=files)
+      if note
+        p.k-hint {note}

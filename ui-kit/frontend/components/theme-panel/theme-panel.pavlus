@@ -1,0 +1,74 @@
+// The theming panel, fixed to the right edge. State = the props passed by the
+// shell: `look` (the visitor's choices), `catalog`, `family` and `shown` (the
+// tab of the colour picker) and `open`. Its events reach the shell as
+// `themepanel.<message>`; the choices are the same as on the Theming page, and
+// they apply to whatever page is open, a template included.
+aside.k-themepanel(class:k-themepanel--open={open} aria-label="Theming" aria-hidden={open ? null : "true"})
+  div.k-themepanel__head
+    strong Theme
+    div.k-row
+      button.ui-button.ui-button-default.ui-button-xs(type="button" @click=random)
+        span.k-icon.k-icon-shuffle
+        | Random
+      button.ui-button.ui-button-outline.ui-button-xs(type="button" @click=reset) Reset
+      button.ui-button.ui-button-ghost.ui-button-icon-xs(type="button" aria-label="Close the theming panel" @click=close)
+        span.k-icon.k-icon-x
+  div.k-themepanel__body
+    div.k-themepanel__group
+      span.k-themepanel__label Colors
+      select.ui-select-control(aria-label="Theme source" @change=family)
+        for f in catalog.families key f.id
+          option(value=f.id selected={family === f.id}) {f.name}
+      div.k-themepanel__swatches
+        for sw in shown.light key sw.id
+          button.k-swatch.k-swatch--mini(type="button" title="{sw.name} (light)" class:is-active={look.palette === sw.id && look.mode === "light"} style="background: {sw.bg}; color: {sw.fg}" @click=palette(sw.id, "light"))
+            span.k-swatch__dot(style="background: {sw.primary}")
+            span {sw.name}
+      div.k-themepanel__swatches
+        for sw in shown.dark key sw.id
+          button.k-swatch.k-swatch--mini(type="button" title="{sw.name} (dark)" class:is-active={look.palette === sw.id && look.mode === "dark"} style="background: {sw.bg}; color: {sw.fg}" @click=palette(sw.id, "dark"))
+            span.k-swatch__dot(style="background: {sw.primary}")
+            span {sw.name}
+      div.ui-switch
+        input.ui-switch-input#tp-bundle(type="checkbox" role="switch" checked={look.bundle} @change=bundle)
+        label.ui-switch-label(for="tp-bundle") A theme sets font, sizes and style too
+    div.k-themepanel__group
+      span.k-themepanel__label Font
+      select.ui-select-control(aria-label="Font" @change=pick("font"))
+        for f in catalog.fonts key f.id
+          option(value=f.id selected={look.font === f.id}) {f.name}
+    div.k-themepanel__group
+      span.k-themepanel__label Style
+      select.ui-select-control(aria-label="Style" @change=pick("style"))
+        for st in catalog.styles key st.id
+          option(value=st.id selected={look.style === st.id}) {st.name}
+    div.k-themepanel__group
+      span.k-themepanel__label Corners
+      select.ui-select-control(aria-label="Corner radius" @change=pick("radius"))
+        for r in catalog.radii key r.id
+          option(value=r.id selected={look.radius === r.id}) {r.name}
+    div.k-themepanel__group
+      span.k-themepanel__label Sizes
+      div.k-themepanel__sizes
+        label.k-themepanel__size
+          span Controls
+          select.ui-select-control(aria-label="Size of controls" @change=pick("ui"))
+            for z in catalog.ui key z.id
+              option(value=z.id selected={look.ui === z.id}) {z.name}
+        label.k-themepanel__size
+          span Text
+          select.ui-select-control(aria-label="Size of text" @change=pick("text"))
+            for z in catalog.text key z.id
+              option(value=z.id selected={look.text === z.id}) {z.name}
+        label.k-themepanel__size
+          span Blocks
+          select.ui-select-control(aria-label="Size of blocks" @change=pick("block"))
+            for z in catalog.block key z.id
+              option(value=z.id selected={look.block === z.id}) {z.name}
+    div.k-themepanel__group
+      span.k-themepanel__label Export
+      div.k-row
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=export("current")) This style
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=export("all")) All styles
+      if exportNote
+        span.k-hint {exportNote}

@@ -1,0 +1,227 @@
+// A classifieds marketplace: browse with filters, a listing page, favorites, a
+// profile (my listings, favorites, messages), a sell form and a sign-in page.
+// Cards are the listing-card block, the heart is favorite-toggle, the account
+// pages are the auth block, embedded as a child component.
+import Card from "../../blocks/listing-card/view.pavlus"
+import Fav from "../../blocks/favorite-toggle/view.pavlus"
+import Auth from "../../blocks/auth/auth.pavlus"
+
+div.k-template.cb
+  header.cb__header
+    button.cb__brand(type="button" @click=goto("browse"))
+      span.ui-brand-mark M
+      strong Marketly
+    nav.cb__nav(aria-label="Marketplace")
+      button.ui-button.ui-button-ghost.ui-button-sm(type="button" class:is-active={view === "browse"} @click=goto("browse")) Browse
+      button.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-label="Favorites" @click=openProfile("favorites"))
+        span.k-icon.k-icon-heart
+        | Favorites
+        span.ui-badge.ui-badge-secondary {favCount}
+      button.ui-button.ui-button-default.ui-button-sm(type="button" @click=goto("sell"))
+        span.k-icon.k-icon-plus
+        | Sell something
+      if user
+        button.cb__account(type="button" aria-label="My profile" @click=openProfile("listings"))
+          span.ui-avatar
+            span.ui-avatar-fallback {initials}
+          if unread
+            span.cb__dot {unread}
+      else
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=goto("signin")) Sign in
+  if view === "browse"
+    section.cb__browse
+      div.cb__filters.ui-card
+        div.cb__search
+          div.k-input-group
+            span.k-input-group__addon.k-input-group__addon--start
+              span.k-icon.k-icon-search
+            input.ui-input(type="search" aria-label="Search listings" placeholder="Search cameras, bikes, tables..." value=filters.query @input=setQuery)
+        div.cb__chips(role="group" aria-label="Category")
+          for chip in chips key chip.name
+            button.ui-button.ui-button-sm(type="button" class:ui-button-default={chip.active} class:ui-button-outline={!chip.active} aria-pressed={chip.active ? "true" : "false"} @click=setCategory(chip.name))
+              | {chip.name}
+              span.cb__count {chip.count}
+        div.cb__row
+          div.cb__price
+            label.ui-label(for="cb-min") Price
+            input.ui-input#cb-min(type="number" min="0" placeholder="Min" value=filters.min @input=setMin)
+            span.k-muted to
+            input.ui-input(type="number" min="0" aria-label="Maximum price" placeholder="Max" value=filters.max @input=setMax)
+          div.cb__sort
+            label.ui-label(for="cb-sort") Sort by
+            select.ui-select-control#cb-sort(@change=setSort)
+              option(value="newest" selected={filters.sort === "newest"}) Newest first
+              option(value="price-asc" selected={filters.sort === "price-asc"}) Price, low to high
+              option(value="price-desc" selected={filters.sort === "price-desc"}) Price, high to low
+          if filtered
+            button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=clearFilters) Clear filters
+      p.cb__result {resultLabel}
+      if cards.length === 0
+        div.ui-empty-state
+          h3 Nothing matches
+          p.k-muted Try a different word, or widen the price range.
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=clearFilters) Clear filters
+      div.k-listing-grid
+        for card in cards key card.id
+          +Card#card(...card)
+  else if view === "detail"
+    section.cb__detail
+      button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=goto("browse"))
+        span.k-icon.k-icon-chevron-left
+        | Back to listings
+      if detail
+        div.cb__detail-grid
+          div.cb__picture.k-listing__media(data-tone={detail.item.tone})
+            span.k-listing__emoji {detail.item.emoji}
+            if detail.item.badge
+              span.ui-badge.ui-badge-default.k-listing__badge {detail.item.badge}
+          div.ui-card.cb__info
+            div.ui-card-header
+              span.cb__price-tag {detail.item.priceLabel}
+              h1.cb__detail-title {detail.item.title}
+              div.cb__tags
+                span.ui-badge.ui-badge-secondary {detail.item.category}
+                span.ui-badge.ui-badge-outline
+                  span.k-icon.k-icon-pin
+                  | {detail.item.location}
+                span.ui-badge.ui-badge-outline Posted {detail.item.ago}
+            div.ui-card-content
+              p.cb__description {detail.item.description}
+              div.cb__seller
+                span.ui-avatar.ui-avatar-lg
+                  span.ui-avatar-fallback {detail.initials}
+                div.cb__seller-text
+                  strong {detail.item.seller}
+                  span.k-muted Member since 2023, usually replies within a day
+            div.ui-card-footer.cb__actions
+              if detail.mine
+                button.ui-button.ui-button-outline(type="button" @click=editListing(detail.item.id)) Edit this listing
+              else if contactSent
+                div.ui-alert.ui-alert-success
+                  span.ui-alert-icon
+                    span.k-icon.k-icon-check
+                  div.ui-alert-body
+                    p.ui-alert-title Message sent
+                    div.ui-alert-description {detail.item.seller} will reply to {user ? user.email : "you"} soon.
+              else if contactOpen
+                form.ui-form.cb__contact(novalidate @submit.prevent=sendContact)
+                  label.ui-label(for="cb-contact") Message to {detail.item.seller}
+                  textarea.ui-textarea-control#cb-contact(rows="3" placeholder="Hi, is this still available?" value=contactText @input=setContact)
+                  button.ui-button.ui-button-default(type="submit") Send message
+              else
+                button.ui-button.ui-button-default(type="button" @click=showContact) Contact seller
+              +Fav#dfav(id=detail.item.id active=detail.favorite label={detail.favorite ? "Saved" : "Save"} size="lg")
+      else
+        div.ui-empty-state
+          p This listing is gone.
+  else if view === "sell"
+    section.cb__sell
+      div.ui-card.cb__formcard
+        div.ui-card-header
+          h1.ui-card-title {isEdit ? "Edit your listing" : "Sell something"}
+          p.ui-card-description A clear title, an honest description and a fair price sell faster.
+        form.ui-card-content(novalidate @submit.prevent=saveListing)
+          div.ui-form
+            div.ui-field(data-invalid={errors.title ? "true" : null})
+              label.ui-label(for="cb-title") Title
+              input.ui-input#cb-title(type="text" maxlength="80" placeholder="e.g. Road bike, 56 cm" value=form.title @input=setField("title"))
+              if errors.title
+                p.ui-field-error {errors.title}
+            div.cb__two
+              div.ui-field(data-invalid={errors.category ? "true" : null})
+                label.ui-label(for="cb-category") Category
+                select.ui-select-control#cb-category(@change=setField("category"))
+                  option(value="" selected={form.category === ""}) Choose...
+                  for name in categories key name
+                    option(value=name selected={form.category === name}) {name}
+                if errors.category
+                  p.ui-field-error {errors.category}
+              div.ui-field(data-invalid={errors.price ? "true" : null})
+                label.ui-label(for="cb-price") Price (USD)
+                input.ui-input#cb-price(type="text" inputmode="decimal" placeholder="0 for free" value=form.price @input=setField("price"))
+                if errors.price
+                  p.ui-field-error {errors.price}
+            div.ui-field(data-invalid={errors.location ? "true" : null})
+              label.ui-label(for="cb-location") Location
+              input.ui-input#cb-location(type="text" placeholder="City, state" value=form.location @input=setField("location"))
+              if errors.location
+                p.ui-field-error {errors.location}
+            div.ui-field(data-invalid={errors.description ? "true" : null})
+              label.ui-label(for="cb-description") Description
+              textarea.ui-textarea-control#cb-description(rows="5" placeholder="Condition, age, what is included, how to collect..." value=form.description @input=setField("description"))
+              if errors.description
+                p.ui-field-error {errors.description}
+            div.k-row
+              button.ui-button.ui-button-default(type="submit") {isEdit ? "Save changes" : "Publish listing"}
+              button.ui-button.ui-button-outline(type="button" @click=openProfile("listings")) Cancel
+  else if view === "profile"
+    section.cb__profile
+      aside.ui-card.cb__me
+        div.cb__me-head
+          span.ui-avatar.ui-avatar-lg
+            span.ui-avatar-fallback {initials}
+          div.cb__seller-text
+            strong {user ? user.name : ""}
+            span.k-muted {user ? user.email : ""}
+        div.cb__menu(role="tablist" aria-label="Profile")
+          button.ui-tabs-trigger(type="button" role="tab" aria-selected={profileTab === "listings" ? "true" : "false"} @click=openProfile("listings")) My listings
+          button.ui-tabs-trigger(type="button" role="tab" aria-selected={profileTab === "favorites" ? "true" : "false"} @click=openProfile("favorites")) Favorites ({favCount})
+          button.ui-tabs-trigger(type="button" role="tab" aria-selected={profileTab === "messages" ? "true" : "false"} @click=openProfile("messages"))
+            | Messages
+            if unread
+              span.ui-badge.ui-badge-default {unread}
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=signOut) Sign out
+      div.cb__panel
+        if saved
+          div.ui-alert.ui-alert-success(role="status")
+            span.ui-alert-icon
+              span.k-icon.k-icon-check
+            div.ui-alert-body
+              p.ui-alert-title {saved}
+        if profileTab === "listings"
+          div.cb__panel-head
+            h1.cb__h1 My listings
+            button.ui-button.ui-button-default.ui-button-sm(type="button" @click=goto("sell"))
+              span.k-icon.k-icon-plus
+              | New listing
+          if mine.length === 0
+            div.ui-empty-state
+              p You have nothing for sale yet.
+          ul.cb__mine
+            for it in mine key it.id
+              li.ui-card.cb__mine-row
+                span.cb__thumb.k-listing__media(data-tone={it.tone})
+                  span {it.emoji}
+                div.cb__mine-text
+                  button.k-listing__title(type="button" @click=open(it.id)) {it.title}
+                  span.k-muted {it.priceLabel} · {it.category} · {it.ago}
+                div.cb__mine-actions
+                  button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=editListing(it.id)) Edit
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-label={"Delete " + it.title} @click=deleteListing(it.id)) Delete
+        else if profileTab === "favorites"
+          div.cb__panel-head
+            h1.cb__h1 Favorites
+          if favCards.length === 0
+            div.ui-empty-state
+              p Tap the heart on a listing to keep it here.
+          div.k-listing-grid
+            for card in favCards key card.id
+              +Card#fcard(...card)
+        else
+          div.cb__panel-head
+            h1.cb__h1 Messages
+            span.k-muted {unread} unread
+          ul.cb__messages
+            for m in messages key m.id
+              li.ui-card.cb__message(class:is-unread={m.unread})
+                div.cb__message-text
+                  strong {m.from}
+                  span.k-muted About: {m.about}
+                  p {m.text}
+                div.cb__mine-actions
+                  span.k-muted {m.ago}
+                  button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=readMessage(m.id)) {m.unread ? "Mark as read" : "Mark as unread"}
+  else
+    section.cb__signin
+      +Auth#auth(...auth)
+  footer.cb__foot Marketly: buy and sell near you. Be kind, meet in public places.

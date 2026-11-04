@@ -1,0 +1,113 @@
+// A photo sharing app: a masonry feed (Explore / Following), a photo page with
+// comments, albums, saved photos, hashtag pages, author profiles and an upload
+// form with validation. Built from social-nav, photo-card, pick-list,
+// comment-thread and profile-header.
+import Nav from "../../blocks/social-nav/view.pavlus"
+import Photo from "../../blocks/photo-card/view.pavlus"
+import Picks from "../../blocks/pick-list/view.pavlus"
+import Comments from "../../blocks/comment-thread/view.pavlus"
+import Head from "../../blocks/profile-header/view.pavlus"
+
+div.k-template.psn
+  +Nav#nav(...nav)
+  if view === "explore"
+    section.psn__section
+      +Picks#tabs(...tabs)
+      if gridEmpty
+        div.ui-empty-state
+          h3 Nothing to show
+          p.k-muted {emptyNote}
+      div.k-photogrid
+        for p in grid key p.id
+          +Photo#photo(...p)
+  else if view === "detail"
+    section.psn__section
+      button.ui-button.ui-button-ghost.ui-button-sm.psn__back(type="button" @click=back)
+        span.k-icon.k-icon-chevron-left
+        | Back to Explore
+      if big
+        div.psn__detail
+          +Photo#big(...big)
+          div.psn__side
+            div.ui-card.psn__comments
+              h3.psn__h {commentCount} {commentCount === 1 ? "comment" : "comments"}
+              +Comments#cm(...thread)
+      if more.length
+        h3.psn__h More from this album
+        div.k-photogrid
+          for m in more key m.id
+            +Photo#more(...m)
+  else if view === "albums"
+    section.psn__albums
+      aside.psn__albumlist
+        +Picks#albumPick(...albumPick)
+      div.psn__section
+        if gridEmpty
+          div.ui-empty-state
+            h3 Empty album
+        div.k-photogrid
+          for p in grid key p.id
+            +Photo#photo(...p)
+  else if view === "saved"
+    section.psn__section
+      h2.psn__title Saved photos
+      if gridEmpty
+        div.ui-empty-state
+          h3 Nothing saved
+          p.k-muted {emptyNote}
+      div.k-photogrid
+        for p in grid key p.id
+          +Photo#photo(...p)
+  else if view === "tag"
+    section.psn__section
+      h2.psn__title {tagLabel}
+      p.k-muted {tagCount} {tagCount === 1 ? "photo" : "photos"}
+      +Picks#tagRelated(...tagRelated)
+      div.k-photogrid
+        for p in grid key p.id
+          +Photo#photo(...p)
+  else if view === "profile"
+    section.psn__section
+      +Head#head(...head)
+      div.k-photogrid
+        for p in grid key p.id
+          +Photo#photo(...p)
+  else if view === "upload"
+    section.psn__upload
+      div.ui-card.psn__form
+        div.ui-card-header
+          h1.ui-card-title Upload a photo
+          p.ui-card-description Pick a picture and colors, then describe it so people can find it.
+        form.ui-card-content(novalidate @submit.prevent=publish)
+          div.ui-form
+            +Picks#emojiPick(...emojiPick)
+            +Picks#tonePick(...tonePick)
+            div.ui-field(data-invalid={errors.title ? "true" : null})
+              label.ui-label(for="psn-title") Title
+              input.ui-input#psn-title(type="text" maxlength="80" placeholder="Blue hour on the bridge" value=form.title @input=setField("title"))
+              if errors.title
+                p.ui-field-error {errors.title}
+            div.ui-field(data-invalid={errors.tags ? "true" : null})
+              label.ui-label(for="psn-tags") Tags
+              input.ui-input#psn-tags(type="text" placeholder="sunset, sea, harbor (up to 5)" value=form.tags @input=setField("tags"))
+              if errors.tags
+                p.ui-field-error {errors.tags}
+            div.ui-field(data-invalid={errors.album ? "true" : null})
+              label.ui-label(for="psn-album") Album
+              select.ui-select-control#psn-album(@change=setField("album"))
+                option(value="" selected={form.album === ""}) Choose...
+                for a in albumOptions key a
+                  option(value=a selected={form.album === a}) {a}
+                option(value="__new" selected={newAlbumOn}) New album...
+              if errors.album
+                p.ui-field-error {errors.album}
+            if newAlbumOn
+              div.ui-field(data-invalid={errors.newAlbum ? "true" : null})
+                label.ui-label(for="psn-newalbum") New album name
+                input.ui-input#psn-newalbum(type="text" placeholder="Road trip" value=form.newAlbum @input=setField("newAlbum"))
+                if errors.newAlbum
+                  p.ui-field-error {errors.newAlbum}
+            button.ui-button.ui-button-default(type="submit") Publish photo
+      div.psn__preview
+        h3.psn__h Preview
+        +Photo#prev(...preview)

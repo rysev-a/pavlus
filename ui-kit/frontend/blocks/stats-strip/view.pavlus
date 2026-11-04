@@ -1,0 +1,7 @@
+// A row of figures, to embed. State = the props: `stats`, a list of
+// { value, label }, and `tone` ("primary" fills the strip with the brand colour).
+dl.k-sstrip(class:k-sstrip--primary={tone === "primary"})
+  for stat in stats key stat.label
+    div.k-sstrip__item
+      dt.k-sstrip__value {stat.value}
+      dd.k-sstrip__label {stat.label}

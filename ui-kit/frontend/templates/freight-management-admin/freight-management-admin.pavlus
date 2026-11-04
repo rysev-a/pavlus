@@ -1,0 +1,113 @@
+// A freight forwarder's back office: the admin shell and one view at a time,
+// all made of blocks. The data and the views worked out from it are in the state.
+import Nav from "../../blocks/admin-shell/view.pavlus"
+import Top from "../../blocks/admin-shell/topbar.pavlus"
+import Stats from "../../blocks/stat-cards/view.pavlus"
+import BarChart from "../../blocks/bar-chart/view.pavlus"
+import Meters from "../../blocks/progress-list/view.pavlus"
+import StatusList from "../../blocks/status-list/view.pavlus"
+import Grid from "../../blocks/data-grid/view.pavlus"
+import FilterBar from "../../blocks/list-filter/view.pavlus"
+import Route from "../../blocks/route-timeline/view.pavlus"
+import Checklist from "../../blocks/customs-checklist/view.pavlus"
+import Board from "../../blocks/shipment-tracker/view.pavlus"
+import Rates from "../../blocks/rate-table/view.pavlus"
+import Calc from "../../blocks/quote-calculator/view.pavlus"
+
+div.k-template.k-ashell.fm(data-nav={navOpen ? "open" : "closed"})
+  aside.k-ashell__side
+    +Nav#nav(brand="Haulage" tagline="Freight admin" groups=groups active=navActive user=user)
+  div.k-ashell__scrim(@click=closeNav)
+  div.k-ashell__main
+    +Top#top(title=title subtitle="Tuesday, 3 November 2026" notice=notice actions=actions user=user)
+    main.k-ashell__content
+      if screen === "overview"
+        +Stats#stats(cards=kpiCards)
+        div.fm__cols
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title Pick-ups per week
+              p.ui-card-description Shipments collected, the last six weeks
+            div.ui-card-content
+              +BarChart#pickups(columns=pickups)
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title Shipments by status
+              p.ui-card-description All the shipments on the books
+            div.ui-card-content
+              +Meters#status(items=statusMeters)
+        div.ui-card
+          div.ui-card-header
+            h3.ui-card-title Needs attention
+            p.ui-card-description Delayed shipments and cargo waiting at the border
+          div.ui-card-content.fm__flush
+            +StatusList#att(rows=attention empty="Nothing needs attention.")
+      else if screen === "shipments"
+        +FilterBar#shipfilter(filters=shipFilters query=core.query placeholder="Search a shipment, city or customer" actions=none)
+        +Grid#ships(columns=shipColumns rows=shipRows empty="No shipments match." footer=shipFooter pickable=true)
+      else if screen === "detail"
+        div.fm__back
+          button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=backToList)
+            span.k-icon.k-icon-chevron-left
+            | All shipments
+          div
+            h2.fm__title {detailTitle}
+            p.fm__sub {detailSub}
+        +Stats#dstats(cards=detailCards)
+        div.fm__cols.fm__cols--even
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title Route
+              p.ui-card-description Planned and real dates of every stop
+            div.ui-card-content
+              +Route#route(stops=detailStops)
+          div.fm__stack
+            div.ui-card
+              div.ui-card-header
+                h3.ui-card-title Documents
+                p.ui-card-description Move a document one step with its button
+              div.ui-card-content
+                +Checklist#ddocs(rows=detailDocs progress=detailProgress readonly=false)
+            div.ui-card
+              div.ui-card-header
+                h3.ui-card-title Charges
+              div.ui-card-content
+                +Grid#charges(columns=chargeColumns rows=chargeRows empty="" footer="" pickable=false)
+      else if screen === "tracking"
+        div.ui-card
+          div.ui-card-header
+            h3.ui-card-title Tracking board
+            p.ui-card-description The vehicle on each bar shows how far the shipment is. Click one to open it.
+          div.ui-card-content
+            +Board#board(lanes=lanes)
+      else if screen === "rates"
+        div.ui-card
+          div.ui-card-header
+            h3.ui-card-title Carriers and rates
+            p.ui-card-description Offers for one lane side by side. Click a header to sort.
+          div.ui-card-content.fm__stack
+            div.ui-field.fm__lane
+              label.ui-label(for="fm-lane") Lane
+              select.ui-select-control#fm-lane(@change=lane)
+                for opt in laneOptions key opt.value
+                  option(value=opt.value selected={opt.selected}) {opt.label}
+            +Rates#rates(columns=rateColumns rows=rateRows)
+      else if screen === "quote"
+        div.ui-card
+          div.ui-card-header
+            h3.ui-card-title Freight quote
+            p.ui-card-description Price a shipment from its weight, volume, distance and mode.
+          div.ui-card-content
+            +Calc#calc(...calc)
+      else if screen === "customs"
+        +FilterBar#cust(filters=customsFilters query="" placeholder="" actions=none)
+        div.ui-card
+          div.ui-card-header
+            h3.ui-card-title {customsTitle}
+            p.ui-card-description The number on a tab is how many required documents are still not approved.
+          div.ui-card-content
+            +Checklist#cdocs(rows=customsRows progress=customsProgress readonly=false)
+      else if screen === "invoices"
+        +Stats#istats(cards=invoiceCards)
+        +FilterBar#invfilter(filters=invoiceFilters query="" placeholder="" actions=none)
+        +Grid#invs(columns=invoiceColumns rows=invoiceRows empty="No invoices here." footer="" pickable=false)

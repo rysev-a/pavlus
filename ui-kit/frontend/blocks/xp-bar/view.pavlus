@@ -1,0 +1,24 @@
+// A learner's progress strip, to embed. State = the props (from `xpProps` in
+// xp.ts): level, title, xp, into, need, pct, toNext, streak, streakLabel.
+div.k-xpbar
+  div.k-xpbar__level
+    span.k-xpbar__badge {level}
+    div.k-xpbar__who
+      strong {title}
+      small Level {level}
+  div.k-xpbar__meter
+    div.k-xpbar__head
+      span {into} / {need} XP
+      small {toNext} to level {level + 1}
+    div.ui-progress.k-xpbar__bar(role="progressbar" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100" aria-label="Progress to the next level")
+      div.ui-progress-indicator(style="width: {pct}%")
+  div.k-xpbar__stat
+    span.k-xpbar__icon ⚡
+    div
+      strong {xp}
+      small XP in total
+  div(class="k-xpbar__stat" class:is-cold={streak <= 0})
+    span.k-xpbar__icon 🔥
+    div
+      strong {streakLabel}
+      small streak

@@ -1,0 +1,91 @@
+// A booking picker, to embed as a child (it has its own state and messages:
+// prev, next, pickDate, pickSession, pickSlot, setField, confirm, reset).
+// State = see `BookingState` in booking-calendar.ts.
+section.k-bk
+  if done
+    div.k-bk__done
+      div.ui-alert.ui-alert-success
+        span.ui-alert-icon
+          span.k-icon.k-icon-check
+        div.ui-alert-body
+          p.ui-alert-title Booking confirmed
+          div.ui-alert-description We sent the details to {email}. See you soon, {name}.
+      dl.k-bk__receipt
+        div
+          dt Reference
+          dd.k-bk__ref {reference}
+        div
+          dt When
+          dd {summary}
+        div
+          dt Session
+          dd
+            for s in sessions key s.id
+              if s.id === session
+                | {s.label} ({s.price})
+      button.ui-button.ui-button-outline(type="button" @click=reset) Book another session
+  else
+    div.k-bk__layout
+      div.k-bk__col
+        h3.k-bk__step
+          span.k-bk__num 1
+          | Session type
+        div.k-bk__sessions(role="radiogroup" aria-label="Session type")
+          for s in sessions key s.id
+            button.k-bk__session(type="button" role="radio" aria-checked={s.id === session ? "true" : "false"} class:is-active={s.id === session} @click=pickSession(s.id))
+              span.k-bk__session-emoji {s.emoji}
+              span.k-bk__session-text
+                strong {s.label}
+                span {s.note}
+              span.k-bk__session-price {s.price}
+        h3.k-bk__step
+          span.k-bk__num 2
+          | Date
+        div.ui-calendar.k-bk__calendar
+          div.ui-calendar-header
+            button.ui-calendar-nav(type="button" aria-label="Previous month" @click=prev)
+              span.k-icon.k-icon-chevron-left
+            h4.ui-calendar-title {title}
+            button.ui-calendar-nav(type="button" aria-label="Next month" @click=next)
+              span.k-icon.k-icon-chevron-right
+          div.ui-calendar-grid
+            for name in weekdays key name
+              span.ui-calendar-weekday {name}
+            for cell in cells key cell.key
+              if cell.day
+                button.ui-calendar-day(type="button" disabled={!cell.available} class:ui-calendar-day-selected={cell.iso === selected} class:k-bk__off={!cell.available} aria-pressed={cell.iso === selected ? "true" : "false"} @click=pickDate(cell.iso)) {cell.day}
+              else
+                span.ui-calendar-empty
+        p.k-bk__hint Closed on Mondays. Past days cannot be booked.
+      div.k-bk__col
+        h3.k-bk__step
+          span.k-bk__num 3
+          | Time
+        if selected
+          p.k-bk__when {selectedLabel}
+          div.k-bk__slots(role="group" aria-label="Available times")
+            for slot in slots key slot.time
+              button.k-bk__slot(type="button" disabled={slot.taken} class:is-active={slot.time === slotTime} aria-pressed={slot.time === slotTime ? "true" : "false"} @click=pickSlot(slot.time)) {slot.label}
+          if slots.length === 0
+            p.k-bk__hint No times for this session on this day.
+        else
+          p.k-bk__hint Choose a day to see the free times.
+        h3.k-bk__step
+          span.k-bk__num 4
+          | Your details
+        form.ui-form(novalidate @submit.prevent=confirm)
+          div.ui-field(data-invalid={errors.name ? "true" : null})
+            label.ui-label(for="bk-name") Name
+            input.ui-input#bk-name(type="text" placeholder="Your name" value=name @input=setField("name"))
+            if errors.name
+              p.ui-field-error {errors.name}
+          div.ui-field(data-invalid={errors.email ? "true" : null})
+            label.ui-label(for="bk-email") Email
+            input.ui-input#bk-email(type="email" placeholder="you@example.com" value=email @input=setField("email"))
+            if errors.email
+              p.ui-field-error {errors.email}
+          if summary
+            p.k-bk__summary
+              span.k-icon.k-icon-calendar
+              | {summary}
+          button.ui-button.ui-button-default(type="submit" disabled={!summary}) Confirm booking

@@ -1,0 +1,3 @@
+.k-faq { width: 100%; max-width: 760px; }
+.k-faq-wrap { display: grid; justify-items: center; }
+.k-faq .ui-accordion-content { line-height: 1.65; color: var(--muted-foreground); }

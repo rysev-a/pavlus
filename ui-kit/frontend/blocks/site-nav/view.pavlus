@@ -1,0 +1,11 @@
+// The top of a site, to embed. State = the props: brand, `links` (a list of
+// { label, href }), ctaLabel, ctaHref.
+header.k-sitenav
+  a.k-sitenav__brand(href="#top")
+    span.ui-brand-mark {brand.slice(0, 1)}
+    span {brand}
+  nav.k-sitenav__links
+    for link in links key link.href
+      a.k-sitenav__link(href=link.href) {link.label}
+  if ctaLabel
+    a.ui-button.ui-button-default.ui-button-sm(href=ctaHref) {ctaLabel}

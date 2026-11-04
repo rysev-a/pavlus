@@ -1,0 +1,40 @@
+.wm { display: grid; gap: calc(12px * var(--k-block, 1)); margin: 0 16px calc(24px * var(--k-block, 1)); position: relative; }
+.wm__top { display: flex; align-items: center; gap: 10px; padding: calc(4px * var(--k-block, 1)) 2px; }
+.wm__brand { font-size: 17px; letter-spacing: -.01em; }
+.wm__spacer { flex: 1; }
+.wm__unread { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted-foreground); }
+.wm .wm__menu { display: none; }
+.wm__frame {
+  position: relative; display: grid; grid-template-columns: 220px minmax(300px, 400px) minmax(0, 1fr);
+  height: clamp(540px, calc(100vh - 200px), 800px); min-height: 0;
+  border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); overflow: hidden;
+}
+.wm__folders { min-height: 0; padding: calc(12px * var(--k-block, 1)); overflow-y: auto; border-right: 1px solid var(--border); background: var(--sidebar, var(--muted)); }
+.wm__list { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--border); }
+.wm__rows { flex: 1; min-height: 0; overflow-y: auto; }
+.wm__read { min-width: 0; min-height: 0; }
+.wm__compose { position: absolute; right: 18px; bottom: 0; z-index: 30; width: min(560px, calc(100% - 36px)); max-height: calc(100% - 24px); display: flex; flex-direction: column; }
+.wm__compose .k-mcomp { box-shadow: var(--shadow-lg); }
+.wm__pop { position: absolute; right: calc(100% + 10px); bottom: 8px; z-index: 40; width: 340px; }
+.wm__toast { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--popover); color: var(--popover-foreground); box-shadow: var(--shadow-lg); position: absolute; left: 50%; bottom: 16px; z-index: 50; display: flex; align-items: center; gap: 10px; width: auto; max-width: calc(100% - 32px); padding: 8px 8px 8px 16px; transform: translateX(-50%); font-size: 14px; }
+.wm__toast-text { flex: 1; min-width: 0; }
+.wm__toast-x { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 999px; background: transparent; color: inherit; cursor: pointer; opacity: .7; }
+.wm__toast-x:hover { opacity: 1; }
+@media (max-width: 1100px) {
+  .wm__frame { grid-template-columns: 190px minmax(260px, 320px) minmax(0, 1fr); }
+  .wm__pop { right: 12px; bottom: auto; top: 52px; width: min(340px, calc(100% - 24px)); }
+}
+@media (max-width: 860px) {
+  .wm .wm__menu { display: inline-flex; }
+  .wm__frame { display: block; height: calc(100vh - 150px); min-height: 520px; }
+  .wm__folders, .wm__list, .wm__read { height: 100%; border-right: 0; }
+  .wm__folders, .wm__list, .wm__read { display: none; }
+  .wm[data-pane="folders"] .wm__folders { display: block; }
+  .wm[data-pane="list"] .wm__list { display: flex; }
+  .wm[data-pane="reader"] .wm__read { display: block; }
+  .wm__compose { inset: 0; width: auto; max-height: none; }
+  .wm__compose .k-mcomp { height: 100%; border: 0; border-radius: 0; }
+  .wm__compose .k-mcomp__form { flex: 1; align-content: start; }
+  .wm__compose .k-mcomp__body { min-height: 240px; }
+  .wm__pop { top: 56px; right: 12px; left: 12px; width: auto; }
+}

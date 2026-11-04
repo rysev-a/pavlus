@@ -1,0 +1,15 @@
+.ui-card.k-jobc { flex-direction: row; align-items: flex-start; gap: calc(14px * var(--k-block, 1)); padding: calc(16px * var(--k-block, 1)); min-width: 0; }
+.k-jobc__logo { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: var(--radius-lg); background: linear-gradient(135deg, color-mix(in srgb, var(--t) 40%, var(--card)), color-mix(in srgb, var(--t) 15%, var(--card))); font-size: 24px; }
+.k-jobc__body { display: grid; flex: 1; gap: 3px; min-width: 0; }
+.k-jobc__title { justify-self: start; padding: 0; border: 0; background: transparent; color: var(--foreground); font: inherit; font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; }
+.k-jobc__title:hover { text-decoration: underline; text-underline-offset: 3px; }
+.k-jobc__company { justify-self: start; padding: 0; border: 0; background: transparent; color: var(--muted-foreground); font: inherit; font-size: 14px; cursor: pointer; }
+.k-jobc__company:hover { color: var(--foreground); }
+.k-jobc__title:focus-visible, .k-jobc__company:focus-visible { outline: none; box-shadow: var(--ring-shadow); border-radius: var(--radius-sm); }
+.k-jobc__meta { margin: 0; font-size: 13px; color: var(--muted-foreground); }
+.k-jobc__tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; padding: 0; list-style: none; }
+.k-jobc__acts { display: grid; gap: 6px; flex: none; justify-items: stretch; }
+@media (max-width: 560px) {
+  .ui-card.k-jobc { flex-wrap: wrap; }
+  .k-jobc__acts { display: flex; width: 100%; }
+}

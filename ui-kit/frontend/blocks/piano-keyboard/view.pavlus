@@ -1,0 +1,14 @@
+// A piano keyboard, to embed. State = the props: `whites`, a list of white keys
+// { midi, name, label, state, black } (see `pianoKeys` in piano-keyboard.ts).
+// It sends `press(midi)` for a click and `keys` (with `msg.event.key`) when a
+// key is typed while the keyboard has the focus: in a parent they arrive as
+// `<id>.press` and `<id>.keys`.
+div.k-piano(role="group" aria-label="Piano keyboard" tabindex="0" @keydown=keys)
+  div.k-piano__keys
+    for white in whites key white.midi
+      div.k-piano__slot
+        button.k-piano__white(type="button" data-state={white.state || null} aria-label={white.name} @click=press(white.midi))
+          span.k-piano__label {white.label}
+        if white.black
+          button.k-piano__black(type="button" data-state={white.black.state || null} aria-label={white.black.name} @click=press(white.black.midi))
+            span.k-piano__label {white.black.label}
