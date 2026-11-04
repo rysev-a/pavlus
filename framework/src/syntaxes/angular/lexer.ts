@@ -254,7 +254,11 @@ export function tokenize(src: Source): Token[] {
       if (end < 0) src.fail("Unclosed <!", i);
       i = end + 1;
     } else if (c === "<" && NAME_START.test(text[i + 1] ?? "")) tag(false);
-    else if (c === "<" && text[i + 1] === "/" && NAME_START.test(text[i + 2] ?? ""))
+    else if (
+      c === "<" &&
+      text[i + 1] === "/" &&
+      NAME_START.test(text[i + 2] ?? "")
+    )
       tag(true);
     else if (c === "}") {
       toks.push({ t: "blockEnd", start: i });
@@ -274,7 +278,7 @@ export function tokenize(src: Source): Token[] {
         if (d === "}") break;
         if (d === "<") {
           const n = text[i + 1] ?? "";
-          if (NAME_START.test(n) || n === "!" ) break;
+          if (NAME_START.test(n) || n === "!") break;
           if (n === "/" && NAME_START.test(text[i + 2] ?? "")) break;
         }
         if (d === "@" && isBlockAt(i)) break;
