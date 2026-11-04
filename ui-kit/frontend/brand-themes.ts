@@ -240,6 +240,8 @@ const radix: VsTheme[] = radixAccents.flatMap(([id, name, a]) =>
     id,
     name,
     preset: RADIX,
+    // white on the accent, as in Radix Themes (amber and sky keep dark text there too)
+    onAccent: id === "amber" || id === "sky" ? undefined : "light",
     light: {
       bg: mix("#ffffff", a, 0.03),
       fg: mix(a, "#000000", 0.78),

@@ -443,6 +443,8 @@ export function vsVars(th: VsTheme): Record<string, string> {
   const primaryFg = th.onAccent === "light" ? "#ffffff" : onColor(primary);
   const muted = ensureContrast(mix(fg, bg, 0.4), hover, 4.5);
   const red = ensureContrast(th.red ?? th.colors[0], bg, 3);
+  // the fill of a danger button always carries white text, as in every design system
+  const dangerFill = ensureContrast(red, "#ffffff", 4.5);
   const panel = th.panel;
   const v: Record<string, string> = {
     "--background": bg,
@@ -460,7 +462,8 @@ export function vsVars(th: VsTheme): Record<string, string> {
     "--accent": hover,
     "--accent-foreground": ensureContrast(fg, hover, 7),
     "--destructive": red,
-    "--destructive-foreground": onColor(red),
+    "--destructive-solid": dangerFill,
+    "--destructive-foreground": "#ffffff",
     "--border": th.border,
     "--input": mix(th.border, fg, 0.15),
     "--ring": th.accent,

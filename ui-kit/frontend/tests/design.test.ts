@@ -2,6 +2,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "vitest";
+import { contrastOf } from "../color.ts";
+import { HEX_THEMES, vsVars } from "../vscode-themes.ts";
 import { buildExport, styleRulesOf } from "../export.ts";
 import {
   catalog,
@@ -92,4 +94,21 @@ test("design.css: every variable a design sets is one a component reads", () => 
     if (/^--(ant|md|mdn|bl|fb|rx)-/.test(name) || /^--(shadow|ring)/.test(name)) continue;
     expect(read.has(name) || defined.has(name), `${name} is set by a design but read by no component`).toBe(true);
   }
+});
+
+test("danger buttons carry white text that reads, in every editor and design-system theme", () => {
+  for (const t of HEX_THEMES) {
+    const v = vsVars(t);
+    expect(v["--destructive-foreground"], t.id).toBe("#ffffff");
+    expect(contrastOf(v["--destructive-solid"], "#ffffff"), t.id).toBeGreaterThanOrEqual(4.5);
+  }
+});
+
+test("Radix writes white on its accents (but amber and sky, which keep dark text as in Radix)", () => {
+  const primaryFg = (id: string) => {
+    const t = HEX_THEMES.find((x) => x.id === `bs-radix-${id}-light`)!;
+    return vsVars(t)["--primary-foreground"];
+  };
+  for (const id of ["blue", "red", "violet", "gray", "teal", "orange"]) expect(primaryFg(id), id).toBe("#ffffff");
+  expect(primaryFg("amber")).not.toBe("#ffffff");
 });

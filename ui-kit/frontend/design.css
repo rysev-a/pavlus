@@ -77,15 +77,19 @@
 .ui-button:hover::after { opacity: var(--btn-state, 0); }
 .ui-button:active::after { opacity: var(--btn-state-press, var(--btn-state, 0)); }
 
+/* ---- danger: a themed fill (--destructive-solid) that carries white text; palettes without one use --destructive ---- */
+:root:root .ui-button-destructive { background: var(--destructive-solid, var(--destructive)); color: var(--destructive-foreground); }
+:root:root .ui-badge-destructive { background: var(--destructive-solid, var(--destructive)); color: var(--destructive-foreground); }
+
 /* ---- button: the colours of a filled variant on hover and press ---- */
 .ui-button-default:hover { background: color-mix(in srgb, var(--primary) var(--btn-hover-amt, 90%), var(--btn-hover-tint, transparent)); }
 .ui-button-secondary:hover { background: color-mix(in srgb, var(--secondary) var(--btn-hover-amt-secondary, 80%), var(--btn-hover-tint, transparent)); }
-.ui-button-destructive:hover { background: color-mix(in srgb, var(--destructive) var(--btn-hover-amt, 90%), var(--btn-hover-tint, transparent)); }
+:root:root .ui-button-destructive:hover { background: color-mix(in srgb, var(--destructive-solid, var(--destructive)) var(--btn-hover-amt, 90%), var(--btn-hover-tint, transparent)); }
 .ui-button-success:hover { background: color-mix(in srgb, var(--success) var(--btn-hover-amt, 90%), var(--btn-hover-tint, transparent)); }
 .ui-button-warning:hover { background: color-mix(in srgb, var(--warning) var(--btn-hover-amt, 90%), var(--btn-hover-tint, transparent)); }
 .ui-button-info:hover { background: color-mix(in srgb, var(--info) var(--btn-hover-amt, 90%), var(--btn-hover-tint, transparent)); }
 .ui-button-default:active { background: color-mix(in srgb, var(--primary) var(--btn-active-amt, var(--btn-hover-amt, 90%)), var(--btn-active-tint, var(--btn-hover-tint, transparent))); }
-.ui-button-destructive:active { background: color-mix(in srgb, var(--destructive) var(--btn-active-amt, var(--btn-hover-amt, 90%)), var(--btn-active-tint, var(--btn-hover-tint, transparent))); }
+:root:root .ui-button-destructive:active { background: color-mix(in srgb, var(--destructive-solid, var(--destructive)) var(--btn-active-amt, var(--btn-hover-amt, 90%)), var(--btn-active-tint, var(--btn-hover-tint, transparent))); }
 .ui-button-default:not(:focus-visible), .ui-button-secondary:not(:focus-visible), .ui-button-destructive:not(:focus-visible),
 .ui-button-success:not(:focus-visible), .ui-button-warning:not(:focus-visible), .ui-button-info:not(:focus-visible) { box-shadow: var(--btn-shadow, none); }
 .ui-button-destructive:not(:focus-visible) { box-shadow: var(--btn-shadow-destructive, var(--btn-shadow, none)); }
