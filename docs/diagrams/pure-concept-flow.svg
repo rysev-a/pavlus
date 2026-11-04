@@ -1,8 +1,7 @@
-<svg id="flowviz-svg" xmlns="http://www.w3.org/2000/svg" width="1240" height="700" viewBox="0 0 1240 700" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
-<rect x="0" y="0" width="1240" height="700" fill="#f6f8fa"/>
+<svg id="flowviz-svg" xmlns="http://www.w3.org/2000/svg" width="1560" height="680" viewBox="0 0 1560 680" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1560" height="680" fill="#f6f8fa"/>
 <text x="24" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" font-weight="600" xml:space="preserve">One pure application — plugins do every dirty thing</text>
-<text x="1216" y="34" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">messages in → effects out</text>
-<rect x="60" y="56" width="330" height="372" rx="14" fill="#eef2ff" stroke="#6366f1" stroke-dasharray="6 4"/>
+<rect x="60" y="56" width="330" height="490" rx="14" fill="#eef2ff" stroke="#6366f1" stroke-dasharray="6 4"/>
 <text x="76" y="80" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#4f46e5" font-weight="600" xml:space="preserve">YOUR APPLICATION</text>
 <rect data-node="app" x="85" y="96" width="280" height="118" rx="10" fill="#ffffff" stroke="#6366f1" stroke-width="1.6"/>
 <text x="225" y="122" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">application</text>
@@ -10,12 +9,12 @@
 <text x="225" y="164" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">no Date.now(), no fetch(),</text>
 <text x="225" y="180" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">no DOM — handlers are pure</text>
 <text x="225" y="202" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the only code you write</text>
-<rect data-node="core" x="85" y="282" width="280" height="128" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
-<text x="225" y="308" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">core — createApp()</text>
-<text x="225" y="330" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">queue → app(msg, state)</text>
-<text x="225" y="346" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">effects → plugins, in order</text>
-<text x="225" y="362" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">state changed → onState(all)</text>
-<text x="225" y="390" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the only code that calls the app</text>
+<rect data-node="core" x="85" y="282" width="280" height="248" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="225" y="316" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">core — createApp()</text>
+<text x="225" y="356" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">queue → app(msg, state)</text>
+<text x="225" y="392" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">effects → plugins, in order</text>
+<text x="225" y="428" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">state changed → onState(all)</text>
+<text x="225" y="498" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">the only code that calls the app</text>
 <line x1="185" y1="278" x2="185" y2="218" stroke="#2563eb" stroke-width="1.6"/>
 <polygon points="185,218 181,227 189,227" fill="#2563eb"/>
 <text x="175" y="252" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="end" font-style="italic" xml:space="preserve">app(msg, state)</text>
@@ -43,35 +42,168 @@
 <text x="680" y="506" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">every message · every effect</text>
 <text x="680" y="522" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#667085" text-anchor="middle" xml:space="preserve">history with undo markers</text>
 <text x="680" y="540" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#98a2b3" text-anchor="middle" font-style="italic" xml:space="preserve">feeds the debug panel</text>
-<line x1="365" y1="319" x2="520" y2="319" stroke="#7c3aed" stroke-width="1.6"/>
-<polygon points="520,319 511,315 511,323" fill="#7c3aed"/>
-<text x="442" y="307" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">handle(effects)</text>
-<path d="M 520 441 L 430 441 L 430 394 L 365 394" fill="none" stroke="#2563eb" stroke-width="1.6"/>
-<line x1="430" y1="394" x2="365" y2="394" stroke="#2563eb" stroke-width="1.6"/>
-<polygon points="365,394 374,398 374,390" fill="#2563eb"/>
-<text x="442" y="461" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">dispatch(msg)</text>
-<line x1="1210" y1="92" x2="1210" y2="546" stroke="#667085" stroke-width="1.2" stroke-dasharray="4 3"/>
-<text x="1210" y="82" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#667085" text-anchor="middle" font-weight="600" xml:space="preserve">browser</text>
-<line x1="840" y1="136" x2="1200" y2="136" stroke="#d97706" stroke-width="1.4"/>
-<polygon points="1200,136 1191,132 1191,140" fill="#d97706"/>
-<text x="1020" y="124" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">build · apply(patches)</text>
-<line x1="840" y1="258" x2="1200" y2="258" stroke="#059669" stroke-width="1.4"/>
-<polygon points="1200,258 1191,254 1191,262" fill="#059669"/>
-<text x="1020" y="246" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">the store tab</text>
-<line x1="840" y1="378" x2="1200" y2="378" stroke="#0ea5e9" stroke-width="1.4"/>
-<polygon points="1200,378 1191,374 1191,382" fill="#0ea5e9"/>
-<text x="1020" y="366" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">fetch()</text>
-<line x1="840" y1="502" x2="1200" y2="502" stroke="#667085" stroke-width="1.4"/>
-<polygon points="1200,502 1191,498 1191,506" fill="#667085"/>
-<text x="1020" y="490" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">the pavlus tab</text>
-<line x1="70" y1="576" x2="94" y2="576" stroke="#2563eb" stroke-width="2"/>
-<text x="100" y="580" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">message (in)</text>
-<line x1="185" y1="576" x2="209" y2="576" stroke="#7c3aed" stroke-width="2"/>
-<text x="215" y="580" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">effect (out)</text>
-<line x1="300" y1="576" x2="324" y2="576" stroke="#059669" stroke-width="2"/>
-<text x="330" y="580" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">state change</text>
-<line x1="415" y1="576" x2="439" y2="576" stroke="#d97706" stroke-width="2"/>
-<text x="445" y="580" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">DOM work</text>
-<line x1="530" y1="576" x2="554" y2="576" stroke="#0ea5e9" stroke-width="2"/>
-<text x="560" y="580" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">network</text>
+<path d="M 365 296 L 445 296 L 445 136 L 520 136" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+<line x1="445" y1="136" x2="520" y2="136" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="520,136 511,132 511,140" fill="#7c3aed"/>
+<path d="M 365 322 L 475 322 L 475 258 L 520 258" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+<line x1="475" y1="258" x2="520" y2="258" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="520,258 511,254 511,262" fill="#7c3aed"/>
+<line x1="365" y1="378" x2="520" y2="378" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="520,378 511,374 511,382" fill="#7c3aed"/>
+<line x1="365" y1="502" x2="520" y2="502" stroke="#7c3aed" stroke-width="1.6"/>
+<polygon points="520,502 511,498 511,506" fill="#7c3aed"/>
+<text x="442" y="352" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">effect (out)</text>
+<path d="M 1000 556 L 340 556 L 340 530" fill="none" stroke="#2563eb" stroke-width="2.2"/>
+<line x1="340" y1="556" x2="340" y2="530" stroke="#2563eb" stroke-width="2.2"/>
+<polygon points="340,530 336,539 344,539" fill="#2563eb"/>
+<text x="670" y="576" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">dispatch</text>
+<line x1="840" y1="136" x2="997" y2="136" stroke="#d97706" stroke-width="1.4"/>
+<polygon points="997,136 988,132 988,140" fill="#d97706"/>
+<text x="918" y="124" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">DOM work</text>
+<line x1="840" y1="258" x2="997" y2="258" stroke="#059669" stroke-width="1.4"/>
+<polygon points="997,258 988,254 988,262" fill="#059669"/>
+<text x="918" y="246" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">state change</text>
+<line x1="840" y1="378" x2="997" y2="378" stroke="#0ea5e9" stroke-width="1.4"/>
+<polygon points="997,378 988,374 988,382" fill="#0ea5e9"/>
+<text x="918" y="366" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">network</text>
+<line x1="840" y1="502" x2="997" y2="502" stroke="#667085" stroke-width="1.4"/>
+<polygon points="997,502 988,498 988,506" fill="#667085"/>
+<text x="918" y="490" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">devtools log</text>
+<rect data-node="browser" x="1000" y="56" width="500" height="504" rx="12" fill="#ffffff" stroke="#d4d9e0"/>
+<rect x="1000" y="56" width="500" height="34" rx="12" fill="#eef1f6"/>
+<rect x="1000" y="80" width="500" height="10" fill="#eef1f6"/>
+<line x1="1000" y1="90" x2="1500" y2="90" stroke="#d4d9e0" stroke-width="1"/>
+<circle cx="1020" cy="73" r="4.5" fill="#f2b0b0"/>
+<circle cx="1036" cy="73" r="4.5" fill="#f5d78a"/>
+<circle cx="1052" cy="73" r="4.5" fill="#b8e0b0"/>
+<rect x="1078" y="62" width="396" height="22" rx="11" fill="#ffffff" stroke="#d4d9e0" id="tb-url-pill"/>
+<text x="1090" y="78" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" id="tb-url" xml:space="preserve">localhost:3000/</text>
+<text x="1016" y="108" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1f2430" font-weight="600" xml:space="preserve">admin</text>
+<text x="1068" y="108" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1d4ed8" font-weight="600" data-nav="overview" xml:space="preserve">overview</text>
+<text x="1146" y="108" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" data-nav="users" xml:space="preserve">users</text>
+<line x1="1000" y1="114" x2="1500" y2="114" stroke="#d4d9e0" stroke-width="1"/>
+<g data-view="home">
+<rect x="1016" y="200" width="130" height="64" rx="8" fill="#fbfcfe" stroke="#d4d9e0"/>
+<text x="1081" y="232" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">8</text>
+<text x="1081" y="252" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" text-anchor="middle" xml:space="preserve">users</text>
+<rect x="1187" y="200" width="130" height="64" rx="8" fill="#fbfcfe" stroke="#d4d9e0"/>
+<text x="1252" y="232" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">10</text>
+<text x="1252" y="252" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" text-anchor="middle" xml:space="preserve">products</text>
+<rect x="1358" y="200" width="130" height="64" rx="8" fill="#fbfcfe" stroke="#d4d9e0"/>
+<text x="1423" y="232" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">10</text>
+<text x="1423" y="252" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" text-anchor="middle" xml:space="preserve">payments</text>
+</g>
+<g data-view="users-loading" display="none">
+<text x="1016" y="146" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" font-weight="600" xml:space="preserve">Users</text>
+<rect x="1012" y="170" width="476" height="14" rx="7" fill="#e8edf4"/>
+<rect x="1012" y="200" width="400" height="14" rx="7" fill="#e8edf4"/>
+<rect x="1012" y="230" width="300" height="14" rx="7" fill="#e8edf4"/>
+</g>
+<g data-view="users" display="none">
+<text x="1016" y="146" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" font-weight="600" xml:space="preserve">Users</text>
+<rect x="1012" y="160" width="476" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0" stroke-width="1"/>
+<text x="1026" y="187" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#98a2b3" xml:space="preserve">1</text>
+<text x="1052" y="187" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1f2430" xml:space="preserve">Ada L.</text>
+<rect x="1340" y="173" width="44" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1362" y="185.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#2563eb" text-anchor="middle" font-weight="600" xml:space="preserve">edit</text>
+<rect x="1392" y="173" width="58" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1421" y="185.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#dc2626" text-anchor="middle" font-weight="600" xml:space="preserve">remove</text>
+<rect x="1012" y="220" width="476" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0" stroke-width="1"/>
+<text x="1026" y="247" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#98a2b3" xml:space="preserve">2</text>
+<text x="1052" y="247" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1f2430" xml:space="preserve">Grace H.</text>
+<rect x="1340" y="233" width="44" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1362" y="245.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#2563eb" text-anchor="middle" font-weight="600" xml:space="preserve">edit</text>
+<rect x="1392" y="233" width="58" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1421" y="245.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#dc2626" text-anchor="middle" font-weight="600" xml:space="preserve">remove</text>
+<rect x="1012" y="280" width="476" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0" stroke-width="1"/>
+<text x="1026" y="307" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#98a2b3" xml:space="preserve">3</text>
+<text x="1052" y="307" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1f2430" xml:space="preserve">Alan T.</text>
+<rect x="1340" y="293" width="44" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1362" y="305.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#2563eb" text-anchor="middle" font-weight="600" xml:space="preserve">edit</text>
+<rect x="1392" y="293" width="58" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1421" y="305.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#dc2626" text-anchor="middle" font-weight="600" xml:space="preserve">remove</text>
+</g>
+<g data-view="users-edit" display="none">
+<text x="1016" y="146" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" font-weight="600" xml:space="preserve">Users</text>
+<rect x="1012" y="160" width="476" height="44" rx="8" fill="#ffffff" stroke="#6366f1" stroke-width="1.5"/>
+<text x="1026" y="187" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#98a2b3" xml:space="preserve">1</text>
+<text x="1052" y="187" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" xml:space="preserve">Ada L.</text>
+<rect x="1390" y="173" width="50" height="18" rx="9" fill="#4f46e5" stroke="#4f46e5"/>
+<text x="1415" y="185.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#ffffff" text-anchor="middle" font-weight="600" xml:space="preserve">save</text>
+<rect x="1012" y="220" width="476" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0" stroke-width="1"/>
+<text x="1026" y="247" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#98a2b3" xml:space="preserve">2</text>
+<text x="1052" y="247" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1f2430" xml:space="preserve">Grace H.</text>
+<rect x="1340" y="233" width="44" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1362" y="245.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#2563eb" text-anchor="middle" font-weight="600" xml:space="preserve">edit</text>
+<rect x="1392" y="233" width="58" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1421" y="245.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#dc2626" text-anchor="middle" font-weight="600" xml:space="preserve">remove</text>
+<rect x="1012" y="280" width="476" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0" stroke-width="1"/>
+<text x="1026" y="307" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#98a2b3" xml:space="preserve">3</text>
+<text x="1052" y="307" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1f2430" xml:space="preserve">Alan T.</text>
+<rect x="1340" y="293" width="44" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1362" y="305.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#2563eb" text-anchor="middle" font-weight="600" xml:space="preserve">edit</text>
+<rect x="1392" y="293" width="58" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1421" y="305.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#dc2626" text-anchor="middle" font-weight="600" xml:space="preserve">remove</text>
+</g>
+<g data-view="users-edited" display="none">
+<text x="1016" y="146" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" font-weight="600" xml:space="preserve">Users</text>
+<rect x="1012" y="160" width="476" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0" stroke-width="1"/>
+<text x="1026" y="187" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#98a2b3" xml:space="preserve">1</text>
+<text x="1052" y="187" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1f2430" xml:space="preserve">Ada Lovelace</text>
+<rect x="1340" y="173" width="44" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1362" y="185.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#2563eb" text-anchor="middle" font-weight="600" xml:space="preserve">edit</text>
+<rect x="1392" y="173" width="58" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1421" y="185.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#dc2626" text-anchor="middle" font-weight="600" xml:space="preserve">remove</text>
+<rect x="1012" y="220" width="476" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0" stroke-width="1"/>
+<text x="1026" y="247" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#98a2b3" xml:space="preserve">2</text>
+<text x="1052" y="247" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1f2430" xml:space="preserve">Grace H.</text>
+<rect x="1340" y="233" width="44" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1362" y="245.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#2563eb" text-anchor="middle" font-weight="600" xml:space="preserve">edit</text>
+<rect x="1392" y="233" width="58" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1421" y="245.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#dc2626" text-anchor="middle" font-weight="600" xml:space="preserve">remove</text>
+<rect x="1012" y="280" width="476" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0" stroke-width="1"/>
+<text x="1026" y="307" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#98a2b3" xml:space="preserve">3</text>
+<text x="1052" y="307" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1f2430" xml:space="preserve">Alan T.</text>
+<rect x="1340" y="293" width="44" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1362" y="305.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#2563eb" text-anchor="middle" font-weight="600" xml:space="preserve">edit</text>
+<rect x="1392" y="293" width="58" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1421" y="305.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#dc2626" text-anchor="middle" font-weight="600" xml:space="preserve">remove</text>
+</g>
+<g data-view="users-after" display="none">
+<text x="1016" y="146" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1f2430" font-weight="600" xml:space="preserve">Users</text>
+<rect x="1012" y="160" width="476" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0" stroke-width="1"/>
+<text x="1026" y="187" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#98a2b3" xml:space="preserve">1</text>
+<text x="1052" y="187" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1f2430" xml:space="preserve">Ada Lovelace</text>
+<rect x="1340" y="173" width="44" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1362" y="185.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#2563eb" text-anchor="middle" font-weight="600" xml:space="preserve">edit</text>
+<rect x="1392" y="173" width="58" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1421" y="185.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#dc2626" text-anchor="middle" font-weight="600" xml:space="preserve">remove</text>
+<rect x="1012" y="220" width="476" height="44" rx="8" fill="#ffffff" stroke="#d4d9e0" stroke-width="1"/>
+<text x="1026" y="247" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#98a2b3" xml:space="preserve">2</text>
+<text x="1052" y="247" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#1f2430" xml:space="preserve">Grace H.</text>
+<rect x="1340" y="233" width="44" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1362" y="245.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#2563eb" text-anchor="middle" font-weight="600" xml:space="preserve">edit</text>
+<rect x="1392" y="233" width="58" height="18" rx="9" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="1421" y="245.5" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9" fill="#dc2626" text-anchor="middle" font-weight="600" xml:space="preserve">remove</text>
+</g>
+<rect x="1000" y="430" width="500" height="130" rx="8" fill="#0b1220"/>
+<text x="1016" y="448" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">store</text>
+<rect x="1012" y="454" width="34" height="2" rx="8" fill="#6366f1"/>
+<text x="1488" y="448" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#64748b" text-anchor="end" id="tb-step" xml:space="preserve">1/15</text>
+<line x1="1000" y1="456" x2="1500" y2="456" stroke="#1e293b" stroke-width="1"/>
+<text x="1016" y="472" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#64748b" id="tb-tl-info" xml:space="preserve">state #1 — init — overview (SSR)</text>
+<rect x="1012" y="480" width="54" height="15" rx="4" fill="#1e293b" id="tb-chip-box"/>
+<text x="1039" y="491" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="8.5" fill="#cbd5e1" text-anchor="middle" font-weight="600" id="tb-chip" xml:space="preserve">ssr</text>
+<text x="1076" y="491" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="9.5" fill="#cbd5e1" id="tb-dbg" xml:space="preserve">render(state) ran on the server</text>
+<line x1="1000" y1="504" x2="1500" y2="504" stroke="#1e293b" stroke-width="1"/>
+<g id="fv-dots-g"></g>
+<line x1="1215" y1="563" x2="1215" y2="593" stroke="#0ea5e9" stroke-width="1.6"/>
+<polygon points="1215,593 1219,584 1211,584" fill="#0ea5e9"/>
+<line x1="1285" y1="593" x2="1285" y2="563" stroke="#0ea5e9" stroke-width="1.6"/>
+<polygon points="1285,563 1281,572 1289,572" fill="#0ea5e9"/>
+<rect data-node="server" x="1000" y="596" width="500" height="56" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
+<circle id="fv-led" cx="1024" cy="624" r="5" fill="#cbd5e1"/>
+<text x="1044" y="621" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#1f2430" font-weight="600" xml:space="preserve">server</text>
+<text x="1044" y="637" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10" fill="#667085" xml:space="preserve">API · Postgres — the outside world</text>
+<text x="1250" y="672" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="middle" font-style="italic" xml:space="preserve">only the browser talks to the server</text>
 <style>rect[data-node]{transition:stroke-width .25s ease}rect[data-node].lit{stroke-width:3.4;filter:drop-shadow(0 0 5px rgba(79,70,229,0.35))}</style><circle id="fv-packet" r="7" fill="#2563eb" stroke="#ffffff" stroke-width="2" opacity="0"/></svg>

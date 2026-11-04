@@ -8,6 +8,7 @@ import {
   type ComponentCtx,
   type ComponentFn,
   namespace,
+  setComponentTrace,
   toHandler,
 } from "./mod.ts";
 
@@ -308,6 +309,50 @@ describe("children", () => {
       expect(namespace("c", child)({ id: "c.x" }, {})).toEqual([
         { plugin: "p", type: "t", replyTo: "c.r" },
       ]);
+    }
+  });
+
+  test("the trace reports receive and emit per component path", () => {
+    const events: string[] = [];
+    setComponentTrace({
+      receive: (path, m) => events.push(`receive ${path || "(root)"} ${m.id}`),
+      emit: (path, m, e) =>
+        events.push(`emit ${path || "(root)"} ${m.id} ${e.length}`),
+    });
+    try {
+      class Row extends Component {
+        remove() {
+          return [{ plugin: "http", type: "request", onSuccess: "removed" }];
+        }
+      }
+      class List extends Component {
+        children: Children = { row: { component: new Row() } };
+        "row.removed"() {
+          return [set("done", true)];
+        }
+      }
+      class Top extends Component {
+        children: Children = { users: { component: new List() } };
+      }
+      expect(toHandler(new Top())({ id: "users.row.remove" }, {})).toHaveLength(
+        1,
+      );
+      // root receives the full id; users receives the stripped one; the leaf
+      // handles it; emit fires bottom-up with the boundary's output
+      expect(events).toEqual([
+        "receive (root) users.row.remove",
+        "receive users row.remove",
+        "receive users.row remove",
+        "emit users.row remove 1",
+        "emit users row.remove 1",
+        "emit (root) users.row.remove 1",
+      ]);
+      // a message nobody handles still reports the receive chain
+      events.length = 0;
+      expect(toHandler(new Top())({ id: "nope" }, {})).toEqual([]);
+      expect(events).toEqual(["receive (root) nope", "emit (root) nope 0"]);
+    } finally {
+      setComponentTrace(null);
     }
   });
 });

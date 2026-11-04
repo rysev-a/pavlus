@@ -43,6 +43,10 @@ export interface TextOpts {
   bold?: boolean;
   italic?: boolean;
   opacity?: number;
+  /** Emitted as id="…" — for elements the walkthrough script talks to. */
+  id?: string;
+  /** Extra raw attributes, e.g. data-nav="overview". */
+  attrs?: string;
 }
 
 /**
@@ -79,6 +83,10 @@ export interface BoxOpts {
   rx?: number;
   dash?: string;
   sw?: number;
+  /** Emitted as id="…" — for elements the walkthrough script talks to. */
+  id?: string;
+  /** Extra raw attributes, e.g. pointer-events="none". */
+  attrs?: string;
 }
 
 export class Svg {
@@ -107,6 +115,8 @@ export class Svg {
       o.stroke ? `stroke="${o.stroke}"` : "",
       o.sw ? `stroke-width="${o.sw}"` : "",
       o.dash ? `stroke-dasharray="${o.dash}"` : "",
+      o.id ? `id="${o.id}"` : "",
+      o.attrs ?? "",
     ]
       .filter(Boolean)
       .join(" ");
@@ -144,6 +154,8 @@ export class Svg {
       o.bold ? `font-weight="600"` : "",
       o.italic ? `font-style="italic"` : "",
       o.opacity !== undefined ? `opacity="${o.opacity}"` : "",
+      o.id ? `id="${o.id}"` : "",
+      o.attrs ?? "",
       `xml:space="preserve"`,
     ]
       .filter(Boolean)

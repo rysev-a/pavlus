@@ -32,6 +32,9 @@ export interface DocsInput {
   examples: { c: Compiled; svg: string }[];
   /** The static pure-concept diagram — it stays on the docs page. */
   pureConcept: string;
+  /** The interactive flow walkthrough — the same one as on the start page. */
+  flowSvg: string;
+  flowSteps: FlowStep[];
   counter: {
     svg: string;
     patches: DemoPatchGroup;
@@ -246,88 +249,16 @@ footer.site { margin: 64px 0 0; border-top: 1px solid var(--border); padding: 26
 .fv-btn { font: 12.5px -apple-system, 'Segoe UI', sans-serif; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); color: var(--ink); cursor: pointer; }
 .fv-btn:hover { border-color: var(--accent); }
 .fv-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.fv-dots { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
-.fv-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--border); background: #e2e6ee; cursor: pointer; padding: 0; }
-.fv-dot.on { background: var(--accent); border-color: var(--accent); }
 .fv-caption { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 10px 16px 14px; background: var(--panel); border-top: 1px solid var(--border); font-size: 13.5px; color: var(--muted); min-height: 92px; }
 .fv-counter { font-weight: 700; color: var(--ink); font-size: 12px; white-space: nowrap; }
 .fv-label { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--accent); }
-/* hero stage: diagram + toy browser, synced */
-.stage { position: relative; display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 20px; align-items: stretch; margin: 26px 0 0; }
-@media (max-width: 1080px) { .stage { grid-template-columns: 1fr; } }
-.fv-dots { gap: 4px; }
-.fv-dot { width: 8px; height: 8px; }
-.fv-dot.fv-gap { margin-left: 11px; }
+/* hero flowviz: one svg — the toy browser and the server are drawn into it */
 .fv-phase { font-size: 11px; font-weight: 700; color: var(--accent); background: #eef2ff; border: 1px solid #dfe3ff; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
-.tb { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); box-shadow: 0 10px 30px rgba(31,36,48,0.08); overflow: hidden; }
-.tb-chrome { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: #eef1f6; border-bottom: 1px solid var(--border); }
-.tb-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
-.tb-dot.r { background: #ff5f57; }
-.tb-dot.y { background: #febc2e; }
-.tb-dot.g { background: #28c840; }
-.tb-url { flex: 1; margin-left: 8px; font: 11.5px/1.2 ui-monospace, Menlo, monospace; color: var(--muted); background: #fff; border: 1px solid var(--border); border-radius: 7px; padding: 5px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#fv-fly { position: absolute; width: 13px; height: 13px; border-radius: 50%; background: var(--accent); border: 2px solid #fff; box-shadow: 0 0 0 3px rgba(79,70,229,.16), 0 2px 10px rgba(31,36,48,.28); pointer-events: none; opacity: 0; z-index: 30; transform: translate(-50%,-50%); }
-@keyframes tbfx { 0%,100% { border-color: var(--border); box-shadow: none; } 50% { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,.2); } }
-.tb-url.fx { animation: tbfx .45s ease-in-out 2; }
-.tb-col { display: flex; flex-direction: column; min-width: 0; }
-.tb-col .tb { flex: 1; }
-.srv-link { align-self: center; width: 0; height: 18px; border-left: 2px dashed #94a3b8; }
-.srv { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--panel); border: 1.5px solid var(--border); border-radius: 12px; box-shadow: 0 6px 20px rgba(31,36,48,0.07); transition: border-color .25s ease, box-shadow .25s ease; }
-.srv-led { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; transition: background .2s; }
-#fv-srv.on .srv-led { background: #16a34a; animation: fvled .45s ease-in-out 3; }
-#fv-srv.on { border-color: #16a34a; }
-#fv-srv.lit { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,.16), 0 6px 20px rgba(31,36,48,0.07); }
-.srv-txt { display: flex; flex-direction: column; line-height: 1.3; }
-.srv-txt b { font-size: 13px; }
-.srv-txt span { font: 10.5px/1.3 ui-monospace, Menlo, monospace; color: var(--muted); }
-.srv-cap { margin: 8px 0 0; text-align: center; font-size: 10.5px; font-style: italic; color: var(--faint); }
-@keyframes fvled { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
-.tb-body { flex: 1; padding: 12px 14px 14px; min-height: 250px; }
-.tb-nav { display: flex; gap: 12px; align-items: baseline; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 10px; }
-.tb-nav b { color: var(--ink); font-size: 12.5px; margin-right: 4px; }
-.tb-nav span.on { color: var(--accent); font-weight: 700; }
-.tb-view h4 { margin: 2px 0 8px; font-size: 13px; }
-.tb-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.tb-card { border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; display: flex; flex-direction: column; }
-.tb-card b { font-size: 16px; }
-.tb-card span { font-size: 10.5px; color: var(--muted); }
-.tb-sk { height: 14px; border-radius: 6px; background: linear-gradient(90deg, #e9edf3, #f6f8fb, #e9edf3); background-size: 200% 100%; animation: tbsk 1.2s linear infinite; margin: 9px 0; }
-@keyframes tbsk { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-.tb-row { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 8px; padding: 6px 9px; margin: 6px 0; font-size: 12px; }
-.tb-row .tb-id { color: var(--faint); font: 11px ui-monospace, Menlo, monospace; }
-.tb-row .tb-sp { flex: 1; }
-.tb-btn { font-style: normal; font-size: 10.5px; font-weight: 700; color: var(--accent); border: 1px solid var(--border); border-radius: 6px; padding: 2px 7px; background: #fff; flex: none; }
-.tb-btn.danger { color: #dc2626; }
-.tb-btn.primary { color: #fff; background: var(--accent); border-color: var(--accent); }
-.tb-in { flex: 1; font: 12px ui-monospace, Menlo, monospace; border: 1px solid var(--accent); border-radius: 6px; padding: 3px 8px; min-width: 60px; }
-.tb-dev { border-top: 1px solid var(--border); background: var(--code-bg); color: var(--code-text); font: 11px/1.45 ui-monospace, Menlo, Consolas, monospace; }
-.tb-tabs { display: flex; align-items: center; gap: 2px; padding: 3px 8px 0; background: #0b1220; border-bottom: 1px solid #1e293b; }
-.tb-tab { font: 11px ui-monospace, Menlo, monospace; color: #7c8aa0; background: none; border: none; border-bottom: 2px solid transparent; padding: 4px 10px 5px; cursor: pointer; }
-.tb-tab.on { color: #e2e8f0; border-bottom-color: var(--accent); }
-.tb-spring { flex: 1; }
-.tb-step { color: #64748b; padding-right: 6px; }
-.tb-line { display: flex; align-items: center; gap: 8px; padding: 6px 12px; }
-.tb-dbg { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tb-pane { display: none; height: 96px; overflow: auto; padding: 4px 12px 8px; }
-.tb-pane.on { display: block; }
-.tb-ev { display: flex; gap: 7px; padding: 1px 0; color: #94a3b8; white-space: nowrap; }
-.tb-ev.new { color: #e2e8f0; }
-.tb-ev .tb-ln { color: #475569; }
-.tb-cm { display: flex; gap: 7px; padding: 1px 0; color: #94a3b8; white-space: nowrap; }
-.tb-cm.cur { color: #e2e8f0; }
-.tb-cm .tb-n { color: #6ee7b7; }
-.tb-tl { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; padding: 7px 2px 3px; }
-.tb-tick { width: 7px; height: 7px; border-radius: 50%; border: 1px solid #334155; background: transparent; padding: 0; cursor: pointer; flex: none; }
-.tb-tick.c { background: #16a34a; border-color: #16a34a; }
-.tb-tick.cur { box-shadow: 0 0 0 2px var(--code-bg), 0 0 0 3.5px var(--accent); }
-.tb-tl-cap { color: #64748b; padding: 3px 2px 6px; }
-.tb-chip { font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 5px; padding: 2px 6px; background: #1e293b; flex: none; }
-.tb-chip.t-msg { color: #93c5fd; }
-.tb-chip.t-fx { color: #c4b5fd; }
-.tb-chip.t-net { color: #67e8f9; }
-.tb-chip.t-state { color: #6ee7b7; }
-.tb-chip.t-dom { color: #fcd34d; }
-.tb-chip.t-app, .tb-chip.t-ssr { color: #cbd5e1; }
+/* the server inside the svg flashes green while the browser talks to it */
+rect[data-node="server"].on { stroke: #16a34a; }
+/* the step dots live inside the svg's devtools — clickable svg circles */
+#fv-dots-g circle { cursor: pointer; }
+#fv-dots-g circle.on { fill: #6366f1; stroke: #6366f1; }
 </style>
 </head>
 <body>
@@ -399,6 +330,7 @@ const FLOWVIZ_SCRIPT = `<script>
   var svg = document.getElementById("flowviz-svg");
   var packet = document.getElementById("fv-packet");
   if (!svg || !packet) return;
+  var NS = "http://www.w3.org/2000/svg";
   var nodes = {};
   svg.querySelectorAll("rect[data-node]").forEach(function (r) {
     nodes[r.getAttribute("data-node")] = r;
@@ -407,129 +339,83 @@ const FLOWVIZ_SCRIPT = `<script>
   var label = document.querySelector(".fv-label");
   var text = document.querySelector(".fv-text");
   var phaseEl = document.querySelector(".fv-phase");
-  var dotsBox = document.querySelector(".fv-dots");
   var playBtn = document.getElementById("fv-play");
   var prevBtn = document.getElementById("fv-prev");
   var nextBtn = document.getElementById("fv-next");
-  var tbUrl = document.getElementById("tb-url");
-  var tbView = document.getElementById("tb-view");
-  var tbChip = document.getElementById("tb-chip");
-  var tbDbg = document.getElementById("tb-dbg");
-  var tbStep = document.getElementById("tb-step");
-  var tbNav = document.querySelectorAll(".tb-nav span[data-nav]");
-  var tbLog = document.getElementById("tb-log");
-  var tbCommits = document.getElementById("tb-commits");
-  var tbTl = document.getElementById("tb-tl");
-  var tbTlInfo = document.getElementById("tb-tl-info");
-  var srv = document.getElementById("fv-srv");
-  var fly = document.getElementById("fv-fly");
-  var stageBox = fly ? fly.parentNode : null;
-  var tabs = document.querySelectorAll(".tb-tab");
-  var panes = document.querySelectorAll(".tb-pane");
-  var srvT = null;
 
-  function ROW(id, name) {
-    return '<div class="tb-row"><span class="tb-id">' + id + '</span><b>' + name +
-      '</b><span class="tb-sp"></span><i class="tb-btn">edit</i><i class="tb-btn danger">remove</i></div>';
-  }
-  function ROWEDIT(id, name) {
-    return '<div class="tb-row"><span class="tb-id">' + id + '</span>' +
-      '<input class="tb-in" value="' + name + '"><i class="tb-btn primary">save</i></div>';
-  }
-  function ROWS(rows) { return '<h4>Users</h4>' + rows.join(""); }
+  // the toy browser is drawn inside the svg — these are its live parts
+  var urlTxt = document.getElementById("tb-url");
+  var urlPill = document.getElementById("tb-url-pill");
+  var stepTxt = document.getElementById("tb-step");
+  var chipTxt = document.getElementById("tb-chip");
+  var dbgTxt = document.getElementById("tb-dbg");
+  var infoTxt = document.getElementById("tb-tl-info");
+  var led = document.getElementById("fv-led");
+  var dotsG = document.getElementById("fv-dots-g");
+  var navEls = svg.querySelectorAll("text[data-nav]");
+  var viewEls = svg.querySelectorAll("g[data-view]");
+  var srvT = null, urlT = null;
 
-  var VIEWS = {
-    home: '<h4>Overview</h4><div class="tb-cards"><div class="tb-card"><b>8</b><span>users</span></div><div class="tb-card"><b>10</b><span>products</span></div><div class="tb-card"><b>10</b><span>payments</span></div></div>',
-    "users-loading": '<h4>Users</h4><div class="tb-sk"></div><div class="tb-sk"></div><div class="tb-sk"></div>',
-    users: ROWS([ROW(1, "Ada L."), ROW(2, "Grace H."), ROW(3, "Alan T.")]),
-    "users-edit": ROWS([ROWEDIT(1, "Ada L."), ROW(2, "Grace H."), ROW(3, "Alan T.")]),
-    "users-edited": ROWS([ROW(1, "Ada Lovelace"), ROW(2, "Grace H."), ROW(3, "Alan T.")]),
-    "users-after": ROWS([ROW(1, "Ada Lovelace"), ROW(2, "Grace H.")])
+  var CHIP = {
+    msg: "#93c5fd", fx: "#c4b5fd", net: "#67e8f9",
+    state: "#6ee7b7", dom: "#fcd34d", app: "#cbd5e1", ssr: "#cbd5e1",
   };
 
-  var cur = { url: "/", view: "home" };
+  function mk(name, attrs, parent) {
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
 
-  // micro timeline: one circle per step, green where the store commits
-  var ticks = [];
-  STEPS.forEach(function (s, k) {
-    var c = s.browser && s.browser.store;
-    var t = document.createElement("button");
-    t.className = "tb-tick" + (c ? " c" : "");
-    t.title = "step " + (k + 1) + (c ? " — " + c : "");
-    t.addEventListener("click", function () { stop(); go(k); });
-    tbTl.appendChild(t);
-    ticks.push(t);
-  });
-
-  // devtools tabs, chrome-style
-  tabs.forEach(function (b) {
-    b.addEventListener("click", function () {
-      tabs.forEach(function (x) { x.classList.remove("on"); });
-      panes.forEach(function (p) {
-        p.classList.toggle("on", p.getAttribute("data-pane") === b.getAttribute("data-tab"));
-      });
-      b.classList.add("on");
+  // the step dots inside the devtools: one circle per step, a wider gap
+  // between phases, green where the store commits — click any dot to jump
+  var dots = [];
+  if (dotsG) {
+    var dx = 1032;
+    STEPS.forEach(function (s, k) {
+      if (k > 0 && s.phase !== STEPS[k - 1].phase) dx += 12;
+      var commit = s.browser && s.browser.store;
+      var c = mk("circle", {
+        cx: dx, cy: 532, r: 5.5,
+        fill: commit ? "#16a34a" : "#0b1220",
+        stroke: commit ? "#16a34a" : "#334155", "stroke-width": 1.5,
+      }, dotsG);
+      var t = mk("title", {}, c);
+      t.textContent = s.phase + " — " + s.label;
+      c.addEventListener("click", function () { stop(); go(k); });
+      dots.push(c);
+      dx += 23;
     });
-  });
-
-  // rebuild both panes from steps 0..i — deterministic on any jump
-  function renderDev() {
-    var n = 0, rows = "", last = "—";
-    for (var k = 0; k <= i; k++) {
-      var b = STEPS[k].browser;
-      if (b && b.store) {
-        n++;
-        last = b.store;
-        rows += '<div class="tb-cm"><span class="tb-n">#' + n + "</span><span>" + b.store + "</span></div>";
-      }
-    }
-    tbCommits.innerHTML = rows || '<div class="tb-cm"><span class="tb-n">—</span><span>no changes yet</span></div>';
-    var log = "";
-    for (var k = Math.max(0, i - 8); k <= i; k++) {
-      var d = STEPS[k].browser && STEPS[k].browser.dbg;
-      if (d) {
-        var nn = (k + 1 < 10 ? "0" : "") + (k + 1);
-        log += '<div class="tb-ev' + (k === i ? " new" : "") + '"><span class="tb-ln">' + nn + '</span><span class="tb-chip t-' + d.t + '">' + d.t + "</span><span>" + d.m + "</span></div>";
-      }
-    }
-    tbLog.innerHTML = log;
-    tbLog.scrollTop = tbLog.scrollHeight;
-    ticks.forEach(function (t) { t.classList.remove("cur"); });
-    ticks[i].classList.add("cur");
-    tbTlInfo.textContent = "state #" + n + " — " + last;
   }
 
   function applyBrowser(f) {
     if (!f) return;
-    if (f.url) {
-      cur.url = f.url;
-      tbUrl.textContent = "localhost:3000" + cur.url;
+    if (f.url && urlTxt) {
+      urlTxt.textContent = "localhost:3000" + f.url;
+      pulseUrl();
     }
-    if (f.view && VIEWS[f.view]) {
-      cur.view = f.view;
-      tbView.innerHTML = VIEWS[f.view];
-      var sec = cur.view === "home" ? "overview" : "users";
-      tbNav.forEach(function (n) {
-        n.className = n.getAttribute("data-nav") === sec ? "on" : "";
+    if (f.view) {
+      viewEls.forEach(function (g) {
+        g.setAttribute("display", g.getAttribute("data-view") === f.view ? "inline" : "none");
+      });
+      var sec = f.view === "home" ? "overview" : "users";
+      navEls.forEach(function (n) {
+        var on = n.getAttribute("data-nav") === sec;
+        n.setAttribute("fill", on ? "#1d4ed8" : "#667085");
+        n.setAttribute("font-weight", on ? "700" : "400");
       });
     }
     if (f.dbg) {
-      tbChip.textContent = f.dbg.t;
-      tbChip.className = "tb-chip t-" + f.dbg.t;
-      tbDbg.textContent = f.dbg.m;
+      if (chipTxt) {
+        chipTxt.textContent = f.dbg.t;
+        chipTxt.setAttribute("fill", CHIP[f.dbg.t] || "#cbd5e1");
+      }
+      if (dbgTxt) dbgTxt.textContent = f.dbg.m;
     }
   }
 
-  var dots = [];
-  STEPS.forEach(function (s, k) {
-    var d = document.createElement("button");
-    d.className = "fv-dot" + (k > 0 && s.phase !== STEPS[k - 1].phase ? " fv-gap" : "");
-    d.title = s.phase + " — " + s.label;
-    d.addEventListener("click", function () { stop(); go(k); });
-    dotsBox.appendChild(d);
-    dots.push(d);
-  });
-  var i = -1, playing = false, timer = null, raf = null, flyRaf = null, urlFxT = null;
+  var i = -1, playing = false, timer = null, raf = null;
 
   function segPoint(pts, t) {
     var segs = [], total = 0, k;
@@ -555,86 +441,97 @@ const FLOWVIZ_SCRIPT = `<script>
       if (nodes[k]) nodes[k].classList.toggle("lit", ids.indexOf(k) >= 0);
   }
 
-  // a fly-leg target: an SVG point, or an HTML anchor ("url" = toy URL bar, "srv" = server box)
-  function anchorPt(a) {
-    var st = stageBox.getBoundingClientRect();
-    var r;
-    if (a.e === "url" && tbUrl) r = tbUrl.getBoundingClientRect();
-    else if (a.e === "srv" && srv) r = srv.getBoundingClientRect();
-    else {
-      var vr = svg.viewBox.baseVal, sr = svg.getBoundingClientRect();
-      return [sr.left - st.left + (a.p[0] / vr.width) * sr.width,
-              sr.top - st.top + (a.p[1] / vr.height) * sr.height];
-    }
-    return [r.left - st.left + r.width / 2, r.top - st.top + r.height / 2];
-  }
   function pulseUrl() {
-    tbUrl.classList.remove("fx");
-    void tbUrl.offsetWidth;
-    tbUrl.classList.add("fx");
-    clearTimeout(urlFxT);
-    urlFxT = setTimeout(function () { tbUrl.classList.remove("fx"); }, 950);
+    if (!urlPill) return;
+    urlPill.setAttribute("stroke", "#4f46e5");
+    if (urlTxt) urlTxt.setAttribute("fill", "#1d4ed8");
+    clearTimeout(urlT);
+    urlT = setTimeout(function () {
+      urlPill.setAttribute("stroke", "#d4d9e0");
+      if (urlTxt) urlTxt.setAttribute("fill", "#1f2430");
+    }, 950);
   }
 
   function go(n, instant) {
     if (raf) cancelAnimationFrame(raf);
-    if (flyRaf) cancelAnimationFrame(flyRaf);
-    flyRaf = null;
     i = ((n % STEPS.length) + STEPS.length) % STEPS.length;
     var s = STEPS[i];
-    if (srv) {
-      if (s.flash) {
-        srv.classList.add("on");
-        clearTimeout(srvT);
-        srvT = setTimeout(function () { srv.classList.remove("on"); }, 1300);
-      } else {
-        srv.classList.remove("on");
-        clearTimeout(srvT);
-      }
+    var srv = nodes.server;
+    if (s.flash) {
+      if (led) led.setAttribute("fill", "#16a34a");
+      if (srv) srv.classList.add("on");
+      clearTimeout(srvT);
+      srvT = setTimeout(function () {
+        if (led) led.setAttribute("fill", "#cbd5e1");
+        if (srv) srv.classList.remove("on");
+      }, 1300);
+    } else {
+      if (led) led.setAttribute("fill", "#cbd5e1");
+      if (srv) srv.classList.remove("on");
+      clearTimeout(srvT);
     }
     lit([s.from, s.to]);
-    if (srv) srv.classList.toggle("lit", s.from === "server" || s.to === "server");
     packet.setAttribute("fill", s.color);
     counter.textContent = "step " + (i + 1) + " / " + STEPS.length;
     label.textContent = s.label;
     text.textContent = s.caption;
     if (phaseEl) phaseEl.textContent = s.phase;
     dots.forEach(function (d, k) { d.classList.toggle("on", k === i); });
-    if (tbStep) tbStep.textContent = (i + 1) + "/" + STEPS.length;
+    if (stepTxt) stepTxt.textContent = (i + 1) + "/" + STEPS.length;
+    // store tab: count the commits so far for the info line
+    var nc = 0, last = "—";
+    for (var k = 0; k <= i; k++) {
+      var b = STEPS[k].browser;
+      if (b && b.store) { nc++; last = b.store; }
+    }
+    if (infoTxt) infoTxt.textContent = "state #" + nc + " — " + last;
+
     var landed = false;
     function land() {
       if (landed) return;
       landed = true;
       applyBrowser(s.browser);
-      renderDev();
     }
-    if (s.fly && fly && stageBox) {
-      packet.setAttribute("opacity", "0");
+    if (s.fly) {
+      var pts = s.fly.map(function (f) { return f.p; });
       if (instant) {
-        var fin = anchorPt(s.fly[s.fly.length - 1]);
-        fly.style.left = fin[0] + "px";
-        fly.style.top = fin[1] + "px";
+        var fin = pts[pts.length - 1];
+        packet.setAttribute("cx", fin[0]);
+        packet.setAttribute("cy", fin[1]);
+        packet.setAttribute("opacity", "1");
         land();
         return;
       }
-      var leg = 0, lt0 = null, lfrom = null, LEG = 420;
+      var leg = 0, lt0 = null, LEG = 420;
+      // a waypoint flagged jump teleports the packet — the browser is a
+      // black box, no leg between its two edges is ever animated
+      function skipJumps() {
+        while (leg < pts.length - 1 && s.fly[leg + 1] && s.fly[leg + 1].jump) {
+          leg++;
+          packet.setAttribute("cx", pts[leg][0]);
+          packet.setAttribute("cy", pts[leg][1]);
+          packet.setAttribute("opacity", "1");
+        }
+      }
+      skipJumps();
+      if (leg >= pts.length - 1) { land(); return; }
       function flyFrame(ts) {
-        if (lt0 === null) { lt0 = ts; lfrom = anchorPt(s.fly[leg]); }
+        if (lt0 === null) lt0 = ts;
         var p = Math.min(1, (ts - lt0) / LEG);
         var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-        var to = anchorPt(s.fly[leg]);
-        fly.style.left = lfrom[0] + (to[0] - lfrom[0]) * e + "px";
-        fly.style.top = lfrom[1] + (to[1] - lfrom[1]) * e + "px";
-        fly.style.opacity = "1";
+        var a = pts[leg], b2 = pts[leg + 1];
+        packet.setAttribute("cx", a[0] + (b2[0] - a[0]) * e);
+        packet.setAttribute("cy", a[1] + (b2[1] - a[1]) * e);
+        packet.setAttribute("opacity", "1");
         if (p >= 1) {
-          if (s.fly[leg].e === "url") pulseUrl();
           leg++;
           lt0 = null;
-          if (leg >= s.fly.length) { fly.style.opacity = "0"; land(); return; }
+          skipJumps();
+          if (leg >= pts.length - 1) { land(); return; }
         }
-        flyRaf = requestAnimationFrame(flyFrame);
+        raf = requestAnimationFrame(flyFrame);
       }
-      flyRaf = requestAnimationFrame(flyFrame);
+      raf = requestAnimationFrame(flyFrame);
       return;
     }
     var t0 = null, DUR = instant ? 0 : 650;
@@ -671,6 +568,31 @@ const FLOWVIZ_SCRIPT = `<script>
   go(0, true);
 })();
 </script>`;
+
+/* ------------------------------------------------------------------ */
+/* the common flowviz — one svg: the diagram with the toy browser and   */
+/* the server drawn into it, the controls under it, the caption below   */
+/* ------------------------------------------------------------------ */
+
+function flowvizStage(flowSvg: string): string {
+  return `<div class="flowviz">
+      ${flowSvg}
+      <div class="fv-bar">
+        <button class="fv-btn" id="fv-prev">‹ prev</button>
+        <button class="fv-btn primary" id="fv-play">▶ play</button>
+        <button class="fv-btn" id="fv-next">next ›</button>
+        <span class="fv-phase"></span>
+      </div>
+      <div class="fv-caption"><span class="fv-counter"></span><code class="fv-label"></code><span class="fv-text"></span></div>
+    </div>`;
+}
+
+function flowvizScripts(flowStepsJson: string): string {
+  return (
+    `<script type="application/json" id="flow-steps">${flowStepsJson}</script>` +
+    FLOWVIZ_SCRIPT
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /* sample code for the "your own plugin" guide                         */
@@ -911,6 +833,10 @@ ${exampleSections}
 
   <h3>The whole system</h3>
   ${figure(input.pureConcept, "Messages flow in (blue), effects flow out (violet), state flows green, DOM work amber, network cyan. The application island never talks to the browser directly — ever.")}
+
+  <h3 id="core-live">The same system, alive</h3>
+  <p class="intro">The walkthrough below is the same diagram as a story: press play (or step through with prev / next — the controls live under the diagram) and watch one admin session — open the start page, load the users, edit one row, remove another. The toy browser is drawn into the diagram itself: it stays in sync with every step, its store devtools count every commit, and the dots inside them mark the steps — green where the store commits, click any dot to jump — and the server under it flashes green each time the browser — and only the browser — talks to it.</p>
+  ${flowvizStage(input.flowSvg)}
 
   <h3 id="core-source">The core, in full</h3>
   <p>This is the whole engine (from <code>framework/src/core/mod.ts</code>): a queue, one call to the app,
@@ -1157,6 +1083,11 @@ ${exampleSections}
 
 </div>`;
 
+  const flowStepsJson = JSON.stringify(input.flowSteps).replace(
+    /</g,
+    "\\u003c",
+  );
+
   return chrome({
     title: "Pavlus — documentation",
     description:
@@ -1165,7 +1096,8 @@ ${exampleSections}
     body,
     scripts:
       `<script type="application/json" id="steps-data">${dataJson}</script>` +
-      STEPS_SCRIPT,
+      STEPS_SCRIPT +
+      flowvizScripts(flowStepsJson),
   });
 }
 
@@ -1184,53 +1116,9 @@ export function renderStartPage(input: StartInput): string {
   <h1>The framework where your code is a pure function</h1>
   <p class="lead">pavlus applications are 100% pure functions: a handler takes a message and the state, and returns effects — plain data. Plugins do every dirty thing (DOM, HTTP, time, storage). Templates compile to two pure functions, <code>render(state)</code> and <code>diff(prev,&nbsp;next)</code> — one click becomes a handful of patches, not a re-render.</p>
 
-  <div class="stage">
-    <div id="fv-fly"></div>
-    <div class="flowviz">
-      ${input.flowSvg}
-      <div class="fv-bar">
-        <button class="fv-btn" id="fv-prev">‹ prev</button>
-        <button class="fv-btn primary" id="fv-play">▶ play</button>
-        <button class="fv-btn" id="fv-next">next ›</button>
-        <span class="fv-phase"></span>
-        <div class="fv-dots"></div>
-      </div>
-      <div class="fv-caption"><span class="fv-counter"></span><code class="fv-label"></code><span class="fv-text"></span></div>
-    </div>
+  ${flowvizStage(input.flowSvg)}
 
-    <div class="tb-col">
-    <div class="tb" id="toy-browser">
-      <div class="tb-chrome"><span class="tb-dot r"></span><span class="tb-dot y"></span><span class="tb-dot g"></span><span class="tb-url" id="tb-url">localhost:3000/</span></div>
-      <div class="tb-body">
-        <div class="tb-nav"><b>admin</b><span data-nav="overview" class="on">overview</span><span data-nav="users">users</span></div>
-        <div class="tb-view" id="tb-view"></div>
-      </div>
-      <div class="tb-dev">
-        <div class="tb-tabs">
-          <button class="tb-tab on" data-tab="pavlus">pavlus</button>
-          <button class="tb-tab" data-tab="store">store</button>
-          <span class="tb-spring"></span>
-          <span class="tb-step" id="tb-step"></span>
-        </div>
-        <div class="tb-line"><span class="tb-chip" id="tb-chip"></span><span class="tb-dbg" id="tb-dbg"></span></div>
-        <div class="tb-pane on" data-pane="pavlus"><div class="tb-log" id="tb-log"></div></div>
-        <div class="tb-pane" data-pane="store">
-          <div class="tb-tl" id="tb-tl"></div>
-          <div class="tb-tl-cap"><span id="tb-tl-info"></span> · one circle per change — click to jump</div>
-          <div class="tb-commits" id="tb-commits"></div>
-        </div>
-      </div>
-    </div>
-    <div class="srv-link"></div>
-    <div class="srv" id="fv-srv">
-      <span class="srv-led"></span>
-      <span class="srv-txt"><b>server</b><span>API · Postgres — the outside world</span></span>
-    </div>
-    <p class="srv-cap">only the browser talks to the server</p>
-    </div>
-  </div>
-
-  <p class="tiny">Left — your application as one island (app + core) with the plugin column: every plugin touches exactly two neighbours — the core and the browser. The server lives under the toy browser, and only the browser talks to it: requests fly in through the browser and drop down to the server — watch the light flash green. The devbar under the browser shows every message, effect and patch in simple mode. Prefer it static? The fully annotated diagram lives in the <a href="docs.html#core">docs, in "Core"</a>.</p>
+  <p class="tiny">One picture: your application as one island (app + core), the plugin column — and, drawn right into the diagram, the toy browser with its store devtools and the server underneath. Every plugin touches exactly two neighbours, the core and the browser; only the browser talks to the server — watch its light flash green. The controls under the diagram walk a tiny admin session step by step; the dots inside the browser's devtools mark the steps — green where the store commits — and clicking one jumps straight there.</p>
 
   <div class="cta-row">
     <a class="cta primary" href="docs.html">Read the docs</a>
@@ -1266,9 +1154,7 @@ export function renderStartPage(input: StartInput): string {
       "pavlus is a TypeScript framework where the application is a pure function: app(message, state) → Effect[]. Plugins do the dirty work.",
     active: "home",
     body,
-    scripts:
-      `<script type="application/json" id="flow-steps">${flowStepsJson}</script>` +
-      FLOWVIZ_SCRIPT,
+    scripts: flowvizScripts(flowStepsJson),
   });
 }
 

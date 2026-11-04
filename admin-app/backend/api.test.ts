@@ -289,6 +289,44 @@ describe("api routing (no server, no database)", () => {
     expect(query.calls[3].params).toEqual([2]);
   });
 
+  test("DELETE /api/users/2,3 removes both users in one go", async () => {
+    const query = fakeQuery([{ id: 2 }, { id: 3 }]);
+    expect(await handleApi("DELETE", "/api/users/2,3", query)).toEqual({
+      status: 200,
+      body: { deleted: [2, 3] },
+    });
+    expect(query.calls[0].sql).toMatch(
+      /DELETE FROM sessions WHERE user_id = ANY\(\$1\)/,
+    );
+    expect(query.calls[3].sql).toMatch(
+      /DELETE FROM users WHERE id = ANY\(\$1\)/,
+    );
+    expect(query.calls[3].params).toEqual([[2, 3]]);
+  });
+
+  test("DELETE /api/tasks/4,7,9 removes the rows and reports the ids", async () => {
+    const query = fakeQuery([{ id: 4 }, { id: 7 }, { id: 9 }]);
+    expect(await handleApi("DELETE", "/api/tasks/4,7,9", query)).toEqual({
+      status: 200,
+      body: { deleted: [4, 7, 9] },
+    });
+    expect(query.calls[0].sql).toMatch(
+      /DELETE FROM tasks WHERE id = ANY\(\$1\)/,
+    );
+    expect(query.calls[0].params).toEqual([[4, 7, 9]]);
+  });
+
+  test("DELETE /api/sessions/4 removes a single session", async () => {
+    const query = fakeQuery([{ id: 4 }]);
+    expect(await handleApi("DELETE", "/api/sessions/4", query)).toEqual({
+      status: 200,
+      body: { deleted: [4] },
+    });
+    expect(query.calls[0].sql).toMatch(
+      /DELETE FROM sessions WHERE id = ANY\(\$1\)/,
+    );
+  });
+
   test("DELETE of an unknown user is a 404", async () => {
     const query = fakeQuery([]);
     expect(await handleApi("DELETE", "/api/users/99", query)).toMatchObject({
@@ -552,6 +590,33 @@ describe("api against Postgres", () => {
       role_id: roles[1].id,
     });
     expect((updated.body as UserDetail).role).toBe(roles[1].name);
+    await resetDatabase(pool);
+  });
+
+  test("rows and sessions delete in bulk; the seed is back after", async () => {
+    expect(await handleApi("DELETE", "/api/tasks/1,2,3", query)).toEqual({
+      status: 200,
+      body: { deleted: [1, 2, 3] },
+    });
+    expect(
+      ((await handleApi("GET", "/api/tasks", query)).body as Task[]).length,
+    ).toBe(27);
+    expect(await handleApi("DELETE", "/api/products/5,6", query)).toEqual({
+      status: 200,
+      body: { deleted: [5, 6] },
+    });
+    const products = (await handleApi("GET", "/api/products", query))
+      .body as Product[];
+    expect(products).toHaveLength(48);
+    expect(products.map((p) => p.id)).not.toContain(5);
+    expect(await handleApi("DELETE", "/api/processes/1", query)).toEqual({
+      status: 200,
+      body: { deleted: [1] },
+    });
+    expect(await handleApi("DELETE", "/api/sessions/2,4", query)).toEqual({
+      status: 200,
+      body: { deleted: [2, 4] },
+    });
     await resetDatabase(pool);
   });
 

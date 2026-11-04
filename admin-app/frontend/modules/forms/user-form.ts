@@ -38,6 +38,10 @@ export const initialUserForm: UserFormState = {
 export class UserForm extends Component<UserFormState> {
   view = view;
 
+  // Shown as the label in the debug panel's Apps tab (same form under two
+  // routes: the creator and the editor both read "user-form").
+  tag = "user-form";
+
   enter(msg: Message): Effect[] {
     const route = msg.payload as Route;
     const id = route.params.id;

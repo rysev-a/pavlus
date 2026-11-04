@@ -37,7 +37,7 @@
  * production, a fake in tests).
  */
 
-import { routeName } from "@service-laboratory/pavlus";
+import { routeName, setComponentTrace } from "@service-laboratory/pavlus";
 import type {
   ChildSpec,
   ComponentLike,
@@ -74,6 +74,26 @@ export interface DebugAppInfo {
    * agent was created without `app`.
    */
   components: string[];
+  /** Display tag per component path (`ChildSpec.tag` / the component's `tag`). */
+  tags?: Record<string, string>;
+}
+
+/** One observed input or output line of a component. */
+export interface DebugIOEntry {
+  /** Input: the full message id. Output: `"plugin:type"`. */
+  id: string;
+  /** How many times it was seen. */
+  n: number;
+  /** When it was last seen (Date.now()). */
+  at: number;
+  /** Output only: one-line summary of the last effect. */
+  summary?: string;
+}
+
+/** Observed input/output of a component at a dotted path. */
+export interface DebugIO {
+  input: DebugIOEntry[];
+  output: DebugIOEntry[];
 }
 
 export interface DebugEffectRec {
@@ -118,6 +138,8 @@ type AgentEvent =
       time: number;
       message: DebugMessageInfo;
       effects: DebugEffectRec[];
+      /** Component paths that received the message (deepest last). */
+      comps?: string[];
     }
   | {
       type: "state";
@@ -146,6 +168,8 @@ interface HelloMsg {
   replay: AgentEvent[];
   /** How many replay events were dropped by the cap. */
   dropped: number;
+  /** Observed per-component input/output, by dotted path. */
+  io?: Record<string, DebugIO>;
 }
 
 interface BatchMsg {
@@ -170,6 +194,8 @@ interface StepCtx {
   posted: boolean;
   /** Http waits for this step, posted right after it. */
   waits: AgentEvent[];
+  /** Component paths that received the message (deepest last). */
+  comps: string[];
 }
 
 interface PendingHttp {
@@ -212,6 +238,69 @@ export interface PavlusDebug {
 
 const usedNames = new Map<string, number>();
 
+/** One buffered component-trace event, drained by the next agent's `onStep`. */
+type TraceEvt =
+  | { k: "in"; path: string; id: string; at: number }
+  | {
+      k: "out";
+      path: string;
+      plugin: string;
+      type: string;
+      summary: string;
+      at: number;
+    };
+
+/**
+ * The framework's trace sink is global (one per page), so events land in this
+ * shared buffer and each agent claims them at its next `onStep`: dispatch
+ * loops are synchronous per app, so between steps the buffer holds exactly
+ * the events of the step being recorded (nested dispatches drain at their
+ * own `onStep`).
+ */
+const traceBuf: TraceEvt[] = [];
+/** Bound on the buffer so a runaway app cannot grow memory without end. */
+const MAX_TRACE = 500;
+/** Per-component io maps stop growing at this many paths. */
+const MAX_IO_PATHS = 300;
+/** io lists shipped in a hello are capped per direction. */
+const MAX_IO_LIST = 50;
+let traceInstalled = false;
+
+const traceJson = (v: unknown): string => {
+  try {
+    const s = JSON.stringify(v) ?? "undefined";
+    return s.length > 60 ? `${s.slice(0, 59)}…` : s;
+  } catch {
+    return "(unserializable)";
+  }
+};
+
+/** Installs the trace sink once per page (idempotent — several apps share it). */
+const installTrace = (): void => {
+  if (traceInstalled) return;
+  traceInstalled = true;
+  setComponentTrace({
+    receive: (path, message) => {
+      if (traceBuf.length < MAX_TRACE)
+        traceBuf.push({ k: "in", path, id: message.id, at: Date.now() });
+    },
+    emit: (path, _message, effects) => {
+      for (const e of effects) {
+        if (traceBuf.length >= MAX_TRACE) return;
+        const { plugin, type, ...rest } = e;
+        traceBuf.push({
+          k: "out",
+          path,
+          plugin,
+          type,
+          summary: traceJson(rest),
+          at: Date.now(),
+        });
+      }
+    },
+  });
+};
+
 export function createPavlusDebug(
   opts: {
     name?: string;
@@ -223,6 +312,8 @@ export function createPavlusDebug(
   host: DebugHost = globalThis as unknown as DebugHost,
 ): PavlusDebug {
   const base = opts.name ?? "app";
+  // several agents share one page: the first call wins, all of them drain
+  installTrace();
   const n = usedNames.get(base) ?? 0;
   usedNames.set(base, n + 1);
   const appId = n === 0 ? base : `${base}#${n}`;
@@ -249,6 +340,13 @@ export function createPavlusDebug(
   const unposted: StepCtx[] = [];
   /** Set by `watch`; without it nothing marks a step complete. */
   let watched = false;
+  /** Observed component inputs: path → (message id → count/last time). */
+  const ioIn = new Map<string, Map<string, { n: number; at: number }>>();
+  /** Observed component outputs: path → ("plugin:type" → count/summary). */
+  const ioOut = new Map<
+    string,
+    Map<string, { n: number; at: number; summary: string }>
+  >();
 
   const events: AgentEvent[] = [];
   let sent = 0;
@@ -292,6 +390,7 @@ export function createPavlusDebug(
       time: s.time,
       message: s.message,
       effects: s.recs,
+      comps: s.comps,
     });
     for (const w of s.waits) push(w);
   };
@@ -434,6 +533,47 @@ export function createPavlusDebug(
   const onStep = (message: Message, effects: Effect[]): void => {
     seq++;
     const time = wall();
+    // claim the component-trace events of this dispatch (see `traceBuf`),
+    // merging them into the per-component io maps and the step's `comps`
+    const received = new Set<string>();
+    for (const t of traceBuf.splice(0)) {
+      if (t.k === "in") {
+        received.add(t.path);
+        // the trace hands out ids relative to the path — store the full id
+        const full = t.path ? `${t.path}.${t.id}` : t.id;
+        let m = ioIn.get(t.path);
+        if (!m) {
+          if (ioIn.size >= MAX_IO_PATHS) continue;
+          m = new Map();
+          ioIn.set(t.path, m);
+        }
+        const cur = m.get(full);
+        if (cur) {
+          cur.n++;
+          cur.at = t.at;
+        } else m.set(full, { n: 1, at: t.at });
+      } else {
+        let m = ioOut.get(t.path);
+        if (!m) {
+          if (ioOut.size >= MAX_IO_PATHS) continue;
+          m = new Map();
+          ioOut.set(t.path, m);
+        }
+        const key = `${t.plugin}:${t.type}`;
+        const cur = m.get(key);
+        if (cur) {
+          cur.n++;
+          cur.at = t.at;
+          cur.summary = t.summary;
+        } else m.set(key, { n: 1, at: t.at, summary: t.summary });
+      }
+    }
+    // fn-only apps dispatch without children: the root still reports itself,
+    // but steps recorded before the trace was installed get a synthetic root
+    if (!received.size) received.add("");
+    const comps = [...received].sort(
+      (a, b) => a.split(".").length - b.split(".").length || a.localeCompare(b),
+    );
     lastMsgId = message.id;
     const recs = effects.map((e, i) =>
       effectRec(`${appId}:${seq}:${i}`, time, e),
@@ -451,6 +591,7 @@ export function createPavlusDebug(
       left: effects.length,
       posted: false,
       waits: [],
+      comps,
     };
     stack.push(step);
     unposted.push(step);
@@ -529,9 +670,12 @@ export function createPavlusDebug(
 
   /** Dotted paths of the app's components, walked once from `opts.app`. */
   let components: string[] | undefined;
+  /** Display tag per component path (`ChildSpec.tag` or the component's own). */
+  let tags: Record<string, string> | undefined;
   const componentsOf = (): string[] => {
     if (components) return components;
     const out: string[] = [];
+    const tagMap: Record<string, string> = {};
     const seen = new Set<object>();
     const walk = (comp: unknown, prefix: string): void => {
       if (!comp || typeof comp !== "object" || seen.has(comp)) return;
@@ -544,16 +688,51 @@ export function createPavlusDebug(
         const path = prefix ? `${prefix}.${name}` : name;
         out.push(path);
         walk(spec.component, path);
+        const t =
+          typeof spec.tag === "string" && spec.tag
+            ? spec.tag
+            : (spec.component as { tag?: unknown } | undefined)?.tag;
+        if (typeof t === "string" && t) tagMap[path] = t;
       }
       for (const [pattern, spec] of Object.entries(c.routing ?? {})) {
         const child = routeName(pattern, spec);
         const path = prefix ? `${prefix}.${child}` : child;
         out.push(path);
         walk(spec.component, path);
+        const t =
+          typeof spec.tag === "string" && spec.tag
+            ? spec.tag
+            : (spec.component as { tag?: unknown } | undefined)?.tag;
+        if (typeof t === "string" && t) tagMap[path] = t;
       }
     };
     walk(opts.app, "");
+    tags = tagMap;
     return (components = out);
+  };
+
+  /** The io maps as a plain hello payload, capped per direction. */
+  const ioPayload = (): Record<string, DebugIO> => {
+    const io: Record<string, DebugIO> = {};
+    const list = (
+      m: Map<string, { n: number; at: number; summary?: string }>,
+    ): DebugIOEntry[] =>
+      [...m.entries()]
+        .sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]))
+        .slice(0, MAX_IO_LIST)
+        .map(([id, v]) => ({
+          id,
+          n: v.n,
+          at: v.at,
+          ...(v.summary === undefined ? {} : { summary: v.summary }),
+        }));
+    for (const [path, m] of ioIn) io[path] = { input: list(m), output: [] };
+    for (const [path, m] of ioOut) {
+      const cur = io[path] ?? { input: [], output: [] };
+      cur.output = list(m);
+      io[path] = cur;
+    }
+    return io;
   };
 
   const sendHello = (): void => {
@@ -579,6 +758,7 @@ export function createPavlusDebug(
         plugins: [...pluginNames],
         hasStore: !!store,
         components: componentsOf(),
+        ...(tags && Object.keys(tags).length ? { tags } : {}),
       },
     ];
     const from = Math.max(0, events.length - MAX_REPLAY);
@@ -592,6 +772,7 @@ export function createPavlusDebug(
       redo,
       replay: events.slice(from),
       dropped: from,
+      io: ioPayload(),
     };
     // The replay carries everything; a pending flush would only duplicate it.
     sent = events.length;

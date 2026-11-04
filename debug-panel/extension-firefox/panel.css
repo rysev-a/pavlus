@@ -296,6 +296,17 @@ button:disabled {
   color: #111;
 }
 
+/* the apps detail pane's view switcher: info | messages | effects | timeline */
+.apps-views {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px 0;
+}
+
+.apps-views + .row {
+  border-top: 1px solid var(--line);
+}
+
 /* store ----------------------------------------------------------------- */
 
 #tab-store .cols {
@@ -416,12 +427,16 @@ button:disabled {
 /* the timeline list and its preview get a thinner scrollbar than the panel
    default */
 #store-timeline .rows::-webkit-scrollbar,
-#tl-detail::-webkit-scrollbar {
+#tl-detail::-webkit-scrollbar,
+#travel-steps::-webkit-scrollbar,
+#travel-detail::-webkit-scrollbar {
   width: 6px;
 }
 
 #store-timeline .rows::-webkit-scrollbar-thumb,
-#tl-detail::-webkit-scrollbar-thumb {
+#tl-detail::-webkit-scrollbar-thumb,
+#travel-steps::-webkit-scrollbar-thumb,
+#travel-detail::-webkit-scrollbar-thumb {
   border-radius: 3px;
 }
 
@@ -682,15 +697,32 @@ button:disabled {
   flex: 1;
   min-width: 0;
   overflow-x: auto;
-  scrollbar-width: thin;
 }
 
+/* very thin horizontal scrollbar; no scrollbar-width here — in Chromium it
+   would disable the webkit rules below and restore the native bar */
 #stepper::-webkit-scrollbar {
   height: 4px;
 }
 
+#stepper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 #stepper::-webkit-scrollbar-thumb {
   background: var(--line);
+  border-radius: 2px;
+}
+
+#stepper::-webkit-scrollbar-thumb:hover {
+  background: var(--dim);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  #stepper {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
 }
 
 .track {
@@ -742,6 +774,60 @@ button:disabled {
 
 .step-dot:hover {
   border-color: var(--accent);
+}
+
+/* time travel ------------------------------------------------------------ */
+
+#travel-cols {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+#travel-rail {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#travel-rail h3 {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg2);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#travel-rail h3 button {
+  flex: none;
+}
+
+/* the vertical line the circles sit on — drawn per-row so it covers the
+   full scroll height and scrolls with the steps */
+.tr-step {
+  position: relative;
+  align-items: center;
+  padding-left: 14px;
+}
+
+.tr-step::before {
+  content: "";
+  position: absolute;
+  left: 19px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--line);
+}
+
+.tr-step .step-dot {
+  z-index: 1;
 }
 
 /* apps tree --------------------------------------------------------------- */

@@ -31,6 +31,7 @@ export {
   mapEffects,
   mapMessage,
   namespace,
+  setComponentTrace,
   toHandler,
   viewOf,
   withLogging,
@@ -41,6 +42,7 @@ export type {
   ComponentCtx,
   ComponentFn,
   ComponentLike,
+  ComponentTrace,
   Handler,
   NamespaceOptions,
 } from "./src/component/mod.ts";

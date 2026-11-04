@@ -1045,9 +1045,10 @@ export function pureConceptSvg(): Svg {
     [C.dom, "DOM work"],
     [C.net, "network"],
   ];
+  // legend — bottom-left, below the network rail that runs along y646
   legend.forEach(([color, label], i) => {
-    const x = 930 + (i % 3) * 90;
-    const yy = 460 + Math.floor(i / 3) * 18;
+    const x = 60 + (i % 3) * 105;
+    const yy = 664 + Math.floor(i / 3) * 18;
     svg.line(x, yy - 4, x + 24, yy - 4, { stroke: color, sw: 2 });
     svg.text(x + 30, yy, label, { size: 10, fill: C.muted });
   });
@@ -1065,12 +1066,14 @@ export interface FlowStep {
   /** Waypoints the packet travels through, in SVG coordinates. */
   pts?: [number, number][];
   /**
-   * Legs between SVG points (`p`) and HTML anchors (`e`: "url" = the toy
-   * browser's URL bar, "srv" = the server box). Steps with `fly` move a dot
-   * across the whole stage — the packet crosses from the diagram into the
-   * toy browser and back — instead of the in-SVG packet.
+   * Legs the packet travels through, in SVG coordinates. The packet never
+   * crosses the toy browser's interior: it leaves from and arrives at the
+   * browser's edge, exactly where its arrows touch it. A waypoint flagged
+   * `jump: true` teleports the packet instead of animating the leg — the
+   * browser is a black box, a signal goes in one side and comes out the
+   * other.
    */
-  fly?: { p?: [number, number]; e?: string }[];
+  fly?: { p: [number, number]; jump?: boolean }[];
   color: string;
   /** The data on the wire (mono line under the diagram). */
   label: string;
@@ -1100,41 +1103,11 @@ const E: Record<string, [number, number][]> = {
     [265, 218],
     [265, 278],
   ],
-  c2d: [
-    [365, 319],
-    [460, 319],
-    [460, 130],
-    [520, 130],
-  ],
-  d2c: [
-    [520, 160],
-    [470, 160],
-    [470, 394],
-    [365, 394],
-  ],
   c2s: [
-    [365, 319],
-    [480, 319],
-    [480, 258],
+    [365, 322],
+    [475, 322],
+    [475, 258],
     [520, 258],
-  ],
-  s2c: [
-    [520, 276],
-    [440, 276],
-    [440, 394],
-    [365, 394],
-  ],
-  c2h: [
-    [365, 319],
-    [500, 319],
-    [500, 370],
-    [520, 370],
-  ],
-  h2c: [
-    [520, 390],
-    [490, 390],
-    [490, 394],
-    [365, 394],
   ],
 };
 
@@ -1145,21 +1118,22 @@ const P4 = "remove Alan";
 
 /**
  * The story of a tiny admin session, as data: open the start page, open the
- * users page, edit one user, remove one user. Phase 2 walks every hop of the
- * loop; later phases compress repeated hops and say so in the caption — the
- * model never bends. The toy browser in the hero reads `browser` frames to
- * stay in sync with the packet.
+ * users page, edit one user, remove one user — fifteen steps, four phases.
+ * The users page walks every hop of the loop once (message → app → effects →
+ * plugins → state → patches); edit and remove compress the repeated hops
+ * into their captions — the model never bends. The toy browser in the hero
+ * reads `browser` frames to stay in sync with the packet.
  */
 export const FLOW_STEPS: FlowStep[] = [
   {
     from: "server",
-    to: "dom",
+    to: "browser",
     color: C.msg,
-    fly: [{ e: "srv" }, { e: "url" }],
+    fly: [{ p: [1285, 594] }, { p: [1285, 562] }],
     flash: true,
     label: 'open "/" — SSR HTML arrives',
     caption:
-      "First paint needs no loop at all: the server ran the same render(state), and the finished HTML flies over the wire into the toy browser, already painted. The dom plugin mounts it and owns every listener.",
+      "First paint needs no loop: the server ran the same render(state), and the finished HTML flies into the browser, already painted. The dom plugin mounts it and owns every listener.",
     phase: P1,
     browser: {
       url: "/",
@@ -1172,48 +1146,21 @@ export const FLOW_STEPS: FlowStep[] = [
     from: "dom",
     to: "core",
     color: C.msg,
-    fly: [
-      { e: "url" },
-      { p: [840, 136] },
-      { p: [520, 136] },
-      { p: [365, 394] },
-    ],
+    fly: [{ p: [1000, 556] }, { p: [340, 556] }, { p: [340, 530] }],
     label: 'dispatch({ id: "mounted" })',
     caption:
-      "The toy browser hands the event to the dom plugin, and it says hello the only way it can: one message — mounted. Nobody calls the application directly.",
+      "The browser hands the event to the dom plugin, which says hello the only way it can: one message. The core calls app(mounted, state) — the page is ready, so the answer is [].",
     phase: P1,
     browser: { dbg: { t: "msg", m: "mounted" } },
-  },
-  {
-    from: "core",
-    to: "app",
-    color: C.msg,
-    pts: E.c2a,
-    label: 'app({ id: "mounted" }, state)',
-    caption:
-      "The core — the only code that ever calls the app — invokes the pure handler.",
-    phase: P1,
-    browser: { dbg: { t: "app", m: "app(mounted, state)" } },
-  },
-  {
-    from: "app",
-    to: "core",
-    color: C.effect,
-    pts: E.a2c,
-    label: "[ ] — no effects",
-    caption:
-      "The overview is already on the page, so the handler returns nothing. Deterministic: same message in, same (empty) answer out.",
-    phase: P1,
-    browser: { dbg: { t: "fx", m: "[] — nothing to do" } },
   },
   {
     from: "dom",
     to: "core",
     color: C.msg,
-    pts: E.d2c,
+    fly: [{ p: [1000, 556] }, { p: [340, 556] }, { p: [340, 530] }],
     label: '@click "users" → dispatch({ id: "users.load" })',
     caption:
-      "The user opens the Users page. The click becomes a message — the only way into the application.",
+      "The user opens the Users page: the click becomes a message — the only way into the application.",
     phase: P2,
     browser: { url: "/users", dbg: { t: "msg", m: "users.load" } },
   },
@@ -1224,7 +1171,7 @@ export const FLOW_STEPS: FlowStep[] = [
     pts: E.c2a,
     label: 'app({ id: "users.load" }, state)',
     caption:
-      "Same rule as always: the core calls the handler with the message and the state.",
+      "The core — the only code that ever calls the app — invokes the pure handler.",
     phase: P2,
     browser: { dbg: { t: "app", m: "app(users.load, state)" } },
   },
@@ -1246,7 +1193,7 @@ export const FLOW_STEPS: FlowStep[] = [
     pts: E.c2s,
     label: 'handle(store.merge("users.loading", true))',
     caption:
-      "The store applies the merge immutably — a new state object with loading flipped.",
+      "The store applies the merge immutably — a new state object — and the skeleton shows up in the browser.",
     phase: P2,
     browser: {
       view: "users-loading",
@@ -1255,25 +1202,19 @@ export const FLOW_STEPS: FlowStep[] = [
     },
   },
   {
-    from: "core",
-    to: "http",
-    color: C.effect,
-    pts: E.c2h,
-    label: 'handle(http.request({ url: "/api/users" }))',
-    caption:
-      "The http plugin owns fetch — application code never touches the network.",
-    phase: P2,
-    browser: { dbg: { t: "fx", m: "GET /api/users" } },
-  },
-  {
     from: "http",
     to: "server",
     color: C.net,
-    fly: [{ p: [840, 378] }, { e: "url" }, { e: "srv" }],
+    fly: [
+      { p: [840, 378] },
+      { p: [997, 378] },
+      { p: [1215, 562], jump: true },
+      { p: [1215, 594] },
+    ],
     flash: true,
     label: 'fetch("/api/users")',
     caption:
-      "The request hops into the toy browser, which passes it down to the server — watch the light flash green.",
+      "The core hands http.request to the http plugin; it fetches through the browser — watch the server's light flash green.",
     phase: P2,
     browser: { dbg: { t: "net", m: "→ GET /api/users" } },
   },
@@ -1281,241 +1222,74 @@ export const FLOW_STEPS: FlowStep[] = [
     from: "server",
     to: "http",
     color: C.net,
-    fly: [{ e: "srv" }, { e: "url" }, { p: [840, 378] }],
+    fly: [
+      { p: [1285, 594] },
+      { p: [1285, 562] },
+      { p: [997, 378], jump: true },
+      { p: [840, 378] },
+    ],
     flash: true,
     label: "HTTP 200 · 3 users · 12 ms",
     caption:
-      "The reply leaves the server and re-enters through the toy browser — in the real admin-app, Postgres behind an API.",
+      "The browser passes the reply back to the http plugin, which turns it into what the app understands: a message. The app answers: store.set(users, rows).",
     phase: P2,
     browser: { dbg: { t: "net", m: "← 200 · 3 users" } },
   },
   {
-    from: "http",
-    to: "core",
-    color: C.msg,
-    pts: E.h2c,
-    label: 'dispatch({ id: "users.loaded", payload })',
+    from: "dom",
+    to: "browser",
+    color: C.dom,
+    fly: [{ p: [840, 136] }, { p: [997, 136] }],
+    label: "apply(3 patches) — the table paints",
     caption:
-      "The http plugin turns the reply into what the app understands: a message. The app never saw a promise.",
-    phase: P2,
-    browser: { dbg: { t: "msg", m: "users.loaded" } },
-  },
-  {
-    from: "core",
-    to: "app",
-    color: C.msg,
-    pts: E.c2a,
-    label: 'app({ id: "users.loaded" }, state)',
-    caption: "Second lap — same rule, same purity.",
-    phase: P2,
-    browser: { dbg: { t: "app", m: "app(users.loaded, state)" } },
-  },
-  {
-    from: "app",
-    to: "core",
-    color: C.effect,
-    pts: E.a2c,
-    label: '[ store.set("users", rows) ]',
-    caption:
-      "The handler computes the new state shape and asks the store to set it.",
-    phase: P2,
-    browser: { dbg: { t: "fx", m: "store.set users" } },
-  },
-  {
-    from: "core",
-    to: "store",
-    color: C.effect,
-    pts: E.c2s,
-    label: 'handle(store.set("users", rows))',
-    caption:
-      "The store replaces the branch immutably; untouched branches keep their identity.",
+      "The store commits, onState fires, the dom plugin diffs — three patch ops fly into the browser. The loop is closed.",
     phase: P2,
     browser: {
-      store: "users ← rows (3)",
-      dbg: { t: "state", m: "users[3] committed" },
+      view: "users",
+      store: "users ← 3 rows",
+      dbg: { t: "dom", m: "Δ 3 patches" },
     },
   },
   {
-    from: "store",
-    to: "core",
-    color: C.state,
-    pts: E.s2c,
-    label: "new state — identity changed",
-    caption:
-      "A new object comes back. Nothing was mutated — that is why diff can trust ===.",
-    phase: P2,
-    browser: { dbg: { t: "state", m: "state #3" } },
-  },
-  {
-    from: "core",
-    to: "dom",
-    color: C.state,
-    pts: E.c2d,
-    label: "onState(next) → diff(prev, next)",
-    caption:
-      "State identity changed, so every plugin is notified. For the dom plugin that means: diff.",
-    phase: P2,
-    browser: { dbg: { t: "state", m: "onState → diff" } },
-  },
-  {
-    from: "dom",
-    to: "browser",
-    color: C.dom,
-    fly: [{ p: [840, 136] }, { e: "url" }],
-    label: "apply(3 patches) — the table paints",
-    caption:
-      "Three patch ops fly out of the diagram into the toy browser and swap the skeleton for the table. The loop is closed — until the next event.",
-    phase: P2,
-    browser: { view: "users", dbg: { t: "dom", m: "Δ 3 patches" } },
-  },
-  {
     from: "dom",
     to: "core",
     color: C.msg,
-    pts: E.d2c,
+    fly: [{ p: [1000, 556] }, { p: [340, 556] }, { p: [340, 530] }],
     label: '@click=edit(1) → dispatch({ id: "users.edit" })',
     caption:
-      "Now the user clicks edit on Ada's row. Same door as always: a message.",
-    phase: P3,
-    browser: { dbg: { t: "msg", m: "users.edit" } },
-  },
-  {
-    from: "core",
-    to: "app",
-    color: C.msg,
-    pts: E.c2a,
-    label: 'app({ id: "users.edit" }, state)',
-    caption: "The row id rides in the payload; the handler reads it from data.",
-    phase: P3,
-    browser: { dbg: { t: "app", m: "app(users.edit, state)" } },
-  },
-  {
-    from: "app",
-    to: "core",
-    color: C.effect,
-    pts: E.a2c,
-    label: '[ store.set("users.editing", 1) ]',
-    caption: "Which row is being edited is just state — nothing else changes.",
-    phase: P3,
-    browser: { dbg: { t: "fx", m: "store.set editing" } },
-  },
-  {
-    from: "dom",
-    to: "browser",
-    color: C.dom,
-    fly: [{ p: [840, 136] }, { e: "url" }],
-    label: "the row becomes a form",
-    caption:
-      "The same three hops as the last phase, compressed: handle → new state → onState — two patches turn the row into an input.",
+      "Same door as always: the click becomes a message. The app answers store.set(users.editing, 1) — two patches turn the row into a form.",
     phase: P3,
     browser: {
       view: "users-edit",
       store: "users.editing ← 1",
-      dbg: { t: "dom", m: "Δ 2 patches" },
+      dbg: { t: "msg", m: "users.edit" },
     },
-  },
-  {
-    from: "dom",
-    to: "core",
-    color: C.msg,
-    pts: E.d2c,
-    label: '@click=save → dispatch({ id: "users.save", payload })',
-    caption: "Save clicked — the new name rides along in the payload.",
-    phase: P3,
-    browser: { dbg: { t: "msg", m: "users.save" } },
-  },
-  {
-    from: "core",
-    to: "app",
-    color: C.msg,
-    pts: E.c2a,
-    label: 'app({ id: "users.save" }, state)',
-    caption: "The handler validates — pure code — and asks for the write.",
-    phase: P3,
-    browser: { dbg: { t: "app", m: "app(users.save, state)" } },
-  },
-  {
-    from: "app",
-    to: "core",
-    color: C.effect,
-    pts: E.a2c,
-    label: '[ http.request({ method: "PATCH", url: "/api/users/1" }) ]',
-    caption:
-      "One effect: persist. Writing is a side effect, so it belongs to a plugin.",
-    phase: P3,
-    browser: { dbg: { t: "fx", m: "PATCH /api/users/1" } },
-  },
-  {
-    from: "core",
-    to: "http",
-    color: C.effect,
-    pts: E.c2h,
-    label: "handle(http.request(…))",
-    caption: "The http plugin sends the PATCH.",
-    phase: P3,
-    browser: { dbg: { t: "fx", m: "→ PATCH /api/users/1" } },
   },
   {
     from: "http",
     to: "server",
     color: C.net,
-    fly: [{ p: [840, 378] }, { e: "url" }, { e: "srv" }],
+    fly: [
+      { p: [840, 378] },
+      { p: [997, 378] },
+      { p: [1215, 562], jump: true },
+      { p: [1215, 594] },
+    ],
     flash: true,
     label: 'PATCH /api/users/1 · { name: "Ada Lovelace" }',
     caption:
-      "The write hops through the toy browser and leaves the island — in the real app it lands in Postgres.",
+      "Save clicked → users.save → one effect: http.request(PATCH). The write hops through the browser down to Postgres.",
     phase: P3,
-    browser: { dbg: { t: "net", m: "→ PATCH · { name }" } },
-  },
-  {
-    from: "server",
-    to: "http",
-    color: C.net,
-    fly: [{ e: "srv" }, { e: "url" }, { p: [840, 378] }],
-    flash: true,
-    label: "HTTP 200 · saved",
-    caption: "The database confirms the row.",
-    phase: P3,
-    browser: { dbg: { t: "net", m: "← 200 · saved" } },
-  },
-  {
-    from: "http",
-    to: "core",
-    color: C.msg,
-    pts: E.h2c,
-    label: 'dispatch({ id: "users.saved" })',
-    caption: "The confirmation re-enters the loop as a message.",
-    phase: P3,
-    browser: { dbg: { t: "msg", m: "users.saved" } },
-  },
-  {
-    from: "core",
-    to: "app",
-    color: C.msg,
-    pts: E.c2a,
-    label: 'app({ id: "users.saved" }, state)',
-    caption: "The handler closes the editor and reshapes the rows.",
-    phase: P3,
-    browser: { dbg: { t: "app", m: "app(users.saved, state)" } },
-  },
-  {
-    from: "app",
-    to: "core",
-    color: C.effect,
-    pts: E.a2c,
-    label: '[ store.set(users, rows′), store.set("users.editing", null) ]',
-    caption: "New rows with the new name, editor closed — two store effects.",
-    phase: P3,
-    browser: { dbg: { t: "fx", m: "store.set ×2" } },
+    browser: { dbg: { t: "net", m: "→ PATCH /api/users/1" } },
   },
   {
     from: "dom",
     to: "browser",
     color: C.dom,
-    fly: [{ p: [840, 136] }, { e: "url" }],
+    fly: [{ p: [840, 136] }, { p: [997, 136] }],
     label: "\u201cAda L.\u201d → \u201cAda Lovelace\u201d",
     caption:
-      "Same compressed ending: handle → state → onState — two text patches, no navigation, the form is gone.",
+      "200 OK → users.saved → store.set(users, rows′) — two text patches fly back into the browser, the form is gone.",
     phase: P3,
     browser: {
       view: "users-edited",
@@ -1527,100 +1301,35 @@ export const FLOW_STEPS: FlowStep[] = [
     from: "dom",
     to: "core",
     color: C.msg,
-    pts: E.d2c,
+    fly: [{ p: [1000, 556] }, { p: [340, 556] }, { p: [340, 530] }],
     label: '@click=remove(3) → dispatch({ id: "users.remove" })',
-    caption: "Last interaction: the user removes Alan. One click, one message.",
+    caption:
+      "Last interaction: the app asks for the delete — it does not perform it. One effect: http.request(DELETE).",
     phase: P4,
     browser: { dbg: { t: "msg", m: "users.remove" } },
-  },
-  {
-    from: "core",
-    to: "app",
-    color: C.msg,
-    pts: E.c2a,
-    label: 'app({ id: "users.remove" }, state)',
-    caption: "The handler asks for the delete — it does not perform it.",
-    phase: P4,
-    browser: { dbg: { t: "app", m: "app(users.remove, state)" } },
-  },
-  {
-    from: "app",
-    to: "core",
-    color: C.effect,
-    pts: E.a2c,
-    label: '[ http.request({ method: "DELETE", url: "/api/users/3" }) ]',
-    caption: "Data out: one DELETE effect, plain data.",
-    phase: P4,
-    browser: { dbg: { t: "fx", m: "DELETE /api/users/3" } },
-  },
-  {
-    from: "core",
-    to: "http",
-    color: C.effect,
-    pts: E.c2h,
-    label: "handle(http.request(…))",
-    caption: "The http plugin sends the DELETE.",
-    phase: P4,
-    browser: { dbg: { t: "fx", m: "→ DELETE /api/users/3" } },
   },
   {
     from: "http",
     to: "server",
     color: C.net,
-    fly: [{ p: [840, 378] }, { e: "url" }, { e: "srv" }],
+    fly: [
+      { p: [840, 378] },
+      { p: [997, 378] },
+      { p: [1215, 562], jump: true },
+      { p: [1215, 594] },
+    ],
     flash: true,
     label: "DELETE /api/users/3",
-    caption: "The delete hops through the browser down to the server.",
+    caption:
+      "The delete hops through the browser down to the server — Postgres drops the row.",
     phase: P4,
     browser: { dbg: { t: "net", m: "→ DELETE /api/users/3" } },
-  },
-  {
-    from: "server",
-    to: "http",
-    color: C.net,
-    fly: [{ e: "srv" }, { e: "url" }, { p: [840, 378] }],
-    flash: true,
-    label: "HTTP 200 · deleted",
-    caption: "Postgres drops the row and confirms.",
-    phase: P4,
-    browser: { dbg: { t: "net", m: "← 200 · deleted" } },
-  },
-  {
-    from: "http",
-    to: "core",
-    color: C.msg,
-    pts: E.h2c,
-    label: 'dispatch({ id: "users.removed" })',
-    caption: "Back into the loop as a message.",
-    phase: P4,
-    browser: { dbg: { t: "msg", m: "users.removed" } },
-  },
-  {
-    from: "core",
-    to: "app",
-    color: C.msg,
-    pts: E.c2a,
-    label: 'app({ id: "users.removed" }, state)',
-    caption:
-      "The handler filters the row out of the state — a pure computation.",
-    phase: P4,
-    browser: { dbg: { t: "app", m: "app(users.removed, state)" } },
-  },
-  {
-    from: "app",
-    to: "core",
-    color: C.effect,
-    pts: E.a2c,
-    label: '[ store.set("users", rows.filter(…)) ]',
-    caption: "The new users list simply doesn't contain Alan anymore.",
-    phase: P4,
-    browser: { dbg: { t: "fx", m: "store.set users" } },
   },
   {
     from: "dom",
     to: "browser",
     color: C.dom,
-    fly: [{ p: [840, 136] }, { e: "url" }],
+    fly: [{ p: [840, 136] }, { p: [997, 136] }],
     label: "the row is gone",
     caption:
       "One removeRow patch. Reload later and the server agrees — state, DOM and database tell the same story.",
@@ -1636,33 +1345,34 @@ export const FLOW_STEPS: FlowStep[] = [
 /** Actor rects that get a data-node attribute for the walkthrough player. */
 const FLOW_NODE_MARKERS: [string, string][] = [
   ["app", '<rect x="85" y="96" width="280" height="118"'],
-  ["core", '<rect x="85" y="282" width="280" height="128"'],
+  ["core", '<rect x="85" y="282" width="280" height="248"'],
   ["dom", '<rect x="520" y="92" width="320" height="88"'],
   ["store", '<rect x="520" y="214" width="320" height="88"'],
   ["http", '<rect x="520" y="336" width="320" height="88"'],
   ["logger", '<rect x="520" y="458" width="320" height="88"'],
+  ["browser", '<rect x="1000" y="56" width="500" height="504"'],
+  ["server", '<rect x="1000" y="596" width="500" height="56"'],
 ];
 
 /**
  * The walkthrough diagram for the hero, drawn from scratch (the static
  * pureConceptSvg keeps the six-actor ring for the docs). Three zones: your
  * application as one island on the left (app + core), the plugin column in
- * the middle, and on the right a dashed rail — the browser's edge. Every
+ * the middle, and on the right the browser itself — the toy browser with
+ * its devtools is drawn into this svg, and the server sits under it. Every
  * plugin touches exactly two neighbours: the core (left) and the browser
- * (right). The toy browser rendered beside this svg on the page IS the
- * browser actor, and the server lives under it in the page — only the
- * browser talks to the server, no plugin ever does.
+ * (right); messages leave the browser through one trunk under the plugin
+ * column. Only the browser talks to the server, no plugin ever does.
  */
 export function pureConceptFlowSvg(id = "flowviz-svg"): string {
-  const svg = new Svg(W, 700);
+  const svg = new Svg(1560, 680);
   svg.text(24, 34, "One pure application — plugins do every dirty thing", {
     size: 16,
     bold: true,
   });
-  svg.caption(W - 24, 34, "messages in → effects out", "end");
 
   // -- your application: app + core in one pure island ------------------
-  svg.rect(60, 56, 330, 372, {
+  svg.rect(60, 56, 330, 490, {
     fill: C.pure,
     stroke: "#6366f1",
     dash: "6 4",
@@ -1706,31 +1416,31 @@ export function pureConceptFlowSvg(id = "flowviz-svg"): string {
     fill: C.faint,
   });
 
-  svg.rect(85, 282, 280, 128, { fill: C.panel, stroke: C.border, rx: 10 });
-  svg.text(225, 308, "core — createApp()", {
+  svg.rect(85, 282, 280, 248, { fill: C.panel, stroke: C.border, rx: 10 });
+  svg.text(225, 316, "core — createApp()", {
     size: 14,
     bold: true,
     anchor: "middle",
   });
-  svg.text(225, 330, "queue → app(msg, state)", {
+  svg.text(225, 356, "queue → app(msg, state)", {
     size: 10.5,
     mono: true,
     anchor: "middle",
     fill: C.muted,
   });
-  svg.text(225, 346, "effects → plugins, in order", {
+  svg.text(225, 392, "effects → plugins, in order", {
     size: 10.5,
     mono: true,
     anchor: "middle",
     fill: C.muted,
   });
-  svg.text(225, 362, "state changed → onState(all)", {
+  svg.text(225, 428, "state changed → onState(all)", {
     size: 10.5,
     mono: true,
     anchor: "middle",
     fill: C.muted,
   });
-  svg.text(225, 390, "the only code that calls the app", {
+  svg.text(225, 498, "the only code that calls the app", {
     size: 10,
     italic: true,
     anchor: "middle",
@@ -1865,54 +1575,264 @@ export function pureConceptFlowSvg(id = "flowviz-svg"): string {
     fill: C.faint,
   });
 
-  // -- trunks between the island and the column (they land in the gaps
-  // between plugin boxes, so they read as "core ↔ the column", not one box)
-  svg.arrow(365, 319, 520, 319, { stroke: C.effect, sw: 1.6 });
-  svg.caption(442, 307, "handle(effects)", "middle");
+  // -- effects out: the core hands every effect to its plugin — one arrow
+  // per plugin, all from the core's right edge (the core is tall enough
+  // that even logger gets a straight line). dom and store sit above the
+  // core's top, so they arrive through short elbows.
   svg.poly(
     [
-      [520, 441],
-      [430, 441],
-      [430, 394],
-      [365, 394],
+      [365, 296],
+      [445, 296],
+      [445, 136],
+      [520, 136],
     ],
-    { stroke: C.msg, sw: 1.6 },
+    { stroke: C.effect, sw: 1.6 },
   );
-  svg.caption(442, 461, "dispatch(msg)", "middle");
+  svg.poly(
+    [
+      [365, 322],
+      [475, 322],
+      [475, 258],
+      [520, 258],
+    ],
+    { stroke: C.effect, sw: 1.6 },
+  );
+  svg.arrow(365, 378, 520, 378, { stroke: C.effect, sw: 1.6 });
+  svg.arrow(365, 502, 520, 502, { stroke: C.effect, sw: 1.6 });
+  svg.caption(442, 352, "effect (out)", "middle");
 
-  // -- every plugin also touches the browser on the right: four arrows
-  // land on a dashed rail — the browser's edge. The toy browser rendered
-  // beside this svg on the page IS that rail; the server lives under it
-  // (in the page), and only the browser talks to the server.
-  svg.line(1210, 92, 1210, 546, { stroke: C.muted, sw: 1.2, dash: "4 3" });
-  svg.text(1210, 82, "browser", {
+  // -- messages in: events come from the browser (the dom plugin owns the
+  // listeners) — one thick trunk: out of the browser's left edge, then
+  // straight left UNDER the whole plugin column, then up into the core's
+  // underside. No line is crossed on the way.
+  svg.poly(
+    [
+      [1000, 556],
+      [340, 556],
+      [340, 530],
+    ],
+    { stroke: C.msg, sw: 2.2 },
+  );
+  svg.caption(670, 576, "dispatch", "middle");
+
+  // -- every plugin also touches the browser on the right — and the browser
+  // itself is drawn right here, inside the svg: chrome + url bar, the page
+  // view, the dark devtools with the store tab and the step dots, and the
+  // server underneath. Only the browser talks to the server.
+  svg.arrow(840, 136, 997, 136, { stroke: C.dom, sw: 1.4 });
+  svg.caption(918, 124, "DOM work", "middle");
+  svg.arrow(840, 258, 997, 258, { stroke: C.state, sw: 1.4 });
+  svg.caption(918, 246, "state change", "middle");
+  svg.arrow(840, 378, 997, 378, { stroke: C.net, sw: 1.4 });
+  svg.caption(918, 366, "network", "middle");
+  svg.arrow(840, 502, 997, 502, { stroke: C.muted, sw: 1.4 });
+  svg.caption(918, 490, "devtools log", "middle");
+
+  // -- the toy browser ---------------------------------------------------
+  // outer card (the walkthrough lights it up as the "browser" actor)
+  svg.rect(1000, 56, 500, 504, {
+    fill: C.panel,
+    stroke: C.border,
+    rx: 12,
+  });
+  // chrome: dots + url pill
+  svg.rect(1000, 56, 500, 34, { fill: "#eef1f6", rx: 12 });
+  svg.raw('<rect x="1000" y="80" width="500" height="10" fill="#eef1f6"/>');
+  svg.line(1000, 90, 1500, 90, { stroke: C.border, sw: 1 });
+  [
+    ["#f2b0b0", 1020],
+    ["#f5d78a", 1036],
+    ["#b8e0b0", 1052],
+  ].forEach(([fill, cx]) => {
+    svg.raw(`<circle cx="${cx}" cy="73" r="4.5" fill="${fill}"/>`);
+  });
+  svg.rect(1078, 62, 396, 22, {
+    fill: "#ffffff",
+    stroke: C.border,
+    rx: 11,
+    id: "tb-url-pill",
+  });
+  svg.text(1090, 78, "localhost:3000/", {
+    size: 11,
+    mono: true,
+    fill: C.ink,
+    id: "tb-url",
+  });
+  // nav
+  svg.text(1016, 108, "admin", { size: 11.5, bold: true });
+  svg.text(1068, 108, "overview", {
+    size: 11.5,
+    fill: "#1d4ed8",
+    bold: true,
+    attrs: 'data-nav="overview"',
+  });
+  svg.text(1146, 108, "users", {
+    size: 11.5,
+    fill: C.muted,
+    attrs: 'data-nav="users"',
+  });
+  svg.line(1000, 114, 1500, 114, { stroke: C.border, sw: 1 });
+
+  // -- page views (the script swaps the groups) --------------------------
+  const pill = (
+    x: number,
+    y: number,
+    w: number,
+    label: string,
+    color: string,
+    solid = false,
+  ): void => {
+    svg.rect(x, y, w, 18, {
+      fill: solid ? "#4f46e5" : "#ffffff",
+      stroke: solid ? "#4f46e5" : C.border,
+      rx: 9,
+    });
+    svg.text(x + w / 2, y + 12.5, label, {
+      size: 9,
+      bold: true,
+      anchor: "middle",
+      fill: solid ? "#ffffff" : color,
+    });
+  };
+  const row = (
+    y: number,
+    id: string,
+    name: string,
+    opts: { edit?: boolean; input?: boolean } = {},
+  ): void => {
+    svg.rect(1012, y, 476, 44, {
+      fill: "#ffffff",
+      stroke: opts.input ? "#6366f1" : C.border,
+      sw: opts.input ? 1.5 : 1,
+      rx: 8,
+    });
+    svg.text(1026, y + 27, id, { size: 10, mono: true, fill: C.faint });
+    if (opts.input) {
+      svg.text(1052, y + 27, name, { size: 11, mono: true });
+      pill(1390, y + 13, 50, "save", "#ffffff", true);
+    } else {
+      svg.text(1052, y + 27, name, { size: 11.5 });
+      pill(1340, y + 13, 44, "edit", C.msg);
+      pill(1392, y + 13, 58, "remove", "#dc2626");
+    }
+  };
+  const view = (name: string, draw: () => void): void => {
+    svg.raw(
+      `<g data-view="${name}"${name === "home" ? "" : ' display="none"'}>`,
+    );
+    draw();
+    svg.raw("</g>");
+  };
+
+  view("home", () => {
+    [
+      ["8", "users"],
+      ["10", "products"],
+      ["10", "payments"],
+    ].forEach(([n, label], i) => {
+      const x = 1016 + i * 171;
+      svg.rect(x, 200, 130, 64, { fill: "#fbfcfe", stroke: C.border, rx: 8 });
+      svg.text(x + 65, 232, n, {
+        size: 16,
+        bold: true,
+        anchor: "middle",
+      });
+      svg.text(x + 65, 252, label, {
+        size: 10,
+        fill: C.muted,
+        anchor: "middle",
+      });
+    });
+  });
+  view("users-loading", () => {
+    svg.text(1016, 146, "Users", { size: 12, bold: true });
+    [476, 400, 300].forEach((w, i) => {
+      svg.rect(1012, 170 + i * 30, w, 14, { fill: "#e8edf4", rx: 7 });
+    });
+  });
+  view("users", () => {
+    svg.text(1016, 146, "Users", { size: 12, bold: true });
+    row(160, "1", "Ada L.");
+    row(220, "2", "Grace H.");
+    row(280, "3", "Alan T.");
+  });
+  view("users-edit", () => {
+    svg.text(1016, 146, "Users", { size: 12, bold: true });
+    row(160, "1", "Ada L.", { input: true });
+    row(220, "2", "Grace H.");
+    row(280, "3", "Alan T.");
+  });
+  view("users-edited", () => {
+    svg.text(1016, 146, "Users", { size: 12, bold: true });
+    row(160, "1", "Ada Lovelace");
+    row(220, "2", "Grace H.");
+    row(280, "3", "Alan T.");
+  });
+  view("users-after", () => {
+    svg.text(1016, 146, "Users", { size: 12, bold: true });
+    row(160, "1", "Ada Lovelace");
+    row(220, "2", "Grace H.");
+  });
+
+  // -- devtools: store tab + the walkthrough dots -------------------------
+  svg.rect(1000, 430, 500, 130, { fill: "#0b1220" });
+  svg.text(1016, 448, "store", {
     size: 10.5,
+    mono: true,
+    bold: true,
+    fill: C.codeText,
+  });
+  svg.rect(1012, 454, 34, 2, { fill: "#6366f1" });
+  svg.text(1488, 448, "1/15", {
+    size: 10,
+    mono: true,
+    fill: "#64748b",
+    anchor: "end",
+    id: "tb-step",
+  });
+  svg.line(1000, 456, 1500, 456, { stroke: "#1e293b", sw: 1 });
+  svg.text(1016, 472, "state #1 — init — overview (SSR)", {
+    size: 9.5,
+    mono: true,
+    fill: "#64748b",
+    id: "tb-tl-info",
+  });
+  svg.rect(1012, 480, 54, 15, { fill: "#1e293b", rx: 4, id: "tb-chip-box" });
+  svg.text(1039, 491, "ssr", {
+    size: 8.5,
+    mono: true,
     bold: true,
     anchor: "middle",
+    fill: "#cbd5e1",
+    id: "tb-chip",
+  });
+  svg.text(1076, 491, "render(state) ran on the server", {
+    size: 9.5,
+    mono: true,
+    fill: "#cbd5e1",
+    id: "tb-dbg",
+  });
+  svg.line(1000, 504, 1500, 504, { stroke: "#1e293b", sw: 1 });
+  // the step dots land here — one per walkthrough step, clickable
+  svg.raw('<g id="fv-dots-g"></g>');
+
+  // -- the server, under the browser — only the browser talks to it, through
+  // the two short arrows in the gap: requests ride down, replies ride up.
+  // No packet ever crosses the browser's drawn interior.
+  svg.arrow(1215, 563, 1215, 593, { stroke: C.net, sw: 1.6 });
+  svg.arrow(1285, 593, 1285, 563, { stroke: C.net, sw: 1.6 });
+  svg.rect(1000, 596, 500, 56, {
+    fill: C.panel,
+    stroke: C.border,
+    rx: 10,
+  });
+  svg.raw('<circle id="fv-led" cx="1024" cy="624" r="5" fill="#cbd5e1"/>');
+  svg.text(1044, 621, "server", { size: 13, bold: true });
+  svg.text(1044, 637, "API · Postgres — the outside world", {
+    size: 10,
     fill: C.muted,
   });
-  svg.arrow(840, 136, 1200, 136, { stroke: C.dom, sw: 1.4 });
-  svg.caption(1020, 124, "build · apply(patches)", "middle");
-  svg.arrow(840, 258, 1200, 258, { stroke: C.state, sw: 1.4 });
-  svg.caption(1020, 246, "the store tab", "middle");
-  svg.arrow(840, 378, 1200, 378, { stroke: C.net, sw: 1.4 });
-  svg.caption(1020, 366, "fetch()", "middle");
-  svg.arrow(840, 502, 1200, 502, { stroke: C.muted, sw: 1.4 });
-  svg.caption(1020, 490, "the pavlus tab", "middle");
-
-  // legend
-  const legend: [string, string][] = [
-    [C.msg, "message (in)"],
-    [C.effect, "effect (out)"],
-    [C.state, "state change"],
-    [C.dom, "DOM work"],
-    [C.net, "network"],
-  ];
-  legend.forEach(([color, label], i) => {
-    const x = 70 + i * 115;
-    svg.line(x, 576, x + 24, 576, { stroke: color, sw: 2 });
-    svg.text(x + 30, 580, label, { size: 10, fill: C.muted });
-  });
+  svg.caption(1250, 672, "only the browser talks to the server", "middle");
 
   let s = svg.toString();
   for (const [node, marker] of FLOW_NODE_MARKERS) {

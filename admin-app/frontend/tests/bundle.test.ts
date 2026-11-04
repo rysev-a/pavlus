@@ -35,6 +35,12 @@ test("the production bundle has the styles of every page", async () => {
     ".form__field", // the create/edit forms
     ".settings__option", // the theme radios
     "scrollbar-gutter:stable", // the page keeps its width when a scrollbar appears
+    ".ui-data-table", // the data tables (users, sessions, products, tasks)
+    ".ui-data-toolbar", // the tasks toolbar: search + facet + reset
+    ".ui-facet-panel", // the faceted filter's option list
+    ".ui-data-check", // the row checkboxes
+    ".ui-resource-footer", // the pagination footer
+    "[data-icon=trash]", // the row delete icons (the bundler drops the quotes)
   ];
   for (const selector of selectors) {
     expect(css, `no style for ${selector}`).toContain(selector);

@@ -22,7 +22,7 @@ export class Admin extends Component<AdminState> {
   view = view;
 
   children: Children<AdminState> = {
-    roles: { component: roles, key: "roles" },
+    roles: { component: roles, key: "roles", tag: "roles-page" },
   };
 
   // Entered by the router: start loading the roles.

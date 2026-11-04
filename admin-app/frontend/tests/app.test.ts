@@ -255,10 +255,10 @@ describe("the sidebar menu and the pages", () => {
     ]);
     expect(document.querySelector(".dashboard")).toBeNull();
     await loaded();
-    // the dashboard loaded its users, and the users list loads its own
+    // the dashboard loaded its users, and the users table loads its own
     expect(api.requests).toEqual(["GET /api/users", "GET /api/users"]);
     expect(text(".auth-users .page-title")).toEqual(["Users"]);
-    expect(text(".auth-users__row td:first-child")).toEqual(USERS);
+    expect(text(".auth-users__row td:nth-child(2)")).toEqual(USERS);
   });
 
   test("about has no logic; its links go through the shell", async () => {
@@ -479,13 +479,33 @@ describe("the dashboard's own pages", () => {
 });
 
 describe("the generated lists", () => {
-  test("the users list: all eight users with their roles and Edit links", async () => {
+  test("the users table: every row has a checkbox, an Edit link and a trash", async () => {
     setup("/auth/users");
     await loaded();
     expect(api.requests).toEqual(["GET /api/users"]);
-    expect(text(".auth-users__row td:nth-child(3)")).toEqual(USER_ROLES);
+    // first cell is the checkbox, then Name, Email, Role, Edit, trash
+    expect(text(".auth-users__row td:nth-child(4)")).toEqual(USER_ROLES);
     expect(text(".auth-users__row a")).toHaveLength(8);
+    expect(text(".auth-users__row .row-delete")).toHaveLength(8);
+    expect(
+      document.querySelector('.auth-users th input[type="checkbox"]'),
+    ).not.toBeNull();
     expect(document.querySelector('a[href="/auth/users/new"]')).not.toBeNull();
+    expect(text(".auth-users .ui-cell-muted")).toContain("8 row(s)");
+  });
+
+  test("the users table: the header checkbox selects the page for a bulk delete", async () => {
+    setup("/auth/users");
+    await loaded();
+    // one tick marks the whole page; the footer offers to remove them all
+    click('.auth-users th input[type="checkbox"]');
+    expect(text(".auth-users .delete-selected")).toEqual([
+      "Delete selected (8)",
+    ]);
+    // unticking clears the selection; nothing has asked the API yet
+    click('.auth-users th input[type="checkbox"]');
+    expect(text(".auth-users .delete-selected")).toEqual([]);
+    expect(api.requests).toEqual(["GET /api/users"]);
   });
 
   test("the roles list: three roles with a New button and Edit links", async () => {
@@ -507,13 +527,14 @@ describe("the generated lists", () => {
     );
   });
 
-  test("the sessions list: the users behind the sessions", async () => {
+  test("the sessions table: the users behind the sessions, deletable", async () => {
     setup("/auth/sessions");
     await loaded();
     expect(api.requests).toEqual(["GET /api/sessions"]);
-    const users = text(".auth-sessions__row td:first-child");
+    const users = text(".auth-sessions__row td:nth-child(2)");
     expect(users.length).toBeGreaterThan(0);
     for (const user of users) expect(USERS).toContain(user);
+    expect(text(".auth-sessions__row .row-delete").length).toBe(users.length);
   });
 
   test("the shop lists: ten categories and twenty orders from the users", async () => {
@@ -531,23 +552,118 @@ describe("the generated lists", () => {
     for (const customer of customers) expect(USERS).toContain(customer);
   });
 
-  test("the system lists: thirty tasks, twenty processes, the notifications", async () => {
+  test("the products table: fifty rows over five pages, paged ten at a time", async () => {
+    setup("/shop/products");
+    await loaded();
+    expect(api.requests).toEqual(["GET /api/products"]);
+    expect(text(".shop-products__row")).toHaveLength(10);
+    expect(text(".shop-products .ui-cell-muted")).toContain("Page 1 of 5");
+    click(".shop-products .ui-resource-pager button", 2); // page "2"
+    await until(
+      () => text(".shop-products__row td:nth-child(2)")[0] === PRODUCTS[10],
+      "page 2",
+    );
+    expect(text(".shop-products .ui-cell-muted")).toContain("Page 2 of 5");
+    // the rows-per-page select resizes the table
+    const select = document.querySelector(
+      ".shop-products .ui-data-rows-select",
+    ) as HTMLSelectElement;
+    select.value = "50";
+    select.dispatchEvent(new Event("change"));
+    await until(() => text(".shop-products__row").length === 50, "50 rows");
+    expect(text(".shop-products .ui-cell-muted")).toContain("Page 1 of 1");
+  });
+
+  test("the system lists: tasks and processes are paged data tables", async () => {
     setup("/system/tasks");
     await loaded();
     expect(api.requests).toEqual(["GET /api/tasks"]);
-    expect(text(".system-tasks__row")).toHaveLength(30);
+    expect(text(".system-tasks__row")).toHaveLength(10); // page 1 of 3
+    expect(text(".system-tasks .ui-cell-muted")).toContain("30 row(s)");
 
     api.requests.length = 0;
     setup("/system/processes");
     await loaded();
     expect(api.requests).toEqual(["GET /api/processes"]);
-    expect(text(".system-processes__row")).toHaveLength(20);
+    expect(text(".system-processes__row")).toHaveLength(10); // page 1 of 2
+    expect(text(".system-processes .ui-cell-muted")).toContain("20 row(s)");
 
     api.requests.length = 0;
     setup("/system/notifications");
     await loaded();
     expect(api.requests).toEqual(["GET /api/notifications"]);
     expect(text(".system-notifications__row")).toHaveLength(6);
+  });
+
+  test("the tasks table: the toolbar filters, the trash deletes without asking", async () => {
+    setup("/system/tasks");
+    await loaded();
+    expect(api.requests).toEqual(["GET /api/tasks"]);
+    expect(text(".system-tasks__row")).toHaveLength(10);
+    // the search narrows the table to the Cleanup jobs
+    const search = document.querySelector(
+      ".system-tasks .ui-data-search input",
+    ) as HTMLInputElement;
+    search.value = "Cleanup";
+    search.dispatchEvent(new Event("input"));
+    await until(() => text(".system-tasks__row").length === 3, "the search");
+    expect(text(".system-tasks__row td:nth-child(2)")).toEqual([
+      "Cleanup temp files #1",
+      "Cleanup temp files #11",
+      "Cleanup temp files #21",
+    ]);
+    expect(text(".system-tasks .ui-cell-muted")).toContain("3 row(s)");
+    search.value = "";
+    search.dispatchEvent(new Event("input"));
+    await until(
+      () => text(".system-tasks__row").length === 10,
+      "the query reset",
+    );
+    // the status facet keeps only the running jobs (the third seed run)
+    expect(text(".system-tasks .ui-facet-active")).toEqual([]);
+    click(".system-tasks .ui-facet-option .ui-data-check", 1); // running
+    await until(() => text(".system-tasks__row").length === 8, "the facet");
+    expect(text(".system-tasks__row .ui-badge")).toEqual(
+      new Array(8).fill("running"),
+    );
+    expect(text(".system-tasks .ui-facet-active")).toEqual(["1"]);
+    expect(text(".system-tasks .ui-cell-muted")).toContain("Page 1 of 1");
+    // the reset brings the whole list back
+    click(".system-tasks .filters-reset");
+    await until(
+      () => text(".system-tasks .ui-facet-active").length === 0,
+      "the filter reset",
+    );
+    expect(text(".system-tasks__row")).toHaveLength(10);
+    // to page 2, then its first two rows go in one request
+    click(".system-tasks .ui-resource-pager button", 2); // the page "2"
+    await until(
+      () => text(".system-tasks .ui-cell-muted").includes("Page 2 of 3"),
+      "page 2",
+    );
+    click(".system-tasks__row .ui-data-check", 0);
+    click(".system-tasks__row .ui-data-check", 1);
+    expect(text(".system-tasks .delete-selected")).toEqual([
+      "Delete selected (2)",
+    ]);
+    click(".system-tasks .delete-selected");
+    await until(
+      () => text(".system-tasks .ui-cell-muted").includes("28 row(s)"),
+      "the bulk delete",
+    );
+    expect(api.requests).toEqual(["GET /api/tasks", "DELETE /api/tasks/11,12"]);
+    expect(text(".system-tasks__row td:nth-child(2)")[0]).toBe(
+      "Send weekly digest #13",
+    );
+    // one row's trash: gone at once, no confirmation anywhere
+    api.requests.length = 0;
+    click(".system-tasks__row .row-delete", 0);
+    await until(
+      () => text(".system-tasks .ui-cell-muted").includes("27 row(s)"),
+      "the row delete",
+    );
+    expect(api.requests).toEqual(["DELETE /api/tasks/13"]);
+    await api.reseed();
   });
 });
 
@@ -636,11 +752,11 @@ describe("the create and edit forms", () => {
     select.dispatchEvent(new Event("change"));
     click('.user-form button[type="submit"]');
     await until(
-      () => text(".auth-users__row td:first-child").length === 9,
+      () => text(".auth-users__row td:nth-child(2)").length === 9,
       "the new user in the list",
     );
-    expect(text(".auth-users__row td:first-child")).toEqual([...USERS, "Zoe"]);
-    expect(text(".auth-users__row td:nth-child(3)")).toEqual([
+    expect(text(".auth-users__row td:nth-child(2)")).toEqual([...USERS, "Zoe"]);
+    expect(text(".auth-users__row td:nth-child(4)")).toEqual([
       ...USER_ROLES,
       "editor",
     ]);
@@ -674,7 +790,7 @@ describe("the create and edit forms", () => {
       () => text(".auth-users__row").length === 8,
       "the list after the save",
     );
-    expect(text(".auth-users__row td:nth-child(3)")).toEqual([
+    expect(text(".auth-users__row td:nth-child(4)")).toEqual([
       "admin",
       "admin", // Bob moved from editor to admin
       "editor",

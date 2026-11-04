@@ -21,11 +21,11 @@ Composition has a **logic layer** (components: messages in, effects out) and a
 **view layer** (templates: state in, DOM patches out). They are tied together
 by one **instance name per embedded child** (`users` below):
 
-| Layer | What the name does |
-|---|---|
+| Layer    | What the name does                                                 |
+| -------- | ------------------------------------------------------------------ |
 | Messages | prefix of every message the child's template sends: `users.select` |
-| Logic | the key in the parent's `children` that routes `users.*` messages |
-| State | the key where the child's state lives: `state.users` |
+| Logic    | the key in the parent's `children` that routes `users.*` messages  |
+| State    | the key where the child's state lives: `state.users`               |
 
 Rule to remember: **`users` in the template, `users` in `children`, `users` in
 the state.**
@@ -43,19 +43,36 @@ they were removed in favour of classes only: every key became a method, and
 import view from "./users-list.pavlus";
 
 class UsersList extends Component<UsersState> {
-  view = view;                                // the template of this component
+  view = view; // the template of this component
   load() {
     return [
-      set("status", "loading"),               // paths are relative to the child
-      { plugin: "http", type: "request", id: "users", url: "/api/users",
-        onSuccess: "loaded", onError: "failed" },
+      set("status", "loading"), // paths are relative to the child
+      {
+        plugin: "http",
+        type: "request",
+        id: "users",
+        url: "/api/users",
+        onSuccess: "loaded",
+        onError: "failed",
+      },
     ];
   }
-  loaded(msg: Message) { return [set("items", msg.payload.data), set("status", "idle")]; }
-  failed() { return [set("status", "failed")]; }
-  select(msg: Message) { return [set("selectedId", msg.payload)]; }
+  loaded(msg: Message) {
+    return [set("items", msg.payload.data), set("status", "idle")];
+  }
+  failed() {
+    return [set("status", "failed")];
+  }
+  select(msg: Message) {
+    return [set("selectedId", msg.payload)];
+  }
   remove(msg: Message, s: UsersState) {
-    return [set("items", s.items.filter((u) => u.id !== msg.payload))];
+    return [
+      set(
+        "items",
+        s.items.filter((u) => u.id !== msg.payload),
+      ),
+    ];
   }
 }
 export const usersList = new UsersList();
@@ -90,14 +107,16 @@ class Dashboard extends Component<DashboardState> {
   children: Children<DashboardState> = {
     users: {
       component: usersList,
-      key: "users",                           // child state = state.users
-      props: (s) => ({ filter: s.filter }),   // + read-only inputs
+      key: "users", // child state = state.users
+      props: (s) => ({ filter: s.filter }), // + read-only inputs
     },
   };
   mounted(_msg: Message, _s: DashboardState, { send }: ComponentCtx) {
-    return send("users", "load");             // parent starts the child
+    return send("users", "load"); // parent starts the child
   }
-  filterInput(msg: Message) { return [set("filter", msg.event?.value ?? "")]; }
+  filterInput(msg: Message) {
+    return [set("filter", msg.event?.value ?? "")];
+  }
 }
 export const dashboard = new Dashboard();
 ```
@@ -216,23 +235,23 @@ Caveats to keep in mind:
   in the state and map it to the component in a function
   (`component: (s) => registry[s.usersKind]`) plus the same choice in the
   template with `if`.
-- Never `store.set` a path *inside* a component value (the store spreads
+- Never `store.set` a path _inside_ a component value (the store spreads
   plain objects and would drop the prototype of a class instance).
 
 ## 6. Compiler and runtime changes
 
-| Area | Change |
-|---|---|
-| Parser | `import X from "path"` header lines; `+Name#instance(props)` and `+{expr}#instance(props)` lines; `...spread` in the attribute list. |
-| Codegen: signatures | `render(state, sfx = "", ns = "")` and `diff(prev, next, sfx = "", ns = "")`. `sfx` (node id suffix) is what is hard-coded as `""` today; `ns` prefixes every event message id. Defaults keep all current behavior. |
-| Codegen: static embed | render: `out.push(...Child.render(props, sfx + "/<nid>", ns + "users."))`. diff: guarded by the props' dependencies, calls `Child.diff(propsP, propsN, ...)`. No markers needed. |
-| Codegen: dynamic embed | Markers plus the identity check from section 5, built from the same code as `if`. |
-| Dependencies | An embed reads the identifiers in its prop expressions (and in `{expr}`), so the parent skips the child when none changed. |
-| Metadata | Compiled views export `meta.embeds` (instance names). As built, nothing checks it yet: a mismatch is not always a bug (a presentational child such as a footer has no logic, and a logic-only child has no markup), so a useful check needs an explicit opt-in. |
-| Vite plugin | The generated module keeps its `import`s; Vite resolves them through the same plugin. `compileToView` (tests) takes a `{ components }` map. |
-| DOM plugin | Patches are unchanged: ids are unique per mount thanks to `sfx`. New: `onMounted` option on `mount`; `mount` accepts a component and uses `.view`. |
-| Core | `createApp({ app })` accepts a function or a component instance. |
-| `component/` | the `Component` base class (`dispatch`), `toHandler` (function / instance), `children` routing built on the existing `namespace`, `props` option, `ctx.send`. |
+| Area                   | Change                                                                                                                                                                                                                                                          |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Parser                 | `import X from "path"` header lines; `+Name#instance(props)` and `+{expr}#instance(props)` lines; `...spread` in the attribute list.                                                                                                                            |
+| Codegen: signatures    | `render(state, sfx = "", ns = "")` and `diff(prev, next, sfx = "", ns = "")`. `sfx` (node id suffix) is what is hard-coded as `""` today; `ns` prefixes every event message id. Defaults keep all current behavior.                                             |
+| Codegen: static embed  | render: `out.push(...Child.render(props, sfx + "/<nid>", ns + "users."))`. diff: guarded by the props' dependencies, calls `Child.diff(propsP, propsN, ...)`. No markers needed.                                                                                |
+| Codegen: dynamic embed | Markers plus the identity check from section 5, built from the same code as `if`.                                                                                                                                                                               |
+| Dependencies           | An embed reads the identifiers in its prop expressions (and in `{expr}`), so the parent skips the child when none changed.                                                                                                                                      |
+| Metadata               | Compiled views export `meta.embeds` (instance names). As built, nothing checks it yet: a mismatch is not always a bug (a presentational child such as a footer has no logic, and a logic-only child has no markup), so a useful check needs an explicit opt-in. |
+| Vite plugin            | The generated module keeps its `import`s; Vite resolves them through the same plugin. `compileToView` (tests) takes a `{ components }` map.                                                                                                                     |
+| DOM plugin             | Patches are unchanged: ids are unique per mount thanks to `sfx`. New: `onMounted` option on `mount`; `mount` accepts a component and uses `.view`.                                                                                                              |
+| Core                   | `createApp({ app })` accepts a function or a component instance.                                                                                                                                                                                                |
+| `component/`           | the `Component` base class (`dispatch`), `toHandler` (function / instance), `children` routing built on the existing `namespace`, `props` option, `ctx.send`.                                                                                                   |
 
 Unchanged: the pure `render`/`diff` split, patches as data, the main invariant
 test. It gets extended with nested static and dynamic children.
@@ -274,9 +293,12 @@ Done: component forms and `children` routing (`src/component`), parser and
 codegen for `import`, `+Name#instance(props)`, `+{expr}#instance(props)` and
 `...spread`, `sfx`/`ns` parameters, `meta`, `dom.mount({ onMounted })` and
 mounting a component, `createApp` taking any component form, the rewritten
-example, and property tests for nested and swapping children (the
+example, property tests for nested and swapping children (the
 "`diff` equals fresh render" invariant over random states, with the DOM
-checked for leaked nodes and listeners).
+checked for leaked nodes and listeners), display `tag` on `ChildSpec` and
+`Component` (the debug panel's Apps tab labels), and `setComponentTrace` —
+a global receive/emit hook per component boundary that the debug agent
+drains into per-component input/output (the Apps tab's **io** view).
 
 Not done: slots, template lifecycle hooks, typed props, recursive templates,
 `switch`/`case` (section 7), and any `meta.embeds` check.

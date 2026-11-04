@@ -132,6 +132,8 @@ const docsHtml = renderDocsPage({
   pipeline: pipeline.toString(),
   examples: exampleSvgs,
   pureConcept,
+  flowSvg: pureFlow,
+  flowSteps: FLOW_STEPS,
   counter: {
     svg: counterSvg,
     patches: {

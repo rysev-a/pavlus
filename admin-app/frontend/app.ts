@@ -28,6 +28,13 @@ import {
   type Row,
 } from "./modules/crud/list.ts";
 import {
+  DataTable,
+  initialTable,
+  type FacetFilter,
+  type TableProps,
+  type TableState,
+} from "./modules/crud/table.ts";
+import {
   settingsPage,
   initialSettings,
   type SettingsState,
@@ -146,33 +153,36 @@ export interface AppState {
   drawerOpen: boolean;
   dashboard: DashboardState;
   admin: AdminState;
-  // Every list page is a `DataList`; the forms have their own slices.
-  usersAdmin: ListState<UserRow>;
+  // The list pages are `DataList`s, the data tables are `DataTable`s; the
+  // forms have their own slices.
+  usersAdmin: TableState<UserRow>;
   userForm: UserFormState;
   rolesAdmin: ListState<RoleRow>;
   roleForm: RoleFormState;
   permissionsAdmin: ListState<PermissionRow>;
   permissionForm: PermissionFormState;
-  sessions: ListState<SessionRow>;
-  shopProducts: ListState<ProductRow>;
+  sessions: TableState<SessionRow>;
+  shopProducts: TableState<ProductRow>;
   shopCategories: ListState<CategoryRow>;
   shopOrders: ListState<OrderRow>;
-  systemTasks: ListState<TaskRow>;
-  systemProcesses: ListState<ProcessRow>;
+  systemTasks: TableState<TaskRow>;
+  systemProcesses: TableState<ProcessRow>;
   systemNotifications: ListState<NotificationRow>;
   systemSettings: SettingsState;
 }
 
-// One `DataList` per endpoint: the same component, other data.
-const usersAdmin = new DataList<UserRow>("/api/users");
+// One component per endpoint: the same logic, other data. Users, sessions and
+// products are data tables with pagination; tasks and processes add the
+// toolbar (search + status facet). The rest stay plain lists.
+const usersAdmin = new DataTable<UserRow>("/api/users");
 const rolesAdmin = new DataList<RoleRow>("/api/roles");
 const permissionsAdmin = new DataList<PermissionRow>("/api/permissions");
-const sessions = new DataList<SessionRow>("/api/sessions");
-const shopProducts = new DataList<ProductRow>("/api/products");
+const sessions = new DataTable<SessionRow>("/api/sessions");
+const shopProducts = new DataTable<ProductRow>("/api/products");
 const shopCategories = new DataList<CategoryRow>("/api/categories");
 const shopOrders = new DataList<OrderRow>("/api/orders");
-const systemTasks = new DataList<TaskRow>("/api/tasks");
-const systemProcesses = new DataList<ProcessRow>("/api/processes");
+const systemTasks = new DataTable<TaskRow>("/api/tasks");
+const systemProcesses = new DataTable<ProcessRow>("/api/processes");
 const systemNotifications = new DataList<NotificationRow>("/api/notifications");
 
 const col = (title: string, field: string) => ({ title, field });
@@ -184,14 +194,39 @@ const props = (
   createPath: string | null = null,
   editPath: string | null = null,
 ): ListProps => ({ section, title, subtitle, columns, createPath, editPath });
+const tableProps = (
+  section: string,
+  title: string,
+  subtitle: string,
+  columns: { title: string; field: string }[],
+  endpoint: string,
+  opts: {
+    createPath?: string | null;
+    editPath?: string | null;
+    searchable?: boolean;
+    searchPlaceholder?: string | null;
+    facetFilter?: FacetFilter | null;
+  } = {},
+): TableProps => ({
+  section,
+  title,
+  subtitle,
+  columns,
+  endpoint,
+  createPath: opts.createPath ?? null,
+  editPath: opts.editPath ?? null,
+  searchable: opts.searchable ?? false,
+  searchPlaceholder: opts.searchPlaceholder ?? null,
+  facetFilter: opts.facetFilter ?? null,
+});
 
-const usersProps = props(
+const usersProps = tableProps(
   "auth-users",
   "Users",
   "Everybody with an account, and the role it has.",
   [col("Name", "name"), col("Email", "email"), col("Role", "role")],
-  "/auth/users/new",
-  "/auth/users",
+  "/api/users",
+  { createPath: "/auth/users/new", editPath: "/auth/users" },
 );
 const rolesProps = props(
   "auth-roles",
@@ -217,7 +252,7 @@ const permissionsProps = props(
   "/auth/permissions/new",
   "/auth/permissions",
 );
-const sessionsProps = props(
+const sessionsProps = tableProps(
   "auth-sessions",
   "Sessions",
   "Who is signed in, from where, and until when.",
@@ -227,8 +262,9 @@ const sessionsProps = props(
     col("Created", "created"),
     col("Expires", "expires"),
   ],
+  "/api/sessions",
 );
-const productsProps = props(
+const productsProps = tableProps(
   "shop-products",
   "Products",
   "The catalogue: what the shop sells, and how much is in stock.",
@@ -238,6 +274,7 @@ const productsProps = props(
     col("Price", "price"),
     col("In stock", "stock"),
   ],
+  "/api/products",
 );
 const categoriesProps = props(
   "shop-categories",
@@ -256,13 +293,23 @@ const ordersProps = props(
     col("Created", "created"),
   ],
 );
-const tasksProps = props(
+const tasksProps = tableProps(
   "system-tasks",
   "Tasks",
   "The background jobs, and how far each one got.",
   [col("Title", "title"), col("Status", "status"), col("Progress", "progress")],
+  "/api/tasks",
+  {
+    searchable: true,
+    searchPlaceholder: "Filter tasks...",
+    facetFilter: {
+      field: "status",
+      label: "Status",
+      options: ["done", "running", "queued", "failed"],
+    },
+  },
 );
-const processesProps = props(
+const processesProps = tableProps(
   "system-processes",
   "Processes",
   "What is running on the server right now.",
@@ -273,6 +320,16 @@ const processesProps = props(
     col("Memory MB", "memory"),
     col("Status", "status"),
   ],
+  "/api/processes",
+  {
+    searchable: true,
+    searchPlaceholder: "Filter processes...",
+    facetFilter: {
+      field: "status",
+      label: "Status",
+      options: ["running", "sleeping"],
+    },
+  },
 );
 const notificationsProps = props(
   "system-notifications",
@@ -327,18 +384,18 @@ export const initialState: AppState = {
   drawerOpen: false,
   dashboard: initialDashboard,
   admin: initialAdmin,
-  usersAdmin: initialList(),
+  usersAdmin: initialTable(),
   userForm: initialUserForm,
   rolesAdmin: initialList(),
   roleForm: initialRoleForm,
   permissionsAdmin: initialList(),
   permissionForm: initialPermissionForm,
-  sessions: initialList(),
-  shopProducts: initialList(),
+  sessions: initialTable(),
+  shopProducts: initialTable(),
   shopCategories: initialList(),
   shopOrders: initialList(),
-  systemTasks: initialList(),
-  systemProcesses: initialList(),
+  systemTasks: initialTable(),
+  systemProcesses: initialTable(),
   systemNotifications: initialList(),
   systemSettings: initialSettings,
 };

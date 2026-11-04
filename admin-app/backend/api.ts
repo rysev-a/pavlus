@@ -391,9 +391,44 @@ export async function deleteUser(id: number, query: Query): Promise<Reply> {
     : error(404, `no user ${id}`);
 }
 
+/** Deletes several users at once (the data table's "delete selected"). */
+async function deleteUsers(ids: number[], query: Query): Promise<Reply> {
+  await query(`DELETE FROM sessions WHERE user_id = ANY($1)`, [ids]);
+  await query(`DELETE FROM orders WHERE user_id = ANY($1)`, [ids]);
+  await query(`DELETE FROM payments WHERE user_id = ANY($1)`, [ids]);
+  const deleted = await query<Pick<User, "id">>(
+    `DELETE FROM users WHERE id = ANY($1) RETURNING id`,
+    [ids],
+  );
+  return deleted.length
+    ? ok({ deleted: deleted.map((r) => r.id) })
+    : error(404, `no users ${ids.join(",")}`);
+}
+
+/** Deletes several rows of a table without references (the ids that existed come back). */
+async function deleteRows(
+  table: "sessions" | "products" | "tasks" | "processes",
+  ids: number[],
+  query: Query,
+): Promise<Reply> {
+  const deleted = await query<Pick<Task, "id">>(
+    `DELETE FROM ${table} WHERE id = ANY($1) RETURNING id`,
+    [ids],
+  );
+  return deleted.length
+    ? ok({ deleted: deleted.map((r) => r.id) })
+    : error(404, `no rows in ${table} for ${ids.join(",")}`);
+}
+
 const withId = (pathname: string, pattern: RegExp): number | null => {
   const match = pattern.exec(pathname);
   return match ? Number(match[1]) : null;
+};
+
+/** `DELETE /api/tasks/4,7,9`: the comma-separated ids of a bulk delete. */
+const withIds = (pathname: string, pattern: RegExp): number[] | null => {
+  const match = pattern.exec(pathname);
+  return match ? match[1].split(",").map(Number) : null;
 };
 
 /** Routes one request. An unknown GET path is a 404, a wrong method a 405. */
@@ -458,8 +493,20 @@ export async function handleApi(
     if (permissionId !== null) return savePermission(body, permissionId, query);
   }
   if (method === "DELETE") {
-    const userId = withId(pathname, /^\/api\/users\/(\d+)$/);
-    if (userId !== null) return deleteUser(userId, query);
+    const userIds = withIds(pathname, /^\/api\/users\/(\d+(?:,\d+)*)$/);
+    if (userIds) {
+      return userIds.length === 1
+        ? deleteUser(userIds[0], query)
+        : deleteUsers(userIds, query);
+    }
+    const sessionIds = withIds(pathname, /^\/api\/sessions\/(\d+(?:,\d+)*)$/);
+    if (sessionIds) return deleteRows("sessions", sessionIds, query);
+    const productIds = withIds(pathname, /^\/api\/products\/(\d+(?:,\d+)*)$/);
+    if (productIds) return deleteRows("products", productIds, query);
+    const taskIds = withIds(pathname, /^\/api\/tasks\/(\d+(?:,\d+)*)$/);
+    if (taskIds) return deleteRows("tasks", taskIds, query);
+    const processIds = withIds(pathname, /^\/api\/processes\/(\d+(?:,\d+)*)$/);
+    if (processIds) return deleteRows("processes", processIds, query);
   }
   return error(405, `${method} is not allowed`);
 }

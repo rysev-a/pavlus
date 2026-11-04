@@ -39,7 +39,11 @@ export const store = createStorePlugin<AppState>(
 // tab draw the component tree (children / routing). `flushMs: 0` streams
 // every event as it happens — the store timeline updates in realtime on
 // route changes instead of landing in 60 ms batches.
-const debug = createPavlusDebug({ name: "admin-app", app: shell, flushMs: 0 });
+const debug = createPavlusDebug({
+  name: "Application",
+  app: shell,
+  flushMs: 0,
+});
 
 // The theme (`/system/settings`): the application sends a `theme` effect and
 // stays pure; this plugin puts the class on `<html>` (the CSS tokens react).

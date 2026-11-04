@@ -52,6 +52,12 @@ export interface ChildSpec<S = any> {
   key?: string;
   /** Extra read-only fields merged into the child's state. */
   props?: (state: S) => Record<string, unknown>;
+  /**
+   * Display tag for the debug agent (overrides the component's own `tag`):
+   * a stable name for a component that appears in the tree under several
+   * keys, e.g. `tag: "user-form"` for an editor and a creator.
+   */
+  tag?: string;
 }
 
 /** Children by instance name: `children: Children<State> = { users: { ... } }`. */
@@ -67,6 +73,33 @@ const NOT_HANDLERS = new Set(["view", "children", "routing", "dispatch"]);
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null;
+
+/* ------------------------------------------------------- component trace */
+
+/**
+ * Per-component message flow, reported by every child boundary
+ * (`namespace`). Paths are dotted, as in `children` (`"users.editor"`);
+ * message ids are relative to the path (`" setEmail"` at `users.editor`).
+ */
+export interface ComponentTrace {
+  /** The component at `path` received `message`. */
+  receive(path: string, message: Message): void;
+  /** Everything the component's own handler and its subtree returned. */
+  emit(path: string, message: Message, effects: Effect[]): void;
+}
+
+let trace: ComponentTrace | null = null;
+/** Dotted path of the component being dispatched (threaded by `namespace`). */
+let curPath = "";
+
+/**
+ * Observe which components receive which messages and what they emit —
+ * the debug agent feeds this into the Apps tab (input/output per component).
+ * One tracer at a time; pass `null` to stop.
+ */
+export const setComponentTrace = (t: ComponentTrace | null): void => {
+  trace = t;
+};
 
 function lookup(obj: object, id: string): Handler | undefined {
   // `_helper` methods are private by convention (`#helper` is private in JS itself).
@@ -323,6 +356,11 @@ export abstract class Component<S = any> {
   /** The component's template. */
   declare view?: View;
   /**
+   * Display tag for the debug agent: a stable name for this component kind,
+   * shown and grouped in the panel's Apps tab (`"user-form"`).
+   */
+  declare tag?: string;
+  /**
    * Children by instance name. Messages `"<name>.x"` are routed to the child
    * as `"x"`; the instance name is the one used in the template (`+Child#name`).
    */
@@ -339,6 +377,10 @@ export abstract class Component<S = any> {
    * addressed to.
    */
   dispatch(message: Message, state: S): Effect[] {
+    // The root has no `namespace` wrapper above it, so it reports itself;
+    // children are reported by the wrapper (curPath is set there).
+    const root = trace !== null && curPath === "";
+    if (root) trace!.receive("", message);
     const { children, routed } = planOf(this);
     const known = (name: string): boolean =>
       Object.hasOwn(children, name) || routed.has(name);
@@ -385,6 +427,7 @@ export abstract class Component<S = any> {
     const child = name && known(name) ? childOf(name) : null;
     if (child) effects.push(...child(message, state));
     if (!own && !child) effects.push(...this.#defaults(message, ctx));
+    if (root) trace!.emit("", message, effects);
     return effects;
   }
 
@@ -476,28 +519,35 @@ export function namespace<S = any, C = any>(
   const head = `${prefix}.`;
   return (m, s) => {
     if (!m.id.startsWith(head)) return [];
+    const path = curPath ? `${curPath}.${prefix}` : prefix;
     let childState = slice(s);
     if (opts.props) {
       const base =
         typeof childState === "object" && childState !== null ? childState : {};
       childState = { ...base, ...opts.props(s) } as C;
     }
-    return h({ ...m, id: m.id.slice(head.length) }, childState).map((e) => {
-      const out: Effect = { ...e };
-      for (const f of REPLY_FIELDS) {
-        if (typeof out[f] === "string") out[f] = head + (out[f] as string);
-      }
-      if (out.plugin === "store" && key !== undefined && "path" in out) {
-        const path = out.path as string | readonly (string | number)[];
-        out.path =
-          typeof path === "string"
-            ? path
-              ? `${key}.${path}`
-              : key
-            : [key, ...path];
-      }
+    const prev = curPath;
+    curPath = path;
+    try {
+      const inner = { ...m, id: m.id.slice(head.length) };
+      trace?.receive(path, inner);
+      const out = h(inner, childState).map((e) => {
+        const out: Effect = { ...e };
+        for (const f of REPLY_FIELDS) {
+          if (typeof out[f] === "string") out[f] = head + (out[f] as string);
+        }
+        if (out.plugin === "store" && key !== undefined && "path" in out) {
+          const sp = out.path as string | readonly (string | number)[];
+          out.path =
+            typeof sp === "string" ? (sp ? `${key}.${sp}` : key) : [key, ...sp];
+        }
+        return out;
+      });
+      trace?.emit(path, inner, out);
       return out;
-    });
+    } finally {
+      curPath = prev;
+    }
   };
 }
 

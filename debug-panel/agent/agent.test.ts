@@ -293,12 +293,16 @@ test("components of the app are reported as dotted paths", () => {
   const f = fakeHost();
   class Editor extends Component<any> {}
   class Users extends Component<any> {
-    children: Children<any> = { editor: { component: new Editor() } };
+    children: Children<any> = {
+      editor: { component: new Editor(), tag: "ed" },
+    };
   }
   class Settings extends Component<any> {}
   const shell = new (class Shell extends Component<any> {
     children: Children<any> = { users: { component: new Users() } };
-    routing: Routing<any> = { "/settings": { component: new Settings() } };
+    routing: Routing<any> = {
+      "/settings": { component: new Settings(), tag: "cfg" },
+    };
   })();
   const debug = createPavlusDebug({ name: "tree", app: shell }, f.host);
   f.say({ source: "__pavlus_panel__", cmd: "hello" });
@@ -309,6 +313,53 @@ test("components of the app are reported as dotted paths", () => {
     "users.editor",
     "settings",
   ]);
+  // ChildSpec.tag wins over the component's own tag
+  assert.deepEqual(hello.apps[0].tags, {
+    "users.editor": "ed",
+    settings: "cfg",
+  });
+});
+
+test("the component trace feeds comps and per-component io", () => {
+  const f = fakeHost();
+  class Users extends Component<any> {
+    tag = "users-mod";
+    load() {
+      return [{ plugin: "dom", type: "focus", selector: "#u" }];
+    }
+  }
+  const shell = new (class Shell extends Component<any> {
+    children: Children<any> = { users: { component: new Users() } };
+  })();
+  const debug = createPavlusDebug({ name: "io", app: shell }, f.host);
+  const plugins = [{ name: "dom", handle() {} }, debug.plugin];
+  debug.watch(plugins);
+  const app = createApp({ app: shell, plugins, onStep: debug.onStep });
+  app.dispatch({ id: "users.load" });
+
+  // the receive chain: the root (full id) and the child, deepest last
+  const step = f.events().find((e) => e.type === "step")!;
+  assert.deepEqual(step.comps, ["", "users"]);
+
+  f.say({ source: "__pavlus_panel__", cmd: "hello" });
+  const hello = f.hello();
+  assert.deepEqual(hello.apps[0].tags, { users: "users-mod" });
+
+  // inputs are keyed by the full message id at every boundary; the child
+  // heard the relative id, reported under the same full id
+  assert.equal(hello.io[""].input.find((x) => x.id === "users.load").n, 1);
+  assert.equal(hello.io["users"].input.find((x) => x.id === "users.load").n, 1);
+  // outputs: every boundary reports its subtree's effects, with a summary
+  const out = hello.io["users"].output.find((x) => x.id === "dom:focus");
+  assert.equal(out.n, 1);
+  assert.equal(out.summary, '{"selector":"#u"}');
+  assert.equal(hello.io[""].output.find((x) => x.id === "dom:focus").n, 1);
+});
+
+test("a function root reports itself as the root component", () => {
+  const { f, app } = setup();
+  app.dispatch({ id: "go" });
+  assert.deepEqual(stepOf(f, "go").comps, [""]);
 });
 
 console.log("agent tests: ok");

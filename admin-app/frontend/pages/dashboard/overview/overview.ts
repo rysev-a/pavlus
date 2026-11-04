@@ -40,6 +40,8 @@ export class Overview extends Component<OverviewState> {
       select: (s) => s.usersComponent, // follows the component in the state
       key: "users",
       props: (s) => ({ filter: s.filter }), // data flows down through the dashboard
+      // the agent cannot see through `select`: this tag is its stable name
+      tag: "users-view",
     },
   };
 

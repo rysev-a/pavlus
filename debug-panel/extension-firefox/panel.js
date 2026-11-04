@@ -45,13 +45,24 @@ const S = {
   redo: new Map(), // id -> redoable entries, chronological (null = count only)
   waits: new Map(), // effect uid -> http round trip ms
   filterApp: "all", // "all" | app id
+  filterComp: null, // component path within the selected app (Apps tab)
   chip: "all", // "all" | plugin name
   selectedMsg: null, // message inspected on the right: `${appId}:${seq}`
   selectedFx: null, // effect inspected on the effects tab: uid
-  split: { messages: 0.55, effects: 0.55, store: 0.5, apps: 0.6 }, // left pane width
+  split: {
+    messages: 0.55,
+    effects: 0.55,
+    store: 0.5,
+    travel: 0.45,
+    apps: 0.6,
+  }, // left pane width
   tlFrac: 0.38, // store preview height, fraction of the timeline column
   details: new Set(), // effect rows with the detail JSON open: uid
   tlShow: null, // change previewed under the timeline: {appId, idx, entry, redo}
+  travelSel: null, // change selected in the Time travel tab: {appId, idx, entry, redo}
+  appsView: "info", // apps detail pane view: info | io | messages | effects | timeline
+  tags: new Map(), // app id -> { component path -> display tag }
+  io: new Map(), // app id -> Map<path, {input: Map, output: Map}>
   viewerOpen: new Set(), // viewer branches forced open: `${key}@${path}`
   viewerShut: new Set(), // viewer branches forced shut (overriding auto-open)
 };
@@ -90,8 +101,54 @@ const appIds = () =>
 
 const stepsOf = (id) => S.steps.get(id) ?? [];
 
+// one component's io bucket, created on demand (steps can arrive pre-hello)
+function ioBucket(appId, path) {
+  let per = S.io.get(appId);
+  if (!per) {
+    per = new Map();
+    S.io.set(appId, per);
+  }
+  let b = per.get(path);
+  if (!b) {
+    b = { input: new Map(), output: new Map() };
+    per.set(path, b);
+  }
+  return b;
+}
+
 function send(cmd, appId, extra = {}) {
   port.postMessage({ source: PANEL, cmd, appId, ...extra });
+}
+
+// one step through the store timeline — the ⟵/⟶ buttons and the ←/→ keys
+// share these; the agent answers with history∓ + state, which re-renders
+function stepBack(id) {
+  const hist = S.hist.get(id) ?? [];
+  if (!hist.length) return;
+  S.redo.set(id, [hist.at(-1) ?? null, ...(S.redo.get(id) ?? [])]);
+  send("undo", id);
+}
+
+function stepFwd(id) {
+  if (!(S.redo.get(id) ?? []).length) return;
+  send("redo", id);
+}
+
+// travel to position i over hist + ghosts: undo the steps after it (they
+// become redoable ghosts) or redo up to it. history± events keep the
+// panel's ghost list in sync with the agent.
+function jumpTo(id, i) {
+  const hist = S.hist.get(id) ?? [];
+  const ghosts = S.redo.get(id) ?? [];
+  const act = hist.length - 1;
+  if (i === act) return;
+  if (i < act) {
+    const steps = act - i;
+    S.redo.set(id, [...hist.slice(hist.length - steps), ...ghosts]);
+    send("undo", id, { steps });
+  } else {
+    for (let n = i - act; n > 0; n--) send("redo", id);
+  }
 }
 
 /* --------------------------------------------------------------- protocol */
@@ -117,6 +174,9 @@ function applyHello(h) {
   S.selectedFx = null;
   S.tlShow = null;
   S.details.clear();
+  S.filterComp = null;
+  S.tags.clear();
+  S.io.clear();
   for (const app of h.apps ?? []) {
     S.apps.set(app.id, app);
     S.steps.set(app.id, []);
@@ -124,9 +184,42 @@ function applyHello(h) {
     S.redo.set(app.id, Array(h.redo?.[app.id] ?? 0).fill(null));
     if (app.id in (h.state ?? {})) S.states.set(app.id, h.state[app.id]);
     if (app.id in (h.history ?? {})) S.hist.set(app.id, [...h.history[app.id]]);
+    S.tags.set(app.id, app.tags ?? {});
+    for (const [path, io] of Object.entries(h.io?.[app.id] ?? {})) {
+      const b = ioBucket(app.id, path);
+      for (const v of io.input ?? []) b.input.set(v.id, { n: v.n, at: v.at });
+      for (const v of io.output ?? [])
+        b.output.set(v.id, { n: v.n, at: v.at, summary: v.summary });
+    }
   }
   for (const e of h.replay ?? []) applyEvent(e);
   refresh();
+}
+
+// live-merge a step's component trace into the io maps: every component on
+// the receive chain counts the message as input; outputs land on the deepest
+// one (the boundary whose subtree produced them) — the next hello re-syncs
+// the exact per-boundary split the agent tracks
+function mergeIo(appId, comps, e) {
+  const list = comps?.length ? comps : [""];
+  for (const p of list) {
+    const b = ioBucket(appId, p);
+    const cur = b.input.get(e.message.id);
+    if (cur) {
+      cur.n++;
+      cur.at = e.time;
+    } else b.input.set(e.message.id, { n: 1, at: e.time });
+  }
+  const b = ioBucket(appId, list[list.length - 1]);
+  for (const fx of e.effects ?? []) {
+    const key = `${fx.plugin}:${fx.type}`;
+    const cur = b.output.get(key);
+    if (cur) {
+      cur.n++;
+      cur.at = fx.time;
+      if (fx.summary !== undefined) cur.summary = fx.summary;
+    } else b.output.set(key, { n: 1, at: fx.time, summary: fx.summary });
+  }
 }
 
 function applyEvent(e) {
@@ -136,6 +229,7 @@ function applyEvent(e) {
       list.push(e);
       if (list.length > MAX_ROWS) list.shift();
       S.steps.set(e.appId, list);
+      mergeIo(e.appId, e.comps, e);
       break;
     }
     case "state":
@@ -182,6 +276,28 @@ setInterval(() => {
   if (!sawHello) sendHello();
 }, 500);
 
+// ←/→ step through the store timeline while the Store or Time travel tab
+// is open (same code path as the ⟵ back / forward ⟶ buttons)
+document.addEventListener("keydown", (ev) => {
+  if (active !== "store" && active !== "travel") return;
+  if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
+  if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+  const t = ev.target;
+  if (
+    t &&
+    (t.tagName === "INPUT" ||
+      t.tagName === "TEXTAREA" ||
+      t.tagName === "SELECT" ||
+      t.isContentEditable)
+  )
+    return;
+  const id = storeAppId();
+  if (!id) return;
+  if (ev.key === "ArrowLeft") stepBack(id);
+  else stepFwd(id);
+  ev.preventDefault();
+});
+
 chrome.devtools.network.onNavigated.addListener(() => {
   // The document reloaded, which dropped the page-side agent. Don't blank
   // the panel: keep the previous recording on screen (amber status) until
@@ -200,15 +316,19 @@ $("#rescan").addEventListener("click", () => {
 
 let active = "messages";
 
+// switch tabs programmatically (the nav buttons and deep links from the
+// Apps tab's data views both go through here)
+function showTab(name) {
+  active = name;
+  for (const x of document.querySelectorAll("#tabs button"))
+    x.classList.toggle("active", x.dataset.tab === name);
+  for (const x of document.querySelectorAll(".tab"))
+    x.classList.toggle("active", x.id === "tab-" + name);
+  refresh();
+}
+
 for (const b of document.querySelectorAll("#tabs button"))
-  b.addEventListener("click", () => {
-    active = b.dataset.tab;
-    for (const x of document.querySelectorAll("#tabs button"))
-      x.classList.toggle("active", x === b);
-    for (const x of document.querySelectorAll(".tab"))
-      x.classList.toggle("active", x.id === "tab-" + active);
-    refresh();
-  });
+  b.addEventListener("click", () => showTab(b.dataset.tab));
 
 /* -------------------------------------------------------- split resizing */
 
@@ -296,6 +416,7 @@ function refresh() {
     if (active === "messages") renderMessages();
     else if (active === "effects") renderEffects();
     else if (active === "store") renderStore();
+    else if (active === "travel") renderTravel();
     else renderApps();
     setScroll(view, kept);
   });
@@ -717,17 +838,8 @@ function renderStore() {
   const act = hist.length - 1;
 
   // Jumping to a step = undo the steps after it (they become redoable ghosts)
-  // or redo until we land there. history± events keep the ghosts in sync.
-  const jump = (i) => {
-    if (i === act) return;
-    if (i < act) {
-      const steps = act - i;
-      S.redo.set(id, [...hist.slice(hist.length - steps), ...ghosts]);
-      send("undo", id, { steps });
-    } else {
-      for (let n = i - act; n > 0; n--) send("redo", id);
-    }
-  };
+  // or redo until we land there. Shared with the Time travel tab.
+  const jump = (i) => jumpTo(id, i);
 
   const head = el("h3", "", "");
   head.append(el("span", "", `timeline — ${hist.length} changes`));
@@ -755,13 +867,10 @@ function renderStore() {
   head.append(wrap);
   const back = el("button", "", "⟵ back");
   back.disabled = !hist.length;
-  back.addEventListener("click", () => {
-    S.redo.set(id, [hist.at(-1) ?? null, ...(S.redo.get(id) ?? [])]);
-    send("undo", id);
-  });
+  back.addEventListener("click", () => stepBack(id));
   const fwd = el("button", "", "forward ⟶");
   fwd.disabled = !ghosts.length;
-  fwd.addEventListener("click", () => send("redo", id));
+  fwd.addEventListener("click", () => stepFwd(id));
   head.append(back, fwd);
   tlBox.append(head);
 
@@ -905,6 +1014,171 @@ function renderStore() {
       actBtn.offsetLeft - wrap.clientWidth / 2 + actBtn.offsetWidth / 2;
 }
 
+/* ------------------------------------------------------------ time travel */
+
+// All store changes as a vertical rail of circles on a line (left) and a
+// detail pane (right). Clicking a circle travels to that state — the same
+// jumpTo path as the Store tab — and shows the change on the right.
+function renderTravel() {
+  const tab = $("#tab-travel");
+  tab.replaceChildren();
+  const id = storeAppId();
+  if (!id) {
+    tab.append(
+      el(
+        "div",
+        "empty-tab",
+        S.apps.size
+          ? "none of the selected apps has a store plugin"
+          : "no pavlus agent on this page yet…",
+      ),
+    );
+    return;
+  }
+
+  const hist = S.hist.get(id) ?? [];
+  const ghosts = S.redo.get(id) ?? [];
+  const act = hist.length - 1;
+
+  const railBox = el("div", "", "");
+  railBox.id = "travel-rail";
+  const head = el("h3", "", `time travel — ${hist.length} changes`);
+  const back = el("button", "", "⟵ back");
+  back.disabled = !hist.length;
+  back.addEventListener("click", () => stepBack(id));
+  const fwd = el("button", "", "forward ⟶");
+  fwd.disabled = !ghosts.length;
+  fwd.addEventListener("click", () => stepFwd(id));
+  head.append(back, fwd);
+  railBox.append(head);
+
+  const detail = el("div", "detail-pane");
+  detail.id = "travel-detail";
+
+  // the right pane: the selected change, identity-validated like the store
+  // preview so it follows the entry as ghosts shift around; nothing selected
+  // pins the current change
+  const renderDetail = () => {
+    detail.replaceChildren();
+    let c = S.travelSel;
+    if (c && c.appId === id && c.entry) {
+      const hi = hist.indexOf(c.entry);
+      const gi = hi < 0 ? ghosts.indexOf(c.entry) : -1;
+      if (hi >= 0) c = { appId: id, idx: hi, entry: c.entry, redo: false };
+      else if (gi >= 0)
+        c = { appId: id, idx: hist.length + gi, entry: c.entry, redo: true };
+      else c = null;
+    } else c = null;
+    if (!c && hist.length) {
+      const cur = hist[act];
+      if (cur) c = { appId: id, idx: act, entry: cur, redo: false };
+    }
+    if (!c) {
+      detail.append(
+        el("div", "tl-note", "click a circle to travel to that state"),
+      );
+      return;
+    }
+    const card = el("div", "tl-card");
+    const line = el("div", "tl-card-head");
+    line.append(
+      el(
+        "span",
+        "chg",
+        `${c.redo ? "↷ redo — " : ""}${c.entry.type} ${c.entry.path}`,
+      ),
+      el(
+        "span",
+        "num",
+        c.entry.msgId === null ? "· panel" : `← ${c.entry.msgId}`,
+      ),
+      el("span", "t", c.entry.time ? fmtTime(c.entry.time) : ""),
+    );
+    card.append(line);
+    if (c.entry.value === undefined)
+      card.append(
+        el(
+          "div",
+          "tl-note",
+          c.entry.type === "remove"
+            ? "remove — the value is gone"
+            : "no value recorded for this change",
+        ),
+      );
+    else {
+      card.append(el("h4", "", "value"));
+      card.append(viewer(`tt:${c.idx}`, c.entry.value));
+    }
+    detail.append(card);
+  };
+
+  const rail = el("div", "rows");
+  rail.id = "travel-steps";
+  if (!hist.length && !ghosts.length)
+    rail.append(
+      el(
+        "div",
+        "tl-note",
+        "every set/merge/remove lands here — click a circle to travel to that state",
+      ),
+    );
+
+  const addStep = (i, entry, redo) => {
+    const step = el(
+      "div",
+      "tl-row tr-step" +
+        (i === act ? " cur" : "") +
+        (redo ? " ghost" : "") +
+        (!redo && entry.msgId === null ? " panel" : ""),
+    );
+    const dot = el(
+      "button",
+      "step-dot" + (redo ? " ghost" : i === act ? " active" : " applied"),
+    );
+    dot.title = redo
+      ? `redo step ${i + 1}${entry ? ` — ${entry.type} ${entry.path}` : ""}`
+      : `step ${i + 1} — state after ${entry.type} ${entry.path}`;
+    step.append(
+      dot,
+      el("span", "idx", String(i + 1)),
+      el(
+        "span",
+        "chg",
+        entry ? `${entry.type} ${entry.path}` : "redo — unknown change",
+      ),
+      el("span", "t", entry && entry.time ? fmtTime(entry.time) : ""),
+    );
+    step.title = "click to travel to this state";
+    step.addEventListener("click", () => {
+      S.travelSel = { appId: id, idx: i, entry, redo };
+      renderDetail();
+      jumpTo(id, i);
+    });
+    rail.append(step);
+  };
+  hist.forEach((h, i) => addStep(i, h, false));
+  ghosts.forEach((g, k) => addStep(act + 1 + k, g, true));
+  renderDetail();
+
+  const vbar = el("div", "divider-v");
+  const cols = el("div", "cols");
+  cols.id = "travel-cols";
+  cols.append(railBox, vbar, detail);
+  railBox.append(rail);
+  applyFlex(railBox, S.split.travel);
+  dragDivider(vbar, (ev) => {
+    const r = cols.getBoundingClientRect();
+    S.split.travel = clampFrac((ev.clientX - r.left) / r.width, 0.15, 0.85);
+    applyFlex(railBox, S.split.travel);
+  });
+  tab.append(cols);
+  // keep the active circle in view (long histories overflow the rail)
+  const cur = rail.querySelector(".tr-step.cur");
+  if (cur)
+    rail.scrollTop =
+      cur.offsetTop - rail.clientHeight / 2 + cur.offsetHeight / 2;
+}
+
 /* ------------------------------------------------------------------- apps */
 
 function renderApps() {
@@ -928,11 +1202,12 @@ function renderApps() {
   const rowApp = 64;
 
   // Components arrive as dotted paths ("users", "users.editor"): pre-order
-  // rows, one step of indent per level under the app.
+  // rows, one step of indent per level under the app. A display tag (the
+  // agent's `tags`) replaces the last path segment as the label.
   const rowsOf = (a) =>
     (a.components ?? []).map((p) => ({
       path: p,
-      label: p.slice(p.lastIndexOf(".") + 1),
+      label: S.tags.get(a.id)?.[p] ?? p.slice(p.lastIndexOf(".") + 1),
       depth: p.split(".").length - 1,
     }));
 
@@ -993,6 +1268,7 @@ function renderApps() {
     sel: S.filterApp === "all",
     on: () => {
       S.filterApp = "all";
+      S.filterComp = null;
       refresh();
     },
   });
@@ -1007,6 +1283,7 @@ function renderApps() {
       title: c.app.name,
       on: () => {
         S.filterApp = appId;
+        S.filterComp = null;
         refresh();
       },
     });
@@ -1036,10 +1313,11 @@ function renderApps() {
       e.setAttribute("class", "edge");
       svg.append(e);
       node(nx, y, COMP_W, COMP_H, r.label, {
-        sel,
-        title: r.path,
+        sel: sel && S.filterComp === r.path,
+        title: `${r.path} — click to inspect its input / output`,
         on: () => {
           S.filterApp = appId;
+          S.filterComp = r.path;
           refresh();
         },
       });
@@ -1055,7 +1333,7 @@ function renderApps() {
     "div",
     "tl-note",
     wired
-      ? "click an app or component to filter messages and effects and inspect the app on the right"
+      ? "click a component to see its input / output — messages in, effects out"
       : "click a node to inspect the app on the right — an app without components was wired without `app` in createPavlusDebug",
   );
   appsTree.append(note);
@@ -1087,12 +1365,195 @@ function renderAppsDetail() {
   );
   appsDetail.append(head);
 
+  // the data views: the app's own io, messages, effects and store timeline,
+  // filtered to the selected component (or the whole app)
+  const views = ["info", "io", "messages", "effects", "timeline"];
+  if (!views.includes(S.appsView)) S.appsView = "info";
+  const bar = el("div", "apps-views");
+  for (const v of views) {
+    const b = el("button", "chip" + (S.appsView === v ? " active" : ""), v);
+    b.addEventListener("click", () => {
+      S.appsView = v;
+      renderAppsDetail();
+    });
+    bar.append(b);
+  }
+  appsDetail.append(bar);
+
+  // steps that reached the selected component (its receive chain includes
+  // every ancestor boundary, so an exact match is the whole subtree)
+  const inComp = (s) => !S.filterComp || (s.comps ?? []).includes(S.filterComp);
+
+  if (S.appsView === "io") {
+    const comp = S.filterComp ?? "";
+    const b = S.io.get(id)?.get(comp);
+    const head = el("div", "detail-head");
+    head.append(
+      el("span", "id", comp || "(root)"),
+      el("span", "num", comp ? "observed input / output" : "whole app"),
+    );
+    appsDetail.append(head);
+    if (!b || (!b.input.size && !b.output.size))
+      appsDetail.append(
+        el(
+          "div",
+          "tl-note",
+          "nothing observed yet — input messages and output effects appear here as the app runs",
+        ),
+      );
+    if (b?.input.size) {
+      appsDetail.append(el("h4", "", "input — messages received"));
+      const rows = [...b.input.entries()].sort(
+        (x, y) => y[1].n - x[1].n || x[0].localeCompare(y[0]),
+      );
+      for (const [mid, v] of rows.slice(0, MAX_ROWS)) {
+        const row = el("div", "row");
+        row.append(
+          el("span", "id", mid),
+          el("span", "num", `×${v.n}`),
+          el("span", "t", fmtTime(v.at)),
+        );
+        appsDetail.append(row);
+      }
+    }
+    if (b?.output.size) {
+      appsDetail.append(el("h4", "", "output — effects produced"));
+      const rows = [...b.output.entries()].sort(
+        (x, y) => y[1].n - x[1].n || x[0].localeCompare(y[0]),
+      );
+      for (const [key, v] of rows.slice(0, MAX_ROWS)) {
+        const row = el("div", "row");
+        row.append(
+          el("span", "plug", key),
+          el("span", "sum", v.summary ?? ""),
+          el("span", "num", `×${v.n}`),
+          el("span", "t", fmtTime(v.at)),
+        );
+        appsDetail.append(row);
+      }
+    }
+    return;
+  }
+
+  if (S.appsView === "messages") {
+    const steps = [...stepsOf(id)].filter(inComp).reverse().slice(0, MAX_ROWS);
+    if (!steps.length)
+      appsDetail.append(
+        el(
+          "div",
+          "tl-note",
+          S.filterComp
+            ? "no messages reached this component yet"
+            : "no messages yet — dispatch one in the app",
+        ),
+      );
+    for (const s of steps) {
+      const key = `${id}:${s.seq}`;
+      const row = el("div", "row");
+      row.append(
+        el("span", "t", fmtTime(s.time)),
+        el("span", "id", s.message.id),
+        el("span", "sum", shortJson(s.message.payload ?? s.message.event)),
+        el("span", "num", `${s.effects.length} eff`),
+      );
+      row.title = "click to inspect the message in the Messages tab";
+      row.addEventListener("click", () => {
+        S.selectedMsg = key;
+        showTab("messages");
+      });
+      appsDetail.append(row);
+    }
+    return;
+  }
+
+  if (S.appsView === "effects") {
+    const all = stepsOf(id)
+      .filter(inComp)
+      .flatMap((s) => s.effects.map((e) => [e, s]));
+    all.sort((a, b) => b[0].time - a[0].time || b[1].seq - a[1].seq);
+    if (!all.length)
+      appsDetail.append(
+        el("div", "tl-note", "no effects yet — dispatch a message in the app"),
+      );
+    for (const [e, s] of all.slice(0, MAX_ROWS)) {
+      const row = el("div", "row");
+      row.append(
+        el("span", "t", fmtTime(e.time)),
+        el("span", "plug", `${e.plugin}:${e.type}`),
+        el("span", "sum", e.summary),
+      );
+      if (e.dur !== undefined) row.append(el("span", "num dur", `${e.dur}ms`));
+      const wait = S.waits.get(e.uid);
+      if (wait !== undefined) row.append(el("span", "num wait", `⧗${wait}ms`));
+      row.title = `message "${s.message.id}" — click to inspect in the Effects tab`;
+      row.addEventListener("click", () => {
+        S.selectedFx = e.uid;
+        S.chip = "all"; // make sure the effect is not hidden by a plugin chip
+        showTab("effects");
+      });
+      appsDetail.append(row);
+    }
+    return;
+  }
+
+  if (S.appsView === "timeline") {
+    const hist = S.hist.get(id) ?? [];
+    const ghosts = S.redo.get(id) ?? [];
+    const act = hist.length - 1;
+    if (!hist.length && !ghosts.length)
+      appsDetail.append(
+        el(
+          "div",
+          "tl-note",
+          "no store changes yet — the timeline fills as the app sets state",
+        ),
+      );
+    hist.forEach((h, i) => {
+      const row = el(
+        "div",
+        "tl-row" +
+          (i === act ? " cur" : "") +
+          (h.msgId === null ? " panel" : ""),
+      );
+      row.append(
+        el("span", "idx", String(i + 1)),
+        el("span", "chg", `${h.type} ${h.path}`),
+        el("span", "num", h.msgId === null ? "· panel" : `← ${h.msgId}`),
+        el("span", "t", fmtTime(h.time)),
+      );
+      row.title = "click to travel to this state";
+      row.addEventListener("click", () => jumpTo(id, i));
+      appsDetail.append(row);
+    });
+    ghosts.forEach((g, k) => {
+      const i = act + 1 + k;
+      const row = el("div", "tl-row ghost");
+      row.append(
+        el("span", "idx", String(i + 1)),
+        el("span", "chg", g ? `${g.type} ${g.path}` : "redo — unknown change"),
+        el("span", "num", "↷ redo"),
+        el("span", "t", g && g.time ? fmtTime(g.time) : ""),
+      );
+      row.title = "click to redo up to this change";
+      row.addEventListener("click", () => jumpTo(id, i));
+      appsDetail.append(row);
+    });
+    return;
+  }
+
+  // info view: facts + state
   const facts = [
     ["plugins", (app.plugins ?? []).join(", ") || "none"],
     ["components", String((app.components ?? []).length)],
     ["effects", String(stepsOf(id).reduce((n, s) => n + s.effects.length, 0))],
     ["timeline", `${(S.hist.get(id) ?? []).length} changes`],
   ];
+  if (S.filterComp) {
+    facts.unshift(
+      ["component", S.filterComp],
+      ["tag", S.tags.get(id)?.[S.filterComp] ?? "—"],
+    );
+  }
   for (const [k, v] of facts) {
     const line = el("div", "detail-line", `${k} `);
     line.append(el("span", "id", v));
