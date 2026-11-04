@@ -458,10 +458,7 @@ export function createServiceWorkerPlugin(
         case "observe": {
           stopObserver(effect.id);
           const sw = swc();
-          if (!sw) {
-            send(effect.onChange, undefined);
-            return;
-          }
+          if (!sw) return; // nothing to observe
           const regId = effect.registration ?? DEFAULT;
           let current: RegistrationLike | undefined;
           let regCleanups: (() => void)[] = [];
