@@ -1,0 +1,23 @@
+// The edit page (`/:id/edit`), rendered by the shell's `+outlet` when the
+// route matches. Until its `enter` fills the slice's `form` there is nothing
+// to edit: a placeholder. The role options come in as a prop from the shell;
+// saving and cancelling navigate back to the users page.
+if form
+  form.card(@submit.prevent=submit)
+    h2 Edit user
+    if error
+      p.status.status--error {error}
+    div.fields
+      input.inp(value=form.name @input=setName placeholder="Name" autocomplete="off")
+      input.inp(type="email" value=form.email @input=setEmail placeholder="Email" autocomplete="off")
+      select.inp(value=form.roleId @change=setRole)
+        option(value="") Pick a role
+        for role in roles key role.id
+          option(value=role.id selected=(form.roleId == role.id)) {role.name}
+    div.actions
+      button.save(type="submit" disabled=(form.name == "" || form.email == "" || form.roleId == "")) Save
+      button.cancel(type="button" @click=cancel) Cancel
+else
+  if error
+    p.status.status--error {error}
+  p.status Loading...

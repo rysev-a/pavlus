@@ -6,6 +6,7 @@
  */
 
 import type { Query } from "./db/query.ts";
+import { resetDb } from "./db/reset.ts";
 export type { Query };
 
 export interface Reply {
@@ -135,6 +136,14 @@ export async function handleApi(
   }
   if (method === "POST") {
     if (pathname === "/api/users") return saveUser(body, null, query);
+    if (pathname === "/api/reset") {
+      // The demo data is rebuilt from scratch: a reset button for the UI.
+      await resetDb(query);
+      const users = await query<Pick<User, "id">>(
+        `SELECT count(*)::int AS id FROM users`,
+      );
+      return ok({ reset: true, users: users[0]?.id ?? 0 });
+    }
   }
   if (method === "PUT") {
     const id = /^\/api\/users\/(\d+)$/.exec(pathname);

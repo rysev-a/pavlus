@@ -225,7 +225,11 @@ export function startServer(
     try {
       html = renderDocument(
         template,
-        await renderPage(await p.frontend(), query),
+        await renderPage(await p.frontend(), query, {
+          path: url.pathname,
+          search: url.search,
+          hash: url.hash,
+        }),
       );
     } catch (e) {
       console.error(`render ${url.pathname}:`, e);

@@ -1,8 +1,8 @@
-import "./styles.css";
-import { createApp } from "@service-laboratory/pavlus";
+import { createApp, paintOnWrite } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createHttpPlugin,
+  createRouterPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
 import { reviveState } from "@service-laboratory/pavlus/ssr";
@@ -17,14 +17,14 @@ const serialized = (globalThis as { __PAVLUS_STATE__?: string })
   .__PAVLUS_STATE__;
 
 // The application (app/) is pure: everything that touches the outside world
-// is a plugin, wired here. Nothing follows the state: every store write
-// answers with `{ prev, next }`, and the app paints from that answer (the
-// "paint" handler in app/app.ts).
+// is a plugin, wired here. Nothing repaints on its own — the components paint
+// themselves from the answers of their writes.
 export const store = createStorePlugin<AppState>(
   serialized ? reviveState<AppState>(serialized) : initialState,
 );
-export const dom = createDomPlugin();
+export const dom = new DomPlugin();
 export const http = createHttpPlugin();
+export const router = createRouterPlugin();
 
 // Devtools panel (debug-panel/extension): records messages, effects and the
 // store timeline. No-op for the page itself.
@@ -34,11 +34,13 @@ const debug = createPavlusDebug({
   flushMs: 0,
 });
 
-const plugins = [store, dom, http, debug.plugin];
+const plugins = [store, dom, http, router, debug.plugin];
 debug.watch(plugins);
 
 export const app = createApp<AppState>({
-  app: shell,
+  // `paintOnWrite`: a shell-level write (the route, the roles) answers
+  // "paint" — the shell's paint swaps the outlet's page on a route change.
+  app: paintOnWrite(shell),
   plugins,
   onStep: debug.onStep,
   mount: "#app",
@@ -47,5 +49,11 @@ export const app = createApp<AppState>({
 if (import.meta.env?.DEV) {
   // Poke at it from the browser console: pavlus.app.dispatch({ id: "newUser" }),
   // pavlus.store.getState(), pavlus.store.history ...
-  (globalThis as Record<string, unknown>).pavlus = { app, store, dom, http };
+  (globalThis as Record<string, unknown>).pavlus = {
+    app,
+    store,
+    dom,
+    http,
+    router,
+  };
 }

@@ -4,9 +4,10 @@
  * in-process, until its data is in. Then its view is rendered to HTML and
  * its state to JSON, and the browser hydrates both (frontend/main.ts).
  *
- * The app's paint effects (`dom.update`) land on an inert plugin: on the
- * server there is nothing to repaint along the way — the whole page is
- * rendered once, from the final state.
+ * The app's dom effects land on an inert plugin: on the server there is
+ * nothing to repaint along the way — the whole page is rendered once, from
+ * the final state. The children are embedded in the app's view, so the one
+ * render includes them; the browser hydrates the whole page.
  */
 import {
   type Component,
@@ -25,6 +26,13 @@ import { handleApi, type Query } from "./api.ts";
 export interface Frontend {
   app: Component;
   initialState: unknown;
+}
+
+/** Where the page is rendered at: the router reports this to the app. */
+export interface PageLocation {
+  path: string;
+  search?: string;
+  hash?: string;
 }
 
 export interface Page {
@@ -63,12 +71,15 @@ function inProcess(query: Query): typeof fetch {
 const inert = (name: string): Plugin => ({ name, handle() {} });
 
 /**
- * Renders the page: `mounted` goes in (the same message the browser's mount
- * dispatches), the data loads through `query`, and the result is rendered.
+ * Renders the page: the route goes in first (the same `routeChanged` the
+ * router plugin dispatches in the browser — it activates the page, whose
+ * `enter` loads its data), then `mounted`, and everything loads through
+ * `query`. The result is rendered once, from the final state.
  */
 export async function renderPage(
   frontend: Frontend,
   query: Query,
+  at: PageLocation = { path: "/" },
 ): Promise<Page> {
   const view = viewOf(frontend.app);
   if (!view) throw new Error("ssr: the app has no view");
@@ -76,17 +87,24 @@ export async function renderPage(
   const http = createHttpPlugin({ fetch: inProcess(query) });
   const instance = createApp({
     app: frontend.app,
-    plugins: [store, http, inert("dom")],
+    plugins: [store, http, inert("dom"), inert("router")],
   });
   try {
+    instance.dispatch({
+      id: "routeChanged",
+      payload: { path: at.path, search: at.search ?? "", hash: at.hash ?? "" },
+    });
     instance.dispatch({ id: "mounted" });
     await http.settled();
   } finally {
     instance.dispose();
   }
   const state = store.getState();
+  // One render of the app's view: the embedded children render from the same
+  // state, in place — a closed form (its slice null) renders nothing.
+  const html = renderToString(view, state);
   return {
-    html: renderToString(view, state),
+    html,
     state: serializeState(state),
   };
 }

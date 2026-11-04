@@ -4,11 +4,14 @@ The pavlus application, arranged the way the framework intends:
 
 ```
 app/        the application — pure, isomorphic code:
-            state.ts (data only), app.ts (the component, one handler per
-            message), app.pavlus (the template), entry-server.ts (what the
-            server loads)
+            state.ts (data only; each page reads one slice),
+            app.ts + app.pavlus (the shell: a sidebar, an outlet and a
+            routing table), sidebar/ (the menu column, a view-only child),
+            user-list/ (the users page, `/`), user-edit/ (`/:id/edit`),
+            user-new/ (`/new`) — a component per folder: its own .pavlus
+            template and .ts file, entry-server.ts (what the server loads)
 frontend/   the browser shell: main.ts wires the plugins (store, dom, http,
-            the devtools agent) and mounts the app into #app
+            router, the devtools agent) and mounts the app into #app
 backend/    the server: server.ts (plain node:http), api.ts (the JSON API
             over Postgres), ssr.ts (renders pages from the same app/ code),
             db/ (schema, seed)
@@ -19,32 +22,44 @@ tests/      the app over the real API on the real database, and the server rende
 browser mounts it and repaints on demand; the server runs it without a DOM
 and renders the final state to HTML.
 
-## The idea: the repaint is a message
+## Pages are routed children
 
-Nothing follows the state, and plugins never talk to each other — everything
-goes through the application. A store write answers with a message carrying
-`{ prev, next }` (the state before and after, only when the write landed),
-and the application turns that answer into the repaint:
+There is no difference between the whole app and a component — they compose
+hierarchically. The shell (`app.ts`) is a template with the sidebar and an
+outlet, and a routing table; each page lives in its own folder and knows the
+state key the shell gave it:
+
+- `/` — `UserList`: the users table, a data table with selection and
+  sorting. Its `enter` loads the users; a row's edit button and the header's
+  "new user" navigate to their pages.
+- `/new` — `UserNew`: an empty form, written by its `enter`.
+- `/:id/edit` — `UserEdit`: its `enter` fetches that user and fills the form.
+
+Saving and cancelling navigate back to `/`, which re-enters and reloads
+itself. The shell only owns the route, the sidebar's menu and the role
+catalogue (passed to the forms as a prop); the sidebar is a view-only child —
+its `navigate` clicks fall through to the framework's default.
+
+## The idea: components paint themselves
+
+Every store write that changed anything answers `paint` with the states
+around it (`{ prev, next }`). A page diffs its own slice — the answer
+arrives already sliced — and returns the patches with no target; the
+outlet's boundary scopes them to where the page renders, so they land on
+the right nodes of the one mount. The shell paints the same way for what
+only it can see: the route itself (a route change swaps the outlet's page)
+and the role catalogue.
 
 ```ts
-const paint = { onSuccess: "paint" } as const;
-
-"users.loaded"(msg: Message): Effect[] {
-  return [
-    store.set("users", msg.payload.data, paint), // → the store answers
-  ];
-}
-
-"paint"(msg: Message): Effect[] {
-  const { prev, next } = msg.payload;
-  return [dom.update(prev, next)]; // the dom plugin diffs prev → next
+// user-list/user-list.ts — slice `list`:
+paint(msg: Message): Effect[] {
+  const { prev, next } = msg.payload as { prev: ListState; next: ListState };
+  return [DomPlugin.update(view.diff(prev, next))]; // ids relative to itself
 }
 ```
 
-A state change alone paints nothing: a no-op write never answers, and a
-handler that only asks for data (`submitForm`) writes nothing at all. The
-`{ prev, next }` pair is frozen when the write lands, so the paints of one
-batch chain exactly (S0→S1, then S1→S2) — every landed write paints.
+The dom plugin still never reads the state: it mounts, and applies the
+patches it is given.
 
 ## Run it
 

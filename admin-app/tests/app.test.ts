@@ -19,12 +19,27 @@ afterAll(async () => {
 const rows = () => document.querySelectorAll("tbody tr");
 const text = (sel: string) => document.querySelector(sel)?.textContent;
 
+/** The sidebar's menu link (the app has one section: Users). */
+const menuLink = () =>
+  document.querySelector("a.ui-sidebar-button") as HTMLAnchorElement;
+
 /** Types into the field and lets the view record it in the state. */
 const type = (sel: string, value: string) => {
   const el = document.querySelector(sel) as HTMLInputElement;
   el.value = value;
   el.dispatchEvent(new Event("input", { bubbles: true }));
 };
+
+/** Picks an option in a select and lets the view record the choice. */
+const pick = (sel: string, value: string) => {
+  const el = document.querySelector(sel) as HTMLSelectElement;
+  el.value = value;
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+};
+
+/** Clicks a button and lets the view record the click. */
+const click = (sel: string, i = 0) =>
+  (document.querySelectorAll(sel)[i] as HTMLButtonElement).click();
 
 /** Real network, real async: wait until the store says so. */
 async function until(
@@ -39,22 +54,10 @@ async function until(
   }
 }
 
-/** Opens the form, types, picks a role, submits. */
-function fillAndSubmit(name: string, email: string) {
-  (document.querySelector("button.new") as HTMLButtonElement).click();
-  expect(text("form.card h2")).toBe("New user");
-  type(`input[placeholder="Name"]`, name);
-  type(`input[placeholder="Email"]`, email);
-  const select = document.querySelector("select.inp") as HTMLSelectElement;
-  select.value = select.options[1].value; // the seed's first real role
-  select.dispatchEvent(new Event("change", { bubbles: true }));
-  document
-    .querySelector("form.card")!
-    .dispatchEvent(new Event("submit", { cancelable: true }));
-}
-
-test("the app over the real API: load, create, edit a seed row, delete", async () => {
+test("the app over the real API: pages, filter, CRUD, reset", async () => {
   document.body.innerHTML = `<div id="app"></div>`;
+  // The route the router reports is the page jsdom is at.
+  window.history.replaceState(null, "", "/");
   // The http plugin reads the page's fetch per request, so the page's fetch
   // can become the real API even after main.ts booted.
   const pageFetch = globalThis.fetch;
@@ -62,38 +65,62 @@ test("the app over the real API: load, create, edit a seed row, delete", async (
   try {
     const { app, store } = await import("../frontend/main.ts");
 
-    // `mounted` puts "loading" on the screen (the write answers "paint",
-    // the app repaints from `{ prev, next }`), the answers paint the list.
-    // Nothing repaints on its own.
+    // `mounted` starts the router; its first report ("/") activates the users
+    // page, whose `enter` asks for the users: the write answers "paint",
+    // the page paints "Loading..." from the answer. Nothing repaints on its own.
     expect(text("p.status")).toBe("Loading...");
-    await until("the seed loads (8 users)", () => rows().length === 8);
-    expect(store.getState().status).toBe("idle");
+    // The seed holds 500 users, ten rows to a page.
+    await until(
+      "the seed loads (10 rows of 500)",
+      () => rows().length === 10 && store.getState().list.users.length === 500,
+    );
     expect(document.querySelector("p.status")).toBe(null);
+    expect(text("span.count")).toBe("Page 1 of 50");
+    expect(rows()[0].querySelector("td.id")?.textContent).toBe("1");
 
-    // Create: the POST answers `user.created`, which appends the user,
-    // closes the form and paints — all in one handler.
-    fillAndSubmit("Edsger Dijkstra", "edsger@example.com");
-    await until("the new user lands (9 rows)", () => rows().length === 9);
-    expect(store.getState().form).toBe(null);
-    expect(document.querySelector("form.card")).toBe(null);
-    const created = store
-      .getState()
-      .users.find((u) => u.email === "edsger@example.com");
-    expect(created).toMatchObject({ name: "Edsger Dijkstra" });
-    expect(created?.role_id).toBeGreaterThan(0);
+    // The shell's sidebar: one menu item, "Users", active on the users page.
+    expect(menuLink().textContent).toContain("Users");
+    expect(menuLink().dataset.active).toBe("true");
 
-    // Edit a seed row: the list carries `role_id`, so the form opens filled.
-    const row = [...rows()].find((r) => r.textContent?.includes("ann@"));
-    (row!.querySelector("button.edit") as HTMLButtonElement).click();
+    // The pager: one page forward lands on user 11, back again on user 1.
+    const pager = () => document.querySelectorAll("button.pg");
+    click("button.pg", 1); // next
+    await until(
+      "page 2 (user 11)",
+      () => !!rows()[0].querySelector("td.id")?.textContent?.includes("11"),
+    );
+    expect(text("span.count")).toBe("Page 2 of 50");
+    click("button.pg", 0); // prev
+    await until(
+      "back on page 1",
+      () => !!rows()[0].querySelector("td.id")?.textContent?.includes("1"),
+    );
+
+    // The rows-per-page select: fifty rows on a page.
+    pick("select.pages", "50");
+    await until("50 rows on a page", () => rows().length === 50);
+    pick("select.pages", "10");
+    await until("back to 10 rows", () => rows().length === 10);
+
+    // The filter narrows the table to the matches, back on page 1.
+    type("input.flt", "ann@");
+    await until("one match for ann@", () => rows().length === 1);
+    expect(text("span.count")).toBe("Page 1 of 1");
+    expect(rows()[0].textContent).toContain("ann@example.com");
+
+    // Edit the match, a page of its own: the row's button navigates to
+    // /:id/edit, the page's `enter` fetches that user (the form opens filled).
+    click("button.edit");
+    await until("/1/edit", () => /\/\d+\/edit$/.test(window.location.pathname));
+    await until(
+      "the form opens filled",
+      () => !!document.querySelector("form.card"),
+    );
     expect(text("form.card h2")).toBe("Edit user");
     const nameInput = document.querySelector(
       `input[placeholder="Name"]`,
     ) as HTMLInputElement;
     expect(nameInput.value).toBe("Ann");
-    const roleSelect = document.querySelector(
-      "select.inp",
-    ) as HTMLSelectElement;
-    expect(roleSelect.value).toBe("1");
     type(`input[placeholder="Name"]`, "Ann A.");
     document
       .querySelector("form.card")!
@@ -101,26 +128,98 @@ test("the app over the real API: load, create, edit a seed row, delete", async (
     await until(
       "the edit lands",
       () =>
-        store.getState().users.find((u) => u.email === "ann@example.com")
+        store.getState().list.users.find((u) => u.email === "ann@example.com")
           ?.name === "Ann A.",
     );
-    expect(store.getState().form).toBe(null);
-    expect(rows().length).toBe(9);
-
-    // Delete: the row goes away.
-    const bob = [...rows()].find((r) => r.textContent?.includes("bob@"));
-    (bob!.querySelector("button.del") as HTMLButtonElement).click();
-    await until("the user is removed", () => rows().length === 8);
-    expect(
-      store.getState().users.find((u) => u.email === "bob@example.com"),
-    ).toBe(undefined);
-
-    // Cancel: the form closes without a request.
-    (document.querySelector("button.new") as HTMLButtonElement).click();
-    expect(document.querySelector("form.card")).toBeTruthy();
-    (document.querySelector("button.cancel") as HTMLButtonElement).click();
-    expect(store.getState().form).toBe(null);
     expect(document.querySelector("form.card")).toBe(null);
+
+    // Delete, found through the filter: the row goes away, the count follows.
+    type("input.flt", "bob@");
+    await until("one match for bob@", () => rows().length === 1);
+    click("button.del");
+    await until("the user is removed", () => store.getState().list.total === 0);
+    expect(
+      store.getState().list.users.find((u) => u.email === "bob@example.com"),
+    ).toBe(undefined);
+    type("input.flt", "");
+    await until("the table is full again", () => rows().length === 10);
+    expect(store.getState().list.total).toBe(499);
+
+    // Sorting: a header click re-orders the whole list, pages and all.
+    const nameHeader = [...document.querySelectorAll("th.sortable")].find(
+      (th) => th.textContent?.startsWith("Name"),
+    ) as HTMLElement | undefined;
+    nameHeader!.click();
+    await until("sorted by name (Ann A. first)", () =>
+      rows()[0]?.textContent?.includes("Ann A."),
+    );
+    expect(store.getState().list.sortKey).toBe("name");
+
+    // Create, a page of its own: the button navigates to /new, the page's
+    // `enter` writes an empty form (the paint puts it in), the POST answers
+    // `created`, and the page navigates back — the users page re-enters and
+    // reloads itself.
+    click("button.new");
+    await until("/new", () => window.location.pathname === "/new");
+    await until("the form opens", () => !!document.querySelector("form.card"));
+    expect(text("form.card h2")).toBe("New user");
+    type(`input[placeholder="Name"]`, "Edsger Dijkstra");
+    type(`input[placeholder="Email"]`, "edsger@example.com");
+    pick("select.inp", "2");
+    document
+      .querySelector("form.card")!
+      .dispatchEvent(new Event("submit", { cancelable: true }));
+    // 500 in the seed − Bob, deleted above, + Edsger: back at 500, reloaded.
+    await until(
+      "back on / with the new user",
+      () =>
+        window.location.pathname === "/" &&
+        store.getState().list.users.length === 500,
+    );
+    const created = store
+      .getState()
+      .list.users.find((u) => u.email === "edsger@example.com");
+    expect(created).toMatchObject({ name: "Edsger Dijkstra" });
+
+    // Cancel: back to the users page without a request.
+    click("button.new");
+    await until("the form opens", () => !!document.querySelector("form.card"));
+    click("button.cancel");
+    await until("back on /", () => window.location.pathname === "/");
+    expect(document.querySelector("form.card")).toBe(null);
+    // The re-entered page reloads itself; the next clicks need its table.
+    await until("the table is back", () => rows().length === 10);
+
+    // The sidebar's link navigates like any in-app link: its click arrives
+    // as `sidebar.navigate`, which the framework's default routes.
+    click("button.new");
+    await until("the form opens", () => !!document.querySelector("form.card"));
+    expect(menuLink().dataset.active).toBe("false");
+    menuLink().click();
+    await until(
+      "back on / via the sidebar",
+      () => window.location.pathname === "/",
+    );
+    expect(document.querySelector("form.card")).toBe(null);
+    expect(menuLink().dataset.active).toBe("true");
+    await until("the table is back again", () => rows().length === 10);
+
+    // Reset: the bottom button rebuilds the seed — everything is as it was.
+    click("button.reset");
+    await until(
+      "the database is reseeded",
+      () =>
+        store.getState().list.users.length === 500 &&
+        store.getState().list.users.some((u) => u.email === "bob@example.com"),
+    );
+    await until("the table is on page 1", () => rows().length === 10);
+    expect(text("span.count")).toBe("Page 1 of 50");
+    expect(
+      store.getState().list.users.find((u) => u.email === "bob@example.com")
+        ?.name,
+    ).toBe("Bob");
+    expect(store.getState().list.filter).toBe("");
+    expect(store.getState().list.sortKey).toBe("id");
 
     app.dispose();
   } finally {

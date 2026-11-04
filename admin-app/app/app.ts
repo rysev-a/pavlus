@@ -1,58 +1,64 @@
 /**
- * The application: one pure component. A handler never touches the DOM and
- * never changes state in place — it returns effects. Plugins never talk to
- * each other; everything goes through the application, and the repaint is
- * the application's decision, made in a message:
- *
- *   store.set(..., paint)              // paint = { onSuccess: "paint" }
- *   → the store answers "paint" with `{ prev, next }` once the write landed
- *   → the "paint" handler relays the pair: dom.update(prev, next)
- *   → the dom plugin diffs prev → next and patches the DOM
- *
- * A state change alone paints nothing — a no-op write never answers — and a
- * handler that only asks for data (`submitForm`) paints nothing at all.
+ * The application root: a shell with an outlet and a routing table. Each page
+ * is a routed child that owns its slice of the state and paints itself; the
+ * shell only owns the route: `mounted` starts the router (its reports become
+ * `routeChanged`, the default handler of a component with `routing`) and
+ * loads the role catalogue, passed to the forms as a prop. A route change is
+ * the shell's own write, so it paints in the shell's paint: the outlet's old
+ * page goes, the new one renders.
  */
 import {
   Component,
   type Effect,
   type Message,
+  type Routing,
+  viewOf,
 } from "@service-laboratory/pavlus";
 import {
-  domEffector as dom,
   httpEffector as http,
+  routerEffector as router,
   storeEffector as store,
 } from "@service-laboratory/pavlus/plugins";
+import { DomPlugin } from "@service-laboratory/pavlus/plugins/dom";
 import view from "./app.pavlus";
-import type { AppState, FormState, User } from "./state.ts";
-
-/** Every write answers this message; the repaint happens in "paint". */
-const paint = { onSuccess: "paint" } as const;
+import { UserEdit } from "./user-edit/user-edit.ts";
+import { UserNew } from "./user-new/user-new.ts";
+import { UserList } from "./user-list/user-list.ts";
+import type { AppState, Role } from "./state.ts";
 
 export class App extends Component<AppState> {
   view = view;
 
-  /**
-   * The store answered a write with `{ prev, next }` — the state before and
-   * after it. The application turns that answer into the repaint. The pair
-   * is frozen when the write lands, so the paints of one batch chain
-   * exactly (S0→S1, then S1→S2) no matter when the messages drain.
-   */
-  paint(msg: Message): Effect[] {
-    const { prev, next } = msg.payload as { prev: AppState; next: AppState };
-    return [dom.update(prev, next)];
-  }
+  /** The pages, each with its state key: `edit.x` reaches that page. */
+  private readonly list = new UserList();
+  private readonly editPage = new UserEdit();
+  private readonly create = new UserNew();
 
-  /** `createApp({ mount })` dispatches this once the view is in the DOM. */
+  /** Which page shows at which path (the template's `+outlet`). */
+  routing: Routing<AppState> = {
+    "/": { component: this.list, key: "list", name: "list" },
+    "/new": {
+      component: this.create,
+      key: "new",
+      name: "new",
+      props: (s) => ({ roles: s.roles }),
+    },
+    "/:id/edit": {
+      component: this.editPage,
+      key: "edit",
+      name: "edit",
+      props: (s) => ({ roles: s.roles }),
+    },
+  };
+
+  /**
+   * `createApp({ mount })` dispatches this once the shell is in the DOM: the
+   * router starts reporting (the first report activates the first page), the
+   * role catalogue loads once.
+   */
   mounted(): Effect[] {
     return [
-      store.set("status", "loading", paint),
-      store.set("error", "", paint),
-      http.request({
-        id: "users",
-        url: "/api/users",
-        onSuccess: "users.loaded",
-        onError: "users.failed",
-      }),
+      router.listen("routeChanged"),
       http.request({
         id: "roles",
         url: "/api/roles",
@@ -62,159 +68,29 @@ export class App extends Component<AppState> {
     ];
   }
 
-  "users.loaded"(msg: Message): Effect[] {
-    const users = (msg.payload as { data: User[] }).data;
-    return [
-      store.set("status", "idle", paint),
-      store.set("error", "", paint),
-      store.set("users", users, paint),
-    ];
-  }
-
-  "roles.loaded"(msg: Message): Effect[] {
-    const roles = (msg.payload as { data: AppState["roles"] }).data;
-    return [store.set("roles", roles, paint)];
-  }
-
-  "users.failed"(msg: Message): Effect[] {
-    return [
-      store.set("status", "failed", paint),
-      store.set(
-        "error",
-        (msg.payload as { error?: string }).error ?? "could not load the users",
-        paint,
-      ),
-    ];
-  }
-
-  "roles.failed"(msg: Message): Effect[] {
-    return [
-      store.set(
-        "error",
-        (msg.payload as { error?: string }).error ?? "could not load the roles",
-        paint,
-      ),
-    ];
-  }
-
-  newUser(): Effect[] {
-    return [
-      store.set("form", { id: null, name: "", email: "", roleId: "" }, paint),
-    ];
-  }
-
-  /** The row's edit button: the form opens filled, with the id set. */
-  editUser(msg: Message): Effect[] {
-    const u = msg.payload as User;
-    const form: FormState = {
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      roleId: String(u.role_id),
-    };
-    return [store.set("form", form, paint)];
-  }
-
-  cancelForm(): Effect[] {
-    return [store.set("form", null, paint)];
-  }
-
-  formName(msg: Message): Effect[] {
-    return [store.set("form.name", msg.event?.value ?? "", paint)];
-  }
-
-  formEmail(msg: Message): Effect[] {
-    return [store.set("form.email", msg.event?.value ?? "", paint)];
-  }
-
-  formRole(msg: Message): Effect[] {
-    return [store.set("form.roleId", msg.event?.value ?? "", paint)];
-  }
-
   /**
-   * A request, not a state change: nothing to paint yet. The answer comes
-   * back as `user.created` / `user.saved` / `user.failed`.
+   * The shell's own paint: the answer of a shell-level write — the route, the
+   * role catalogue — with the whole state before and after it. What the diff
+   * sees reaching the outlet: another page clears and renders, the same page
+   * diffs itself.
    */
-  submitForm(_msg: Message, s: AppState): Effect[] {
-    if (!s.form) return [];
-    const body = {
-      name: s.form.name,
-      email: s.form.email,
-      role_id: Number(s.form.roleId),
+  paint(msg: Message): Effect[] {
+    const { prev, next } = msg.payload as {
+      prev: AppState;
+      next: AppState;
     };
-    return [
-      s.form.id
-        ? http.request({
-            id: "save",
-            method: "PUT",
-            url: `/api/users/${s.form.id}`,
-            body,
-            onSuccess: "user.saved",
-            onError: "user.failed",
-          })
-        : http.request({
-            id: "save",
-            method: "POST",
-            url: "/api/users",
-            body,
-            onSuccess: "user.created",
-            onError: "user.failed",
-          }),
-    ];
+    return [DomPlugin.update(viewOf(this)!.diff(prev, next))];
   }
 
-  "user.created"(msg: Message, s: AppState): Effect[] {
-    const user = (msg.payload as { data: User }).data;
-    return [
-      store.set("users", [...s.users, user], paint),
-      store.set("form", null, paint),
-    ];
+  /** The role catalogue, loaded once; the forms read it as a prop. */
+  "roles.loaded"(msg: Message): Effect[] {
+    const roles = (msg.payload as { data: Role[] }).data;
+    return [store.set("roles", roles)];
   }
 
-  "user.saved"(msg: Message, s: AppState): Effect[] {
-    const user = (msg.payload as { data: User }).data;
-    return [
-      store.set(
-        "users",
-        s.users.map((u) => (u.id === user.id ? user : u)),
-        paint,
-      ),
-      store.set("form", null, paint),
-    ];
-  }
-
-  removeUser(msg: Message): Effect[] {
-    const id = msg.payload as number;
-    return [
-      http.request({
-        id: "remove",
-        method: "DELETE",
-        url: `/api/users/${id}`,
-        onSuccess: "user.removed",
-        onError: "user.failed",
-      }),
-    ];
-  }
-
-  "user.removed"(msg: Message, s: AppState): Effect[] {
-    const id = (msg.payload as { data: { deleted: number } }).data.deleted;
-    return [
-      store.set(
-        "users",
-        s.users.filter((u) => u.id !== id),
-        paint,
-      ),
-    ];
-  }
-
-  "user.failed"(msg: Message): Effect[] {
-    return [
-      store.set(
-        "error",
-        (msg.payload as { error?: string }).error ?? "could not save",
-        paint,
-      ),
-    ];
+  /** Nothing to show: the forms snapshot the roles they had on open. */
+  "roles.failed"(): Effect[] {
+    return [];
   }
 }
 

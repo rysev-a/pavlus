@@ -39,6 +39,10 @@ test("the page renders on the server from the same pure app", async () => {
   expect(page.html).toContain("admin");
   expect(page.html).not.toContain("Loading...");
 
+  // The shell's sidebar rides along: its one menu item, active on "/".
+  expect(page.html).toContain("ui-sidebar-button");
+  expect(page.html).toContain('data-active="true"');
+
   // The state rides along for the hydration.
   expect(page.state).toContain("ann@example.com");
 

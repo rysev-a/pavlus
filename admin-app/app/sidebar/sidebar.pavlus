@@ -1,0 +1,23 @@
+// The left sidebar, in the style of the legacy admin-app shell (the shadcn
+// sidebar anatomy): the brand in a header, the menu under a group label. It
+// is a view-only child — the shell passes the menu and the route as props,
+// and its clicks reach the shell as `sidebar.navigate`, which nobody handles:
+// the framework's default turns it into `router.navigate` (relative to the
+// shell, the root). The active item is the route's own section.
+aside.ui-shell-aside
+  div.ui-sidebar
+    div.ui-sidebar-header
+      // the brand is a link to the start page, through the router like the menu
+      a.ui-brand(href="/" @click.prevent=navigate("/"))
+        span.ui-brand-mark A
+        span admin-app
+    nav.ui-sidebar-content(aria-label="Main")
+      div.ui-sidebar-group
+        p.ui-sidebar-group-label Menu
+        ul.ui-sidebar-menu
+          for item in menu key item.path
+            li
+              // href keeps the link real (copy, middle-click); the click goes to the router
+              a.ui-sidebar-button(href=item.path data-active={(item.path === "/" ? route.path === "/" : route.path === item.path || route.path.startsWith(item.path + "/")) ? "true" : "false"} @click.prevent=navigate(item.path))
+                span.ui-sidebar-icon(data-icon=item.icon)
+                span.ui-sidebar-label {item.title}
