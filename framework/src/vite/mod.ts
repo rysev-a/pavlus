@@ -46,7 +46,9 @@ export function pavlus(opts: PavlusPluginOptions = {}): PavlusVitePlugin {
     enforce: "pre",
     transform(code, id) {
       const [file, query = ""] = id.split("?");
-      const alt = Object.keys(opts.syntaxes ?? {}).find((e) => file.endsWith(e));
+      const alt = Object.keys(opts.syntaxes ?? {}).find((e) =>
+        file.endsWith(e),
+      );
       if (!file.endsWith(ext) && !alt) return null;
       // `?raw`, `?url` and `?inline` want the file itself, not a compiled module.
       if (/(^|&)(raw|url|inline)(&|$)/.test(query)) return null;
