@@ -18,6 +18,13 @@
     "./plugins/ws": "./src/plugins/ws/mod.ts",
     "./plugins/time": "./src/plugins/time/mod.ts",
     "./plugins/logger": "./src/plugins/logger/mod.ts",
+    "./plugins/canvas": "./src/plugins/canvas/mod.ts",
+    "./plugins/svg": "./src/plugins/svg/mod.ts",
+    "./plugins/video": "./src/plugins/video/mod.ts",
+    "./plugins/audio": "./src/plugins/audio/mod.ts",
+    "./plugins/geolocation": "./src/plugins/geolocation/mod.ts",
+    "./plugins/serviceworker": "./src/plugins/serviceworker/mod.ts",
+    "./plugins/svg/h": "./src/plugins/svg/h.ts",
     "./plugins/router": "./src/plugins/router/mod.ts"
   },
   "publish": {
