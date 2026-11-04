@@ -322,6 +322,102 @@ main
     expect(v.meta).toEqual({ embeds: ["row", "b"], outlet: true });
   });
 
+  // The same snippet is the side-by-side in README.md.
+  test("phone-retail-crm snippet (README)", () => {
+    const table = compileToView(`table.t {rows}`);
+    same(
+      `{#import Table from "../../blocks/crud-table/view.pavlus"}
+
+<main class="k-ashell__content">
+  {#if view === "list"}
+    {#if confirm.open}
+      <div class="ui-alert pcrm__alert pcrm__confirm">
+        <span class="ui-alert-icon">
+          <span class="k-icon k-icon-alert"></span>
+        </span>
+        <div class="ui-alert-body">
+          <p class="ui-alert-title">Are you sure?</p>
+          <div class="ui-alert-description">{confirm.text}</div>
+          <div class="pcrm__confirmbar">
+            <button class="ui-button ui-button-destructive ui-button-sm" type="button" on:click={confirmYes}>Delete</button>
+            <button class="ui-button ui-button-outline ui-button-sm" type="button" on:click={confirmNo}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    {/if}
+    <Table name="table" {...grid} />
+  {:else if view === "settings"}
+    <div class="pcrm__counts">
+      {#each settings.counts as item (item.id)}
+        <div class="pcrm__count">
+          <span class="pcrm__countlabel">{item.label}</span>
+          <strong>{item.count}</strong>
+        </div>
+      {/each}
+    </div>
+    {#if settings.askReset}
+      <span class="pcrm__ask">All your changes will be lost. Reset everything?</span>
+      <button class="ui-button ui-button-destructive" type="button" on:click={settingsReset}>Yes, reset all data</button>
+    {:else}
+      <button class="ui-button ui-button-outline pcrm__danger" type="button" on:click={settingsAskReset}>
+        <span class="k-icon k-ai-refresh"></span>
+        Reset all data
+      </button>
+    {/if}
+  {/if}
+</main>`,
+      `import Table from "../../blocks/crud-table/view.pavlus"
+
+main.k-ashell__content
+  if view === "list"
+    if confirm.open
+      div.ui-alert.pcrm__alert.pcrm__confirm
+        span.ui-alert-icon
+          span.k-icon.k-icon-alert
+        div.ui-alert-body
+          p.ui-alert-title Are you sure?
+          div.ui-alert-description {confirm.text}
+          div.pcrm__confirmbar
+            button.ui-button.ui-button-destructive.ui-button-sm(type="button" @click=confirmYes) Delete
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=confirmNo) Cancel
+    +Table#table(...grid)
+  else if view === "settings"
+    div.pcrm__counts
+      for item in settings.counts key item.id
+        div.pcrm__count
+          span.pcrm__countlabel {item.label}
+          strong {item.count}
+    if settings.askReset
+      span.pcrm__ask All your changes will be lost. Reset everything?
+      button.ui-button.ui-button-destructive(type="button" @click=settingsReset) Yes, reset all data
+    else
+      button.ui-button.ui-button-outline.pcrm__danger(type="button" @click=settingsAskReset)
+        span.k-icon.k-ai-refresh
+        | Reset all data`,
+      [
+        {
+          view: "list",
+          confirm: { open: true, text: "Delete 3?" },
+          grid: { rows: 1 },
+        },
+        { view: "list", confirm: { open: false, text: "" }, grid: { rows: 2 } },
+        {
+          view: "settings",
+          settings: {
+            askReset: false,
+            counts: [
+              { id: 1, label: "users", count: 200 },
+              { id: 2, label: "roles", count: 50 },
+            ],
+          },
+        },
+        { view: "settings", settings: { askReset: true, counts: [] } },
+        { view: "other" },
+      ],
+      { Table: table },
+    );
+  });
+
   test("dashboard from the dom tests", () => {
     same(
       `<div class="dashboard">
