@@ -25,11 +25,11 @@
 .orbph__pager { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 14px; }
 /* the viewer */
 .orbph__lightbox { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; }
-.orbph__scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--background) 92%, transparent); animation: ui-fade-in .2s ease-out; }
+.orbph__scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--background) 96%, transparent); animation: ui-fade-in .2s ease-out; }
 .orbph__stage { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: min(100%, 1000px); max-height: 100dvh; overflow: auto; padding: 56px 16px 24px; animation: ui-zoom-in .2s ease-out; }
 .orbph__stage:focus { outline: none; }
-.orbph__close { position: absolute; top: 8px; right: 16px; }
-.orbph__figure { display: grid; justify-items: center; gap: 12px; min-width: 0; }
+.orbph__stage .orbph__close { position: absolute; top: 8px; right: 16px; }
+.orbph__figure { display: grid; justify-items: center; gap: 12px; min-width: 0; width: 100%; }
 .orbph__frame { display: grid; place-items: center; width: 100%; height: min(60dvh, 560px); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); font-size: 96px; background-color: var(--muted); background-repeat: no-repeat; background-size: contain !important; background-position: center !important; }
 .orbph__side { display: grid; gap: 8px; justify-items: center; text-align: center; width: min(100%, 420px); }
 .orbph__side .ui-field { width: 100%; text-align: left; }
@@ -37,7 +37,7 @@
 .orbph__side .orbph__row { justify-content: center; }
 @media (max-width: 640px) {
   .orbph__stage { grid-template-columns: minmax(0, 1fr); padding: 56px 12px 80px; }
-  .orbph__nav { position: fixed; bottom: 16px; }
-  .orbph__nav--prev { left: calc(50% - 56px); }
-  .orbph__nav--next { right: calc(50% - 56px); }
+  .orbph__stage .orbph__nav { position: fixed; bottom: 16px; z-index: 1; }
+  .orbph__stage .orbph__nav--prev { left: calc(50% - 56px); }
+  .orbph__stage .orbph__nav--next { right: calc(50% - 56px); }
 }

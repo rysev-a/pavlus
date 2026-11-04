@@ -1,7 +1,7 @@
 /* Orbit, the profile screen. Classes are prefixed orbp__. */
 .orbp { display: grid; gap: calc(16px * var(--k-block, 1)); min-width: 0; align-content: start; }
 .orbp > *, .orbp .ui-card { min-width: 0; }
-.orbp__head { flex-direction: row; flex-wrap: wrap; align-items: center; gap: calc(20px * var(--k-block, 1)); padding: calc(24px * var(--k-block, 1)); }
+.orbp .orbp__head { flex-direction: row; flex-wrap: wrap; align-items: center; gap: calc(20px * var(--k-block, 1)); padding: calc(24px * var(--k-block, 1)); }
 .orbp__who { display: grid; gap: 6px; flex: 1 1 220px; min-width: 0; }
 .orbp__line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .orbp__name { margin: 0; font-size: 24px; letter-spacing: -.01em; overflow-wrap: anywhere; }

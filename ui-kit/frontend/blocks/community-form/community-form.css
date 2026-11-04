@@ -1,0 +1,9 @@
+.ui-card.k-cfrm { gap: calc(16px * var(--k-block, 1)); padding: calc(20px * var(--k-block, 1)); min-width: 0; }
+.k-cfrm__title { margin: 0; font-size: 18px; font-weight: 700; }
+.k-cfrm__req { color: var(--destructive); }
+.k-cfrm__text { width: 100%; min-width: 0; resize: vertical; }
+.k-cfrm__covers { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+.k-cfrm__cover { display: grid; place-items: center; aspect-ratio: 1; padding: 0; border: 2px solid transparent; border-radius: var(--radius-md); font-size: 24px; cursor: pointer; }
+.k-cfrm__cover.is-on { border-color: var(--foreground); box-shadow: var(--ring-shadow); }
+.k-cfrm__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.k-cfrm__spacer { flex: 1; }

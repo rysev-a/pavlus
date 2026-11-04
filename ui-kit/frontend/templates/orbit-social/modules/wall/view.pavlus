@@ -16,7 +16,7 @@ div.orbw
     if showTabs
       div.ui-tabs-list.orbw__tabs(role="tablist")
         for t in tabs key t.id
-          button.ui-tabs-trigger(type="button" role="tab" aria-selected={t.active ? "true" : "false"} @click=tab(t.id)) {t.label}
+          button.ui-tabs-trigger(type="button" role="tab" aria-selected={t.active ? "true" : "false"} @click=pickTab(t.id)) {t.label}
     if feed.composer
       +Composer#composer(...feed.composer)
     else if hint

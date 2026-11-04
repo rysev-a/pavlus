@@ -5,9 +5,31 @@
  * the blocks `social-post`, `post-comments` and `wall-composer` show, and the
  * handlers of their events (`feedHandlers`).
  */
-import { byId, type DomEvent, type Handler, nextId, type OrbitState, type Update, when } from "../../core.ts";
-import { glyphOf, gradient, initialsOf, isUpload, pictureStyle } from "../../pictures.ts";
-import type { Comment, Community, Db, Friend, Post, Song, User } from "../../schema.ts";
+import {
+  byId,
+  type DomEvent,
+  type Handler,
+  nextId,
+  type OrbitState,
+  type Update,
+  when,
+} from "../../core.ts";
+import {
+  glyphOf,
+  gradient,
+  initialsOf,
+  isUpload,
+  pictureStyle,
+} from "../../pictures.ts";
+import type {
+  Comment,
+  Community,
+  Db,
+  Friend,
+  Post,
+  Song,
+  User,
+} from "../../schema.ts";
 
 // ---- constants ----
 
@@ -53,7 +75,8 @@ interface PostIndex {
   byAuthor: Map<number, Post[]>;
 }
 
-const newest = (a: Post, b: Post): number => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.id - a.id);
+const newest = (a: Post, b: Post): number =>
+  a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.id - a.id;
 
 const postIndexes = new WeakMap<Post[], PostIndex>();
 
@@ -84,7 +107,13 @@ export function commentsOf(comments: Comment[], postId: number): Comment[] {
   let idx = commentIndexes.get(comments);
   if (!idx) {
     idx = new Map();
-    for (const c of [...comments].sort((a, b) => (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : a.id - b.id))) {
+    for (const c of [...comments].sort((a, b) =>
+      a.createdAt < b.createdAt
+        ? -1
+        : a.createdAt > b.createdAt
+          ? 1
+          : a.id - b.id,
+    )) {
       const list = idx.get(c.postId);
       if (list) list.push(c);
       else idx.set(c.postId, [c]);
@@ -146,29 +175,45 @@ export function friendRow(db: Db, a: number, b: number): Friend | undefined {
 
 // ---- rules ----
 
-export const isStaff = (u: User | undefined): boolean => u?.role === "admin" || u?.role === "moderator";
+export const isStaff = (u: User | undefined): boolean =>
+  u?.role === "admin" || u?.role === "moderator";
 
 /** May `me` write on this wall: their own, a friend's, or a community they belong to. */
 export function canPost(db: Db, me: number, scope: Scope): boolean {
   if (me <= 0) return false;
   if (scope.kind === "news") return false;
-  if (scope.kind === "wall") return scope.userId === me || relation(db, me, scope.userId) === "friends";
+  if (scope.kind === "wall")
+    return scope.userId === me || relation(db, me, scope.userId) === "friends";
   const c = byId(db.communities).get(scope.communityId);
-  return !!c && (c.ownerId === me || c.memberIds.includes(me) || c.moderatorIds.includes(me));
+  return (
+    !!c &&
+    (c.ownerId === me ||
+      c.memberIds.includes(me) ||
+      c.moderatorIds.includes(me))
+  );
 }
 
-const runsCommunity = (c: Community | undefined, me: number): boolean => !!c && (c.ownerId === me || c.moderatorIds.includes(me));
+const runsCommunity = (c: Community | undefined, me: number): boolean =>
+  !!c && (c.ownerId === me || c.moderatorIds.includes(me));
 
 /** The author, the owner of the wall, the moderators and administrators, and the leaders of the community. */
 export function canDeletePost(db: Db, me: number, post: Post): boolean {
   if (me <= 0) return false;
-  if (post.authorId === me || (post.communityId === 0 && post.wallId === me)) return true;
+  if (post.authorId === me || (post.communityId === 0 && post.wallId === me))
+    return true;
   if (isStaff(byId(db.users).get(me))) return true;
-  return post.communityId > 0 && runsCommunity(byId(db.communities).get(post.communityId), me);
+  return (
+    post.communityId > 0 &&
+    runsCommunity(byId(db.communities).get(post.communityId), me)
+  );
 }
 
 /** The comment's author, those who may delete the post, and the author of the post. */
-export function canDeleteComment(db: Db, me: number, comment: Comment): boolean {
+export function canDeleteComment(
+  db: Db,
+  me: number,
+  comment: Comment,
+): boolean {
   if (me <= 0) return false;
   if (comment.authorId === me) return true;
   const post = byId(db.posts).get(comment.postId);
@@ -183,11 +228,13 @@ export function toggleId(ids: number[], id: number): number[] {
 export function scopePosts(db: Db, scope: Scope): Post[] {
   const idx = postIndex(db.posts);
   if (scope.kind === "wall") return idx.byWall.get(scope.userId) ?? [];
-  if (scope.kind === "community") return idx.byCommunity.get(scope.communityId) ?? [];
+  if (scope.kind === "community")
+    return idx.byCommunity.get(scope.communityId) ?? [];
   // the news: what my friends published on walls
   const out: Post[] = [];
   for (const f of friendIds(db, scope.userId)) {
-    for (const p of idx.byAuthor.get(f) ?? []) if (p.communityId === 0) out.push(p);
+    for (const p of idx.byAuthor.get(f) ?? [])
+      if (p.communityId === 0) out.push(p);
   }
   return out.sort(newest);
 }
@@ -201,7 +248,9 @@ function haystackOf(db: Db): string[] {
   if (!h) {
     const artists = byId(db.artists);
     const albums = byId(db.albums);
-    h = db.songs.map((s) => `${s.title} ${artists.get(s.artistId)?.name ?? ""} ${albums.get(s.albumId)?.title ?? ""}`.toLowerCase());
+    h = db.songs.map((s) =>
+      `${s.title} ${artists.get(s.artistId)?.name ?? ""} ${albums.get(s.albumId)?.title ?? ""}`.toLowerCase(),
+    );
     haystacks.set(db.songs, h);
   }
   return h;
@@ -215,7 +264,8 @@ export interface SongView {
   duration: string;
 }
 
-export const fmtDuration = (seconds: number): string => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+export const fmtDuration = (seconds: number): string =>
+  `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
 export function songView(db: Db, id: number): SongView | null {
   const s = byId(db.songs).get(id);
@@ -235,14 +285,23 @@ export function searchSongs(db: Db, query: string, limit = 8): Song[] {
   if (!q) return [];
   const h = haystackOf(db);
   const out: Song[] = [];
-  for (let i = 0; i < h.length && out.length < limit; i++) if (h[i].includes(q)) out.push(db.songs[i]);
+  for (let i = 0; i < h.length && out.length < limit; i++)
+    if (h[i].includes(q)) out.push(db.songs[i]);
   return out;
 }
 
 /** My latest photos (for the photo post). */
 export function myPhotos(db: Db, me: number, limit = 12): Db["photos"] {
   const own = db.photos.filter((p) => p.ownerId === me);
-  return own.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.id - a.id)).slice(0, limit);
+  return own
+    .sort((a, b) =>
+      a.createdAt < b.createdAt
+        ? 1
+        : a.createdAt > b.createdAt
+          ? -1
+          : b.id - a.id,
+    )
+    .slice(0, limit);
 }
 
 // ---- the composer ----
@@ -259,7 +318,17 @@ export interface Compose {
   error: string;
 }
 
-export const initialCompose = (): Compose => ({ kind: "text", text: "", songQuery: "", songId: 0, photoId: 0, picture: "", url: "", linkTitle: "", error: "" });
+export const initialCompose = (): Compose => ({
+  kind: "text",
+  text: "",
+  songQuery: "",
+  songId: 0,
+  photoId: 0,
+  picture: "",
+  url: "",
+  linkTitle: "",
+  error: "",
+});
 
 /** `example.com/a` as `https://example.com/a`; "" when it is not an http(s) address. */
 export function normalizeUrl(raw: string): string {
@@ -271,7 +340,13 @@ export function normalizeUrl(raw: string): string {
 }
 
 /** The post a composer makes, or the reason it cannot. Pure. */
-export function newPost(db: Db, me: number, scope: Scope, c: Compose, now: string): { post?: Post; error?: string } {
+export function newPost(
+  db: Db,
+  me: number,
+  scope: Scope,
+  c: Compose,
+  now: string,
+): { post?: Post; error?: string } {
   if (!canPost(db, me, scope)) return { error: "You cannot write here" };
   const text = c.text.trim().slice(0, MAX_TEXT);
   const base: Post = {
@@ -297,10 +372,12 @@ export function newPost(db: Db, me: number, scope: Scope, c: Compose, now: strin
     base.songId = c.songId;
   } else if (c.kind === "photo") {
     const photo = byId(db.photos).get(c.photoId);
-    if (!photo || photo.ownerId !== me) return { error: "Pick one of your photos" };
+    if (!photo || photo.ownerId !== me)
+      return { error: "Pick one of your photos" };
     base.photoId = photo.id;
   } else if (c.kind === "picture") {
-    if (!PICTURES.includes(c.picture) && !isUpload(c.picture)) return { error: "Pick a picture" };
+    if (!PICTURES.includes(c.picture) && !isUpload(c.picture))
+      return { error: "Pick a picture" };
     base.picture = c.picture;
   } else {
     const url = normalizeUrl(c.url);
@@ -312,7 +389,13 @@ export function newPost(db: Db, me: number, scope: Scope, c: Compose, now: strin
 }
 
 /** A repost of a post onto my own wall (a repost of a repost shows the original). */
-export function repost(db: Db, me: number, postId: number, text: string, now: string): Post | null {
+export function repost(
+  db: Db,
+  me: number,
+  postId: number,
+  text: string,
+  now: string,
+): Post | null {
   const target = byId(db.posts).get(postId);
   if (!target || me <= 0) return null;
   const originalId = target.kind === "repost" ? target.repostOf : target.id;
@@ -336,16 +419,34 @@ export function repost(db: Db, me: number, postId: number, text: string, now: st
 }
 
 /** A new comment, or null when it is empty or the post is gone. */
-export function newComment(db: Db, me: number, postId: number, text: string, now: string): Comment | null {
+export function newComment(
+  db: Db,
+  me: number,
+  postId: number,
+  text: string,
+  now: string,
+): Comment | null {
   const t = text.trim().slice(0, 500);
   if (!t || me <= 0 || !byId(db.posts).has(postId)) return null;
-  return { id: nextId(db.comments), postId, authorId: me, text: t, createdAt: now };
+  return {
+    id: nextId(db.comments),
+    postId,
+    authorId: me,
+    text: t,
+    createdAt: now,
+  };
 }
 
 /** The ids to remove when posts are deleted: the posts and their comments. */
-export function postRemoval(db: Db, postIds: number[]): { posts: number[]; comments: number[] } {
+export function postRemoval(
+  db: Db,
+  postIds: number[],
+): { posts: number[]; comments: number[] } {
   const gone = new Set(postIds);
-  return { posts: [...gone], comments: db.comments.filter((c) => gone.has(c.postId)).map((c) => c.id) };
+  return {
+    posts: [...gone],
+    comments: db.comments.filter((c) => gone.has(c.postId)).map((c) => c.id),
+  };
 }
 
 // ---- the view ----
@@ -418,7 +519,14 @@ export interface FeedUi {
   compose: Compose;
 }
 
-export const initialFeedUi = (): FeedUi => ({ page: 1, openId: 0, draft: "", shareId: 0, shareText: "", compose: initialCompose() });
+export const initialFeedUi = (): FeedUi => ({
+  page: 1,
+  openId: 0,
+  draft: "",
+  shareId: 0,
+  shareText: "",
+  compose: initialCompose(),
+});
 
 export interface ComposerView {
   kinds: { id: string; label: string; active: boolean }[];
@@ -457,13 +565,29 @@ export interface FeedView {
   empty: string;
 }
 
-export function pagerView(page: number, size: number, total: number, noun: string, labels: [string, string] = ["Newer", "Older"]): PagerView {
+export function pagerView(
+  page: number,
+  size: number,
+  total: number,
+  noun: string,
+  labels: [string, string] = ["Newer", "Older"],
+): PagerView {
   const pages = Math.max(1, Math.ceil(total / size));
   const p = Math.min(Math.max(1, page), pages);
-  return { page: p, pages, total, label: `${total} ${noun}`, hasPrev: p > 1, hasNext: p < pages, prevLabel: labels[0], nextLabel: labels[1] };
+  return {
+    page: p,
+    pages,
+    total,
+    label: `${total} ${noun}`,
+    hasPrev: p > 1,
+    hasNext: p < pages,
+    prevLabel: labels[0],
+    nextLabel: labels[1],
+  };
 }
 
-const avatarTextOf = (u: User | undefined): string => (u && !isUpload(u.avatar) ? glyphOf(u.avatar) || initialsOf(u.name) : "");
+const avatarTextOf = (u: User | undefined): string =>
+  u && !isUpload(u.avatar) ? glyphOf(u.avatar) || initialsOf(u.name) : "";
 
 function bodyOf(db: Db, p: Post): Body {
   let imageSrc = "";
@@ -485,7 +609,8 @@ function bodyOf(db: Db, p: Post): Body {
 function whoOf(db: Db, p: Post, now: string): Who {
   const author = byId(db.users).get(p.authorId);
   let where = "";
-  if (p.communityId > 0) where = `in ${byId(db.communities).get(p.communityId)?.name ?? "a community"}`;
+  if (p.communityId > 0)
+    where = `in ${byId(db.communities).get(p.communityId)?.name ?? "a community"}`;
   else if (p.wallId !== p.authorId) {
     const owner = byId(db.users).get(p.wallId);
     where = owner ? `on ${owner.name}'s wall` : "";
@@ -493,7 +618,9 @@ function whoOf(db: Db, p: Post, now: string): Who {
   return {
     authorId: p.authorId,
     authorName: author?.name ?? "Deleted user",
-    avatarStyle: author ? pictureStyle(author.avatar) : "background: var(--muted)",
+    avatarStyle: author
+      ? pictureStyle(author.avatar)
+      : "background: var(--muted)",
     avatarText: avatarTextOf(author),
     when: when(p.createdAt, now),
     where,
@@ -501,7 +628,13 @@ function whoOf(db: Db, p: Post, now: string): Who {
 }
 
 /** The card of one post. */
-export function cardOf(db: Db, me: number, p: Post, now: string, ui: FeedUi): PostCard {
+export function cardOf(
+  db: Db,
+  me: number,
+  p: Post,
+  now: string,
+  ui: FeedUi,
+): PostCard {
   const users = byId(db.users);
   const open = ui.openId === p.id;
   let thread: ThreadView | null = null;
@@ -571,25 +704,55 @@ export function composerView(db: Db, me: number, c: Compose): ComposerView {
     kinds: COMPOSE_KINDS.map((k) => ({ ...k, active: k.id === c.kind })),
     kind: c.kind,
     text: c.text,
-    placeholder: c.kind === "text" ? "What is new?" : "Add a few words (optional)",
+    placeholder:
+      c.kind === "text" ? "What is new?" : "Add a few words (optional)",
     error: c.error,
     canSend,
     songQuery: c.songQuery,
-    songs: results.map((s) => ({ id: s.id, title: s.title, artist: artists.get(s.artistId)?.name ?? "", selected: s.id === c.songId })),
+    songs: results.map((s) => ({
+      id: s.id,
+      title: s.title,
+      artist: artists.get(s.artistId)?.name ?? "",
+      selected: s.id === c.songId,
+    })),
     pickedSong: song ? `${song.title} - ${song.artist}` : "",
     hasSearch: c.songQuery.trim().length > 0,
-    photos: photos.map((p) => ({ id: p.id, style: pictureStyle(p.src), selected: p.id === c.photoId })),
+    photos: photos.map((p) => ({
+      id: p.id,
+      style: pictureStyle(p.src),
+      selected: p.id === c.photoId,
+    })),
     noPhotos: c.kind === "photo" && photos.length === 0,
-    pictures: c.kind === "picture" ? PICTURES.map((src, i) => ({ i, style: pictureStyle(src), glyph: glyphOf(src), selected: src === c.picture })) : [],
+    pictures:
+      c.kind === "picture"
+        ? PICTURES.map((src, i) => ({
+            i,
+            style: pictureStyle(src),
+            glyph: glyphOf(src),
+            selected: src === c.picture,
+          }))
+        : [],
     url: c.url,
     linkTitle: c.linkTitle,
   };
 }
 
 /** The whole feed of a scope for the page `ui.page`. Returns the clamped `ui` too. */
-export function deriveFeed(db: Db, me: number, now: string, scope: Scope, ui: FeedUi, emptyText: string): { feed: FeedView; ui: FeedUi } {
+export function deriveFeed(
+  db: Db,
+  me: number,
+  now: string,
+  scope: Scope,
+  ui: FeedUi,
+  emptyText: string,
+): { feed: FeedView; ui: FeedUi } {
   const all = scopePosts(db, scope);
-  const pager = pagerView(ui.page, PAGE_SIZE, all.length, all.length === 1 ? "post" : "posts");
+  const pager = pagerView(
+    ui.page,
+    PAGE_SIZE,
+    all.length,
+    all.length === 1 ? "post" : "posts",
+  );
   const rows = all.slice((pager.page - 1) * PAGE_SIZE, pager.page * PAGE_SIZE);
   const allowed = canPost(db, me, scope);
   return {
@@ -614,20 +777,35 @@ const text = (e: DomEvent | undefined): string => String(e?.value ?? "");
  * posts the module shows (null when none), and `key` is the module's slice, which
  * holds `ui: FeedUi`.
  */
-export function feedHandlers(key: "wall" | "communities", scopeOf: (s: OrbitState) => Scope | null): Record<string, Handler> {
-  const uiOf = (s: OrbitState): FeedUi => (s[key] as unknown as { ui: FeedUi }).ui;
-  const patch = (s: OrbitState, p: Partial<FeedUi>): Update => ({ slice: { ui: { ...uiOf(s), ...p } } });
-  const compose = (s: OrbitState, p: Partial<Compose>): Update => patch(s, { compose: { ...uiOf(s).compose, error: "", ...p } });
-  const postOf = (s: OrbitState, id: unknown): Post | undefined => byId(s.db.posts).get(Number(id));
+export function feedHandlers(
+  key: "wall" | "communities",
+  scopeOf: (s: OrbitState) => Scope | null,
+): Record<string, Handler> {
+  const uiOf = (s: OrbitState): FeedUi =>
+    (s[key] as unknown as { ui: FeedUi }).ui;
+  const patch = (s: OrbitState, p: Partial<FeedUi>): Update => ({
+    slice: { ui: { ...uiOf(s), ...p } },
+  });
+  const compose = (s: OrbitState, p: Partial<Compose>): Update =>
+    patch(s, { compose: { ...uiOf(s).compose, error: "", ...p } });
+  const postOf = (s: OrbitState, id: unknown): Post | undefined =>
+    byId(s.db.posts).get(Number(id));
 
   const removePost = (s: OrbitState, id: unknown): Update | void => {
     const p = postOf(s, id);
-    if (!p || !canDeletePost(s.db, s.me, p)) return { notice: "You cannot delete this post" };
+    if (!p || !canDeletePost(s.db, s.me, p))
+      return { notice: "You cannot delete this post" };
     const r = postRemoval(s.db, [p.id]);
     const ui = uiOf(s);
     return {
       remove: { posts: r.posts, comments: r.comments },
-      slice: { ui: { ...ui, openId: ui.openId === p.id ? 0 : ui.openId, shareId: ui.shareId === p.id ? 0 : ui.shareId } },
+      slice: {
+        ui: {
+          ...ui,
+          openId: ui.openId === p.id ? 0 : ui.openId,
+          shareId: ui.shareId === p.id ? 0 : ui.shareId,
+        },
+      },
       notice: "Post deleted",
     };
   };
@@ -638,24 +816,43 @@ export function feedHandlers(key: "wall" | "communities", scopeOf: (s: OrbitStat
       if (!p || s.me <= 0) return;
       return { put: { posts: [{ ...p, likeIds: toggleId(p.likeIds, s.me) }] } };
     },
-    "post.comments": (id, _e, s) => patch(s, { openId: uiOf(s).openId === Number(id) ? 0 : Number(id), draft: "" }),
-    "post.share": (id, _e, s) => patch(s, { shareId: uiOf(s).shareId === Number(id) ? 0 : Number(id), shareText: "" }),
+    "post.comments": (id, _e, s) =>
+      patch(s, {
+        openId: uiOf(s).openId === Number(id) ? 0 : Number(id),
+        draft: "",
+      }),
+    "post.share": (id, _e, s) =>
+      patch(s, {
+        shareId: uiOf(s).shareId === Number(id) ? 0 : Number(id),
+        shareText: "",
+      }),
     "post.setShare": (_p, e, s) => patch(s, { shareText: text(e) }),
     "post.shareSend": (id, _e, s) => {
       const p = repost(s.db, s.me, Number(id), uiOf(s).shareText, s.now);
       if (!p) return { notice: "This post cannot be shared" };
-      return { put: { posts: [p] }, ...patch(s, { shareId: 0, shareText: "" }), notice: "Shared on your wall" };
+      return {
+        put: { posts: [p] },
+        ...patch(s, { shareId: 0, shareText: "" }),
+        notice: "Shared on your wall",
+      };
     },
     "post.remove": (id, _e, s) => removePost(s, id),
-    "post.profile": (userId) => ({ go: { screen: "wall", params: { userId: Number(userId) } } }),
+    "post.profile": (userId) => ({
+      go: { screen: "wall", params: { userId: Number(userId) } },
+    }),
     "post.original": (id, _e, s) => {
       const p = postOf(s, id);
       const o = p ? postOf(s, p.repostOf) : undefined;
       if (!o) return { notice: "The original post was deleted" };
-      if (o.communityId > 0) return { go: { screen: "communities", params: { communityId: o.communityId } } };
+      if (o.communityId > 0)
+        return {
+          go: { screen: "communities", params: { communityId: o.communityId } },
+        };
       return { go: { screen: "wall", params: { userId: o.wallId } } };
     },
-    "post.play": (songId) => ({ go: { screen: "music", params: { songId: Number(songId) } } }),
+    "post.play": (songId) => ({
+      go: { screen: "music", params: { songId: Number(songId) } },
+    }),
 
     "cm.setDraft": (_p, e, s) => patch(s, { draft: text(e) }),
     "cm.send": (_p, _e, s) => {
@@ -666,17 +863,28 @@ export function feedHandlers(key: "wall" | "communities", scopeOf: (s: OrbitStat
     },
     "cm.remove": (id, _e, s) => {
       const c = byId(s.db.comments).get(Number(id));
-      if (!c || !canDeleteComment(s.db, s.me, c)) return { notice: "You cannot delete this comment" };
+      if (!c || !canDeleteComment(s.db, s.me, c))
+        return { notice: "You cannot delete this comment" };
       return { remove: { comments: [c.id] } };
     },
-    "cm.open": (userId) => ({ go: { screen: "wall", params: { userId: Number(userId) } } }),
+    "cm.open": (userId) => ({
+      go: { screen: "wall", params: { userId: Number(userId) } },
+    }),
 
-    "composer.pickKind": (id, _e, s) => compose(s, { kind: String(id) as ComposeKind }),
+    "composer.pickKind": (id, _e, s) =>
+      compose(s, { kind: String(id) as ComposeKind }),
     "composer.setText": (_p, e, s) => compose(s, { text: text(e) }),
     "composer.setSongQuery": (_p, e, s) => compose(s, { songQuery: text(e) }),
-    "composer.pickSong": (id, _e, s) => compose(s, { songId: uiOf(s).compose.songId === Number(id) ? 0 : Number(id) }),
-    "composer.pickPhoto": (id, _e, s) => compose(s, { photoId: uiOf(s).compose.photoId === Number(id) ? 0 : Number(id) }),
-    "composer.pickPicture": (i, _e, s) => compose(s, { picture: PICTURES[Number(i)] ?? "" }),
+    "composer.pickSong": (id, _e, s) =>
+      compose(s, {
+        songId: uiOf(s).compose.songId === Number(id) ? 0 : Number(id),
+      }),
+    "composer.pickPhoto": (id, _e, s) =>
+      compose(s, {
+        photoId: uiOf(s).compose.photoId === Number(id) ? 0 : Number(id),
+      }),
+    "composer.pickPicture": (i, _e, s) =>
+      compose(s, { picture: PICTURES[Number(i)] ?? "" }),
     "composer.setUrl": (_p, e, s) => compose(s, { url: text(e) }),
     "composer.setLinkTitle": (_p, e, s) => compose(s, { linkTitle: text(e) }),
     "composer.send": (_p, _e, s) => {
@@ -684,10 +892,16 @@ export function feedHandlers(key: "wall" | "communities", scopeOf: (s: OrbitStat
       if (!scope) return;
       const r = newPost(s.db, s.me, scope, uiOf(s).compose, s.now);
       if (!r.post) return compose(s, { error: r.error ?? "" });
-      return { put: { posts: [r.post] }, ...patch(s, { compose: initialCompose(), page: 1 }), notice: "Posted" };
+      return {
+        put: { posts: [r.post] },
+        ...patch(s, { compose: initialCompose(), page: 1 }),
+        notice: "Posted",
+      };
     },
 
-    newer: (_p, _e, s) => patch(s, { page: Math.max(1, uiOf(s).page - 1), openId: 0, shareId: 0 }),
-    older: (_p, _e, s) => patch(s, { page: uiOf(s).page + 1, openId: 0, shareId: 0 }),
+    newer: (_p, _e, s) =>
+      patch(s, { page: Math.max(1, uiOf(s).page - 1), openId: 0, shareId: 0 }),
+    older: (_p, _e, s) =>
+      patch(s, { page: uiOf(s).page + 1, openId: 0, shareId: 0 }),
   };
 }

@@ -9,8 +9,8 @@
 .orba__alert { margin: 0; }
 .orba__bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .orba__overview { display: grid; gap: calc(16px * var(--k-block, 1)); min-width: 0; }
-.orba__cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: calc(16px * var(--k-block, 1)); }
-.orba__cols--even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.orba__cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: calc(16px * var(--k-block, 1)); }
+.orba__cols--even { grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); }
 .orba__cols > * { min-width: 0; }
 .orba__picker { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .orba__picker .ui-field-label { margin: 0; }
@@ -45,6 +45,7 @@
 .orba__settings { display: grid; gap: calc(16px * var(--k-block, 1)); max-width: 980px; }
 .orba__row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .orba__ask { font-weight: 500; }
-@media (max-width: 800px) {
-  .orba__cols, .orba__cols--even { grid-template-columns: minmax(0, 1fr); }
-}
+.orba .k-ctable, .orba .ui-data-table, .orba .k-cform { min-width: 0; max-width: 100%; }
+.orba .ui-data-toolbar { flex-wrap: wrap; }
+.orba .ui-data-footer-controls { flex-wrap: wrap; }
+.orba .ui-resource-footer { flex-wrap: wrap; gap: 8px; }

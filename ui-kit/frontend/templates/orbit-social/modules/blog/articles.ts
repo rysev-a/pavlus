@@ -25,13 +25,24 @@ const caches = new WeakMap<Article[], Sorted>();
 function sortedOf(articles: Article[]): Sorted {
   let c = caches.get(articles);
   if (!c) {
-    const list = [...articles].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.id - a.id));
+    const list = [...articles].sort((a, b) =>
+      a.createdAt < b.createdAt
+        ? 1
+        : a.createdAt > b.createdAt
+          ? -1
+          : b.id - a.id,
+    );
     const counts = new Map<string, number>();
-    for (const a of list) for (const t of a.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+    for (const a of list)
+      for (const t of a.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
     c = {
       list,
-      hay: list.map((a) => `${a.title}\n${a.body}\n${a.tags.join(" ")}`.toLowerCase()),
-      tags: [...counts].map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag)),
+      hay: list.map((a) =>
+        `${a.title}\n${a.body}\n${a.tags.join(" ")}`.toLowerCase(),
+      ),
+      tags: [...counts]
+        .map(([tag, count]) => ({ tag, count }))
+        .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag)),
     };
     caches.set(articles, c);
   }
@@ -39,7 +50,8 @@ function sortedOf(articles: Article[]): Sorted {
 }
 
 /** The twelve most used tags. */
-export const topTags = (db: Db): { tag: string; count: number }[] => sortedOf(db.articles).tags.slice(0, TAG_CHIPS);
+export const topTags = (db: Db): { tag: string; count: number }[] =>
+  sortedOf(db.articles).tags.slice(0, TAG_CHIPS);
 
 export interface Filters {
   query: string;
@@ -65,12 +77,15 @@ export function filterArticles(db: Db, me: number, f: Filters): Article[] {
 
 // ---- rules ----
 
-export const canEditArticle = (me: number, a: Article): boolean => me > 0 && a.authorId === me;
+export const canEditArticle = (me: number, a: Article): boolean =>
+  me > 0 && a.authorId === me;
 
 /** The author, and the moderators and administrators. */
-export const canDeleteArticle = (db: Db, me: number, a: Article): boolean => canEditArticle(me, a) || (me > 0 && isStaff(byId(db.users).get(me)));
+export const canDeleteArticle = (db: Db, me: number, a: Article): boolean =>
+  canEditArticle(me, a) || (me > 0 && isStaff(byId(db.users).get(me)));
 
-export const toggleArticleLike = (a: Article, me: number): Article => (me > 0 ? { ...a, likeIds: toggleId(a.likeIds, me) } : a);
+export const toggleArticleLike = (a: Article, me: number): Article =>
+  me > 0 ? { ...a, likeIds: toggleId(a.likeIds, me) } : a;
 
 // ---- the form ----
 
@@ -84,9 +99,23 @@ export interface ArticleForm {
   errors: { title: string; body: string };
 }
 
-export const emptyForm = (): ArticleForm => ({ id: 0, title: "", tagsText: "", body: "", cover: PICTURES[0], errors: { title: "", body: "" } });
+export const emptyForm = (): ArticleForm => ({
+  id: 0,
+  title: "",
+  tagsText: "",
+  body: "",
+  cover: PICTURES[0],
+  errors: { title: "", body: "" },
+});
 
-export const formOf = (a: Article): ArticleForm => ({ id: a.id, title: a.title, tagsText: a.tags.join(", "), body: a.body, cover: a.cover, errors: { title: "", body: "" } });
+export const formOf = (a: Article): ArticleForm => ({
+  id: a.id,
+  title: a.title,
+  tagsText: a.tags.join(", "),
+  body: a.body,
+  cover: a.cover,
+  errors: { title: "", body: "" },
+});
 
 /** `Travel, art,  travel` as `["travel", "art"]` (lowercase, no repeats, at most eight). */
 export function parseTags(text: string): string[] {
@@ -98,25 +127,55 @@ export function parseTags(text: string): string[] {
   return out.slice(0, MAX_TAGS);
 }
 
-export function validateArticle(f: ArticleForm): { title: string; body: string } {
+export function validateArticle(f: ArticleForm): {
+  title: string;
+  body: string;
+} {
   return {
-    title: f.title.trim() ? (f.title.trim().length > 120 ? "At most 120 characters" : "") : "The title is required",
-    body: f.body.trim().length >= MIN_BODY ? "" : `Write at least ${MIN_BODY} characters (${f.body.trim().length} so far)`,
+    title: f.title.trim()
+      ? f.title.trim().length > 120
+        ? "At most 120 characters"
+        : ""
+      : "The title is required",
+    body:
+      f.body.trim().length >= MIN_BODY
+        ? ""
+        : `Write at least ${MIN_BODY} characters (${f.body.trim().length} so far)`,
   };
 }
 
 /** The row a valid form makes: a new article, or the edited one (only its author may edit). */
-export function saveArticle(db: Db, me: number, f: ArticleForm, now: string): { article?: Article; errors: ArticleForm["errors"] } {
+export function saveArticle(
+  db: Db,
+  me: number,
+  f: ArticleForm,
+  now: string,
+): { article?: Article; errors: ArticleForm["errors"] } {
   const errors = validateArticle(f);
   if (errors.title || errors.body) return { errors };
-  const fields = { title: f.title.trim(), body: f.body.trim(), tags: parseTags(f.tagsText), cover: f.cover };
+  const fields = {
+    title: f.title.trim(),
+    body: f.body.trim(),
+    tags: parseTags(f.tagsText),
+    cover: f.cover,
+  };
   if (f.id > 0) {
     const old = byId(db.articles).get(f.id);
-    if (!old || !canEditArticle(me, old)) return { errors: { title: "You cannot edit this article", body: "" } };
+    if (!old || !canEditArticle(me, old))
+      return { errors: { title: "You cannot edit this article", body: "" } };
     return { article: { ...old, ...fields }, errors };
   }
   if (me <= 0) return { errors: { title: "Sign in first", body: "" } };
-  return { article: { id: nextId(db.articles), authorId: me, ...fields, createdAt: now, likeIds: [] }, errors };
+  return {
+    article: {
+      id: nextId(db.articles),
+      authorId: me,
+      ...fields,
+      createdAt: now,
+      likeIds: [],
+    },
+    errors,
+  };
 }
 
 // ---- the views ----
@@ -149,9 +208,15 @@ export function excerptOf(body: string, max = 150): string {
   return `${flat.slice(0, max).replace(/\s+\S*$/, "")}...`;
 }
 
-const avatarText = (u: User | undefined): string => (u && !isUpload(u.avatar) ? glyphOf(u.avatar) || initialsOf(u.name) : "");
+const avatarText = (u: User | undefined): string =>
+  u && !isUpload(u.avatar) ? glyphOf(u.avatar) || initialsOf(u.name) : "";
 
-export function cardOf(db: Db, me: number, a: Article, now: string): ArticleCard {
+export function cardOf(
+  db: Db,
+  me: number,
+  a: Article,
+  now: string,
+): ArticleCard {
   const author = byId(db.users).get(a.authorId);
   return {
     id: a.id,
@@ -161,7 +226,9 @@ export function cardOf(db: Db, me: number, a: Article, now: string): ArticleCard
     coverGlyph: isUpload(a.cover) ? "" : glyphOf(a.cover),
     authorId: a.authorId,
     authorName: author?.name ?? "Deleted user",
-    avatarStyle: author ? pictureStyle(author.avatar) : "background: var(--muted)",
+    avatarStyle: author
+      ? pictureStyle(author.avatar)
+      : "background: var(--muted)",
     avatarText: avatarText(author),
     when: when(a.createdAt, now),
     tags: a.tags,
@@ -170,10 +237,18 @@ export function cardOf(db: Db, me: number, a: Article, now: string): ArticleCard
   };
 }
 
-export function readerOf(db: Db, me: number, a: Article, now: string): ArticleReaderView {
+export function readerOf(
+  db: Db,
+  me: number,
+  a: Article,
+  now: string,
+): ArticleReaderView {
   return {
     ...cardOf(db, me, a, now),
-    paragraphs: a.body.split(/\n+/).map((p) => p.trim()).filter(Boolean),
+    paragraphs: a.body
+      .split(/\n+/)
+      .map((p) => p.trim())
+      .filter(Boolean),
     canEdit: canEditArticle(me, a),
     canDelete: canDeleteArticle(db, me, a),
   };

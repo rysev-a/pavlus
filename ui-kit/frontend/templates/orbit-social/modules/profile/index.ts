@@ -129,13 +129,17 @@ const EMPTY_FORM: ProfileForm = {
   phone: "",
 };
 
+/** The letters on an avatar: none when it has an emoji or is an uploaded photo. */
+const markOf = (u: User): string =>
+  glyphOf(u.avatar) || u.avatar.startsWith("data:") ? "" : initialsOf(u.name);
+
 const personRow = (u: User, since = ""): PersonRow => ({
   id: u.id,
   name: u.name,
   city: u.city,
   style: pictureStyle(u.avatar),
   glyph: glyphOf(u.avatar),
-  initials: glyphOf(u.avatar) ? "" : initialsOf(u.name),
+  initials: markOf(u),
   since,
 });
 
@@ -301,7 +305,7 @@ export const profileModule: Module<ProfileState> = {
         friends: all.length,
         style: pictureStyle(user.avatar),
         glyph,
-        initials: glyph ? "" : initialsOf(user.name),
+        initials: markOf(user),
       },
       about: {
         name: user.name,
@@ -328,7 +332,7 @@ export const profileModule: Module<ProfileState> = {
       outgoing,
       avatarStyle: pictureStyle(user.avatar),
       avatarGlyph: glyph,
-      avatarInitials: glyph ? "" : initialsOf(user.name),
+      avatarInitials: markOf(user),
       hasUpload: user.avatar.startsWith("data:"),
       presets: PRESETS.map((p) => ({
         i: p.i,

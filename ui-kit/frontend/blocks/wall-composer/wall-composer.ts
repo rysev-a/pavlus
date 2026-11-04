@@ -16,12 +16,22 @@ const base = {
   error: "",
   canSend: false,
   songQuery: "",
-  songs: [] as { id: number; title: string; artist: string; selected: boolean }[],
+  songs: [] as {
+    id: number;
+    title: string;
+    artist: string;
+    selected: boolean;
+  }[],
   pickedSong: "",
   hasSearch: false,
   photos: [],
   noPhotos: false,
-  pictures: [] as { i: number; style: string; glyph: string; selected: boolean }[],
+  pictures: [] as {
+    i: number;
+    style: string;
+    glyph: string;
+    selected: boolean;
+  }[],
   url: "",
   linkTitle: "",
 };
@@ -37,7 +47,12 @@ export const initial = {
     canSend: true,
     songs: [
       { id: 1, title: "Blue Hours", artist: "The Night Owls", selected: true },
-      { id: 2, title: "Blue Monday Again", artist: "Kilo Mike", selected: false },
+      {
+        id: 2,
+        title: "Blue Monday Again",
+        artist: "Kilo Mike",
+        selected: false,
+      },
     ],
   },
   picture: {
@@ -45,9 +60,27 @@ export const initial = {
     kinds: kinds("picture"),
     kind: "picture",
     pictures: [
-      { i: 0, style: "background: linear-gradient(135deg, hsl(20 70% 55%), hsl(340 70% 42%))", glyph: "🌅", selected: true },
-      { i: 1, style: "background: linear-gradient(135deg, hsl(200 70% 55%), hsl(240 70% 42%))", glyph: "🌊", selected: false },
-      { i: 2, style: "background: linear-gradient(135deg, hsl(120 70% 55%), hsl(160 70% 42%))", glyph: "🌲", selected: false },
+      {
+        i: 0,
+        style:
+          "background: linear-gradient(135deg, hsl(20 70% 55%), hsl(340 70% 42%))",
+        glyph: "🌅",
+        selected: true,
+      },
+      {
+        i: 1,
+        style:
+          "background: linear-gradient(135deg, hsl(200 70% 55%), hsl(240 70% 42%))",
+        glyph: "🌊",
+        selected: false,
+      },
+      {
+        i: 2,
+        style:
+          "background: linear-gradient(135deg, hsl(120 70% 55%), hsl(160 70% 42%))",
+        glyph: "🌲",
+        selected: false,
+      },
     ],
   },
 };

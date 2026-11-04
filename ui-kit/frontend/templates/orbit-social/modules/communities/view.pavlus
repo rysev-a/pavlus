@@ -1,5 +1,95 @@
-// STUB of the "communities" view: replace it. State = the props: the module's slice, spread.
-div.ui-card
-  div.ui-card-header
-    h3.ui-card-title {title}
-    p.ui-card-description Coming soon.
+// Communities: the list (All / Mine), the create form, and a community page (wall, members, settings).
+// State = the slice of modules/communities/index.ts.
+import Card from "../../../../blocks/community-card/view.pavlus"
+import Form from "../../../../blocks/community-form/view.pavlus"
+import Head from "../../../../blocks/social-header/view.pavlus"
+import Composer from "../../../../blocks/wall-composer/view.pavlus"
+import Post from "../../../../blocks/social-post/view.pavlus"
+import Comments from "../../../../blocks/post-comments/view.pavlus"
+import Contacts from "../../../../blocks/contacts-card/view.pavlus"
+import Members from "../../../../blocks/member-list/view.pavlus"
+import Pager from "../../../../blocks/pager-bar/view.pavlus"
+
+div.orbc
+  if mode === "create"
+    div.orbc__narrow
+      +Form#form(...formView)
+  else if mode === "list"
+    div.orbc__bar
+      div.ui-tabs-list(role="tablist")
+        for t in tabs key t.id
+          button.ui-tabs-trigger(type="button" role="tab" aria-selected={t.active ? "true" : "false"} @click=pickTab(t.id)) {t.label}
+      div.orbc__search
+        span.k-icon.k-icon-search
+        input.ui-input(type="search" aria-label="Search the communities" placeholder="Search communities" autocomplete="off" value={query} @input=search)
+      if canCreate
+        button.ui-button.ui-button-default.ui-button-sm(type="button" @click=create)
+          span.k-icon.k-icon-plus
+          | New community
+    div.orbc__grid
+      for c in cards key c.id
+        +Card#card(...c)
+    if cards.length === 0
+      p.orbc__empty {empty}
+    +Pager#pager(...pager)
+  else
+    div.orbc__top
+      button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=back)
+        span.k-icon.k-icon-chevron-left
+        | All communities
+    +Head#header(...header)
+    div.ui-tabs-list.orbc__tabs(role="tablist")
+      for t in pageTabs key t.id
+        button.ui-tabs-trigger(type="button" role="tab" aria-selected={t.active ? "true" : "false"} @click=openTab(t.id)) {t.label}
+    if pageTab === "wall"
+      div.orbc__cols
+        div.orbc__main
+          if feed.composer
+            +Composer#composer(...feed.composer)
+          else if hint
+            p.orbc__hint {hint}
+          div.orbc__feed
+            for p in feed.cards key p.id
+              div.orbc__item
+                +Post#post(...p)
+                if p.open
+                  div.orbc__comments
+                    +Comments#cm(...p.thread)
+            if feed.cards.length === 0
+              p.orbc__empty {feed.empty}
+          +Pager#fpager(...feed.pager)
+        div.orbc__side
+          +Contacts#contacts(...contacts)
+    else if pageTab === "members"
+      div.ui-card.orbc__panel
+        div.orbc__search
+          span.k-icon.k-icon-search
+          input.ui-input(type="search" aria-label="Search the members" placeholder="Search members" autocomplete="off" value={memberQuery} @input=setMemberQuery)
+        +Members#members(...members)
+        +Pager#mpager(...memberPager)
+    else
+      div.orbc__settings
+        +Form#form(...formView)
+        div.ui-card.orbc__panel
+          h3.orbc__h Contacts
+          p.orbc__note The people members can write to.
+          div.orbc__chips
+            for c in settingsContacts key c.id
+              span.orbc__chip
+                | {c.name}
+                button.orbc__x(type="button" aria-label="Remove {c.name} from the contacts" @click=removeContact(c.id))
+                  span.k-icon.k-icon-x
+          div.orbc__search
+            span.k-icon.k-icon-search
+            input.ui-input(type="search" aria-label="Find a member to add" placeholder="Find a member to add" autocomplete="off" value={contactQuery} @input=setContactQuery)
+          ul.orbc__results
+            for r in contactResults key r.id
+              li
+                span {r.name}
+                button.ui-button.ui-button-outline.ui-button-xs(type="button" @click=addContact(r.id)) Add
+            if hasContactQuery && contactResults.length === 0
+              li.orbc__none No members found.
+        div.ui-card.orbc__panel.orbc__danger
+          h3.orbc__h Delete the community
+          p.orbc__note This removes the community, its wall posts and their comments for good.
+          button.ui-button.ui-button-destructive(type="button" @click=deleteCommunity) {deleteLabel}
