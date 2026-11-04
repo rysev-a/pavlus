@@ -28,6 +28,8 @@ export interface Look {
   text: string;
   block: string;
   style: string;
+  /** The corners: `auto` is what the style says, else an id of RADII. */
+  radius: string;
   /**
    * When on, picking a theme also sets the font, the three size scales and the
    * style the theme comes with (not just its colours).
@@ -46,6 +48,7 @@ export const defaultLook = (mode: Mode = "light"): Look => ({
   text: "md",
   block: "md",
   style: "default",
+  radius: "auto",
   bundle: true,
 });
 
@@ -302,6 +305,28 @@ export const STYLES: Style[] = [
   },
 ];
 
+// ---- corners ----
+
+export interface Radius {
+  id: string;
+  name: string;
+  /** `--radius`: the corners of cards, popovers and the rest. */
+  radius: string;
+  /** The corners of buttons, badges and tabs (a pill is fully round). */
+  chip: string;
+}
+
+/** `auto` (from the style) is the first choice; the rest set the corners whatever the style. */
+export const RADII: Radius[] = [
+  { id: "auto", name: "From the style", radius: "", chip: "" },
+  { id: "none", name: "Sharp", radius: "0", chip: "0" },
+  { id: "sm", name: "Small", radius: "0.25rem", chip: "0.25rem" },
+  { id: "md", name: "Medium", radius: "0.5rem", chip: "0.5rem" },
+  { id: "lg", name: "Large", radius: "0.875rem", chip: "0.875rem" },
+  { id: "xl", name: "Round", radius: "1.25rem", chip: "1.25rem" },
+  { id: "pill", name: "Pill", radius: "1.25rem", chip: "999px" },
+];
+
 // ---- palettes: 30 names, each a light and a dark theme ----
 
 export interface Palette {
@@ -552,6 +577,7 @@ export interface Catalog {
   text: Size[];
   block: Size[];
   styles: Style[];
+  radii: Radius[];
 }
 
 const familyOf = (id: string, name: string, list: VsTheme[]): ThemeFamily => ({
@@ -587,6 +613,7 @@ export const catalog = (): Catalog => ({
   text: TEXT_SIZES,
   block: BLOCK_SIZES,
   styles: STYLES,
+  radii: RADII,
 });
 
 // ---- from a look to CSS ----
@@ -606,6 +633,15 @@ export function varsOf(look: Look): Record<string, string> {
     "--k-block": String(scaleOf(BLOCK_SIZES, look.block)),
   };
   if (style.id !== "default") vars["--radius"] = style.radius;
+  // corners the visitor chose win over the style's: every radius token follows
+  const r = RADII.find((x) => x.id === look.radius);
+  if (r && r.radius) {
+    vars["--radius"] = r.radius;
+    vars["--btn-radius"] = r.chip;
+    vars["--chip-radius"] = r.chip;
+    vars["--field-radius"] = r.id === "pill" ? "0.875rem" : r.radius;
+    vars["--card-radius"] = r.radius;
+  }
   return vars;
 }
 
@@ -641,6 +677,7 @@ export function parseLook(raw: unknown, fallback: Look): Look {
     text: idOf(TEXT_SIZES, o.text, fallback.text),
     block: idOf(BLOCK_SIZES, o.block, fallback.block),
     style: idOf(STYLES, o.style, fallback.style),
+    radius: idOf(RADII, o.radius, fallback.radius),
     bundle: typeof o.bundle === "boolean" ? o.bundle : fallback.bundle,
   };
 }
@@ -695,6 +732,7 @@ export function withTheme(look: Look, palette: string, mode: Mode): Look {
     text: preset.text ?? base.text,
     block: preset.block ?? base.block,
     style: preset.style ?? base.style,
+    radius: "auto",
   };
 }
 
@@ -710,7 +748,8 @@ export function withChoice(look: Look, row: string, id: string): Look {
       return { ...look, font: idOf(FONTS, id, look.font) };
     case "style": {
       const style = byId(STYLES, id);
-      return { ...look, style: style.id, font: style.font };
+      // a style brings its own corners, font and all
+      return { ...look, style: style.id, font: style.font, radius: "auto" };
     }
     case "ui":
       return { ...look, ui: idOf(UI_SIZES, id, look.ui) };
@@ -718,6 +757,8 @@ export function withChoice(look: Look, row: string, id: string): Look {
       return { ...look, text: idOf(TEXT_SIZES, id, look.text) };
     case "block":
       return { ...look, block: idOf(BLOCK_SIZES, id, look.block) };
+    case "radius":
+      return { ...look, radius: idOf(RADII, id, look.radius) };
     default:
       return look;
   }

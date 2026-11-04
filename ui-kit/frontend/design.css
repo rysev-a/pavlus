@@ -1,0 +1,214 @@
+/* =============================================================================
+   Design tokens.
+
+   A design system (Ant Design, Material...) is not a pile of overrides: it is a
+   handful of answers to the same questions. How tall is a button? How round?
+   What happens on hover? Where is the border of a field? This file asks the
+   questions once, as CSS variables, and wires them to the components once.
+   A design is then only a block of variables (see the bottom of this file).
+
+   Every variable has a fallback equal to what the admin-app stylesheet says, so
+   with nothing set the kit looks as before. Sizes are plain numbers of pixels:
+   the consumers scale them with --k-ui (controls) and --k-text (type).
+
+     button   --btn-h --btn-h-xs/-sm/-lg --btn-px --btn-px-sm/-lg --btn-px-icon --btn-px-ghost
+              --btn-radius --btn-fs --btn-fw --btn-ls --btn-shadow --btn-shadow-outline
+              --btn-ease --btn-state --btn-state-press (the state layer's opacity)
+              --btn-hover-amt --btn-hover-amt-secondary --btn-hover-tint (a filled button's hover)
+              --btn-active-amt --btn-active-tint
+              --btn-outline-{bg,border,fg} --btn-outline-hover-{bg,border,fg} --btn-ghost-fg --btn-ghost-hover-{bg,fg}
+     field    --field-h --field-px --field-radius --field-bg --field-border --field-border-hover
+              --field-shadow --field-focus-border --field-focus-ring
+     card     --card-radius --card-border --card-shadow --card-bg
+     chip     --chip-radius (badges, pills)
+     tabs     --tabs-bg --tabs-radius --tabs-p --tabs-h --tabs-line --tabs-trigger-radius
+              --tabs-trigger-px --tabs-active-bg --tabs-active-fg --tabs-active-shadow
+     check    --check-radius --check-border
+     switch   --sw-w --sw-h --sw-thumb --sw-thumb-on --sw-off-x --sw-on-x
+     heading  --heading-fw --heading-ls
+   ============================================================================= */
+
+/* ---- tokens that differ by mode: the admin-app restates them under .dark ---- */
+:root {
+  --btn-outline-bg: var(--background);
+  --btn-outline-border: var(--border);
+  --btn-outline-hover-bg: var(--accent);
+  --btn-ghost-hover-bg: var(--accent);
+  --field-bg: transparent;
+  --sw-off-bg: var(--input);
+  --sw-off-thumb: var(--background);
+  --sw-on-thumb: var(--background);
+}
+.dark {
+  --btn-outline-bg: color-mix(in srgb, var(--input) 30%, transparent);
+  --btn-outline-border: var(--input);
+  --btn-outline-hover-bg: color-mix(in srgb, var(--input) 50%, transparent);
+  --btn-ghost-hover-bg: color-mix(in srgb, var(--accent) 50%, transparent);
+  --field-bg: color-mix(in srgb, var(--input) 30%, transparent);
+  --sw-off-bg: color-mix(in srgb, var(--input) 80%, transparent);
+  --sw-off-thumb: var(--foreground);
+  --sw-on-thumb: var(--primary-foreground);
+}
+
+/* ---- button: the metrics ---- */
+.ui-button {
+  position: relative;
+  height: calc(var(--btn-h, 36) * 1px * var(--k-ui, 1));
+  padding-inline: var(--btn-px, 16px);
+  border-radius: var(--btn-radius, var(--radius-md));
+  font-size: calc(var(--btn-fs, 14) * 1px * var(--k-text, 1));
+  font-weight: var(--btn-fw, 500);
+  letter-spacing: var(--btn-ls, normal);
+  transition: background-color var(--btn-ease, .15s), color var(--btn-ease, .15s), border-color var(--btn-ease, .15s), box-shadow var(--btn-ease, .15s);
+}
+.ui-button:has(> svg:only-child), .ui-button:has(> svg:first-child:not(:only-child)) { padding-inline: var(--btn-px-icon, 12px); }
+.ui-button-xs { height: calc(var(--btn-h-xs, 24) * 1px * var(--k-ui, 1)); padding-inline: var(--btn-px-xs, 8px); }
+.ui-button-sm { height: calc(var(--btn-h-sm, 32) * 1px * var(--k-ui, 1)); padding-inline: var(--btn-px-sm, 12px); }
+.ui-button-lg { height: calc(var(--btn-h-lg, 40) * 1px * var(--k-ui, 1)); padding-inline: var(--btn-px-lg, 24px); }
+.ui-button-icon { width: calc(var(--btn-h, 36) * 1px * var(--k-ui, 1)); padding-inline: 0; }
+.ui-button-icon-xs { width: calc(var(--btn-h-xs, 24) * 1px * var(--k-ui, 1)); height: calc(var(--btn-h-xs, 24) * 1px * var(--k-ui, 1)); padding-inline: 0; }
+.ui-button-icon-sm { width: calc(var(--btn-h-sm, 32) * 1px * var(--k-ui, 1)); height: calc(var(--btn-h-sm, 32) * 1px * var(--k-ui, 1)); padding-inline: 0; }
+.ui-button-icon-lg { width: calc(var(--btn-h-lg, 40) * 1px * var(--k-ui, 1)); height: calc(var(--btn-h-lg, 40) * 1px * var(--k-ui, 1)); padding-inline: 0; }
+.ui-button-link { height: auto; padding-inline: 0; }
+.ui-button-ghost:not(.ui-button-icon):not(.ui-button-icon-xs):not(.ui-button-icon-sm):not(.ui-button-icon-lg) { padding-inline: var(--btn-px-ghost, var(--btn-px, 16px)); }
+
+/* a state layer: a film of the text colour that a design may show on hover and press */
+.ui-button::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: currentColor; opacity: 0; pointer-events: none; transition: opacity var(--btn-ease, .15s); }
+.ui-button:hover::after { opacity: var(--btn-state, 0); }
+.ui-button:active::after { opacity: var(--btn-state-press, var(--btn-state, 0)); }
+
+/* ---- button: the colours of a filled variant on hover and press ---- */
+.ui-button-default:hover { background: color-mix(in srgb, var(--primary) var(--btn-hover-amt, 90%), var(--btn-hover-tint, transparent)); }
+.ui-button-secondary:hover { background: color-mix(in srgb, var(--secondary) var(--btn-hover-amt-secondary, 80%), var(--btn-hover-tint, transparent)); }
+.ui-button-destructive:hover { background: color-mix(in srgb, var(--destructive) var(--btn-hover-amt, 90%), var(--btn-hover-tint, transparent)); }
+.ui-button-success:hover { background: color-mix(in srgb, var(--success) var(--btn-hover-amt, 90%), var(--btn-hover-tint, transparent)); }
+.ui-button-warning:hover { background: color-mix(in srgb, var(--warning) var(--btn-hover-amt, 90%), var(--btn-hover-tint, transparent)); }
+.ui-button-info:hover { background: color-mix(in srgb, var(--info) var(--btn-hover-amt, 90%), var(--btn-hover-tint, transparent)); }
+.ui-button-default:active { background: color-mix(in srgb, var(--primary) var(--btn-active-amt, var(--btn-hover-amt, 90%)), var(--btn-active-tint, var(--btn-hover-tint, transparent))); }
+.ui-button-destructive:active { background: color-mix(in srgb, var(--destructive) var(--btn-active-amt, var(--btn-hover-amt, 90%)), var(--btn-active-tint, var(--btn-hover-tint, transparent))); }
+.ui-button-default:not(:focus-visible), .ui-button-secondary:not(:focus-visible), .ui-button-destructive:not(:focus-visible),
+.ui-button-success:not(:focus-visible), .ui-button-warning:not(:focus-visible), .ui-button-info:not(:focus-visible) { box-shadow: var(--btn-shadow, none); }
+.ui-button-destructive:not(:focus-visible) { box-shadow: var(--btn-shadow-destructive, var(--btn-shadow, none)); }
+
+/* outline and ghost, in the colours the admin-app gives them in either mode. The doubled :root
+   outranks the admin-app's own .dark and prefers-color-scheme rules (same weight, later wins). */
+:root:root .ui-button-outline { border-color: var(--btn-outline-border); background: var(--btn-outline-bg); color: var(--btn-outline-fg, var(--foreground)); }
+:root:root .ui-button-outline:not(:focus-visible) { box-shadow: var(--btn-shadow-outline, var(--shadow-xs)); }
+:root:root .ui-button-outline:hover { border-color: var(--btn-outline-hover-border, var(--btn-outline-border)); background: var(--btn-outline-hover-bg); color: var(--btn-outline-hover-fg, var(--btn-outline-fg, var(--accent-foreground))); }
+:root:root .ui-button-ghost { color: var(--btn-ghost-fg, var(--foreground)); }
+:root:root .ui-button-ghost:hover { background: var(--btn-ghost-hover-bg); color: var(--btn-ghost-hover-fg, var(--btn-ghost-fg, var(--accent-foreground))); }
+
+/* ---- fields ---- */
+.ui-input, .ui-textarea-control, .ui-select-control, .ui-command-input { padding-inline: var(--field-px, 12px); border-radius: var(--field-radius, var(--radius-md)); }
+.ui-input, .ui-select-control { height: calc(var(--field-h, 36) * 1px * var(--k-ui, 1)); }
+.ui-select-control, .ui-field select { padding-right: calc(var(--field-px, 12px) + 24px); background-position: right var(--field-px, 12px) center; }
+:root:root .ui-input, :root:root .ui-textarea-control, :root:root .ui-select-control, :root:root .ui-command-input,
+:root:root .ui-field textarea, :root:root .ui-field select { border-color: var(--field-border, var(--input)); border-radius: var(--field-radius, var(--radius-md)); background-color: var(--field-bg); box-shadow: var(--field-shadow, var(--shadow-xs)); }
+:root:root .ui-input:hover:not(:focus-visible):not(:disabled), :root:root .ui-textarea-control:hover:not(:focus-visible):not(:disabled),
+:root:root .ui-select-control:hover:not(:focus-visible):not(:disabled) { border-color: var(--field-border-hover, var(--field-border, var(--input))); }
+:root:root .ui-input:focus-visible, :root:root .ui-textarea-control:focus-visible, :root:root .ui-select-control:focus-visible,
+:root:root .ui-field select:focus-visible, :root:root .ui-field textarea:focus-visible { border-color: var(--field-focus-border, var(--ring)); box-shadow: var(--field-focus-ring, var(--ring-shadow)); }
+
+:root:root .ui-input[aria-invalid="true"], :root:root .ui-textarea-control[aria-invalid="true"], :root:root .ui-select-control[aria-invalid="true"],
+:root:root .ui-field[data-invalid="true"] .ui-input, :root:root .ui-field[data-invalid="true"] textarea, :root:root .ui-field[data-invalid="true"] select {
+  border-color: var(--destructive); box-shadow: 0 0 0 3px color-mix(in srgb, var(--destructive) 20%, transparent);
+}
+
+/* ---- cards, badges, tabs ---- */
+.ui-card { border-color: var(--card-border, var(--border)); border-radius: var(--card-radius, var(--radius-xl)); box-shadow: var(--card-shadow, var(--shadow-sm)); background: var(--card-bg, var(--card)); }
+.ui-badge, .ui-pill { border-radius: var(--chip-radius, 999px); }
+.ui-page-title, .ui-card-title { font-weight: var(--heading-fw, 600); }
+.ui-page-title { letter-spacing: var(--heading-ls, -.02em); }
+.ui-card-title { letter-spacing: var(--heading-ls, -.01em); }
+.ui-tabs-list { height: calc(var(--tabs-h, 36) * 1px * var(--k-ui, 1)); padding: var(--tabs-p, 3px); border-radius: var(--tabs-radius, var(--radius-lg)); background: var(--tabs-bg, var(--muted)); box-shadow: var(--tabs-line, none); }
+.ui-tabs-trigger { padding-inline: var(--tabs-trigger-px, 12px); border-radius: var(--tabs-trigger-radius, var(--radius-md)); }
+.ui-tabs-trigger[aria-selected="true"] { background: var(--tabs-active-bg, var(--background)); color: var(--tabs-active-fg, var(--foreground)); box-shadow: var(--tabs-active-shadow, var(--shadow-sm)); }
+
+/* ---- checkbox, radio, switch ---- */
+.ui-checkbox-input, .ui-data-check { border-radius: var(--check-radius, 4px); }
+:root:root .ui-checkbox-input, :root:root .ui-radio-input, :root:root .ui-data-check { border-color: var(--check-border, var(--input)); }
+:root:root .ui-checkbox-input:checked, :root:root .ui-data-check:checked, :root:root .ui-radio-input:checked { border-color: var(--primary); }
+.ui-switch-input { --switch-w: var(--sw-w, 32px); --switch-h: var(--sw-h, 18.4px); --switch-thumb: var(--sw-thumb, 16px); --sw-on: var(--sw-thumb-on, var(--switch-thumb)); }
+.ui-switch-sm .ui-switch-input { --switch-w: var(--sw-w-sm, 24px); --switch-h: var(--sw-h-sm, 14px); --switch-thumb: var(--sw-thumb-sm, 12px); --sw-on: var(--sw-thumb-on-sm, var(--switch-thumb)); }
+.ui-switch-input::before { left: var(--sw-off-x, 0px); transition: left .15s var(--switch-ease), width .15s var(--switch-ease), height .15s var(--switch-ease), background-color .15s var(--switch-ease); }
+.ui-switch-input:checked::before { left: calc(100% - var(--sw-on) - var(--sw-on-x, 0px)); translate: 0 -50%; width: var(--sw-on); height: var(--sw-on); }
+:root:root .ui-switch-input:not(:checked) { border-color: var(--sw-off-border, transparent); background: var(--sw-off-bg); }
+:root:root .ui-switch-input:not(:checked)::before { background: var(--sw-off-thumb); }
+:root:root .ui-switch-input:checked::before { background: var(--sw-on-thumb); }
+
+/*@designs*/
+/* =============================================================================
+   Designs: a block of variables each, selected by <html data-style="...">.
+   Nothing below names a component: add a design by answering the questions.
+   ============================================================================= */
+
+/* Ant Design (v5): 32px controls, 6px corners, a 2px "drop" under filled buttons,
+   a hover that lightens, outlined default buttons that turn primary, line tabs. */
+html[data-style="ant"] {
+  --shadow-xs: none;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / .03), 0 1px 6px -1px rgb(0 0 0 / .02), 0 2px 4px rgb(0 0 0 / .02);
+  --ring-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+  --ant-line: color-mix(in srgb, var(--foreground) 16%, var(--background));
+  --ant-hover: color-mix(in srgb, var(--primary) 85%, #fff);
+
+  --btn-h: 32; --btn-h-xs: 22; --btn-h-sm: 24; --btn-h-lg: 40;
+  --btn-px: 15px; --btn-px-sm: 7px; --btn-px-lg: 15px; --btn-px-icon: 15px;
+  --btn-radius: 6px; --btn-fs: 14; --btn-fw: 400; --btn-ease: .2s cubic-bezier(.645, .045, .355, 1);
+  --btn-shadow: 0 2px 0 color-mix(in srgb, var(--primary) 10%, transparent);
+  --btn-shadow-destructive: 0 2px 0 color-mix(in srgb, var(--destructive) 8%, transparent);
+  --btn-shadow-outline: 0 2px 0 rgb(0 0 0 / .02);
+  --btn-hover-amt: 85%; --btn-hover-amt-secondary: 100%; --btn-hover-tint: #fff;
+  --btn-active-amt: 85%; --btn-active-tint: #000;
+  --btn-outline-bg: var(--card); --btn-outline-border: var(--ant-line);
+  --btn-outline-hover-bg: var(--card); --btn-outline-hover-border: var(--ant-hover); --btn-outline-hover-fg: var(--ant-hover);
+  --btn-ghost-hover-bg: color-mix(in srgb, var(--foreground) 6%, transparent);
+
+  --field-h: 32; --field-px: 11px; --field-radius: 6px; --field-bg: var(--card); --field-border: var(--ant-line);
+  --field-border-hover: var(--ant-hover); --field-shadow: none; --field-focus-border: var(--primary);
+  --field-focus-ring: 0 0 0 2px color-mix(in srgb, var(--primary) 10%, transparent);
+
+  --card-radius: 8px; --card-border: color-mix(in srgb, var(--foreground) 6%, var(--background)); --card-shadow: none;
+  --chip-radius: 4px; --heading-fw: 500; --heading-ls: 0;
+  --tabs-bg: transparent; --tabs-radius: 0; --tabs-p: 0; --tabs-h: 40; --tabs-line: inset 0 -1px 0 var(--border);
+  --tabs-trigger-radius: 0; --tabs-trigger-px: 16px; --tabs-active-bg: transparent; --tabs-active-fg: var(--primary);
+  --tabs-active-shadow: inset 0 -2px 0 var(--primary);
+  --check-radius: 2px; --check-border: var(--ant-line);
+  --sw-w: 44px; --sw-h: 22px; --sw-thumb: 18px; --sw-off-x: 1px; --sw-on-x: 1px;
+  --sw-w-sm: 28px; --sw-h-sm: 16px; --sw-thumb-sm: 12px;
+  --sw-off-bg: color-mix(in srgb, var(--foreground) 25%, transparent); --sw-off-thumb: #fff; --sw-on-thumb: #fff;
+}
+
+/* Material (Angular Material, M3): 40px pill buttons with no border, a state layer on hover and
+   press instead of a colour change, outlined text in the primary colour, 48px outlined fields,
+   elevated cards without borders, a 52x32 switch, tabs with a 3px indicator. */
+html[data-style="material"] {
+  --shadow-xs: none;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / .3), 0 1px 3px 1px rgb(0 0 0 / .15);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / .3), 0 2px 6px 2px rgb(0 0 0 / .15);
+  --ring-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);
+  --md-outline: color-mix(in srgb, var(--foreground) 50%, var(--background));
+
+  --btn-h: 40; --btn-h-xs: 28; --btn-h-sm: 32; --btn-h-lg: 48;
+  --btn-px: 24px; --btn-px-sm: 16px; --btn-px-lg: 32px; --btn-px-icon: 16px; --btn-px-ghost: 12px;
+  --btn-radius: 999px; --btn-fs: 14; --btn-fw: 500; --btn-ls: .1px; --btn-ease: .2s cubic-bezier(.2, 0, 0, 1);
+  --btn-state: .08; --btn-state-press: .1; --btn-hover-amt: 100%; --btn-hover-amt-secondary: 100%;
+  --btn-shadow-outline: none;
+  --btn-outline-bg: transparent; --btn-outline-border: var(--md-outline); --btn-outline-fg: var(--primary);
+  --btn-outline-hover-bg: transparent; --btn-outline-hover-border: var(--md-outline); --btn-outline-hover-fg: var(--primary);
+  --btn-ghost-fg: var(--primary); --btn-ghost-hover-bg: transparent;
+
+  --field-h: 48; --field-px: 16px; --field-radius: 4px; --field-bg: transparent; --field-border: var(--md-outline);
+  --field-border-hover: var(--foreground); --field-shadow: none; --field-focus-border: var(--primary);
+  --field-focus-ring: inset 0 0 0 1px var(--primary);
+
+  --card-radius: 12px; --card-border: transparent; --card-bg: color-mix(in srgb, var(--primary) 3%, var(--card));
+  --chip-radius: 8px; --heading-fw: 400; --heading-ls: 0;
+  --tabs-bg: transparent; --tabs-radius: 0; --tabs-p: 0; --tabs-h: 48; --tabs-line: inset 0 -1px 0 var(--border);
+  --tabs-trigger-radius: 0; --tabs-trigger-px: 16px; --tabs-active-bg: transparent; --tabs-active-fg: var(--primary);
+  --tabs-active-shadow: inset 0 -3px 0 var(--primary);
+  --check-radius: 2px; --check-border: var(--md-outline);
+  --sw-w: 52px; --sw-h: 32px; --sw-thumb: 16px; --sw-thumb-on: 24px; --sw-off-x: 7px; --sw-on-x: 3px;
+  --sw-off-bg: color-mix(in srgb, var(--foreground) 8%, var(--background)); --sw-off-border: var(--md-outline);
+  --sw-w-sm: 40px; --sw-h-sm: 24px; --sw-thumb-sm: 12px; --sw-thumb-on-sm: 16px;
+  --sw-off-thumb: var(--md-outline); --sw-on-thumb: var(--primary-foreground);
+}

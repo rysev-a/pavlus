@@ -189,6 +189,9 @@
 .k-topmenu__link.is-active { background: var(--accent); color: var(--foreground); }
 .k-topmenu__link:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
 .ui-shell-header-start { padding-left: 0; }
+@media (max-width: 1180px) { .k-github { display: none; } }
+.k-with-panel .k-github { display: none; }
+.k-with-panel .k-topmenu__link { padding: 6px 8px; font-size: 13px; }
 /* the burger, the logo and the dropdown are for a narrow screen only */
 .k-burger, .k-header-logo, .k-mobilemenu { display: none; }
 .k-header-logo { align-items: center; gap: 8px; font-weight: 700; color: var(--foreground); }
@@ -196,13 +199,24 @@
 .k-mobilemenu__link { display: block; width: 100%; padding: 12px 14px; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--foreground); font: inherit; font-size: 15px; font-weight: 500; text-align: left; cursor: pointer; }
 .k-mobilemenu__link:hover, .k-mobilemenu__link.is-active { background: var(--accent); }
 .k-mobilemenu__pages { color: var(--muted-foreground); }
-@media (max-width: 800px) {
-  .ui-shell-header { position: sticky; }
+/* the sections fold into the burger when they no longer fit: on a narrow screen, and beside the open theming panel */
+.k-mobilemenu__pages { display: none; }
+@media (max-width: 1100px) {
   .k-burger { display: inline-flex; }
-  .k-header-logo { display: inline-flex; }
-  .k-topmenu, .k-github, .k-sidebar-toggle { display: none; }
+  .k-topmenu { display: none; }
   .ui-shell-header-start { flex: 1; }
   .k-mobilemenu { display: grid; gap: 2px; position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 30; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--popover, var(--card)); box-shadow: 0 10px 30px color-mix(in srgb, var(--foreground) 18%, transparent); }
+}
+@media (min-width: 1101px) and (max-width: 1560px) {
+  .k-with-panel .k-burger { display: inline-flex; }
+  .k-with-panel .k-topmenu { display: none; }
+  .k-with-panel .ui-shell-header-start { flex: 1; }
+  .k-with-panel .k-mobilemenu { display: grid; gap: 2px; position: absolute; top: calc(100% + 6px); left: 0; width: 280px; z-index: 30; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--popover, var(--card)); box-shadow: 0 10px 30px color-mix(in srgb, var(--foreground) 18%, transparent); }
+}
+@media (max-width: 800px) {
+  .k-header-logo { display: inline-flex; }
+  .k-github, .k-sidebar-toggle { display: none; }
+  .k-mobilemenu__pages { display: block; }
 }
 @media (max-width: 640px) {
   .k-topmenu__link { padding: 6px 8px; font-size: 13px; }
@@ -342,22 +356,6 @@ html[data-style="radix"] .ui-card, html[data-style="radix"] .ui-alert { border-c
 html[data-style="radix"] .ui-button { font-weight: 500; }
 html[data-style="radix"] .ui-badge, html[data-style="radix"] .ui-pill { border-radius: .375rem; }
 html[data-style="radix"] .ui-input, html[data-style="radix"] .ui-select-control, html[data-style="radix"] .ui-textarea-control { background: color-mix(in srgb, var(--primary) 4%, var(--background)); }
-
-/* Material: pill buttons, elevated cards without borders, regular-weight headings */
-html[data-style="material"] { --shadow-xs: none; --shadow-sm: 0 1px 3px 1px rgb(0 0 0 / .15), 0 1px 2px rgb(0 0 0 / .3); --shadow-md: 0 2px 6px 2px rgb(0 0 0 / .15), 0 1px 2px rgb(0 0 0 / .3); }
-html[data-style="material"] .ui-button, html[data-style="material"] .ui-tabs-list, html[data-style="material"] .ui-tabs-trigger { border-radius: 999px; }
-html[data-style="material"] .ui-button { letter-spacing: .01em; }
-html[data-style="material"] .ui-card, html[data-style="material"] .ui-alert { border-color: transparent; border-radius: 1rem; }
-html[data-style="material"] .ui-page-title, html[data-style="material"] .ui-card-title { font-weight: 400; letter-spacing: 0; }
-html[data-style="material"] .ui-input, html[data-style="material"] .ui-select-control, html[data-style="material"] .ui-textarea-control { border-radius: .25rem; border-color: var(--muted-foreground); box-shadow: none; }
-html[data-style="material"] .ui-badge, html[data-style="material"] .ui-pill { border-radius: .5rem; }
-
-/* Ant Design: compact, 6px corners, light shadows, regular weight */
-html[data-style="ant"] { --shadow-xs: none; --shadow-sm: 0 1px 2px rgb(0 0 0 / .03), 0 1px 6px -1px rgb(0 0 0 / .02), 0 2px 4px rgb(0 0 0 / .02); --ring-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent); }
-html[data-style="ant"] .ui-button { font-weight: 400; }
-html[data-style="ant"] .ui-card { border-radius: .5rem; }
-html[data-style="ant"] .ui-page-title, html[data-style="ant"] .ui-card-title { font-weight: 500; letter-spacing: 0; }
-html[data-style="ant"] .ui-badge, html[data-style="ant"] .ui-pill { border-radius: .25rem; }
 
 /* MDN: plain documentation, small corners, underlined links, bold headings */
 html[data-style="mdn"] { --shadow-xs: none; --shadow-sm: none; --shadow-md: 0 1px 3px rgb(0 0 0 / .15); }

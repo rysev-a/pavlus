@@ -38,6 +38,8 @@ interface Spec {
   accent: string;
   red: string;
   preset: Preset;
+  /** The design system writes white on its accent: keep it (the accent is darkened to read). */
+  onAccent?: "light";
 }
 
 const both = (
@@ -74,6 +76,7 @@ const both = (
       pair: `bs-${spec.family}-${spec.id}-${other}`,
       preset: spec.preset,
       family: spec.family,
+      onAccent: spec.onAccent,
     };
   });
 
@@ -441,7 +444,7 @@ const material: VsTheme[] = [
 
 // ---- Ant Design ----
 
-const ANT: Preset = { font: "segoe", style: "ant", text: "sm", ui: "sm" };
+const ANT: Preset = { font: "segoe", style: "ant", text: "md", ui: "md" };
 
 const antColors: [string, string, string][] = [
   ["blue", "Daybreak Blue", "#1677ff"],
@@ -460,6 +463,7 @@ const ant: VsTheme[] = antColors.flatMap(([id, name, a]) =>
     id,
     name,
     preset: ANT,
+    onAccent: "light",
     light: {
       bg: "#f5f5f5",
       fg: "#1f1f1f",

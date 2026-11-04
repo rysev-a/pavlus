@@ -41,6 +41,8 @@ export interface VsTheme {
   red?: string;
   /** Chart colours, when they are not `colors`. */
   charts?: string[];
+  /** The text on the accent is always white (the accent is darkened until it reads). */
+  onAccent?: "light";
 }
 
 const t = (
@@ -433,8 +435,12 @@ export function vsVars(th: VsTheme): Record<string, string> {
   const fg = ensureContrast(th.fg, bg, 7);
   const soft = mix(bg, fg, 0.08);
   const hover = mix(bg, fg, 0.13);
-  const primary = ensureContrast(th.accent, onColor(th.accent), 4.5);
-  const primaryFg = onColor(primary);
+  const primary = ensureContrast(
+    th.accent,
+    th.onAccent === "light" ? "#ffffff" : onColor(th.accent),
+    4.5,
+  );
+  const primaryFg = th.onAccent === "light" ? "#ffffff" : onColor(primary);
   const muted = ensureContrast(mix(fg, bg, 0.4), hover, 4.5);
   const red = ensureContrast(th.red ?? th.colors[0], bg, 3);
   const panel = th.panel;
