@@ -159,7 +159,11 @@ export function startFetch<T>(
     };
     let result: Promise<T> | T;
     try {
-      result = fetcher({ signal: ctrl.signal, value: e.data.peek(), refetching });
+      result = fetcher({
+        signal: ctrl.signal,
+        value: e.data.peek(),
+        refetching,
+      });
     } catch (err) {
       finish(() => fail(e, err));
       return;

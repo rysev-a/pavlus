@@ -51,16 +51,24 @@ export function createAnnouncer(): Announcer {
 /** Move focus to the main content of the new page so keyboard and screen-reader users start there. */
 export function focusContent(selector: string | "auto"): boolean {
   if (typeof document === "undefined") return false;
-  const sel = selector === "auto" ? "[data-router-focus], main, [role=main], h1" : selector;
-  const target = document.querySelector<HTMLElement>(sel);
+  const candidates =
+    selector === "auto"
+      ? ["[data-router-focus]", "main", "[role=main]", "h1"]
+      : [selector];
+  let target: HTMLElement | null = null;
+  for (const sel of candidates) {
+    target = document.querySelector<HTMLElement>(sel);
+    if (target !== null) break;
+  }
   if (target === null) return false;
-  if (!target.hasAttribute("tabindex") && !isNativelyFocusable(target)) {
-    target.setAttribute("tabindex", "-1");
-    target.addEventListener("blur", () => target.removeAttribute("tabindex"), {
+  const el = target;
+  if (!el.hasAttribute("tabindex") && !isNativelyFocusable(el)) {
+    el.setAttribute("tabindex", "-1");
+    el.addEventListener("blur", () => el.removeAttribute("tabindex"), {
       once: true,
     });
   }
-  target.focus({ preventScroll: true });
+  el.focus({ preventScroll: true });
   return true;
 }
 

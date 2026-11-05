@@ -178,9 +178,7 @@ export function resource<T, S>(
   };
   read.latest = () => {
     const v = read();
-    return v === undefined || v === options.initialValue
-      ? (lastSeen ?? v)
-      : v;
+    return v === undefined || v === options.initialValue ? (lastSeen ?? v) : v;
   };
   read.refetch = () => {
     const e = untrack(current);
@@ -211,4 +209,3 @@ export function resource<T, S>(
   };
   return read;
 }
-

@@ -23,8 +23,7 @@ export interface ActionContext {
 export interface ActionOptions<I, R> {
   /** Key prefixes of resources to refetch after a successful run. */
   invalidates?:
-    | readonly QueryKey[]
-    | ((input: I, result: R) => readonly QueryKey[]);
+    readonly QueryKey[] | ((input: I, result: R) => readonly QueryKey[]);
   /**
    * What happens when `run` is called while a run is active:
    * `latest` (default) aborts and replaces it, `queue` runs one after another,
@@ -78,7 +77,11 @@ export function action<I = void, R = void>(
   };
 
   const execute = async (input: I): Promise<R | undefined> => {
-    const r: Run = { ctrl: new AbortController(), rollbacks: [], superseded: false };
+    const r: Run = {
+      ctrl: new AbortController(),
+      rollbacks: [],
+      superseded: false,
+    };
     const id = ++seq;
     active.add(r);
     batch(() => error.set(undefined));

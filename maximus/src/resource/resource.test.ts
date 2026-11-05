@@ -115,8 +115,16 @@ describe("resource basics", () => {
 
   it("resources with the same key stay in sync", async () => {
     const [a, b] = root(() => {
-      const a = resource(() => 1, async () => "v", { key: () => ["k"] });
-      const b = resource(() => 1, async () => "v", { key: () => ["k"] });
+      const a = resource(
+        () => 1,
+        async () => "v",
+        { key: () => ["k"] },
+      );
+      const b = resource(
+        () => 1,
+        async () => "v",
+        { key: () => ["k"] },
+      );
       return [a, b] as const;
     });
     await flush();
@@ -137,7 +145,11 @@ describe("resource basics", () => {
 
   it("initialValue is returned without changing loading()", async () => {
     root(() => {
-      const r = resource(() => 1, async () => "real", { initialValue: "init" });
+      const r = resource(
+        () => 1,
+        async () => "real",
+        { initialValue: "init" },
+      );
       expect(r()).toBe("init");
       expect(r.loading()).toBe(true);
       return r;
@@ -191,7 +203,11 @@ describe("staleTime / cacheTime / stale-while-revalidate", () => {
   it("evicts unused entries after cacheTime and keeps used ones", async () => {
     vi.useFakeTimers();
     const dispose = root((d) => {
-      resource(() => 1, async () => 1, { key: () => ["gc"], cacheTime: 100 });
+      resource(
+        () => 1,
+        async () => 1,
+        { key: () => ["gc"], cacheTime: 100 },
+      );
       return d;
     });
     await vi.advanceTimersByTimeAsync(0);
@@ -209,11 +225,15 @@ describe("staleTime / cacheTime / stale-while-revalidate", () => {
     vi.useFakeTimers();
     const mk = () =>
       root((d) => {
-        resource(() => 1, async () => 1, {
-          key: () => ["gc2"],
-          cacheTime: 100,
-          staleTime: 10_000,
-        });
+        resource(
+          () => 1,
+          async () => 1,
+          {
+            key: () => ["gc2"],
+            cacheTime: 100,
+            staleTime: 10_000,
+          },
+        );
         return d;
       });
     const d1 = mk();
@@ -228,7 +248,11 @@ describe("staleTime / cacheTime / stale-while-revalidate", () => {
 
   it("cacheTime 0 drops the entry as soon as nobody uses it", async () => {
     const dispose = root((d) => {
-      resource(() => 1, async () => 1, { key: () => ["zero"], cacheTime: 0 });
+      resource(
+        () => 1,
+        async () => 1,
+        { key: () => ["zero"], cacheTime: 0 },
+      );
       return d;
     });
     await flush();
@@ -336,7 +360,11 @@ describe("cancellation", () => {
     const before = debugStats();
     const id = signal(1);
     const dispose = root((d) => {
-      resource(() => id(), async (i: number) => i, { key: (i) => ["leak", i] });
+      resource(
+        () => id(),
+        async (i: number) => i,
+        { key: (i) => ["leak", i] },
+      );
       return d;
     });
     await flush();
@@ -351,7 +379,11 @@ describe("refetch / mutate / latest", () => {
   it("refetch re-runs the fetcher and resolves with the data", async () => {
     let n = 0;
     const r = root(() =>
-      resource(() => 1, async () => ++n, { key: () => ["refetch"], staleTime: 1e9 }),
+      resource(
+        () => 1,
+        async () => ++n,
+        { key: () => ["refetch"], staleTime: 1e9 },
+      ),
     );
     await flush();
     expect(await r.refetch()).toBe(2);
@@ -359,7 +391,12 @@ describe("refetch / mutate / latest", () => {
   });
 
   it("refetch of a disabled resource resolves undefined", async () => {
-    const r = root(() => resource(() => null, async () => 1));
+    const r = root(() =>
+      resource(
+        () => null,
+        async () => 1,
+      ),
+    );
     expect(await r.refetch()).toBeUndefined();
   });
 
@@ -369,7 +406,10 @@ describe("refetch / mutate / latest", () => {
     const r = root(() =>
       resource(
         () => 1,
-        (_s: number, c: { signal: AbortSignal }) => ((sig = c.signal), d.promise),
+        (_s: number, c: { signal: AbortSignal }) => (
+          (sig = c.signal),
+          d.promise
+        ),
         { key: () => ["mut"] },
       ),
     );
@@ -387,7 +427,11 @@ describe("refetch / mutate / latest", () => {
 
   it("rollback does nothing when newer data arrived", async () => {
     const r = root(() =>
-      resource(() => 1, async () => 1, { key: () => ["rb"], staleTime: 1e9 }),
+      resource(
+        () => 1,
+        async () => 1,
+        { key: () => ["rb"], staleTime: 1e9 },
+      ),
     );
     await flush();
     const undo = r.mutate(10);
@@ -511,7 +555,11 @@ describe("suspense integration", () => {
       suspense(
         () => html`<i>wait</i>`,
         () => {
-          const r = resource(() => 1, () => d.promise, { key: () => ["sus"] });
+          const r = resource(
+            () => 1,
+            () => d.promise,
+            { key: () => ["sus"] },
+          );
           return html`<b>${() => r()}</b>`;
         },
       ),
@@ -530,7 +578,11 @@ describe("suspense integration", () => {
       suspense(
         () => html`<i>wait</i>`,
         () => {
-          const r = resource(() => 1, async () => ++n, { key: () => ["sus2"] });
+          const r = resource(
+            () => 1,
+            async () => ++n,
+            { key: () => ["sus2"] },
+          );
           rr = r;
           return html`<b>${() => r()}</b>`;
         },
@@ -552,7 +604,10 @@ describe("suspense integration", () => {
         () => {
           const r = resource(
             () => id(),
-            (i: number) => (i === 3 ? Promise.resolve("three") : new Promise<string>(() => {})),
+            (i: number) =>
+              i === 3
+                ? Promise.resolve("three")
+                : new Promise<string>(() => {}),
             { key: (i) => ["sus3", i] },
           );
           return html`<b>${() => r()}</b>`;
@@ -571,9 +626,13 @@ describe("suspense integration", () => {
       suspense(
         () => html`<i>wait</i>`,
         () => {
-          const r = resource(() => 1, () => new Promise<string>(() => {}), {
-            suspense: false,
-          });
+          const r = resource(
+            () => 1,
+            () => new Promise<string>(() => {}),
+            {
+              suspense: false,
+            },
+          );
           return html`<b>${() => (r.loading() ? "loading" : "x")}</b>`;
         },
       ),
@@ -625,14 +684,22 @@ describe("prefetch / invalidate", () => {
     let a = 0;
     let b = 0;
     const [ra, rb] = root(() => {
-      const ra = resource(() => 1, async () => ++a, {
-        key: () => ["user", 1],
-        staleTime: 1e9,
-      });
-      const rb = resource(() => 1, async () => ++b, {
-        key: () => ["post", 1],
-        staleTime: 1e9,
-      });
+      const ra = resource(
+        () => 1,
+        async () => ++a,
+        {
+          key: () => ["user", 1],
+          staleTime: 1e9,
+        },
+      );
+      const rb = resource(
+        () => 1,
+        async () => ++b,
+        {
+          key: () => ["post", 1],
+          staleTime: 1e9,
+        },
+      );
       return [ra, rb] as const;
     });
     await flush();
@@ -647,10 +714,14 @@ describe("prefetch / invalidate", () => {
     let n = 0;
     const mk = () =>
       root((d) => {
-        const r = resource(() => 1, async () => ++n, {
-          key: () => ["idle", 1],
-          staleTime: 1e9,
-        });
+        const r = resource(
+          () => 1,
+          async () => ++n,
+          {
+            key: () => ["idle", 1],
+            staleTime: 1e9,
+          },
+        );
         return { r, d };
       });
     const a = mk();
@@ -666,10 +737,14 @@ describe("prefetch / invalidate", () => {
   it("key elements are compared structurally", async () => {
     let n = 0;
     root(() => {
-      resource(() => 1, async () => ++n, {
-        key: () => ["q", { a: 1, b: 2 }],
-        staleTime: 1e9,
-      });
+      resource(
+        () => 1,
+        async () => ++n,
+        {
+          key: () => ["q", { a: 1, b: 2 }],
+          staleTime: 1e9,
+        },
+      );
     });
     await flush();
     await invalidate(["q", { b: 2, a: 1 }]);
@@ -685,7 +760,10 @@ describe("effects over resources", () => {
   it("effects track data()", async () => {
     const seen: Array<string | undefined> = [];
     root(() => {
-      const r = resource(() => 1, async () => "v");
+      const r = resource(
+        () => 1,
+        async () => "v",
+      );
       effect(() => void seen.push(r()));
     });
     await flush();

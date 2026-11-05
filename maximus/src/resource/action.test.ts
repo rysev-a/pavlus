@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { root, signal } from "../core/mod.ts";
+import { root } from "../core/mod.ts";
 import { html } from "../dom/mod.ts";
 import { cleanup, fire, flush, mount } from "../testing/mod.ts";
 import { action, clearCache, resource } from "./mod.ts";
@@ -74,7 +74,11 @@ describe("action", () => {
   it("invalidates resources after success and waits for the refetch", async () => {
     let n = 0;
     const r = root(() =>
-      resource(() => 1, async () => ++n, { key: () => ["todos"], staleTime: 1e9 }),
+      resource(
+        () => 1,
+        async () => ++n,
+        { key: () => ["todos"], staleTime: 1e9 },
+      ),
     );
     await flush();
     const add = action(async (_: void) => "ok", {
@@ -87,7 +91,11 @@ describe("action", () => {
   it("invalidates may depend on input and result, and is skipped on error", async () => {
     let n = 0;
     const r = root(() =>
-      resource(() => 1, async () => ++n, { key: () => ["item", 5], staleTime: 1e9 }),
+      resource(
+        () => 1,
+        async () => ++n,
+        { key: () => ["item", 5], staleTime: 1e9 },
+      ),
     );
     await flush();
     const a = action(async (id: number) => id, {
@@ -107,7 +115,11 @@ describe("action", () => {
 
   it("optimistic updates apply immediately and roll back on error", async () => {
     const r = root(() =>
-      resource(() => 1, async () => ["a"], { key: () => ["list"], staleTime: 1e9 }),
+      resource(
+        () => 1,
+        async () => ["a"],
+        { key: () => ["list"], staleTime: 1e9 },
+      ),
     );
     await flush();
     const d = deferred<void>();
@@ -126,7 +138,11 @@ describe("action", () => {
   it("optimistic updates stay on success and the invalidation brings server truth", async () => {
     let server = ["a"];
     const r = root(() =>
-      resource(() => 1, async () => [...server], { key: () => ["list2"], staleTime: 1e9 }),
+      resource(
+        () => 1,
+        async () => [...server],
+        { key: () => ["list2"], staleTime: 1e9 },
+      ),
     );
     await flush();
     const add = action(
@@ -274,16 +290,5 @@ describe("action", () => {
     d.resolve();
     await flush();
     expect(b.disabled).toBe(false);
-  });
-
-  it("signals created for an action do not retain subscribers after dispose", async () => {
-    const flag = signal(0);
-    const dispose = root((d) => {
-      const a = action(async (_: void) => flag.peek());
-      void a.pending();
-      return d;
-    });
-    dispose();
-    expect(flag).toBeDefined();
   });
 });

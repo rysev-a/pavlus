@@ -10,9 +10,7 @@
 
 type Simplify<T> = { [K in keyof T]: T[K] } & {};
 
-type Seg<P extends string> = P extends `${infer H}/${infer T}`
-  ? H | Seg<T>
-  : P;
+type Seg<P extends string> = P extends `${infer H}/${infer T}` ? H | Seg<T> : P;
 
 type OptionalKeys<S> = S extends `:${infer N}?` ? N : never;
 type RequiredKeys<S> = S extends `:${infer N}`
@@ -50,21 +48,31 @@ export function splitPath(path: string): string[] {
   return path.split("/").filter((s) => s !== "");
 }
 
-export function compilePattern(pattern: string, caseSensitive = false): Segment[] {
+export function compilePattern(
+  pattern: string,
+  caseSensitive = false,
+): Segment[] {
   const parts = splitPath(pattern);
   return parts.map((raw, i) => {
     if (raw.startsWith(":")) {
       const optional = raw.endsWith("?");
       const name = raw.slice(1, optional ? -1 : undefined);
-      if (!name) throw new Error(`Maximus router: empty param name in "${pattern}"`);
+      if (!name)
+        throw new Error(`Maximus router: empty param name in "${pattern}"`);
       return { kind: optional ? OPTIONAL : PARAM, value: name, raw };
     }
     if (raw.startsWith("*")) {
       if (i !== parts.length - 1)
-        throw new Error(`Maximus router: wildcard must be the last segment in "${pattern}"`);
+        throw new Error(
+          `Maximus router: wildcard must be the last segment in "${pattern}"`,
+        );
       return { kind: WILD, value: raw.slice(1) || "*", raw };
     }
-    return { kind: STATIC, value: caseSensitive ? raw : raw.toLowerCase(), raw };
+    return {
+      kind: STATIC,
+      value: caseSensitive ? raw : raw.toLowerCase(),
+      raw,
+    };
   });
 }
 
@@ -91,7 +99,8 @@ export function matchSegments(
       case STATIC:
         return (
           j < parts.length &&
-          (caseSensitive ? parts[j] : decode(parts[j]!).toLowerCase()) === s.value &&
+          (caseSensitive ? parts[j] : decode(parts[j]!).toLowerCase()) ===
+            s.value &&
           go(i + 1, j + 1)
         );
       case PARAM:
@@ -116,7 +125,10 @@ export function matchSegments(
 }
 
 /** Negative when `a` is more specific than `b`: static beats dynamic beats optional beats wildcard, segment by segment. */
-export function compareSegments(a: readonly Segment[], b: readonly Segment[]): number {
+export function compareSegments(
+  a: readonly Segment[],
+  b: readonly Segment[],
+): number {
   const n = Math.max(a.length, b.length);
   for (let i = 0; i < n; i++) {
     const x = a[i]?.kind ?? END;
@@ -127,13 +139,19 @@ export function compareSegments(a: readonly Segment[], b: readonly Segment[]): n
 }
 
 /** Join route pattern pieces: `("/users", ":id")` -> `/users/:id`. */
-export function joinPatterns(parent: string, child: string | undefined): string {
+export function joinPatterns(
+  parent: string,
+  child: string | undefined,
+): string {
   const parts = [...splitPath(parent), ...splitPath(child ?? "")];
   return "/" + parts.join("/");
 }
 
 /** Build a path from a pattern and params (values are URI-encoded). */
-export function buildPath(pattern: string, params: Record<string, unknown> = {}): string {
+export function buildPath(
+  pattern: string,
+  params: Record<string, unknown> = {},
+): string {
   const out: string[] = [];
   for (const raw of splitPath(pattern)) {
     if (raw.startsWith(":")) {
@@ -142,7 +160,9 @@ export function buildPath(pattern: string, params: Record<string, unknown> = {})
       const v = params[name];
       if (v == null || v === "") {
         if (optional) continue;
-        throw new Error(`Maximus router: missing param "${name}" for "${pattern}"`);
+        throw new Error(
+          `Maximus router: missing param "${name}" for "${pattern}"`,
+        );
       }
       out.push(encodeURIComponent(String(v)));
     } else if (raw.startsWith("*")) {

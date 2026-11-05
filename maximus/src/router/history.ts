@@ -77,7 +77,10 @@ export function createMemoryHistory(
   const entries: HistoryLocation[] = (initial.length ? initial : ["/"]).map(
     (u) => ({ ...parseUrl(u), state: undefined, key: newKey() }),
   );
-  let at = Math.min(Math.max(index ?? entries.length - 1, 0), entries.length - 1);
+  let at = Math.min(
+    Math.max(index ?? entries.length - 1, 0),
+    entries.length - 1,
+  );
   const listeners = new Set<PopListener>();
   const go = (delta: number): void => {
     const next = at + delta;
@@ -128,10 +131,7 @@ function readStored(raw: unknown): Stored | null {
   return null;
 }
 
-function createDomHistory(
-  kind: "browser" | "hash",
-  win: Window,
-): History {
+function createDomHistory(kind: "browser" | "hash", win: Window): History {
   const hist = win.history;
   try {
     hist.scrollRestoration = "manual";
@@ -176,11 +176,21 @@ function createDomHistory(
   win.addEventListener("popstate", onPop);
   if (kind === "hash") win.addEventListener("hashchange", onPop);
 
-  const write = (mode: "pushState" | "replaceState", url: string, state: unknown) => {
+  const write = (
+    mode: "pushState" | "replaceState",
+    url: string,
+    state: unknown,
+  ) => {
     const nextIdx = mode === "pushState" ? idx + 1 : idx;
     const key =
-      mode === "pushState" ? newKey() : (readStored(hist.state)?.__mx.key ?? newKey());
-    hist[mode]({ __mx: { key, idx: nextIdx }, state } satisfies Stored, "", makeHref(url));
+      mode === "pushState"
+        ? newKey()
+        : (readStored(hist.state)?.__mx.key ?? newKey());
+    hist[mode](
+      { __mx: { key, idx: nextIdx }, state } satisfies Stored,
+      "",
+      makeHref(url),
+    );
     idx = nextIdx;
     lastUrl = read();
   };

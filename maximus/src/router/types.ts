@@ -158,7 +158,10 @@ export interface Router {
   ready: Promise<void>;
   history: History;
   navigate(to: string, options?: NavigateOptions): Promise<boolean>;
-  replace(to: string, options?: Omit<NavigateOptions, "replace">): Promise<boolean>;
+  replace(
+    to: string,
+    options?: Omit<NavigateOptions, "replace">,
+  ): Promise<boolean>;
   back(): void;
   forward(): void;
   go(delta: number): void;
@@ -172,13 +175,22 @@ export interface Router {
   /** Spread onto an `<a>`: `html\`<a ${router.link("/x")}>x</a>\``. */
   link(path: string, options?: LinkOptions): LinkSpread;
   /** An `<a>` with client-side navigation. */
-  a(path: string, content: Child, attrs?: Record<string, unknown>, options?: LinkOptions): Node;
+  a(
+    path: string,
+    content: Child,
+    attrs?: Record<string, unknown>,
+    options?: LinkOptions,
+  ): Node;
   /** Reactive: is `path` the current page (or an ancestor, with `exact: false`)? */
   isActive(path: string, exact?: boolean): boolean;
   /** `href` string for a router path (base and driver applied). */
   href(path: string): string;
   /** Build a path from a pattern: `url("/users/:id", { id: 3 })`. */
-  url<P extends string>(pattern: P, params: ParamsOf<P>, query?: Record<string, unknown>): string;
+  url<P extends string>(
+    pattern: P,
+    params: ParamsOf<P>,
+    query?: Record<string, unknown>,
+  ): string;
   /** Start the loaders of `path` ahead of time. */
   prefetch(path: string): Promise<void>;
   /** Announce `message` through the polite live region. */
