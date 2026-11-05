@@ -7,7 +7,7 @@
  * holes to nodes that are located by their position in a tree walk, never by
  * querying. Hole kinds:
  *
- *   text position      <!--$mx$--><!--$mx$-->  (start/end of a region; omitted when the hole is the only child)
+ *   text position      <!--$mx$--><!--/$mx$-->  (start/end of a region; omitted when the hole is the only child)
  *   attribute          name=${v}  name="a ${v} b"   (marked element gets `data-mx`, removed after parsing)
  *   .prop ?bool @event ref   by prefix/name
  *   spread / directive `...${obj}` or a bare `${obj}` in a tag
@@ -24,9 +24,11 @@ import {
   bindSpread,
 } from "./attrs.ts";
 import { bindChild } from "./insert.ts";
+import { doc, env } from "./env.ts";
 import type { Region, View } from "./insert.ts";
 
 const MARK = "$mx$";
+const MARK_END = "/$mx$";
 const K_CHILD = 0;
 const K_ATTR = 1;
 const K_PROP = 2;
@@ -58,6 +60,7 @@ interface Part {
 }
 
 interface Compiled {
+  strings: readonly string[];
   tpl: HTMLTemplateElement;
   parts: Part[];
   maxNode: number;
@@ -305,7 +308,7 @@ export function scan(strings: readonly string[]): {
     // the hole between strings[i] and strings[i + 1]
     switch (state) {
       case S_TEXT:
-        out += `<!--${MARK}--><!--${MARK}-->`;
+        out += `<!--${MARK}--><!--${MARK_END}-->`;
         parts.push({
           kind: K_CHILD,
           name: "",
@@ -372,7 +375,7 @@ export function scan(strings: readonly string[]): {
 }
 
 function walkAll(root: Node, visit: (n: Node, index: number) => void): void {
-  const w = document.createTreeWalker(
+  const w = doc().createTreeWalker(
     root,
     129 /* SHOW_ELEMENT | SHOW_COMMENT */,
   );
@@ -381,7 +384,7 @@ function walkAll(root: Node, visit: (n: Node, index: number) => void): void {
 }
 
 function trimWhitespace(root: Node): void {
-  const w = document.createTreeWalker(root, 4 /* SHOW_TEXT */);
+  const w = doc().createTreeWalker(root, 4 /* SHOW_TEXT */);
   const drop: Node[] = [];
   for (let n = w.nextNode(); n !== null; n = w.nextNode()) {
     const data = (n as Text).data;
@@ -395,7 +398,7 @@ function trimWhitespace(root: Node): void {
 
 function compile(strings: readonly string[], isSvg: boolean): Compiled {
   const { markup, parts: raw, tagCount, childCount } = scan(strings);
-  const tpl = document.createElement("template");
+  const tpl = doc().createElement("template");
   tpl.innerHTML = isSvg ? `<svg>${markup}</svg>` : markup;
   if (isSvg) {
     const wrapper = tpl.content.firstChild!;
@@ -410,7 +413,8 @@ function compile(strings: readonly string[], isSvg: boolean): Compiled {
   walkAll(content, (n) => {
     if (n.nodeType === 1) {
       if ((n as Element).hasAttribute("data-mx")) marked.push(n as Element);
-    } else if ((n as Comment).data === MARK) markers.push(n as Comment);
+    } else if ((n as Comment).data === MARK || (n as Comment).data === MARK_END)
+      markers.push(n as Comment);
   });
   if (marked.length !== tagCount || markers.length !== childCount * 2) {
     throw new Error(
@@ -451,7 +455,8 @@ function compile(strings: readonly string[], isSvg: boolean): Compiled {
         ? (soleParent[p.ordinal] ?? markers[2 * p.ordinal]!)
         : marked[p.ordinal]!;
     const node = indexOf.get(target)!;
-    if (node > maxNode) maxNode = node;
+    if (node + (p.kind === K_CHILD && !sole ? 1 : 0) > maxNode)
+      maxNode = node + (p.kind === K_CHILD && !sole ? 1 : 0);
     return {
       kind: p.kind,
       name: p.name,
@@ -465,64 +470,72 @@ function compile(strings: readonly string[], isSvg: boolean): Compiled {
   const first = content.firstChild;
   const single =
     content.childNodes.length === 1 && first !== null && first.nodeType === 1;
-  return { tpl, parts, maxNode, single };
+  return { strings, tpl, parts, maxNode, single };
 }
 
 const htmlCache = new WeakMap<readonly string[], Compiled>();
 const svgCache = new WeakMap<readonly string[], Compiled>();
 
 function instantiate(c: Compiled, values: readonly unknown[]): View {
-  const content = c.tpl.content.cloneNode(true) as DocumentFragment;
-  const parts = c.parts;
-  if (parts.length > 0) {
-    const nodes: Node[] = [];
-    const w = document.createTreeWalker(content, 129);
-    for (let i = 0; i <= c.maxNode; i++) nodes[i] = w.nextNode()!;
-    for (let i = 0; i < parts.length; i++) {
-      const p = parts[i]!;
-      const target = nodes[p.node]!;
-      switch (p.kind) {
-        case K_CHILD: {
-          const region: Region = p.sole
-            ? { start: null, end: null, parent: target }
-            : { start: target, end: target.nextSibling, parent: null };
-          bindChild(region, values[p.values[0]!]);
-          break;
-        }
-        case K_ATTR:
-          bindAttr(target as Element, p.name, values[p.values[0]!]);
-          break;
-        case K_PROP:
-          bindProp(target as Element, p.name, values[p.values[0]!]);
-          break;
-        case K_BOOL:
-          bindBool(target as Element, p.name, values[p.values[0]!]);
-          break;
-        case K_EVENT:
-          bindEvent(target as Element, p.name, values[p.values[0]!]);
-          break;
-        case K_REF:
-          bindRef(target as Element, values[p.values[0]!]);
-          break;
-        case K_SPREAD:
-          bindSpread(target as Element, values[p.values[0]!]);
-          break;
-        default:
-          bindComposite(
-            target as Element,
-            p.name,
-            p.strings,
-            p.values.map((v) => values[v]),
-          );
-      }
+  const claim = env.claim !== null ? env.claim(c) : null;
+  let content: DocumentFragment | null = null;
+  let nodes: Node[];
+  if (claim !== null) nodes = claim.nodes;
+  else {
+    content = c.tpl.content.cloneNode(true) as DocumentFragment;
+    nodes = [];
+    if (c.parts.length > 0) {
+      const w = doc().createTreeWalker(content, 129);
+      for (let i = 0; i <= c.maxNode; i++) nodes[i] = w.nextNode()!;
     }
   }
-  if (c.single) {
-    const el = content.firstChild!;
-    content.removeChild(el);
-    return el;
+  const parts = c.parts;
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i]!;
+    const target = nodes[p.node]!;
+    switch (p.kind) {
+      case K_CHILD: {
+        const region: Region = p.sole
+          ? { start: null, end: null, parent: target }
+          : { start: target, end: nodes[p.node + 1]!, parent: null };
+        bindChild(region, values[p.values[0]!], claim !== null);
+        break;
+      }
+      case K_ATTR:
+        bindAttr(target as Element, p.name, values[p.values[0]!]);
+        break;
+      case K_PROP:
+        bindProp(target as Element, p.name, values[p.values[0]!]);
+        break;
+      case K_BOOL:
+        bindBool(target as Element, p.name, values[p.values[0]!]);
+        break;
+      case K_EVENT:
+        bindEvent(target as Element, p.name, values[p.values[0]!]);
+        break;
+      case K_REF:
+        bindRef(target as Element, values[p.values[0]!]);
+        break;
+      case K_SPREAD:
+        bindSpread(target as Element, values[p.values[0]!]);
+        break;
+      default:
+        bindComposite(
+          target as Element,
+          p.name,
+          p.strings,
+          p.values.map((v) => values[v]),
+        );
+    }
   }
-  return content;
+  if (claim !== null) return claim.finish();
+  let result: View;
+  if (c.single) {
+    const el = content!.firstChild!;
+    content!.removeChild(el);
+    result = el;
+  } else result = content!;
+  return env.tag !== null ? env.tag(c, result) : result;
 }
 
 /**

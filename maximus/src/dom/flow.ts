@@ -22,6 +22,7 @@ import {
   batch,
 } from "../core/mod.ts";
 import type { Accessor, Owner, SuspenseContext } from "../core/mod.ts";
+import { doc, env } from "./env.ts";
 import { region, removeRange, toNodes } from "./insert.ts";
 import type { Child } from "./insert.ts";
 
@@ -80,11 +81,12 @@ export function portal(
   target: Element | string,
   view: (() => Child) | Child,
 ): Node {
-  const t =
-    typeof target === "string" ? document.querySelector(target) : target;
+  const d = doc();
+  // portals render client-side only: there is no document to target on the server
+  if (env.server) return d.createComment("portal-anchor");
+  const t = typeof target === "string" ? d.querySelector(target) : target;
   if (t === null)
     throw new Error(`Maximus: portal target not found: ${String(target)}`);
-  const d = document;
   const start = d.createComment("portal");
   const end = d.createComment("/portal");
   const frag = d.createDocumentFragment();
@@ -155,7 +157,7 @@ export function suspense(
   fallback: () => Child,
   view: () => Child,
 ): DocumentFragment {
-  const d = document;
+  const d = doc();
   const self = getOwner();
   const frag = d.createDocumentFragment();
   const start = d.createComment("suspense");
@@ -170,6 +172,7 @@ export function suspense(
   const ctx: SuspenseContext = {
     pending,
     register(p) {
+      if (env.pending !== null) env.pending(p);
       pending.update((n) => n + 1);
       const done = (): void => {
         if (!disposed) pending.update((n) => n - 1);
@@ -178,6 +181,7 @@ export function suspense(
     },
   };
 
+  if (env.suspense !== null) env.suspense({ start, end, pending });
   const cs = d.createComment("content");
   const ce = d.createComment("/content");
   const holder = d.createDocumentFragment();
@@ -313,7 +317,7 @@ export function each<T>(
   render: (item: Accessor<T>, index: Accessor<number>) => Child,
   fallback?: () => Child,
 ): DocumentFragment {
-  const d = document;
+  const d = doc();
   const frag = d.createDocumentFragment();
   const start = d.createComment("each");
   const end = d.createComment("/each");

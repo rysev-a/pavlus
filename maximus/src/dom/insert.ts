@@ -5,6 +5,7 @@
  * @module
  */
 import { renderEffect } from "../core/mod.ts";
+import { doc, env } from "./env.ts";
 import { isUnsafe } from "./safety.ts";
 
 /** Anything that can be interpolated or returned from a component. */
@@ -73,7 +74,7 @@ export function removeRange(first: Node, last: Node): void {
 }
 
 export function parseHtml(markup: string): Node[] {
-  const t = document.createElement("template");
+  const t = doc().createElement("template");
   t.innerHTML = markup;
   return Array.from(t.content.childNodes);
 }
@@ -100,7 +101,7 @@ export function toNodes(value: unknown, out: Node[] = []): Node[] {
     out.push(...parseHtml(value.value));
     return out;
   }
-  out.push(document.createTextNode(String(value)));
+  out.push(doc().createTextNode(String(value)));
   return out;
 }
 
@@ -109,7 +110,12 @@ export function toNodes(value: unknown, out: Node[] = []): Node[] {
  * tracked by a render effect and the region is updated in place: text reuses
  * one Text node, anything else replaces the content.
  */
-export function bindChild(r: Region, value: unknown): void {
+export function bindChild(
+  r: Region,
+  value: unknown,
+  adopt = false,
+): void {
+  let adopting = adopt;
   let text: Text | null = null;
   let filled = false;
   let cur: Node | null = null;
@@ -128,7 +134,68 @@ export function bindChild(r: Region, value: unknown): void {
     filled = true;
   };
 
+  /** Hydration: the region already holds server content; keep what matches the first value. */
+  const adoptFirst = (v: unknown): boolean => {
+    adopting = false;
+    const p = parentOf(r);
+    if (p === null) return false;
+    const ex: Node[] = [];
+    for (
+      let n = r.start !== null ? r.start.nextSibling : p.firstChild;
+      n !== null && n !== r.end;
+      n = n.nextSibling
+    )
+      ex.push(n);
+    const warn = (m: string): void => env.mismatch?.(m);
+    if (v == null || typeof v === "boolean") {
+      if (ex.length > 0) {
+        warn("server rendered content where the client renders nothing");
+        clearRegion(r);
+      }
+      return true;
+    }
+    const t = typeof v;
+    if (t === "string" || t === "number" || t === "bigint") {
+      const s = String(v);
+      const first = ex[0];
+      if (first !== undefined && first.nodeType === 3 && ex.length === 1) {
+        text = first as Text;
+        filled = true;
+        if (text.data !== s) {
+          warn(
+            `text mismatch (server ${JSON.stringify(text.data.slice(0, 40))}, client ${JSON.stringify(s.slice(0, 40))})`,
+          );
+          text.data = s;
+        }
+        return true;
+      }
+      if (s !== "" || ex.length > 0)
+        warn(`text mismatch (client ${JSON.stringify(s.slice(0, 40))}, server has ${ex.length} node(s))`);
+      clearRegion(r);
+      return false;
+    }
+    let want: Node[];
+    if (isNode(v) && v.nodeType !== 11) {
+      want = [v];
+      cur = v;
+    } else if (Array.isArray(v) && v.every(isNode)) {
+      want = toNodes(v);
+      curList = v as Node[];
+    } else want = toNodes(v);
+    const keep = new Set(want);
+    for (const n of ex)
+      if (!keep.has(n) && n.parentNode === p) p.removeChild(n);
+    let ptr: Node | null = r.start !== null ? r.start.nextSibling : p.firstChild;
+    for (const w of want) {
+      if (w === ptr) ptr = ptr.nextSibling;
+      else p.insertBefore(w, ptr === null ? r.end : ptr);
+    }
+    filled = true;
+    return true;
+  };
+
   const set = (v: unknown): void => {
+    if (adopting && adoptFirst(v)) return;
     if (v == null || typeof v === "boolean") return clear();
     const t = typeof v;
     if (t === "string" || t === "number" || t === "bigint") {
@@ -138,7 +205,7 @@ export function bindChild(r: Region, value: unknown): void {
         return;
       }
       clear();
-      put((text = document.createTextNode(s)));
+      put((text = doc().createTextNode(s)));
       return;
     }
     if (isNode(v) && v.nodeType !== 11) {
@@ -158,7 +225,7 @@ export function bindChild(r: Region, value: unknown): void {
       )
         return;
       clear();
-      const frag = document.createDocumentFragment();
+      const frag = doc().createDocumentFragment();
       for (const n of list) frag.appendChild(n);
       put(frag);
       curList = list;
@@ -166,7 +233,7 @@ export function bindChild(r: Region, value: unknown): void {
     }
     const nodes = toNodes(v);
     clear();
-    const frag = document.createDocumentFragment();
+    const frag = doc().createDocumentFragment();
     for (const n of nodes) frag.appendChild(n);
     put(frag);
   };
@@ -186,7 +253,7 @@ export function bindChild(r: Region, value: unknown): void {
  * owner that is current when called.
  */
 export function region(fn: () => unknown): DocumentFragment {
-  const d = document;
+  const d = doc();
   const frag = d.createDocumentFragment();
   const start = d.createComment("");
   const end = d.createComment("");

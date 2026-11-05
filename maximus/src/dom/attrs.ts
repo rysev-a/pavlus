@@ -14,6 +14,7 @@ import {
   renderEffect,
   untrack,
 } from "../core/mod.ts";
+import { doc } from "./env.ts";
 import {
   DANGEROUS_PROPS,
   URL_ATTRS,
@@ -314,7 +315,7 @@ export function bindEvent(el: Element, spec: string, handler: unknown): void {
     !mods.includes("direct")
   ) {
     const key = "$$" + type;
-    ensureDelegate(document, type);
+    ensureDelegate(doc(), type);
     (el as unknown as Handlers)[key] = run;
     onCleanup(() => {
       if ((el as unknown as Handlers)[key] === run)
