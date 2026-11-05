@@ -19,3 +19,10 @@ export type {
   WsTestClient,
   WsConnectOptions,
 } from "./net.ts";
+export { collector } from "./collector.ts";
+export {
+  startTestRedis,
+  redisServerBinary,
+  freePort,
+} from "../plugins/redis/testserver.ts";
+export type { TestRedis } from "../plugins/redis/testserver.ts";

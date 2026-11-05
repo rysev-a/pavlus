@@ -1,5 +1,12 @@
 import type { Plugin } from "@service-laboratory/pavlus";
-import { type Cancellable, type Ctx, fail, ok, ridOf } from "../_reply.ts";
+import {
+  type Cancellable,
+  type EffectCtx,
+  deliver,
+  fail,
+  ok,
+  ridOf,
+} from "../../ctx.ts";
 
 export { fetchEffector } from "./helpers.ts";
 export type { FetchEffector } from "./helpers.ts";
@@ -38,7 +45,7 @@ export type FetchEffect = FetchRequest & {
   type: "request";
   replyTo: string;
   onError?: string;
-  ctx?: Ctx;
+  ctx?: EffectCtx;
 };
 
 export interface FetchResponse {
@@ -292,15 +299,17 @@ export function createFetchPlugin(opts: FetchPluginOptions = {}): FetchPlugin {
           : undefined;
       run(effect, deadline, ac.signal)
         .then(
-          (res) => !ac.signal.aborted && ok(pc.dispatch, effect, res),
+          (res) => !ac.signal.aborted && deliver(pc.dispatch, ok(effect, res)),
           (e) => {
             if (ac.signal.aborted) return;
             const f = e as FetchFailure;
-            fail(
+            deliver(
               pc.dispatch,
-              effect,
-              { code: f.code ?? "ERROR", message: f.message },
-              "fetch.error",
+              fail(
+                effect,
+                { code: f.code ?? "ERROR", message: f.message },
+                "fetch.error",
+              ),
             );
           },
         )

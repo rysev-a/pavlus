@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { collector } from "../_reply.ts";
+import { collector } from "../../testing/collector.ts";
 import { createPostgresPlugin, pgEffector as db, sql } from "./mod.ts";
 
 const URL_ =

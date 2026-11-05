@@ -32,6 +32,8 @@ import {
 
 export { parseCookies, serializeCookie, clearCookie } from "./cookies.ts";
 export type { CookieOptions } from "./cookies.ts";
+export { httpEffector } from "./helpers.ts";
+export type { HttpEffector } from "./helpers.ts";
 export { normalizeRespond } from "./respond.ts";
 export type { RespondEffect, NormalizedResponse } from "./respond.ts";
 export { parseQuery, parseBody, HttpError } from "./body.ts";

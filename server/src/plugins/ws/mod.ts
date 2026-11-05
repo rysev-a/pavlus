@@ -17,6 +17,8 @@ import {
   type FrameParser,
 } from "./frame.ts";
 
+export { wsEffector } from "./helpers.ts";
+export type { WsEffector } from "./helpers.ts";
 export { OP, createFrameParser, encodeFrame, closePayload } from "./frame.ts";
 export type { FrameParser, FrameParserOptions } from "./frame.ts";
 

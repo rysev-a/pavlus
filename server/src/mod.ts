@@ -1,43 +1,9 @@
-// agent-a: postgres, redis, fetch, time, log plugins
-export * from "./plugins/postgres/mod.ts"; // agent-a
-export * from "./plugins/redis/mod.ts"; // agent-a
-export * from "./plugins/fetch/mod.ts"; // agent-a
-export {
-  createTimePlugin,
-  createFakeClock,
-  timeEffector,
-  parseCron,
-  nextCron,
-} from "./plugins/time/mod.ts"; // agent-a
-export type {
-  TimeEffect,
-  TimePlugin,
-  TimePluginOptions,
-  Clock,
-  FakeClock,
-  TimeEffector,
-} from "./plugins/time/mod.ts"; // agent-a
-export * from "./plugins/log/mod.ts"; // agent-a
+// pavlus-server public surface. One factory per plugin, one runtime, one reply
+// convention (ctx.ts), and one `<name>Effector` object of effect builders per
+// plugin. Test helpers live in "pavlus-server/testing".
 
-// agent-b: ctx, runtime, routing, requests, http, ws (testing: ./testing/mod.ts)
-export {
-  newRid,
-  reply,
-  fail,
-  ridOf,
-  toErrorPayload,
-  traceOf,
-  createTraceBuffer,
-  defaultTrace,
-} from "./ctx.ts"; // agent-b
-export type {
-  Ctx,
-  ErrorPayload,
-  TraceBuffer,
-  TraceEntry,
-  TraceOptions,
-} from "./ctx.ts"; // agent-b
-export { createServerApp } from "./runtime.ts"; // agent-b
+// ---- the runtime and the context that rides on every message -------------
+export { createServerApp } from "./runtime.ts";
 export type {
   CreateServerAppOptions,
   ServerApp,
@@ -45,49 +11,84 @@ export type {
   ServerLimits,
   RuntimeStats,
   ErrorInfo,
-} from "./runtime.ts"; // agent-b
-export { route, routed, dispatchRoute, toRouter } from "./routing.ts"; // agent-b
+} from "./runtime.ts";
+export {
+  newRid,
+  ridOf,
+  reply,
+  ok,
+  fail,
+  deliver,
+  toErrorPayload,
+  traceOf,
+  createTraceBuffer,
+  defaultTrace,
+} from "./ctx.ts";
+export type {
+  Ctx,
+  EffectCtx,
+  Dispatch,
+  ReplyFields,
+  Cancellable,
+  ErrorPayload,
+  TraceBuffer,
+  TraceEntry,
+  TraceOptions,
+} from "./ctx.ts";
+export { route, routed, dispatchRoute, toRouter } from "./routing.ts";
 export type {
   RouteTable,
   RouteResult,
   Router,
   RouterOptions,
-} from "./routing.ts"; // agent-b
+} from "./routing.ts";
+
+// ---- plugins: createXPlugin + xEffector -----------------------------------
 export {
   createRequestsPlugin,
   requestsEffector,
   applyRequestsEffect,
-} from "./plugins/requests/mod.ts"; // agent-b
+} from "./plugins/requests/mod.ts";
 export type {
   RequestsEffect,
   RequestsPlugin,
   ServerState,
-} from "./plugins/requests/mod.ts"; // agent-b
+} from "./plugins/requests/mod.ts";
 export {
   createHttpServerPlugin,
+  httpEffector,
   parseCookies,
   serializeCookie,
   clearCookie,
   normalizeRespond,
   HttpError,
-} from "./plugins/http/mod.ts"; // agent-b
+} from "./plugins/http/mod.ts";
 export type {
   HttpEffect,
+  HttpEffector,
   HttpServerOptions,
   HttpServerPlugin,
   HttpLimits,
   HttpStats,
   CookieOptions,
   RespondEffect,
-} from "./plugins/http/mod.ts"; // agent-b
+} from "./plugins/http/mod.ts";
 export {
   createWsServerPlugin,
+  wsEffector,
   createFrameParser,
   encodeFrame,
-} from "./plugins/ws/mod.ts"; // agent-b
+} from "./plugins/ws/mod.ts";
 export type {
   WsEffect,
+  WsEffector,
   WsOptions,
   WsServerPlugin,
   WsStats,
-} from "./plugins/ws/mod.ts"; // agent-b
+} from "./plugins/ws/mod.ts";
+export * from "./plugins/postgres/mod.ts";
+export * from "./plugins/redis/mod.ts";
+export * from "./plugins/fetch/mod.ts";
+export * from "./plugins/time/mod.ts";
+export * from "./plugins/log/mod.ts";
+export * from "./plugins/crypto/mod.ts";

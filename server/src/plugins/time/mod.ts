@@ -1,5 +1,5 @@
 import type { Plugin, PluginContext } from "@service-laboratory/pavlus";
-import { type Cancellable, type Ctx, ridOf } from "../_reply.ts";
+import { type Cancellable, type EffectCtx, ridOf } from "../../ctx.ts";
 import { type Clock, systemClock } from "./clock.ts";
 import { nextCron, parseCron } from "./cron.ts";
 
@@ -9,7 +9,7 @@ export { createFakeClock, systemClock } from "./clock.ts";
 export type { Clock, FakeClock } from "./clock.ts";
 export { nextCron, parseCron } from "./cron.ts";
 
-type Base = { plugin: "time"; ctx?: Ctx };
+type Base = { plugin: "time"; ctx?: EffectCtx };
 
 export type TimeEffect =
   /** One-shot timer; replies `replyTo` with `payload` (and the effect's ctx). */

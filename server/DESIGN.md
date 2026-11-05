@@ -11,7 +11,7 @@ interface Ctx { rid: string; conn: "http" | "ws" | "job" | string; connId?: stri
 ```
 * A plugin that accepts a connection mints the `rid` (a request id; for a websocket, one `rid` per connection plus one per inbound frame `rid` + `connId`) and dispatches the first message with `ctx`.
 * The runtime **stamps the context of the message being handled onto every effect it returns** (`effect.ctx ??= message.ctx`). The handler never threads the id by hand.
-* A plugin that finishes an effect replies with `ctx.reply(effect, { id: effect.replyTo, payload })`, which copies the effect's `ctx` onto the reply. So the answer from Postgres arrives in the handler *with the same `rid`*: the flow continues exactly where it was. This is the "by requestId I know which connection it is" part.
+* A plugin that finishes an effect replies with `dispatch(reply(effect, { id: effect.replyTo, payload }))` (or `deliver(dispatch, ok(effect, payload))`), which copies the effect's `ctx` onto the reply. So the answer from Postgres arrives in the handler *with the same `rid`*: the flow continues exactly where it was. This is the "by requestId I know which connection it is" part.
 * Which connection a `rid` belongs to is plugin knowledge (http plugin: the `ServerResponse`; ws plugin: the socket). The app only says `http.respond` / `ws.send` and the plugin finds the connection through `effect.ctx.rid` / `connId`.
 
 No other change to pavlus is needed: `createApp` gets an additive `ctx` stamping step; everything else is plugins.

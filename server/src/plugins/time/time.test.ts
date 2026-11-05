@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collector } from "../_reply.ts";
+import { collector } from "../../testing/collector.ts";
 import {
   createFakeClock,
   createTimePlugin,

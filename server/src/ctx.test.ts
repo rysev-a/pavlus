@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   createTraceBuffer,
+  deliver,
+  ok,
   fail,
   newRid,
   reply,
@@ -46,6 +48,22 @@ describe("reply / fail", () => {
   });
   it("fail is undefined without onError", () => {
     expect(fail({ ctx: { rid: "r" } }, "x")).toBeUndefined();
+  });
+  it("fail falls back to a named message when the effect has no onError", () => {
+    const e = { ctx: { rid: "r" } };
+    const m = fail(e, { code: "ERR", message: "x" }, "pg.error");
+    expect(m).toEqual({
+      id: "pg.error",
+      payload: { code: "ERR", message: "x" },
+      ctx: e.ctx,
+    });
+    expect(fail(effect, "x", "pg.error").id).toBe("bad"); // onError wins
+  });
+  it("ok answers replyTo, or nothing for fire-and-forget; deliver skips undefined", () => {
+    const sent: unknown[] = [];
+    deliver((m) => sent.push(m), ok(effect, { n: 1 }));
+    deliver((m) => sent.push(m), ok({ ctx: effect.ctx }, 1));
+    expect(sent).toEqual([{ id: "got", payload: { n: 1 }, ctx: effect.ctx }]);
   });
   it("toErrorPayload accepts strings and odd values", () => {
     expect(toErrorPayload("no")).toEqual({ code: "error", message: "no" });

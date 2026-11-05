@@ -26,15 +26,57 @@ export function ridOf(x: {
   return typeof rid === "string" ? rid : undefined;
 }
 
+// ---------------------------------------------------------------- replies ----
+//
+// THE reply convention (documented in docs/plugins.md). A plugin that finishes
+// an effect builds its answer with these pure helpers and hands it to
+// `dispatch`. The answer carries the effect's `ctx`, so the flow continues in
+// the handler with the same `rid`.
+//
+//   dispatch(reply(effect, { id: effect.replyTo, payload }))   // explicit id
+//   deliver(dispatch, ok(effect, payload))                     // to replyTo, if any
+//   deliver(dispatch, fail(effect, err, "pg.error"))           // to onError, else fallback
+
+/** The ctx an effect carries (stamped by the runtime): `Ctx` without the guarantees. */
+export type EffectCtx = Record<string, unknown>;
+
+/** What a plugin receives from `PluginContext.dispatch`. */
+export type Dispatch = (message: Message) => void;
+
+/** The fields every server effect may carry besides its own. */
+export interface ReplyFields {
+  ctx?: EffectCtx;
+  replyTo?: string;
+  onError?: string;
+}
+
+/** Optional plugin member: abandon everything in flight for `rid`. */
+export interface Cancellable {
+  cancel(rid: string): void;
+}
+
 /** The answer to `effect`: a message with the effect's ctx copied onto it. */
 export function reply(
-  effect: { ctx?: Record<string, unknown> },
+  effect: { ctx?: EffectCtx },
   msg: { id: string; payload?: unknown },
 ): Message {
   const m: Message = { id: msg.id };
   if (msg.payload !== undefined) m.payload = msg.payload;
   if (effect.ctx) m.ctx = effect.ctx;
   return m;
+}
+
+/**
+ * Success answer: `reply` to `effect.replyTo`, or `undefined` when the effect
+ * is fire-and-forget (no `replyTo`).
+ */
+export function ok(
+  effect: ReplyFields,
+  payload?: unknown,
+): Message | undefined {
+  return typeof effect.replyTo === "string"
+    ? reply(effect, { id: effect.replyTo, payload })
+    : undefined;
 }
 
 export interface ErrorPayload {
@@ -58,19 +100,37 @@ export function toErrorPayload(error: unknown, code = "error"): ErrorPayload {
 }
 
 /**
- * Replies to `effect.onError` with the error. Returns `undefined` when the
- * effect names no error message (fire-and-forget), so plugins can write
- * `const m = fail(e, err); if (m) dispatch(m)`.
+ * Failure answer: `reply` to `effect.onError` with `{code, message, ...}`.
+ * When the effect names no `onError`, the answer goes to `fallback` (a message
+ * id such as `"pg.error"`, so an unhandled failure is still visible to the
+ * app); with no fallback either it returns `undefined` (fire-and-forget).
  */
 export function fail(
-  effect: { ctx?: Record<string, unknown>; onError?: unknown },
+  effect: { ctx?: EffectCtx; onError?: unknown },
   error: unknown,
+  fallback: string,
+): Message;
+export function fail(
+  effect: { ctx?: EffectCtx; onError?: unknown },
+  error: unknown,
+  fallback?: string,
+): Message | undefined;
+export function fail(
+  effect: { ctx?: EffectCtx; onError?: unknown },
+  error: unknown,
+  fallback?: string,
 ): Message | undefined {
-  if (typeof effect.onError !== "string") return undefined;
-  return reply(effect, {
-    id: effect.onError,
-    payload: toErrorPayload(error),
-  });
+  const id = typeof effect.onError === "string" ? effect.onError : fallback;
+  if (id === undefined) return undefined;
+  return reply(effect, { id, payload: toErrorPayload(error) });
+}
+
+/** `if (message) dispatch(message)`, so `deliver(dispatch, ok(e, v))` reads as one step. */
+export function deliver(
+  dispatch: Dispatch,
+  message: Message | undefined,
+): void {
+  if (message) dispatch(message);
 }
 
 // ---------------------------------------------------------------- trace ----

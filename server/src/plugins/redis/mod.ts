@@ -1,12 +1,13 @@
 import type { Plugin, PluginContext } from "@service-laboratory/pavlus";
 import {
   type Cancellable,
-  type Ctx,
+  type EffectCtx,
   type Dispatch,
+  deliver,
   fail,
   ok,
   ridOf,
-} from "../_reply.ts";
+} from "../../ctx.ts";
 import { RedisClient, type ClientOptions, errorPayload } from "./client.ts";
 import { type LinkOptions, parseRedisUrl } from "./link.ts";
 import { type RedisArg, decode } from "./resp.ts";
@@ -28,7 +29,12 @@ export { parseRedisUrl } from "./link.ts";
 /** How the raw reply is shaped before it is sent back. */
 export type RedisShape = "hash" | "scores" | "bool";
 
-type Base = { plugin: "redis"; ctx?: Ctx; replyTo?: string; onError?: string };
+type Base = {
+  plugin: "redis";
+  ctx?: EffectCtx;
+  replyTo?: string;
+  onError?: string;
+};
 type Opts = { timeoutMs?: number; binary?: boolean };
 
 export type RedisEffect =
@@ -86,7 +92,7 @@ interface Sub {
   rid?: string;
   owner?: string;
   onMessage: string;
-  ctx?: Ctx;
+  ctx?: EffectCtx;
   binary: boolean;
 }
 
@@ -136,7 +142,7 @@ export function createRedisPlugin(
 
   function timeoutFor(effect: {
     timeoutMs?: number;
-    ctx?: Ctx;
+    ctx?: EffectCtx;
   }): number | undefined {
     let ms = effect.timeoutMs;
     const deadline = effect.ctx?.deadline;
@@ -148,7 +154,7 @@ export function createRedisPlugin(
   }
 
   function callOpts(effect: {
-    ctx?: Ctx;
+    ctx?: EffectCtx;
     timeoutMs?: number;
     binary?: boolean;
   }) {
@@ -164,7 +170,7 @@ export function createRedisPlugin(
   const reportError = (dispatch: Dispatch, effect: Base, e: unknown) => {
     const p = errorPayload(e);
     if (p.code === "CANCELLED") return;
-    fail(dispatch, effect, p, "redis.error");
+    deliver(dispatch, fail(effect, p, "redis.error"));
   };
 
   function ensureSubscriber(): RedisSubscriber {
@@ -202,7 +208,7 @@ export function createRedisPlugin(
     }
   }
 
-  const ownerOf = (ctx?: Ctx): string | undefined => {
+  const ownerOf = (ctx?: EffectCtx): string | undefined => {
     const v = ctx?.connId ?? ctx?.rid;
     return typeof v === "string" ? v : undefined;
   };
@@ -220,7 +226,7 @@ export function createRedisPlugin(
       switch (effect.type) {
         case "cmd":
           client.call(effect.args, callOpts(effect)).then(
-            (v) => ok(d, effect, shape(v, effect.as)),
+            (v) => deliver(d, ok(effect, shape(v, effect.as))),
             (e) => reportError(d, effect, e),
           );
           return;
@@ -228,19 +234,19 @@ export function createRedisPlugin(
           client
             .call(["PUBLISH", effect.channel, effect.message], callOpts(effect))
             .then(
-              (v) => ok(d, effect, v),
+              (v) => deliver(d, ok(effect, v)),
               (e) => reportError(d, effect, e),
             );
           return;
         case "pipeline":
           client.pipeline(effect.cmds, callOpts(effect)).then(
-            (results) => ok(d, effect, { results }),
+            (results) => deliver(d, ok(effect, { results })),
             (e) => reportError(d, effect, e),
           );
           return;
         case "multi":
           client.multi(effect.cmds, callOpts(effect)).then(
-            (results) => ok(d, effect, { results }),
+            (results) => deliver(d, ok(effect, { results })),
             (e) => reportError(d, effect, e),
           );
           return;
@@ -248,14 +254,16 @@ export function createRedisPlugin(
           const kind: SubKind = effect.pattern !== undefined ? "p" : "s";
           const name = effect.pattern ?? effect.channel;
           if (name === undefined) {
-            fail(
+            deliver(
               d,
-              effect,
-              {
-                code: "ERR",
-                message: "redis.subscribe needs `channel` or `pattern`",
-              },
-              "redis.error",
+              fail(
+                effect,
+                {
+                  code: "ERR",
+                  message: "redis.subscribe needs `channel` or `pattern`",
+                },
+                "redis.error",
+              ),
             );
             return;
           }
@@ -285,7 +293,7 @@ export function createRedisPlugin(
             confirmed.set(key, p);
           }
           p.then(
-            () => ok(d, effect, { subscribed: name }),
+            () => deliver(d, ok(effect, { subscribed: name })),
             (e) => {
               removeSub(key, sub.id);
               reportError(d, effect, e);
@@ -308,7 +316,7 @@ export function createRedisPlugin(
             if (owner !== undefined && sub.owner !== owner) continue;
             removeSub(key, sub.id);
           }
-          ok(d, effect, { unsubscribed: name });
+          deliver(d, ok(effect, { unsubscribed: name }));
           return;
         }
       }

@@ -1,7 +1,7 @@
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { collector } from "../_reply.ts";
+import { collector } from "../../testing/collector.ts";
 import { createFetchPlugin, fetchEffector as f } from "./mod.ts";
 
 let server: Server;

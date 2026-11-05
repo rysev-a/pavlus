@@ -17,7 +17,7 @@ process.on("SIGTERM", () => server.shutdown({ timeoutMs: 10_000 }));
 ## ctx.ts
 
 - `Ctx { rid, conn, connId?, deadline?, ... }` rides on messages and effects (the core stamps effects; plugins reply with the effect's ctx).
-- `reply(effect, {id, payload})` -> message with `effect.ctx`. `fail(effect, error)` -> message to `effect.onError` (or `undefined`).
+- The one reply convention (pure builders returning a `Message`, see plugins.md): `reply(effect, {id, payload})` -> message with `effect.ctx`; `ok(effect, payload)` -> to `effect.replyTo` (or `undefined`); `fail(effect, error, fallbackId?)` -> to `effect.onError`, else `fallbackId`, else `undefined`; `deliver(dispatch, msg?)` dispatches when defined.
 - `newRid()` 12 url-safe chars, 72 random bits.
 - `traceOf(rid)`: ring buffer (`createTraceBuffer({maxRids, maxEntries})`) of message ids and `plugin.type` of effects, plus `finished:<reason>` notes.
 

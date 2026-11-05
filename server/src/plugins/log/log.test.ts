@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collector } from "../_reply.ts";
+import { collector } from "../../testing/collector.ts";
 import { createLogPlugin, logEffector as log, Metrics } from "./mod.ts";
 
 const pc = (dispatch: any): any => ({

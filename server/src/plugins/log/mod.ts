@@ -1,5 +1,5 @@
 import type { Plugin } from "@service-laboratory/pavlus";
-import { type Ctx, reply } from "../_reply.ts";
+import { type EffectCtx, deliver, ok } from "../../ctx.ts";
 import { type Labels, Metrics } from "./metrics.ts";
 import { DEFAULT_REDACT, sanitize } from "./redact.ts";
 
@@ -19,7 +19,7 @@ const ORDER: Record<LogLevel, number> = {
   fatal: 60,
 };
 
-type Base = { plugin: "log"; ctx?: Ctx };
+type Base = { plugin: "log"; ctx?: EffectCtx };
 
 export type LogEffect =
   | (Base & {
@@ -69,7 +69,7 @@ export interface LogPlugin extends Plugin<LogEffect, any> {
     level: LogLevel,
     msg: string,
     fields?: Record<string, unknown>,
-    ctx?: Ctx,
+    ctx?: EffectCtx,
   ): void;
   readonly metrics: Metrics;
   /** Prometheus text exposition. */
@@ -104,7 +104,7 @@ export function createLogPlugin(opts: LogPluginOptions = {}): LogPlugin {
     level: LogLevel,
     msg: string,
     fields?: Record<string, unknown>,
-    ctx?: Ctx,
+    ctx?: EffectCtx,
   ): void {
     if (ORDER[level] < min) return;
     const rec: LogRecord = { ts: new Date(now()).toISOString(), level, msg };
@@ -140,10 +140,7 @@ export function createLogPlugin(opts: LogPluginOptions = {}): LogPlugin {
             effect.buckets,
           );
         case "metrics.get":
-          return reply(ctx.dispatch, effect, {
-            id: effect.replyTo,
-            payload: metrics.text(),
-          });
+          return deliver(ctx.dispatch, ok(effect, metrics.text()));
       }
     },
     log,

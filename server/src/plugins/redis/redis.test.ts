@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import net from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { collector } from "../_reply.ts";
+import { collector } from "../../testing/collector.ts";
 import { createRedisPlugin, redisEffector as r } from "./mod.ts";
 import {
   type TestRedis,

@@ -3,12 +3,13 @@ import type { Plugin, PluginContext } from "@service-laboratory/pavlus";
 import pg from "pg";
 import {
   type Cancellable,
-  type Ctx,
+  type EffectCtx,
   type Dispatch,
+  deliver,
   fail,
   ok,
   ridOf,
-} from "../_reply.ts";
+} from "../../ctx.ts";
 import {
   type MigrateResult,
   type MigrationStep,
@@ -22,7 +23,12 @@ export { sql } from "./sql.ts";
 export type { SqlQuery, SqlTag } from "./sql.ts";
 export type { MigrateResult, MigrationStep } from "./migrate.ts";
 
-type Base = { plugin: "pg"; ctx?: Ctx; replyTo?: string; onError?: string };
+type Base = {
+  plugin: "pg";
+  ctx?: EffectCtx;
+  replyTo?: string;
+  onError?: string;
+};
 
 export type PgEffect =
   /** Replies `{rows, rowCount, fields}`. With `tx` it runs inside that transaction. */
@@ -175,7 +181,7 @@ export function createPostgresPlugin(opts: PgPluginOptions): PgPlugin {
 
   function effectiveTimeout(effect: {
     timeoutMs?: number;
-    ctx?: Ctx;
+    ctx?: EffectCtx;
   }): number | undefined {
     let ms = effect.timeoutMs ?? opts.defaultTimeoutMs;
     const deadline = effect.ctx?.deadline;
@@ -242,7 +248,7 @@ export function createPostgresPlugin(opts: PgPluginOptions): PgPlugin {
           dataTypeID: f.dataTypeID,
         })),
       };
-      ok(dispatch, effect, payload);
+      deliver(dispatch, ok(effect, payload));
     } catch (e) {
       if (state.cancelled || disposed) return;
       stats.errors++;
@@ -252,7 +258,7 @@ export function createPostgresPlugin(opts: PgPluginOptions): PgPlugin {
         err.code = "57014";
         err.message = "statement timeout";
       }
-      fail(dispatch, effect, err, "pg.error");
+      deliver(dispatch, fail(effect, err, "pg.error"));
     } finally {
       if (timer) clearTimeout(timer);
       untrack();
@@ -305,11 +311,11 @@ export function createPostgresPlugin(opts: PgPluginOptions): PgPlugin {
       if (disposed) throw new Error("plugin disposed");
       txs.set(tx.id, tx);
       stats.txBegun++;
-      ok(dispatch, effect, { tx: tx.id });
+      deliver(dispatch, ok(effect, { tx: tx.id }));
     } catch (e) {
       client?.release(true);
       stats.errors++;
-      fail(dispatch, effect, toPgError(e), "pg.error");
+      deliver(dispatch, fail(effect, toPgError(e), "pg.error"));
     }
   }
 
@@ -320,24 +326,26 @@ export function createPostgresPlugin(opts: PgPluginOptions): PgPlugin {
     const tx = txs.get(effect.tx);
     if (!tx) {
       if (effect.type === "tx.commit")
-        fail(
+        deliver(
           dispatch,
-          effect,
-          {
-            code: "PAVLUS_NO_TX",
-            message: `unknown or finished transaction ${effect.tx}`,
-          },
-          "pg.error",
+          fail(
+            effect,
+            {
+              code: "PAVLUS_NO_TX",
+              message: `unknown or finished transaction ${effect.tx}`,
+            },
+            "pg.error",
+          ),
         );
-      else ok(dispatch, effect, { tx: effect.tx });
+      else deliver(dispatch, ok(effect, { tx: effect.tx }));
       return;
     }
     try {
       await finishTx(tx, effect.type === "tx.commit" ? "commit" : "rollback");
-      ok(dispatch, effect, { tx: effect.tx });
+      deliver(dispatch, ok(effect, { tx: effect.tx }));
     } catch (e) {
       stats.errors++;
-      fail(dispatch, effect, toPgError(e), "pg.error");
+      deliver(dispatch, fail(effect, toPgError(e), "pg.error"));
     }
   }
 
@@ -351,10 +359,10 @@ export function createPostgresPlugin(opts: PgPluginOptions): PgPlugin {
         (effect.dir ? await stepsFromDir(effect.dir) : undefined);
       if (!steps) throw new Error("pg.migrate needs `dir` or `steps`");
       const res: MigrateResult = await migrate(pool, steps, effect.table);
-      ok(dispatch, effect, res);
+      deliver(dispatch, ok(effect, res));
     } catch (e) {
       stats.errors++;
-      fail(dispatch, effect, toPgError(e), "pg.error");
+      deliver(dispatch, fail(effect, toPgError(e), "pg.error"));
     }
   }
 
