@@ -473,8 +473,15 @@ function compile(strings: readonly string[], isSvg: boolean): Compiled {
   return { strings, tpl, parts, maxNode, single };
 }
 
-const htmlCache = new WeakMap<readonly string[], Compiled>();
-const svgCache = new WeakMap<readonly string[], Compiled>();
+// templates compiled against the virtual server DOM must not leak into a real document (and vice versa)
+const htmlCache = [
+  new WeakMap<readonly string[], Compiled>(),
+  new WeakMap<readonly string[], Compiled>(),
+];
+const svgCache = [
+  new WeakMap<readonly string[], Compiled>(),
+  new WeakMap<readonly string[], Compiled>(),
+];
 
 function instantiate(c: Compiled, values: readonly unknown[]): View {
   const claim = env.claim !== null ? env.claim(c) : null;
@@ -547,14 +554,16 @@ export function html(
   strings: TemplateStringsArray,
   ...values: unknown[]
 ): View {
-  let c = htmlCache.get(strings);
-  if (c === undefined) htmlCache.set(strings, (c = compile(strings, false)));
+  const cache = htmlCache[env.server ? 1 : 0]!;
+  let c = cache.get(strings);
+  if (c === undefined) cache.set(strings, (c = compile(strings, false)));
   return instantiate(c, values);
 }
 
 /** Like {@link html} for SVG fragments (parsed in the SVG namespace). */
 export function svg(strings: TemplateStringsArray, ...values: unknown[]): View {
-  let c = svgCache.get(strings);
-  if (c === undefined) svgCache.set(strings, (c = compile(strings, true)));
+  const cache = svgCache[env.server ? 1 : 0]!;
+  let c = cache.get(strings);
+  if (c === undefined) cache.set(strings, (c = compile(strings, true)));
   return instantiate(c, values);
 }
