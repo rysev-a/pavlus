@@ -50,23 +50,28 @@ export class VNode {
     return this.firstChild !== null;
   }
   contains(other: VNode | null): boolean {
-    for (let n = other; n !== null; n = n.parentNode) if (n === this) return true;
+    for (let n = other; n !== null; n = n.parentNode)
+      if (n === this) return true;
     return false;
   }
 
   private unlink(): void {
     const p = this.parentNode;
     if (p === null) return;
-    if (this.previousSibling) this.previousSibling.nextSibling = this.nextSibling;
+    if (this.previousSibling)
+      this.previousSibling.nextSibling = this.nextSibling;
     else p.firstChild = this.nextSibling;
-    if (this.nextSibling) this.nextSibling.previousSibling = this.previousSibling;
+    if (this.nextSibling)
+      this.nextSibling.previousSibling = this.previousSibling;
     else p.lastChild = this.previousSibling;
     this.parentNode = this.nextSibling = this.previousSibling = null;
   }
 
   insertBefore<T extends VNode>(node: T, ref: VNode | null): T {
     if (ref !== null && ref.parentNode !== this)
-      throw new Error("NotFoundError: the reference node is not a child of this node");
+      throw new Error(
+        "NotFoundError: the reference node is not a child of this node",
+      );
     if (node.nodeType === FRAGMENT) {
       let c = node.firstChild;
       while (c !== null) {
@@ -105,7 +110,9 @@ export class VNode {
   }
   append(...nodes: Array<VNode | string>): void {
     for (const n of nodes)
-      this.appendChild(typeof n === "string" ? this.ownerDocument.createTextNode(n) : n);
+      this.appendChild(
+        typeof n === "string" ? this.ownerDocument.createTextNode(n) : n,
+      );
   }
   remove(): void {
     this.unlink();
@@ -115,11 +122,14 @@ export class VNode {
   }
   set textContent(v: string | null) {
     while (this.firstChild !== null) this.removeChild(this.firstChild);
-    if (v !== null && v !== "") this.appendChild(this.ownerDocument.createTextNode(v));
+    if (v !== null && v !== "")
+      this.appendChild(this.ownerDocument.createTextNode(v));
   }
   cloneNode(deep = false): VNode {
     const c = this.shallow();
-    if (deep) for (let n = this.firstChild; n !== null; n = n.nextSibling) c.appendChild(n.cloneNode(true));
+    if (deep)
+      for (let n = this.firstChild; n !== null; n = n.nextSibling)
+        c.appendChild(n.cloneNode(true));
     return c;
   }
   protected shallow(): VNode {
@@ -135,7 +145,12 @@ export class VNode {
 function collectText(n: VNode): string {
   let s = "";
   for (let c = n.firstChild; c !== null; c = c.nextSibling)
-    s += c.nodeType === TEXT ? (c as VText).data : c.nodeType === ELEMENT ? collectText(c) : "";
+    s +=
+      c.nodeType === TEXT
+        ? (c as VText).data
+        : c.nodeType === ELEMENT
+          ? collectText(c)
+          : "";
   return s;
 }
 
@@ -330,7 +345,10 @@ export class VElement extends VNode {
   }
   set innerHTML(markup: string) {
     while (this.firstChild !== null) this.removeChild(this.firstChild);
-    const target = this.localName === "template" ? (this as unknown as VTemplate).content : this;
+    const target =
+      this.localName === "template"
+        ? (this as unknown as VTemplate).content
+        : this;
     parseFragment(markup, this.ownerDocument, target, this.svg);
   }
   focus(): void {}
@@ -363,7 +381,9 @@ export class VTemplate extends VElement {
   }
   cloneNode(deep = false): VNode {
     const c = super.cloneNode(deep) as VTemplate;
-    if (deep) for (let n = this.content.firstChild; n !== null; n = n.nextSibling) c.content.appendChild(n.cloneNode(true));
+    if (deep)
+      for (let n = this.content.firstChild; n !== null; n = n.nextSibling)
+        c.content.appendChild(n.cloneNode(true));
     return c;
   }
 }
@@ -471,10 +491,14 @@ export class VDocument extends VNode {
   }
   createElement(name: string): VElement {
     const lower = name.toLowerCase();
-    return lower === "template" ? new VTemplate(this) : new VElement(this, lower);
+    return lower === "template"
+      ? new VTemplate(this)
+      : new VElement(this, lower);
   }
   createElementNS(ns: string | null, name: string): VElement {
-    return ns === "http://www.w3.org/2000/svg" ? new VElement(this, name, true) : this.createElement(name);
+    return ns === "http://www.w3.org/2000/svg"
+      ? new VElement(this, name, true)
+      : this.createElement(name);
   }
   createTextNode(data: string): VText {
     return new VText(this, String(data));
@@ -485,7 +509,10 @@ export class VDocument extends VNode {
   createDocumentFragment(): VFragment {
     return new VFragment(this);
   }
-  createTreeWalker(root: VNode, whatToShow = 0xffffffff): { nextNode(): VNode | null } {
+  createTreeWalker(
+    root: VNode,
+    whatToShow = 0xffffffff,
+  ): { nextNode(): VNode | null } {
     let cur: VNode = root;
     return {
       nextNode(): VNode | null {
@@ -493,7 +520,8 @@ export class VDocument extends VNode {
           let next: VNode | null = cur.firstChild;
           if (next === null) {
             let n: VNode | null = cur;
-            while (n !== null && n !== root && n.nextSibling === null) n = n.parentNode;
+            while (n !== null && n !== root && n.nextSibling === null)
+              n = n.parentNode;
             next = n === null || n === root ? null : n.nextSibling;
           }
           if (next === null) return null;
@@ -537,7 +565,9 @@ function compileSelector(sel: string): Test {
     if (m[3] !== undefined) {
       const name = m[3];
       const val = m[4];
-      tests.push((e) => (val === undefined ? e.hasAttribute(name) : e.getAttribute(name) === val));
+      tests.push((e) =>
+        val === undefined ? e.hasAttribute(name) : e.getAttribute(name) === val,
+      );
     } else if (m[1] === "#") {
       const id = m[2]!;
       tests.push((e) => e.id === id);
@@ -550,7 +580,9 @@ function compileSelector(sel: string): Test {
     }
   }
   if (consumed !== sel.trim().length || tests.length === 0)
-    throw new Error(`Maximus ssr: unsupported selector "${sel}" (only tag, #id, .class and [attr] are supported on the server)`);
+    throw new Error(
+      `Maximus ssr: unsupported selector "${sel}" (only tag, #id, .class and [attr] are supported on the server)`,
+    );
   return (e) => tests.every((t) => t(e));
 }
 

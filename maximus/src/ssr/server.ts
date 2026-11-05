@@ -18,7 +18,12 @@ import type { TemplateInfo } from "../dom/env.ts";
 import { toNodes } from "../dom/insert.ts";
 import type { Child } from "../dom/mod.ts";
 import { serialize, serializeChildren } from "./serialize.ts";
-import { DEFAULT_STATE_ID, TransferCtx, TransferState, stateScript } from "./state.ts";
+import {
+  DEFAULT_STATE_ID,
+  TransferCtx,
+  TransferState,
+  stateScript,
+} from "./state.ts";
 import { VDocument, VElement } from "./vdom.ts";
 import type { VNode } from "./vdom.ts";
 
@@ -83,7 +88,9 @@ class Render {
 
   constructor(opts: RenderOptions, stream: boolean) {
     this.state =
-      opts.state instanceof TransferState ? opts.state : new TransferState(opts.state);
+      opts.state instanceof TransferState
+        ? opts.state
+        : new TransferState(opts.state);
     this.info = { url: opts.url ?? "/", request: opts.request };
     this.stream = stream;
     this.timeout = opts.timeout ?? 5000;
@@ -110,7 +117,10 @@ class Render {
   }
 
   /** Wait until `set()` is empty or the deadline passes. Returns false on timeout. */
-  async settle(set: () => ReadonlySet<Promise<unknown>>, deadline: number): Promise<boolean> {
+  async settle(
+    set: () => ReadonlySet<Promise<unknown>>,
+    deadline: number,
+  ): Promise<boolean> {
     for (;;) {
       await this.drain();
       const current = set();
@@ -137,7 +147,8 @@ class Render {
           RenderCtx.provide(this, () =>
             SuspenseCtx.provide(ctx, () => {
               batch(() => {
-                for (const n of toNodes(view())) this.container.appendChild(n as unknown as VNode);
+                for (const n of toNodes(view()))
+                  this.container.appendChild(n as unknown as VNode);
               });
             }),
           ),
@@ -178,7 +189,8 @@ function tag(info: TemplateInfo, result: Node): Node {
   if (rc === null) return result;
   const seq = ++rc.seq;
   let hash = hashCache.get(info.strings);
-  if (hash === undefined) hashCache.set(info.strings, (hash = hashStrings(info.strings)));
+  if (hash === undefined)
+    hashCache.set(info.strings, (hash = hashStrings(info.strings)));
   if (info.single) {
     (result as unknown as VElement).mx = { seq, hash };
     return result;
@@ -191,7 +203,13 @@ function tag(info: TemplateInfo, result: Node): Node {
 }
 
 let refs = 0;
-const saved = { doc: null as Document | null, server: false, tag: null as typeof env.tag, pending: null as typeof env.pending, suspense: null as typeof env.suspense };
+const saved = {
+  doc: null as Document | null,
+  server: false,
+  tag: null as typeof env.tag,
+  pending: null as typeof env.pending,
+  suspense: null as typeof env.suspense,
+};
 
 function enter(): void {
   if (refs++ > 0) return;
@@ -212,7 +230,14 @@ function enter(): void {
       b.start.data = `suspense:${id}`;
       b.end.data = `/suspense:${id}`;
     }
-    rc.boundaries.push({ id, start: b.start, end: b.end, pending: b.pending, waiting: false, done: false });
+    rc.boundaries.push({
+      id,
+      start: b.start,
+      end: b.end,
+      pending: b.pending,
+      waiting: false,
+      done: false,
+    });
   };
 }
 
@@ -240,7 +265,10 @@ function withState(html: string, rc: Render, opts: RenderOptions): string {
  * effects they trigger. Suspense content is rendered when it is ready; if the
  * timeout hits, the fallback is rendered.
  */
-export async function renderToString(view: () => Child, opts: RenderOptions = {}): Promise<string> {
+export async function renderToString(
+  view: () => Child,
+  opts: RenderOptions = {},
+): Promise<string> {
   enter();
   const rc = new Render(opts, false);
   try {
@@ -264,18 +292,31 @@ const RUNTIME =
   "t&&t.remove();c&&c.remove()}var s=document.currentScript;s&&s.remove()</script>";
 
 function attached(rc: Render, n: Node): boolean {
-  for (let p: VNode | null = n as unknown as VNode; p !== null; p = p.parentNode) if (p === (rc.container as VNode)) return true;
+  for (
+    let p: VNode | null = n as unknown as VNode;
+    p !== null;
+    p = p.parentNode
+  )
+    if (p === (rc.container as VNode)) return true;
   return false;
 }
 
 function rangeHtml(b: Boundary): string {
   let out = "";
   const end = b.end as unknown as VNode;
-  for (let n = (b.start as unknown as VNode).nextSibling; n !== null && n !== end; n = n.nextSibling) out += serialize(n);
+  for (
+    let n = (b.start as unknown as VNode).nextSibling;
+    n !== null && n !== end;
+    n = n.nextSibling
+  )
+    out += serialize(n);
   return out;
 }
 
-async function* chunks(view: () => Child, opts: RenderOptions): AsyncGenerator<string, void, void> {
+async function* chunks(
+  view: () => Child,
+  opts: RenderOptions,
+): AsyncGenerator<string, void, void> {
   enter();
   const rc = new Render(opts, true);
   try {
@@ -285,7 +326,8 @@ async function* chunks(view: () => Child, opts: RenderOptions): AsyncGenerator<s
     if (!(await rc.settle(() => rc.unbounded, deadline))) rc.timedOut(opts);
     const mark = (): void => {
       for (const b of rc.boundaries)
-        if (!b.done && !b.waiting && b.pending() > 0 && attached(rc, b.start)) b.waiting = true;
+        if (!b.done && !b.waiting && b.pending() > 0 && attached(rc, b.start))
+          b.waiting = true;
     };
     mark();
     yield serializeChildren(rc.container);
@@ -305,7 +347,8 @@ async function* chunks(view: () => Child, opts: RenderOptions): AsyncGenerator<s
       await rc.drain();
       // outer boundaries first: their content may carry the inner boundaries
       for (const b of rc.boundaries) {
-        if (b.done || !b.waiting || b.pending() > 0 || !attached(rc, b.start)) continue;
+        if (b.done || !b.waiting || b.pending() > 0 || !attached(rc, b.start))
+          continue;
         b.done = true;
         const body = rangeHtml(b);
         mark();
@@ -334,7 +377,10 @@ async function* chunks(view: () => Child, opts: RenderOptions): AsyncGenerator<s
  *
  * Hydrate after the stream has completed (the swap scripts have run).
  */
-export function renderToStream(view: () => Child, opts: RenderOptions = {}): ReadableStream<string> {
+export function renderToStream(
+  view: () => Child,
+  opts: RenderOptions = {},
+): ReadableStream<string> {
   const it = chunks(view, opts);
   return new ReadableStream<string>({
     async pull(controller) {
@@ -351,4 +397,3 @@ export function renderToStream(view: () => Child, opts: RenderOptions = {}): Rea
     },
   });
 }
-

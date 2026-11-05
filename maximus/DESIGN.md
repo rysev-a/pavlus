@@ -4,9 +4,10 @@ A small frontend framework designed from first principles for the best developer
 Where pavlus is "pure messages and effects, compiled templates", Maximus is "fine-grained signals, real DOM, zero build required".
 
 ## Thesis (what is different, and why)
+
 1. **Signals, not diffing.** State is `signal`/`computed`; a binding subscribes to exactly the signals it reads and updates exactly one DOM node. No virtual DOM, no component re-render, no dependency arrays, no stale closures. Components are plain functions that run **once**.
 2. **No build step required.** Templates are tagged template literals (`html`...``). The static HTML of a template is parsed once, cloned per use, and bindings are located by index (lit-html/Solid style). A compiler is an optional optimisation, never a requirement; plain `.ts` files run in the browser through any bundler or even native ESM.
-3. **Ownership scopes.** Every effect, computed, event listener and child component belongs to an *owner*. Disposing an owner disposes everything beneath it (no leaks by construction). `onCleanup`, `context` (provide/use) and error boundaries all ride on the owner tree.
+3. **Ownership scopes.** Every effect, computed, event listener and child component belongs to an _owner_. Disposing an owner disposes everything beneath it (no leaks by construction). `onCleanup`, `context` (provide/use) and error boundaries all ride on the owner tree.
 4. **Async is first class.** `resource` (queries: keyed cache, dedupe, abort, stale-while-revalidate, refetch, optimistic `mutate`) and `action` (mutations: pending/error/result, invalidation of resources by key). `suspense` boundaries show fallbacks while resources load; `errorBoundary` catches errors from render, effects and resources.
 5. **Batteries on the same primitives:** router (nested layouts, loaders, guards, prefetch, view transitions, scroll restoration, typed params), forms (schema validation, per-field signals, dirty/touched, async validators), stores (deep reactive objects with path-level tracking), i18n-ready formatting helpers.
 6. **Server and hydration without double work:** `renderToString` / `renderToStream` (with suspense streaming) and `hydrate` that adopts server DOM using markers; islands by simply hydrating a subtree.
@@ -14,17 +15,19 @@ Where pavlus is "pure messages and effects, compiled templates", Maximus is "fin
 8. **Accessible and fast by default:** built-in focus management on route change, live-region announcer, `prefers-reduced-motion` aware transitions, event delegation for common events, keyed list reconciliation with LIS moves, batched microtask scheduling, tiny size (core <= 4 kB gz target, dom+core <= 9 kB).
 
 ## Package layout (`maximus/src`, ESM, TypeScript strict, no dependencies)
-`core/`  signal, computed, effect, batch, untrack, owner (root, onCleanup, context, errors), scheduler, devtools hook
-`dom/`   html, svg, render, bindings, control flow (show, each, match, portal, lazy, suspense, errorBoundary), component helpers, hydrate
+
+`core/` signal, computed, effect, batch, untrack, owner (root, onCleanup, context, errors), scheduler, devtools hook
+`dom/` html, svg, render, bindings, control flow (show, each, match, portal, lazy, suspense, errorBoundary), component helpers, hydrate
 `store/` createStore (proxy, path tracking), produce, reconcile
 `resource/` resource, action, cache, invalidate
 `router/` createRouter, routes, link, params/query signals, loaders, guards, prefetch, transitions
-`form/`  createForm, field, validators, standard-schema adapter
-`ssr/`   renderToString, renderToStream, hydrate markers
+`form/` createForm, field, validators, standard-schema adapter
+`ssr/` renderToString, renderToStream, hydrate markers
 `testing/` mount, flush, fire, waitFor
 `mod.ts` re-exports; package.json `exports` per folder.
 
 ## API (the contract; names and shapes are fixed)
+
 ```ts
 // core
 const count = signal(0);          count()  count.set(1)  count.update(n => n + 1)  count.peek()
@@ -66,10 +69,13 @@ f.field("email") -> { value, error, touched, dirty, bind (spread directive for i
 renderToString(() => App(), { url }) ; renderToStream(...) ; hydrate(() => App(), container)
 const t = mount(() => App()); t.query("button").click(); await flush(); expect(t.text()).toContain("1"); t.unmount();
 ```
+
 ## Quality bar
+
 Every module has vitest + jsdom tests (behaviour, leak/dispose, error paths); strict TypeScript with inferred types and no `any` in public APIs; READMEs with examples; a gallery of examples in `maximus/examples` (counter, todo with keyed list and filters, async search with suspense, routed mini-app with loader and form, SVG chart). Benchmarks (jsdom, honest) in `maximus/bench`. A `docs/` with: concepts, signals mental model, ownership, templates, async, routing, SSR, testing, comparison with React/Solid/Svelte/Lit/pavlus (fair trade-offs).
 
 ## Implementation notes
+
 Wave 1 (`core`, `dom`, `store`, `testing`). Everything in the contract above is implemented with the same names and shapes; the deliberate additions and deviations are:
 
 **Scheduling.** `effect` runs its first pass synchronously at creation unless created inside a `batch`/`render`/flush, in which case it is deferred to the end of that (so effects see attached DOM). Later runs are queued and flushed in a microtask, or synchronously at the end of the outermost `batch` (event handlers are batched, so the DOM is current right after a handler). `renderEffect` (used by every DOM binding) runs first at creation and before user effects within a flush. Extras exported from core: `flushSync`, `tick`, `renderEffect`, `onMount`, `createOwner`, `disposeOwner`, `setOwner`, `handleError`, `isSignal`, `isTracking`, `subscriberCount`, `debugStats` (live owner/subscription counters for leak tests), `installDevtools`.
@@ -85,3 +91,11 @@ Wave 1 (`core`, `dom`, `store`, `testing`). Everything in the contract above is 
 **Testing.** `mount`, `cleanup`, `flush` (async, flushes effects around a few microtask ticks), `fire` (typed events, assigns `value`/`checked`), `waitFor`.
 **Hydration (design only).** The comment-marker pairs and walk-index binding described above are what `hydrate` will adopt: walk server nodes in the same order as the client's clone walk instead of cloning. `suspense`/`each` fragments already carry their own marker comments.
 **Size.** Minified+gzip, everything exported (no tree-shaking): core 2.9 kB, core+dom 11.0 kB, +store 12.1 kB; the target of 9 kB for core+dom is not met yet (the template scanner and error messages dominate); a tree-shaken counter app is 7.8 kB total.
+
+Wave 2 B (`form`, `ssr`, `devtools`). Names and shapes follow the contract; additions and deviations:
+
+**Form.** `createForm({ initial, schema, onSubmit, validateOn, debounce, validators })`; `f.field(path, { validate, debounce })` gives `{ value (signal), error, errors, touched (signal), dirty, validating, errorId, set, bind, validate, reset }`; `bind` is a spread directive for input/textarea/select/checkbox/radio/number/file and manages `aria-invalid`/`aria-describedby`. `f.array(path)` has `items` (stable keys), `add/remove/move/swap/clear`; per-path state (touched, errors) moves with the items. Validators are sync or async functions or built-ins (`required minLength maxLength pattern email min max equalsField`); typing-triggered validation is debounced, a newer run aborts the older and its result is dropped. `schema` is Standard Schema or a function `(values) => ({ path: message })`; `onSubmit` receives the schema output. `f.submit` prevents default, validates, focuses the first invalid field, catches errors into `f.submitError()`; `f.setErrors` takes server errors. Devtools time travel and SSR both work with forms (bind writes `value/checked/selected` on the server).
+
+**SSR.** `renderToString(view, { url, timeout, ... })` is async (it waits for resources): it returns `Promise<string>`. It runs on a small virtual DOM (`ssr/vdom.ts`, parser, serializer), no jsdom, installed through a seam `dom/env.ts` (`doc()`, hooks that are `null` in browsers). The end marker of a child hole is now `<!--/$mx$-->` (start stays `<!--$mx$-->`). Template instances are tagged for hydration (`data-mx-i="seq:hash"` on single roots, `<!--mx:seq:hash-->`..`<!--/mx:seq-->` around fragments); `hydrate(view, container)` claims them in completion order, verifies the template fingerprint and attaches bindings to the existing nodes (identity kept; mismatches warn through `onMismatch`). `renderToStream` returns `ReadableStream<string>`: shell, then `<template>` + inline swap script per ready suspense boundary, then the state. `TransferState` (+ `serializeState`/`stateScript`, escaping `< > & U+2028 U+2029`) carries resource results; `useServer()`/`isServer()` expose the request URL. `resource` does not use `TransferState` yet. Compiled templates are cached separately for server and client.
+
+**Devtools.** `installDevtools()` from `maximus/devtools` (exposed as the `devtools` namespace from the root entry because `core` already exports the hook installer of the same name) keeps a bounded timeline, `snapshot()` of the owner tree and named signals, `timeTravel()` over `signal(v, { debug: true })`, and `devtoolsPanel()`. Core got small additions: `SignalOptions.debug`, `signal:write` carries `prev` and `set`, `owner:create` carries `parent` and `owner`, `computed:update` carries `path`.

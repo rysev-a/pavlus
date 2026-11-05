@@ -97,6 +97,8 @@ html`<button ...${rest}>${() => mine.label}</button>`;
 
 Props are plain objects; reactive props are signals/getters the caller passes (`Card({ get title() { return t(); } })`). Never destructure props in the component body, that reads them once.
 
-## Hydration-ready design (not implemented in wave 1)
+## Hydration and the environment seam
 
-The DOM layer was shaped so wave 2's `renderToString`/`hydrate` can adopt server HTML without double work: the static markup of a template is what the server emits; each dynamic child is delimited by a pair of comment markers (`<!--$mx$--><!--$mx$-->`; hydrate walks the same element/comment sequence as the client clone, so binding indices match); an element with dynamic attributes needs no marker because it is located by walk index; control-flow fragments emit their own `<!--each-->`/`<!--/each-->` style markers; a `suspense` boundary streams its fallback in the marker range and later patches in the content. A hydrating `instantiate` would walk server nodes instead of cloning, attaching bindings without creating nodes.
+`env.ts` is the only place where the DOM layer looks at its environment: `doc()` is `document` unless `maximus/ssr` installed a virtual document (server), plus a few optional hooks (`tag`, `claim`, `pending`, `suspense`, `mismatch`) that are `null` in a browser, so the browser path costs one nullish check per `html` call.
+
+Markers: each child hole is `<!--$mx$-->` ... `<!--/$mx$-->` (or none when it is the only child of its element); control-flow fragments carry their own comments (`<!--each-->`, `<!--suspense-->`, ...). `maximus/ssr` renders with these, tags every template instance, and `hydrate` walks the server nodes in the same element/comment order as the client's clone walk (skipping hole content), so binding indexes match and bindings attach to the existing nodes. See `src/ssr/README.md`.

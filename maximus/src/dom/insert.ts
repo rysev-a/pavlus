@@ -110,11 +110,7 @@ export function toNodes(value: unknown, out: Node[] = []): Node[] {
  * tracked by a render effect and the region is updated in place: text reuses
  * one Text node, anything else replaces the content.
  */
-export function bindChild(
-  r: Region,
-  value: unknown,
-  adopt = false,
-): void {
+export function bindChild(r: Region, value: unknown, adopt = false): void {
   let adopting = adopt;
   let text: Text | null = null;
   let filled = false;
@@ -170,7 +166,9 @@ export function bindChild(
         return true;
       }
       if (s !== "" || ex.length > 0)
-        warn(`text mismatch (client ${JSON.stringify(s.slice(0, 40))}, server has ${ex.length} node(s))`);
+        warn(
+          `text mismatch (client ${JSON.stringify(s.slice(0, 40))}, server has ${ex.length} node(s))`,
+        );
       clearRegion(r);
       return false;
     }
@@ -185,7 +183,8 @@ export function bindChild(
     const keep = new Set(want);
     for (const n of ex)
       if (!keep.has(n) && n.parentNode === p) p.removeChild(n);
-    let ptr: Node | null = r.start !== null ? r.start.nextSibling : p.firstChild;
+    let ptr: Node | null =
+      r.start !== null ? r.start.nextSibling : p.firstChild;
     for (const w of want) {
       if (w === ptr) ptr = ptr.nextSibling;
       else p.insertBefore(w, ptr === null ? r.end : ptr);

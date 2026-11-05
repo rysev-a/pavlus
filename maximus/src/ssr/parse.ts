@@ -11,7 +11,19 @@
 import type { VDocument, VElement, VNode } from "./vdom.ts";
 
 export const VOID = new Set([
-  "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr",
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "link",
+  "meta",
+  "source",
+  "track",
+  "wbr",
 ]);
 const RAW = new Set(["script", "style"]);
 const RCDATA = new Set(["textarea", "title"]);
@@ -31,29 +43,74 @@ const CLOSES: Record<string, string[]> = {
   tfoot: ["thead", "tbody"],
 };
 const CLOSE_P = new Set([
-  "address", "article", "aside", "blockquote", "div", "dl", "fieldset", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6",
-  "header", "hr", "main", "nav", "ol", "p", "pre", "section", "table", "ul",
+  "address",
+  "article",
+  "aside",
+  "blockquote",
+  "div",
+  "dl",
+  "fieldset",
+  "footer",
+  "form",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "header",
+  "hr",
+  "main",
+  "nav",
+  "ol",
+  "p",
+  "pre",
+  "section",
+  "table",
+  "ul",
 ]);
 
 const NAMED: Record<string, string> = {
-  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", copy: "©", hellip: "…", mdash: "—", ndash: "–",
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  copy: "©",
+  hellip: "…",
+  mdash: "—",
+  ndash: "–",
 };
 
 export function decodeEntities(s: string): string {
   if (!s.includes("&")) return s;
   return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
     if (e[0] === "#") {
-      const code = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
-      return Number.isFinite(code) && code <= 0x10ffff ? String.fromCodePoint(code) : m;
+      const code =
+        e[1] === "x" || e[1] === "X"
+          ? parseInt(e.slice(2), 16)
+          : parseInt(e.slice(1), 10);
+      return Number.isFinite(code) && code <= 0x10ffff
+        ? String.fromCodePoint(code)
+        : m;
     }
     return NAMED[e.toLowerCase()] ?? m;
   });
 }
 
 /** Parse `markup` and append the resulting nodes to `target`. */
-export function parseFragment(markup: string, doc: VDocument, target: VNode, inSvg = false): void {
-  const stack: Array<{ node: VNode; name: string; svg: boolean }> = [{ node: target, name: "", svg: inSvg }];
-  const top = (): { node: VNode; name: string; svg: boolean } => stack[stack.length - 1]!;
+export function parseFragment(
+  markup: string,
+  doc: VDocument,
+  target: VNode,
+  inSvg = false,
+): void {
+  const stack: Array<{ node: VNode; name: string; svg: boolean }> = [
+    { node: target, name: "", svg: inSvg },
+  ];
+  const top = (): { node: VNode; name: string; svg: boolean } =>
+    stack[stack.length - 1]!;
   let i = 0;
   const n = markup.length;
   const text = (s: string): void => {
@@ -61,7 +118,8 @@ export function parseFragment(markup: string, doc: VDocument, target: VNode, inS
     const t = top().node;
     const data = decodeEntities(s);
     const last = t.lastChild;
-    if (last !== null && last.nodeType === 3) (last as unknown as { data: string }).data += data;
+    if (last !== null && last.nodeType === 3)
+      (last as unknown as { data: string }).data += data;
     else t.appendChild(doc.createTextNode(data));
   };
   while (i < n) {
@@ -74,7 +132,9 @@ export function parseFragment(markup: string, doc: VDocument, target: VNode, inS
     i = lt;
     if (markup.startsWith("<!--", i)) {
       const end = markup.indexOf("-->", i + 4);
-      top().node.appendChild(doc.createComment(markup.slice(i + 4, end === -1 ? n : end)));
+      top().node.appendChild(
+        doc.createComment(markup.slice(i + 4, end === -1 ? n : end)),
+      );
       i = end === -1 ? n : end + 3;
       continue;
     }
@@ -85,7 +145,10 @@ export function parseFragment(markup: string, doc: VDocument, target: VNode, inS
     }
     if (markup[i + 1] === "/") {
       const end = markup.indexOf(">", i);
-      const name = markup.slice(i + 2, end === -1 ? n : end).trim().toLowerCase();
+      const name = markup
+        .slice(i + 2, end === -1 ? n : end)
+        .trim()
+        .toLowerCase();
       i = end === -1 ? n : end + 1;
       for (let k = stack.length - 1; k > 0; k--) {
         if (stack[k]!.name.toLowerCase() === name) {
@@ -105,7 +168,9 @@ export function parseFragment(markup: string, doc: VDocument, target: VNode, inS
     const rawName = markup.slice(i + 1, j);
     const lower = rawName.toLowerCase();
     const svg = top().svg || lower === "svg";
-    const el: VElement = svg ? doc.createElementNS("http://www.w3.org/2000/svg", rawName) : doc.createElement(lower);
+    const el: VElement = svg
+      ? doc.createElementNS("http://www.w3.org/2000/svg", rawName)
+      : doc.createElement(lower);
     let selfClose = false;
     for (;;) {
       while (j < n && /\s/.test(markup[j]!)) j++;
@@ -145,7 +210,8 @@ export function parseFragment(markup: string, doc: VDocument, target: VNode, inS
           j = k;
         }
       }
-      if (name !== "" && !el.hasAttribute(name)) el.setAttribute(name, decodeEntities(value));
+      if (name !== "" && !el.hasAttribute(name))
+        el.setAttribute(name, decodeEntities(value));
     }
     i = j;
     if (!svg) {
@@ -157,7 +223,14 @@ export function parseFragment(markup: string, doc: VDocument, target: VNode, inS
             stack.length = k;
             break;
           }
-          if (nm === "ul" || nm === "ol" || nm === "table" || nm === "select" || nm === "dl") break;
+          if (
+            nm === "ul" ||
+            nm === "ol" ||
+            nm === "table" ||
+            nm === "select" ||
+            nm === "dl"
+          )
+            break;
         }
       }
       if (CLOSE_P.has(lower) && top().name === "p") stack.pop();
@@ -168,10 +241,20 @@ export function parseFragment(markup: string, doc: VDocument, target: VNode, inS
       const m = new RegExp(`</${lower}\\s*>`, "i").exec(markup.slice(i));
       const end = m === null ? n : i + m.index;
       const body = markup.slice(i, end);
-      if (body !== "") el.appendChild(doc.createTextNode(RCDATA.has(lower) ? decodeEntities(body) : body));
+      if (body !== "")
+        el.appendChild(
+          doc.createTextNode(RCDATA.has(lower) ? decodeEntities(body) : body),
+        );
       i = m === null ? n : end + m[0].length;
       continue;
     }
-    stack.push({ node: lower === "template" ? (el as unknown as { content: VNode }).content : el, name: svg ? rawName : lower, svg });
+    stack.push({
+      node:
+        lower === "template"
+          ? (el as unknown as { content: VNode }).content
+          : el,
+      name: svg ? rawName : lower,
+      svg,
+    });
   }
 }

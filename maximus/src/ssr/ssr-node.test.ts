@@ -13,10 +13,22 @@ describe("ssr without a DOM", () => {
   it("renders the same component code to a string", async () => {
     const items = signal([1, 2, 3]);
     const App = () =>
-      html`<ul class="list">${each(items, (n) => n, (n) => html`<li>${n}</li>`)}</ul>${show(() => items().length > 2, () => html`<p>many</p>`)}`;
+      html`<ul class="list">
+          ${each(
+            items,
+            (n) => n,
+            (n) => html`<li>${n}</li>`,
+          )}
+        </ul>
+        ${show(
+          () => items().length > 2,
+          () => html`<p>many</p>`,
+        )}`;
     const out = await renderToString(App);
     expect(out).toContain('<ul class="list"');
-    expect(out).toMatch(/<li[^>]*>1<\/li>.*<li[^>]*>2<\/li>.*<li[^>]*>3<\/li>/s);
+    expect(out).toMatch(
+      /<li[^>]*>1<\/li>.*<li[^>]*>2<\/li>.*<li[^>]*>3<\/li>/s,
+    );
     expect(out).toContain("many");
   });
 

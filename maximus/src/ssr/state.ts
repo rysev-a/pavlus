@@ -59,14 +59,21 @@ export function useTransferState(): TransferState | null {
 export function serializeState(
   state: TransferState | Record<string, unknown>,
 ): string {
-  const json = JSON.stringify(state instanceof TransferState ? state.toJSON() : state) ?? "{}";
-  return json.replace(/[<>&\u2028\u2029]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
+  const json =
+    JSON.stringify(state instanceof TransferState ? state.toJSON() : state) ??
+    "{}";
+  return json.replace(
+    /[<>&\u2028\u2029]/g,
+    (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"),
+  );
 }
 
 export function deserializeState(text: string): TransferState {
   const parsed: unknown = JSON.parse(text);
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
-    throw new TypeError("Maximus ssr: the serialized state must be a JSON object");
+    throw new TypeError(
+      "Maximus ssr: the serialized state must be a JSON object",
+    );
   return new TransferState(parsed as Record<string, unknown>);
 }
 

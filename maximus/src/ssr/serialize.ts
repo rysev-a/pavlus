@@ -8,7 +8,9 @@ import { VOID } from "./parse.ts";
 import type { VElement, VNode, VText } from "./vdom.ts";
 
 export function escapeText(s: string): string {
-  return s.replace(/[&<>]/g, (c) => (c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;"));
+  return s.replace(/[&<>]/g, (c) =>
+    c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;",
+  );
 }
 
 export function escapeAttr(s: string): string {
@@ -36,20 +38,33 @@ export function serialize(node: VNode): string {
 export function serializeChildren(node: VNode, selectValue?: string): string {
   let out = "";
   const raw = node.nodeType === 1 ? (node as VElement).localName : "";
-  const isRaw = !((node as VElement).svg) && (raw === "script" || raw === "style");
+  const isRaw =
+    !(node as VElement).svg && (raw === "script" || raw === "style");
   for (let c = node.firstChild; c !== null; c = c.nextSibling) {
     if (isRaw && c.nodeType === 3) {
-      out += (c as VText).data.replace(new RegExp(`</(${raw})`, "gi"), "<\\/$1");
-    } else if (c.nodeType === 1) out += serializeElement(c as VElement, selectValue);
+      out += (c as VText).data.replace(
+        new RegExp(`</(${raw})`, "gi"),
+        "<\\/$1",
+      );
+    } else if (c.nodeType === 1)
+      out += serializeElement(c as VElement, selectValue);
     else out += serialize(c);
   }
   return out;
 }
 
-function serializeElement(el: VElement, selectValue: string | undefined): string {
+function serializeElement(
+  el: VElement,
+  selectValue: string | undefined,
+): string {
   let attrs = "";
   for (const [k, v] of el.attrs) {
-    if (selectValue !== undefined && el.localName === "option" && k === "selected") continue;
+    if (
+      selectValue !== undefined &&
+      el.localName === "option" &&
+      k === "selected"
+    )
+      continue;
     attrs += ` ${k}="${escapeAttr(v)}"`;
   }
   if (selectValue !== undefined && el.localName === "option") {
@@ -61,6 +76,11 @@ function serializeElement(el: VElement, selectValue: string | undefined): string
   if (!el.svg && VOID.has(name)) return `<${name}${attrs}>`;
   const sv = name === "select" ? el.selectValue : selectValue;
   let inner = serializeChildren(el, sv);
-  if (!el.svg && (name === "textarea" || name === "pre") && inner.startsWith("\n")) inner = "\n" + inner;
+  if (
+    !el.svg &&
+    (name === "textarea" || name === "pre") &&
+    inner.startsWith("\n")
+  )
+    inner = "\n" + inner;
   return `<${name}${attrs}>${inner}</${name}>`;
 }

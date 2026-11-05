@@ -13,6 +13,7 @@
     "./router": "./src/router/mod.ts",
     "./form": "./src/form/mod.ts",
     "./ssr": "./src/ssr/mod.ts",
+    "./devtools": "./src/devtools/mod.ts",
     "./testing": "./src/testing/mod.ts"
   },
   "scripts": {

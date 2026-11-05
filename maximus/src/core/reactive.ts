@@ -22,6 +22,8 @@ export interface SignalOptions<T> {
   equals?: Equals<T>;
   /** Name shown by devtools. */
   name?: string;
+  /** Let devtools time travel this signal: its writes carry the previous value and a setter. */
+  debug?: boolean;
 }
 
 export interface Signal<T> {
@@ -72,6 +74,8 @@ class SignalNode<T> implements Source {
   observers: Set<Computation> | null = null;
   equals: Equals<T>;
   name: string | undefined;
+  /** the signal's `set`, kept only for `{ debug: true }` signals (devtools time travel) */
+  debugSet: ((v: T) => void) | null = null;
   constructor(value: T, options?: SignalOptions<T>) {
     this.value = value;
     this.equals = options?.equals === undefined ? Object.is : options.equals;
@@ -95,7 +99,13 @@ export class Owner {
     if (attach && parent !== null) (parent.children ??= new Set()).add(this);
     liveOwners++;
     if (devtoolsActive())
-      emit({ type: "owner:create", id: this.id, path: ownerPath(this) });
+      emit({
+        type: "owner:create",
+        id: this.id,
+        parent: parent === null ? null : parent.id,
+        owner: this,
+        path: ownerPath(this),
+      });
   }
 }
 
@@ -188,6 +198,7 @@ class Computation extends Owner implements Source {
             id: this.id,
             name: this.name,
             value: this.value,
+            path: ownerPath(this),
           });
         }
       }
@@ -369,6 +380,7 @@ export function signal<T>(initial: T, options?: SignalOptions<T>): Signal<T> {
   read.update = (fn) => writeSignal(node, fn(node.value));
   read.peek = () => node.value;
   (read as unknown as Record<symbol, unknown>)[SIGNAL_NODE] = node;
+  if (options?.debug === true) node.debugSet = read.set;
   return read;
 }
 
@@ -379,12 +391,15 @@ function writeSignal<T>(node: SignalNode<T>, v: T): void {
       "Maximus: cannot write to a signal inside a computed (computeds must be pure; use an effect)",
     );
   }
+  const prev = node.value;
   node.value = v;
   if (devtoolsActive())
     emit({
       type: "signal:write",
       name: node.name,
       value: v,
+      prev,
+      set: node.debugSet,
       path: ownerPath(owner),
     });
   const obs = node.observers;

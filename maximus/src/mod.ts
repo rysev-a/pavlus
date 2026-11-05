@@ -4,5 +4,6 @@ export * from "./store/mod.ts";
 export * from "./testing/mod.ts";
 export * from "./resource/mod.ts";
 export * from "./router/mod.ts";
-// wave 2: export * from "./form/mod.ts";
-// wave 2: export * from "./ssr/mod.ts";
+export * from "./form/mod.ts";
+export * from "./ssr/mod.ts";
+export * as devtools from "./devtools/mod.ts";

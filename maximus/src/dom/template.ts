@@ -375,10 +375,7 @@ export function scan(strings: readonly string[]): {
 }
 
 function walkAll(root: Node, visit: (n: Node, index: number) => void): void {
-  const w = doc().createTreeWalker(
-    root,
-    129 /* SHOW_ELEMENT | SHOW_COMMENT */,
-  );
+  const w = doc().createTreeWalker(root, 129 /* SHOW_ELEMENT | SHOW_COMMENT */);
   let i = -1;
   for (let n = w.nextNode(); n !== null; n = w.nextNode()) visit(n, ++i);
 }
