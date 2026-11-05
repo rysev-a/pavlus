@@ -1,6 +1,6 @@
 // The context that rides on every message and effect (see DESIGN.md), the
 // reply helpers plugins use to continue a flow, and the per-rid trace buffer.
-import { randomBytes } from "node:crypto";
+import { randomFillSync } from "node:crypto";
 import type { Message } from "@service-laboratory/pavlus";
 
 /** What a message carries so a flow keeps its identity from socket to socket. */
@@ -15,8 +15,17 @@ export interface Ctx {
 
 /** An unguessable short request id (72 random bits, 12 url-safe chars). */
 export function newRid(): string {
-  return randomBytes(9).toString("base64url");
+  // one syscall per 512 ids: randomBytes() per request was 7% of a hello-world
+  if (ridAt + 9 > ridPool.length) {
+    randomFillSync(ridPool);
+    ridAt = 0;
+  }
+  const id = ridPool.toString("base64url", ridAt, ridAt + 9);
+  ridAt += 9;
+  return id;
 }
+const ridPool = Buffer.allocUnsafe(9 * 512);
+let ridAt = ridPool.length;
 
 /** The rid of a message or an effect, when it has one. */
 export function ridOf(x: {

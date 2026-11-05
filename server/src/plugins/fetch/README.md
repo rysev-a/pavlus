@@ -3,7 +3,7 @@
 Plugin `fetch`, effect `fetch.request` (node's global `fetch`).
 
 ```ts
-import { fetchEffector as http } from "pavlus-server/plugins/fetch/mod.ts";
+import { fetchEffector as http } from "pavlus-server/plugins/fetch";
 http.get("https://api.example.com/users", {
   query: { page: 2 },
   replyTo: "gotUsers",

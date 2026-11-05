@@ -21,7 +21,7 @@ const plugin = createPostgresPlugin({
 Errors arrive at `onError` as `{code, message, detail?, constraint?, table?, column?, schema?}`; `code` is the SQLSTATE (`23505` unique violation, `57014` timeout/cancel). Plugin-level codes: `PAVLUS_NO_TX`. If an effect has no `onError` the error goes to the message `pg.error`.
 
 ```ts
-import { pgEffector as pg, sql } from "pavlus-server/plugins/postgres/mod.ts";
+import { pgEffector as pg, sql } from "pavlus-server/plugins/postgres";
 
 case "http.request": return [pg.query(sql`select * from users where id = ${id}`, { replyTo: "gotUser", onError: "dbFailed" })];
 

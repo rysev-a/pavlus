@@ -39,7 +39,7 @@ export function flow<S extends ServerState = ServerState>(
   const router = opts.routes ? toRouter(opts.routes) : undefined;
   let state = {
     ...opts.state,
-    requests: opts.state?.requests ?? {},
+    requests: { ...opts.state?.requests }, // the map is updated in place
     shared: opts.state?.shared ?? {},
   } as S;
   const log: (readonly [Message, Effect[]])[] = [];
@@ -52,7 +52,7 @@ export function flow<S extends ServerState = ServerState>(
       let msg = message;
       const rid = msg.ctx?.rid;
       if (typeof rid === "string" && !(rid in state.requests))
-        state = { ...state, requests: { ...state.requests, [rid]: {} } };
+        state.requests[rid] = {};
       let produced: Effect[];
       const routed =
         router && msg.id === "http.request"

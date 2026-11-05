@@ -33,3 +33,7 @@ process.on("SIGTERM", () => server.shutdown({ timeoutMs: 10_000 }));
 - `stats()`: `active, timers, messages, effects, discarded, errors, timeouts, budgetExceeded, cancels, finished, forced` (use them to assert "nothing leaked").
 
 A plugin joins the lifecycle by implementing the optional `ServerPlugin` members `cancel(rid)`, `stop()`, `closed()`.
+
+## Requests slice and speed
+
+`state.requests` is updated **in place** (each rid's slice is replaced, never mutated; the map and the root object are not copied per write). A copy of the map per `open`/`drop`/`req.set` was a third of the CPU with 100 requests in flight (see bench/ and docs/comparison.md). Read `state.requests[rid]` while handling a message; do not keep the map.

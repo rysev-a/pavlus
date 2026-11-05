@@ -3,7 +3,7 @@
 Plugin `log`: structured logs and metrics.
 
 ```ts
-import { logEffector as log } from "pavlus-server/plugins/log/mod.ts";
+import { logEffector as log } from "pavlus-server/plugins/log";
 return [log.info("user created", { userId, password })]; // password -> "[REDACTED]"
 ```
 

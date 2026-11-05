@@ -58,7 +58,23 @@ const segs = (p: Path): (string | number)[] =>
   typeof p === "string" ? (p === "" ? [] : p.split(".")) : [...p];
 
 /**
- * The pure state transition of an effect of this plugin (also used by the
+ * Writes one request slice. The slice itself is replaced (never mutated), but
+ * the `requests` map is updated IN PLACE and only the root is copied: with
+ * hundreds of requests in flight, copying the map on every write costs more
+ * than the rest of the request (measured: bench/). Nobody should hold on to
+ * `state.requests` across messages; read `state.requests[rid]` when handling.
+ */
+function putSlice<S extends ServerState>(
+  state: S,
+  rid: string,
+  slice: unknown,
+): S {
+  (state.requests as Record<string, unknown>)[rid] = slice;
+  return { ...state };
+}
+
+/**
+ * The state transition of an effect of this plugin (also used by the
  * `flow` test helper). Writes for a rid without a slice are ignored, so a
  * late effect of a finished request never resurrects it.
  */
@@ -73,26 +89,26 @@ export function applyRequestsEffect<S extends ServerState>(
     case "req.set":
     case "req.merge": {
       if (typeof rid !== "string" || !(rid in state.requests)) return state;
-      const base = ["requests", rid, ...segs(e.path ?? [])];
-      return (
+      const path = segs(e.path ?? []);
+      const slice =
         e.type === "req.set"
-          ? applyChange(state, {
+          ? applyChange(state.requests[rid], {
               plugin: "store",
               type: "set",
-              path: base,
+              path,
               value: e.value,
             })
-          : applyChange(state, {
+          : applyChange(state.requests[rid], {
               plugin: "store",
               type: "merge",
-              path: base,
+              path,
               value: e.value,
-            })
-      ) as S;
+            });
+      return putSlice(state, rid, slice);
     }
     case "req.clear": {
       if (typeof rid !== "string" || !(rid in state.requests)) return state;
-      return { ...state, requests: { ...state.requests, [rid]: {} } };
+      return putSlice(state, rid, {});
     }
     case "shared.set":
       return applyChange(state, {
@@ -186,12 +202,10 @@ export function createRequestsPlugin<S extends ServerState = ServerState>(
     getState: () => state,
     open(rid) {
       if (rid in state.requests) return;
-      state = { ...state, requests: { ...state.requests, [rid]: {} } };
+      state.requests[rid] = {}; // in place, see `putSlice`
     },
     drop(rid) {
-      if (!(rid in state.requests)) return;
-      const { [rid]: _gone, ...rest } = state.requests;
-      state = { ...state, requests: rest };
+      delete state.requests[rid];
     },
     rids: () => Object.keys(state.requests),
     handle(effect: RequestsEffect, ctx: PluginContext<S>) {

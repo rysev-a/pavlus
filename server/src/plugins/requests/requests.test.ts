@@ -37,6 +37,14 @@ describe("requests slice", () => {
       r2: {},
     });
   });
+  it("replaces slices instead of mutating them (the map is updated in place)", () => {
+    const s: ServerState = { requests: { r1: { a: 1 } }, shared: {} };
+    const before = s.requests.r1;
+    const next = applyRequestsEffect(s, stamp(rq.set("a", 2)) as never);
+    expect(before).toEqual({ a: 1 });
+    expect(next.requests.r1).toEqual({ a: 2 });
+    expect(next).not.toBe(s); // the root is new, so onState fires
+  });
   it("ignores writes for a rid without a slice", () => {
     const s: ServerState = { requests: {}, shared: {} };
     expect(applyRequestsEffect(s, stamp(rq.set("a", 1)) as never)).toBe(s);
