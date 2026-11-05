@@ -23,6 +23,12 @@ export type DomEffect =
       view: View;
       /** Message id dispatched once the view is in the DOM. */
       onMounted?: string;
+      /**
+       * For a view that cannot compute patches of its own (a direct view):
+       * the plugin repaints the mount on every state change. Set by `createApp`
+       * from the component's `updateDomOnStateChange`.
+       */
+      followState?: boolean;
     }
   | { plugin: "dom"; type: "unmount"; target: string | Element }
   | {
@@ -68,6 +74,10 @@ interface Instance {
   end: Comment;
   view: View;
   nodes: Map<string, Node>;
+  /** The state the instance was last rendered or repainted with. */
+  state: unknown;
+  /** Set by `followState`: the plugin repaints the instance on state changes. */
+  follow: boolean;
 }
 
 /**
@@ -115,7 +125,7 @@ export class DomPlugin implements Plugin<DomEffect, any> {
   static mount(
     target: string | Element,
     view: View,
-    options: { onMounted?: string } = {},
+    options: { onMounted?: string; followState?: boolean } = {},
   ): DomEffect {
     return {
       plugin: "dom",
@@ -123,6 +133,7 @@ export class DomPlugin implements Plugin<DomEffect, any> {
       target,
       view,
       ...(options.onMounted !== undefined && { onMounted: options.onMounted }),
+      ...(options.followState === true && { followState: true }),
     };
   }
 
@@ -212,7 +223,11 @@ export class DomPlugin implements Plugin<DomEffect, any> {
   mount(
     target: string | Element,
     view: View,
-    options: { onMounted?: string; ctx?: PluginContext<any> } = {},
+    options: {
+      onMounted?: string;
+      ctx?: PluginContext<any>;
+      followState?: boolean;
+    } = {},
   ): void {
     const ctx = options.ctx ?? this.ctx;
     const container = this.resolve(target);
@@ -226,6 +241,8 @@ export class DomPlugin implements Plugin<DomEffect, any> {
       end: server?.end ?? this.doc.createComment(RENDER_END),
       view,
       nodes: new Map(),
+      state,
+      follow: options.followState === true,
     };
     // A server render in the container (`renderToString`) is hydrated: the
     // markup stays, the listeners and ids are attached to it.
@@ -322,6 +339,7 @@ export class DomPlugin implements Plugin<DomEffect, any> {
         return this.mount(effect.target, effect.view, {
           onMounted: effect.onMounted,
           ctx,
+          followState: effect.followState,
         });
       case "unmount":
         return this.unmount(effect.target);
@@ -337,6 +355,22 @@ export class DomPlugin implements Plugin<DomEffect, any> {
   dispose() {
     for (const c of [...this.instances.keys()]) this.unmount(c);
     this.ctx = undefined;
+  }
+
+  /**
+   * Repaints the mounts that asked for it (`followState`): a view that has
+   * no component painting it — the root of an app whose component sets
+   * `updateDomOnStateChange`, typically a direct view without a `diff`.
+   * The patches come from the view's own `diff` of what it was last painted
+   * with against the new state, addressed to the mount's own nodes.
+   */
+  onState(next: unknown): void {
+    for (const inst of [...this.instances.values()]) {
+      if (!inst.follow) continue;
+      if (typeof inst.view.diff !== "function") continue; // a direct view
+      this.apply(inst.view.diff(inst.state, next), inst);
+      inst.state = next;
+    }
   }
 
   /* -------------------------------------------------------- DOM internals */

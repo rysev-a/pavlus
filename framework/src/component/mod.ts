@@ -170,7 +170,25 @@ export function viewOf<S = any, C = any>(
   opts: ViewOfOptions<S, C> = {},
 ): View | undefined {
   const view = "render" in c ? c : (c as { view?: View }).view;
-  if (!view) return undefined;
+  if (!view) {
+    // A direct view (src/direct) given directly: no render/diff, its `create`
+    // is a function. A component member named `create` (a child, a handler)
+    // must not be mistaken for one.
+    if (typeof (c as { create?: unknown }).create === "function")
+      return c as unknown as View;
+    return undefined;
+  }
+  if (typeof (view as { create?: unknown }).create === "function") {
+    // A direct view closed over the component: the owner rides in `env.o`.
+    const direct = view as unknown as {
+      create(env: object, state: unknown): unknown;
+    };
+    return {
+      ...direct,
+      create: (env: object, state: unknown) =>
+        direct.create({ ...env, o: c }, state),
+    } as unknown as View;
+  }
   const plain =
     opts.key === undefined &&
     opts.select === undefined &&
@@ -416,6 +434,12 @@ function planOf(component: Component): Plan {
 export abstract class Component<S = any> {
   /** The component's template. */
   declare view?: View;
+  /**
+   * For a view that cannot compute patches of its own (a direct view, built
+   * by `create` instead of `render`/`diff`): the plugin repaints the mount on
+   * every state change instead of applying the component's paint effects.
+   */
+  declare updateDomOnStateChange?: boolean;
   /**
    * Display tag for the debug agent: a stable name for this component kind,
    * shown and grouped in the panel's Apps tab (`"user-form"`).

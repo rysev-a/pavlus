@@ -1,0 +1,9 @@
+import Post from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Kinds of posts
+    p.k-demo__note A message, a song, a picture, a link and a repost that quotes the original post. The buttons send messages only.
+    div.k-preview.k-preview--column
+      for post in posts key post.id
+        +Post#post(...post)

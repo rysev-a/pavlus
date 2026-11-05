@@ -10,6 +10,13 @@ export interface DomEventInfo {
 export interface Message {
   id: string;
   payload?: unknown;
+  /**
+   * Context that rides with the message (a server request id, the connection
+   * it belongs to...). The core copies it onto every effect the message
+   * produces, and a plugin copies it onto its reply, so a flow keeps its
+   * context from the first message to the last.
+   */
+  ctx?: Record<string, unknown>;
   event?: DomEventInfo;
 }
 
@@ -18,6 +25,8 @@ export interface Effect {
   /** Name of the plugin that handles this effect. */
   plugin: string;
   type: string;
+  /** Stamped by the core from the message being handled (see Message.ctx). */
+  ctx?: Record<string, unknown>;
   [key: string]: unknown;
 }
 

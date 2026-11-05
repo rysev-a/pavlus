@@ -164,7 +164,7 @@ Die Plugins, die du für eine geroutete Anwendung brauchst, sind der Store (er h
 ```ts main.ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createRouterPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
@@ -174,7 +174,7 @@ createApp<AppState>({
   app: shell,
   plugins: [
     createStorePlugin(initialState),
-    createDomPlugin(),
+    new DomPlugin(),
     createRouterPlugin(),
   ],
   mount: "#app",
@@ -413,7 +413,7 @@ Ein Test steuert die ganze Site mit den echten Plugins in jsdom. Er klickt die L
 ```ts routing.test.ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createRouterPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
@@ -426,7 +426,7 @@ function start(path: string) {
   const store = createStorePlugin<AppState>(initialState);
   const app = createApp<AppState>({
     app: shell,
-    plugins: [store, createDomPlugin(), createRouterPlugin()],
+    plugins: [store, new DomPlugin(), createRouterPlugin()],
     mount: "#app",
   });
   return { app, store };
@@ -550,7 +550,7 @@ createApp<AppState>({
   app: shell,
   plugins: [
     createStorePlugin(initialState({ root })),
-    createDomPlugin(),
+    new DomPlugin(),
     createRouterPlugin({ window: windowAt(root) }),
   ],
   mount: "#app",

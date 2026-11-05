@@ -121,7 +121,7 @@ Each built-in plugin has its effector. The usual short alias is in the second co
 | Plugin | Effector (alias) |
 | --- | --- |
 | store | `storeEffector` as `store` |
-| dom | `domEffector` as `dom` |
+| dom | `DomPlugin` (static builders) |
 | http | `httpEffector` as `http` |
 | ws | `wsEffector` as `ws` |
 | time | `timeEffector` as `time` |
@@ -137,14 +137,14 @@ Plugins are listed when the application is created:
 ```ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createHttpPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
 
 createApp({
   app: dashboard,
-  plugins: [createStorePlugin(initialState), createDomPlugin(), createHttpPlugin()],
+  plugins: [createStorePlugin(initialState), new DomPlugin(), createHttpPlugin()],
   mount: "#app",
 });
 ```

@@ -154,7 +154,7 @@ These are thrown when the application starts or when an effect is performed. Eac
 ```text
 pavlus: no plugin "http" for effect "request"
 pavlus: duplicate plugin "store"
-pavlus: `mount` needs the dom plugin (createDomPlugin)
+pavlus: `mount` needs the dom plugin (new DomPlugin())
 pavlus/dom: target "#nope" not found
 pavlus: two children named "x" (routing "/x/:id"); give one a `name`
 pavlus: +outlet needs a component with a `routing` table; mount the component, not only its view
@@ -214,7 +214,7 @@ The logger plugin prints entries. It does not know what happened, so you ask for
 ```ts
 createApp({
   app: withLogging(shell, "shell"),
-  plugins: [createStorePlugin(initialState), createLoggerPlugin(), createDomPlugin()],
+  plugins: [createStorePlugin(initialState), createLoggerPlugin(), new DomPlugin()],
   mount: "#app",
 });
 ```

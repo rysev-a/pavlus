@@ -1,0 +1,67 @@
+// Posts (the blog): the list with search, tag chips and pages; one article; the article form.
+// State = the slice of modules/blog/index.ts.
+import Card from "../../../../blocks/blog-card/view.pavlus"
+import Reader from "../../../../blocks/article-reader/view.pavlus"
+import Pager from "../../../../blocks/pager-bar/view.pavlus"
+
+div.orbb
+  if mode === "read"
+    +Reader#reader(...reader)
+  else if mode === "form"
+    div.orbb__formhead
+      button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=cancel)
+        span.k-icon.k-icon-chevron-left
+        | Back
+      h2.orbb__heading {formView.heading}
+    div.ui-card.orbb__form
+      div.ui-field(data-invalid={formView.errors.title ? "true" : null})
+        label.ui-field-label Title
+          span.orbb__req  *
+        input.ui-input(type="text" placeholder="A title for your article" autocomplete="off" aria-invalid={formView.errors.title ? "true" : null} value={formView.title} @input=setTitle)
+        if formView.errors.title
+          p.ui-field-error {formView.errors.title}
+      div.ui-field
+        label.ui-field-label Tags
+        input.ui-input(type="text" placeholder="travel, art, food" autocomplete="off" value={formView.tagsText} @input=setTags)
+        p.ui-field-description Separate the tags with commas.
+      div.ui-field
+        label.ui-field-label Cover
+        div.orbb__covers
+          for c in formView.covers key c.i
+            button.orbb__cover(type="button" aria-label="Choose this cover" aria-pressed={c.selected ? "true" : "false"} class:is-on={c.selected} style={c.style} @click=pickCover(c.i)) {c.glyph}
+      div.ui-field(data-invalid={formView.errors.body ? "true" : null})
+        label.ui-field-label Text
+          span.orbb__req  *
+        textarea.ui-textarea-control.orbb__body(rows="10" placeholder="Write your article. A blank line starts a new paragraph." aria-invalid={formView.errors.body ? "true" : null} value={formView.body} @input=setBody)
+        if formView.errors.body
+          p.ui-field-error {formView.errors.body}
+        else
+          p.ui-field-description {formView.bodyCount}
+      div.orbb__formfoot
+        if formView.editing
+          button.ui-button.ui-button-destructive(type="button" @click=removeArticle) Delete
+        span.orbb__spacer
+        button.ui-button.ui-button-outline(type="button" @click=cancel) Cancel
+        button.ui-button.ui-button-default(type="button" @click=save) {formView.saveLabel}
+  else
+    div.orbb__bar
+      div.orbb__search
+        span.k-icon.k-icon-search
+        input.ui-input(type="search" aria-label="Search the articles" placeholder="Search by title or text" autocomplete="off" value={query} @input=search)
+      button.ui-button.ui-button-outline.ui-button-sm(type="button" aria-pressed={mine ? "true" : "false"} class:is-active={mine} @click=toggleMine) My posts
+      if canWrite
+        button.ui-button.ui-button-default.ui-button-sm(type="button" @click=create)
+          span.k-icon.k-icon-plus
+          | New article
+    if chips.length > 0
+      div.orbb__chips
+        for c in chips key c.tag
+          button.orbb__chip(type="button" aria-pressed={c.active ? "true" : "false"} class:is-on={c.active} @click=tag(c.tag)) {c.label}
+        if filtersOn
+          button.ui-button.ui-button-ghost.ui-button-xs(type="button" @click=clear) Clear filters
+    div.orbb__grid
+      for a in cards key a.id
+        +Card#card(...a)
+    if cards.length === 0
+      p.orbb__empty {empty}
+    +Pager#pager(...pager)

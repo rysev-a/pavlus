@@ -1,0 +1,198 @@
+// The admin panel of Orbit. State = the props: the slice of the `admin` module,
+// spread (see index.ts). One `view` at a time: denied (not an administrator),
+// overview, list (the generic data table), form (the generic create / update
+// form), detail (all the data of one user) or settings.
+import Stats from "../../../../blocks/stat-cards/view.pavlus"
+import Area from "../../../../blocks/area-chart/view.pavlus"
+import BarChart from "../../../../blocks/bar-chart/view.pavlus"
+import Meters from "../../../../blocks/progress-list/view.pavlus"
+import Table from "../../../../blocks/crud-table/view.pavlus"
+import Form from "../../../../blocks/crud-form/view.pavlus"
+
+div.orba
+  if view === "denied"
+    div.ui-card
+      div.ui-card-content.orba__denied
+        span.k-icon.k-ai-key
+        h3 Admins only
+        p This area is for administrators. Ask one of them to change your role.
+  else
+    div.ui-tabs-list.orba__tabs(role="tablist" aria-label="Admin sections")
+      for t in tabs key t.id
+        button.ui-tabs-trigger(type="button" role="tab" aria-selected={t.active ? "true" : "false"} @click=section(t.id))
+          span(class="k-icon {t.icon}")
+          | {t.label}
+    if view === "list" || view === "form" || view === "detail"
+      if guardNote
+        div.ui-alert.ui-alert-danger.orba__alert
+          span.ui-alert-icon
+            span.k-icon.k-icon-alert
+          div.ui-alert-body
+            p.ui-alert-title Not allowed
+            div.ui-alert-description {guardNote}
+      if confirm.open
+        div.ui-alert.orba__alert
+          span.ui-alert-icon
+            span.k-icon.k-icon-alert
+          div.ui-alert-body
+            p.ui-alert-title Are you sure?
+            div.ui-alert-description {confirm.text}
+            div.orba__bar
+              button.ui-button.ui-button-destructive.ui-button-sm(type="button" @click=confirmYes) Delete
+              button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=confirmNo) Cancel
+    if view === "overview"
+      div.orba__overview
+        +Stats#kpis(cards=overview.kpis)
+        div.orba__cols
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title New users per month
+              p.ui-card-description {overview.newUsers} sign-ups in the last twelve months
+            div.ui-card-content
+              +Area#usersChart(chart=overview.usersChart height="220px")
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title Wall posts per month
+              p.ui-card-description {overview.newPosts} posts in the last twelve months
+            div.ui-card-content
+              +BarChart#postsChart(columns=overview.postsCols height="220px")
+        div.orba__cols.orba__cols--even
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title Most active users
+              p.ui-card-description Posts, comments and messages
+            div.ui-card-content
+              +Meters#topUsers(items=overview.topUsers)
+          div.ui-card
+            div.ui-card-header
+              h3.ui-card-title Most active communities
+              p.ui-card-description Members and wall posts
+            div.ui-card-content
+              +Meters#topCommunities(items=overview.topCommunities)
+    else if view === "list"
+      if tabs.length > 0
+        if entities.length > 0
+          if section === "data"
+            div.orba__picker
+              label.ui-field-label(for="orba-entity") Table
+              select.ui-select-control#orba-entity(aria-label="Table" @change=entity)
+                for x in entities key x.value
+                  option(value={x.value} selected={x.active}) {x.label}
+      if bulk.show
+        div.orba__bulk
+          strong {bulk.count} ticked
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=bulkBan)
+            span.k-icon.k-ai-key
+            | Ban
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=bulkUnban) Unban
+          if bulk.canView
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=viewTicked)
+              span.k-icon.k-icon-user
+              | View all data
+      +Table#table(...grid)
+    else if view === "form"
+      if formUser > 0
+        div.orba__bulk
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=viewUser(formUser))
+            span.k-icon.k-icon-user
+            | View all data of this user
+      +Form#form(...form)
+    else if view === "detail"
+      div.orba__detail
+        div.ui-card
+          div.ui-card-content.orba__who
+            span.orba__avatar(style="{detail.avatarStyle}")
+            div.orba__whotext
+              h2 {detail.name}
+              p {detail.email}
+              div.orba__pills
+                span.ui-pill.ui-pill-info {detail.role}
+                span.ui-pill(class:ui-pill-destructive={detail.status === "banned"} class:ui-pill-success={detail.status !== "banned"}) {detail.status}
+            div.orba__bar
+              button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=detailBack)
+                span.k-icon.k-icon-chevron-left
+                | All users
+              button.ui-button.ui-button-default.ui-button-sm(type="button" @click=openWall) Open their wall
+              button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=detailEdit) Edit
+              button.ui-button.ui-button-outline.ui-button-sm.orba__danger(type="button" @click=detailRemove) Delete
+        div.orba__counts
+          for c in detail.counts key c.label
+            div.orba__count
+              span.orba__countlabel {c.label}
+              strong {c.value}
+        div.ui-card
+          div.ui-card-header
+            h3.ui-card-title Profile
+            p.ui-card-description Every field of the account except the password
+          div.ui-card-content
+            dl.orba__fields
+              for f in detail.fields key f.label
+                div.orba__field
+                  dt {f.label}
+                  dd {f.value}
+        div.orba__lists
+          for l in detail.lists key l.key
+            div.ui-card.orba__list
+              div.ui-card-header
+                h3.ui-card-title {l.title}
+                p.ui-card-description {l.total} in total
+              div.ui-card-content
+                if l.total === 0
+                  p.orba__empty {l.empty}
+                ul.orba__items
+                  for it in l.items key it.id
+                    li.orba__item
+                      if it.style
+                        span.orba__thumb(style="{it.style}")
+                      div.orba__itemtext
+                        strong {it.title}
+                        small {it.sub}
+              if l.pages > 1
+                div.ui-card-footer.orba__pager
+                  button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={l.page <= 1} @click=detailPage(l.key, -1)) Previous
+                  span Page {l.page} of {l.pages}
+                  button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={l.page >= l.pages} @click=detailPage(l.key, 1)) Next
+    else if view === "settings"
+      div.orba__settings
+        div.ui-card
+          div.ui-card-header
+            h3.ui-card-title Your data
+            p.ui-card-description {total} rows in {counts.length} tables, about {size}. Everything is stored in this browser (IndexedDB), nowhere else.
+          div.ui-card-content
+            div.orba__counts
+              for item in counts key item.id
+                div.orba__count
+                  span.orba__countlabel {item.label}
+                  strong {item.count}
+        div.ui-card
+          div.ui-card-header
+            h3.ui-card-title Export and import
+            p.ui-card-description Save all the data as one JSON file, or load a file you exported before. An import replaces everything.
+          div.ui-card-content.orba__row
+            button.ui-button.ui-button-default(type="button" @click=settingsExport)
+              span.k-icon.k-ai-arrow-down
+              | Export all data (JSON)
+            button.ui-button.ui-button-outline(type="button" @click=settingsImport)
+              span.k-icon.k-ai-file
+              | Import from a JSON file
+          if importError
+            div.ui-card-content
+              div.ui-alert.ui-alert-danger
+                span.ui-alert-icon
+                  span.k-icon.k-icon-alert
+                div.ui-alert-body
+                  p.ui-alert-title The file was not imported
+                  div.ui-alert-description {importError}
+        div.ui-card
+          div.ui-card-header
+            h3.ui-card-title Reset
+            p.ui-card-description Delete every change and bring back the sample data: 1000 users, their posts, photos, messages and the library of 10000 songs.
+          div.ui-card-content.orba__row
+            if askReset
+              span.orba__ask All your changes will be lost. Reset everything?
+              button.ui-button.ui-button-destructive(type="button" @click=settingsReset) Yes, reset all data
+              button.ui-button.ui-button-outline(type="button" @click=settingsCancelReset) Cancel
+            else
+              button.ui-button.ui-button-outline.orba__danger(type="button" @click=settingsAskReset)
+                span.k-icon.k-ai-refresh
+                | Reset all data

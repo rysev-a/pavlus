@@ -1,0 +1,45 @@
+// The box that writes a wall post of one of five kinds, to embed: `+Composer#composer(...composer)`
+// where `composer` comes from `composerView()` in modules/wall/posts.ts. State = kinds
+// ({ id, label, active }), kind, text, placeholder, error, canSend, songQuery, songs
+// ({ id, title, artist, selected }), pickedSong, hasSearch, photos ({ id, style, selected }),
+// noPhotos, pictures ({ i, style, glyph, selected }), url, linkTitle.
+// Events (with the name of the embed in front): pickKind(id), setText, setSongQuery, pickSong(id),
+// pickPhoto(id), pickPicture(i), setUrl, setLinkTitle, send.
+div.ui-card.k-wcomp
+  div.ui-tabs-list.k-wcomp__tabs(role="tablist")
+    for k in kinds key k.id
+      button.ui-tabs-trigger(type="button" role="tab" aria-selected={k.active ? "true" : "false"} @click=pickKind(k.id)) {k.label}
+  if kind === "music"
+    div.k-wcomp__search
+      span.k-icon.k-icon-search
+      input.ui-input(type="search" aria-label="Search the song library" placeholder="Search by title, artist or album" autocomplete="off" value={songQuery} @input=setSongQuery)
+    if pickedSong
+      p.k-wcomp__picked ♪ {pickedSong}
+    ul.k-wcomp__songs
+      for s in songs key s.id
+        li
+          button.k-wcomp__song(type="button" aria-pressed={s.selected ? "true" : "false"} class:is-on={s.selected} @click=pickSong(s.id))
+            strong {s.title}
+            span {s.artist}
+      if hasSearch && songs.length === 0
+        li.k-wcomp__none No songs found.
+  else if kind === "photo"
+    if noPhotos
+      p.k-wcomp__none You have no photos yet. Upload some in Photos.
+    div.k-wcomp__tiles
+      for p in photos key p.id
+        button.k-wcomp__tile(type="button" aria-label="Choose this photo" aria-pressed={p.selected ? "true" : "false"} class:is-on={p.selected} style={p.style} @click=pickPhoto(p.id))
+  else if kind === "picture"
+    div.k-wcomp__tiles
+      for p in pictures key p.i
+        button.k-wcomp__tile(type="button" aria-label="Choose this picture" aria-pressed={p.selected ? "true" : "false"} class:is-on={p.selected} style={p.style} @click=pickPicture(p.i)) {p.glyph}
+  else if kind === "link"
+    div.k-wcomp__links
+      input.ui-input(type="url" aria-label="Web address" placeholder="example.com/article" autocomplete="off" value={url} @input=setUrl)
+      input.ui-input(type="text" aria-label="Link title" placeholder="Title (optional)" autocomplete="off" value={linkTitle} @input=setLinkTitle)
+  textarea.ui-textarea-control.k-wcomp__text(rows="2" aria-label="Your message" placeholder={placeholder} value={text} @input=setText)
+  div.k-wcomp__foot
+    if error
+      span.ui-field-error {error}
+    span.k-wcomp__spacer
+    button.ui-button.ui-button-default.ui-button-sm(type="button" disabled={!canSend} @click=send) Post

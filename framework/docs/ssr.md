@@ -57,7 +57,7 @@ import { reviveState } from "@service-laboratory/pavlus/ssr";
 
 const json = (globalThis as { __STATE__?: string }).__STATE__;
 const store = createStorePlugin(json ? reviveState(json, { list, table }) : initialState);
-createApp({ app: shell, plugins: [store, createDomPlugin(), ...], mount: "#app" });
+createApp({ app: shell, plugins: [store, new DomPlugin(), ...], mount: "#app" });
 ```
 
 `mount` sees the two comments in the container and **hydrates**: it walks the

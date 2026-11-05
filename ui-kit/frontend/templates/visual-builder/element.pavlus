@@ -1,0 +1,174 @@
+// One element of a page, drawn from its view (`vb-builder/stage.ts`). The same
+// part draws the Design canvas (where the CSS makes it inert) and the Preview
+// (where its events are real): the page answers `e.onClick`, `e.onInput`, ...
+div.vb-el(inert={design} data-kind=kind data-tone={tone || null} data-radius={radius || null} data-size={size || null} data-align={align || null} data-weight={weight || null} data-ghost={ghost ? "true" : null} @mouseenter=onHover(id))
+  if kind === "heading"
+    if h1
+      h1.vb-h(@click=onClick(id)) {text}
+    else if h3
+      h3.vb-h(@click=onClick(id)) {text}
+    else
+      h2.vb-h(@click=onClick(id)) {text}
+  else if kind === "text"
+    p.vb-p(@click=onClick(id)) {text}
+  else if kind === "button"
+    button.ui-button.ui-button-default(type="button" data-variant=variant disabled={disabled} @click=onClick(id) @focus=onFocus(id) @blur=onBlur(id)) {text}
+  else if kind === "link"
+    a.vb-link(href=href @click.prevent=onLink(id)) {text}
+  else if kind === "image"
+    if hasSrc
+      img.vb-img(src=src alt=alt @click=onClick(id))
+    else
+      div.vb-img.vb-img--empty(role="img" aria-label=alt @click=onClick(id))
+        span.k-icon.k-icon-image
+        span {alt}
+  else if kind === "badge"
+    span.ui-badge.vb-badge(data-variant=variant @click=onClick(id)) {text}
+  else if kind === "progress"
+    div.vb-progress(@click=onClick(id))
+      div.vb-progress__head
+        span {label}
+        span {percentText}
+      div.ui-progress(role="progressbar" aria-label=label aria-valuemin="0" aria-valuemax="100" aria-valuenow="{percent}")
+        div.ui-progress-indicator(style="width: {percent}%")
+  else if kind === "card"
+    div.ui-card.vb-card(@click=onClick(id))
+      div.ui-card-content
+        h3.vb-card__title {title}
+        p.vb-card__text {text}
+  else if kind === "kpi"
+    div.ui-card.vb-kpi(@click=onClick(id))
+      div.ui-card-content
+        span.vb-kpi__label {label}
+        strong.vb-kpi__value {text}
+        if delta
+          span.vb-kpi__delta {delta}
+  else if kind === "input"
+    label.vb-field
+      span.vb-field__label {label}
+      input.ui-input(type=inputType value=value placeholder=placeholder @input=onInput(id) @change=onChange(id) @focus=onFocus(id) @blur=onBlur(id) @keydown=onKey(id))
+  else if kind === "textarea"
+    label.vb-field
+      span.vb-field__label {label}
+      textarea.ui-textarea-control(rows="3" value=value placeholder=placeholder @input=onInput(id) @change=onChange(id) @focus=onFocus(id) @blur=onBlur(id))
+  else if kind === "select"
+    label.vb-field
+      span.vb-field__label {label}
+      select.ui-select-control(@change=onChange(id) @focus=onFocus(id) @blur=onBlur(id))
+        option(value="") -
+        for o in options key o.k
+          option(value=o.label selected={o.selected}) {o.label}
+  else if kind === "checkbox"
+    label.vb-check
+      input(type="checkbox" checked={checked} @change=onChange(id) @focus=onFocus(id) @blur=onBlur(id))
+      span {label}
+  else if kind === "list"
+    div.vb-listbox
+      if isEmpty
+        p.vb-empty {empty}
+      else
+        ul.vb-list
+          for it in items key it.k
+            li.vb-list__item
+              button.vb-list__main(type="button" @click=onItem(id, it.index)) {it.title}
+              if removable
+                button.ui-button.ui-button-ghost.ui-button-sm.vb-list__x(type="button" aria-label="Remove {it.title}" @click=onRemove(id, it.index)) Remove
+  else if kind === "repeater"
+    div.vb-cards
+      if isEmpty
+        p.vb-empty {empty}
+      for it in items key it.k
+        div.ui-card.vb-card(@click=onItem(id, it.index))
+          div.ui-card-content
+            h3.vb-card__title {it.title}
+            p.vb-card__text {it.text}
+            if it.footer
+              span.vb-card__foot {it.footer}
+  else if kind === "table"
+    div.vb-tablebox
+      if searchBox
+        input.ui-input.vb-tablesearch(type="search" value=q placeholder="Search the table" aria-label="Search the table" @input=onSearch(id))
+      div.ui-table-container
+        table.ui-table
+          thead.ui-table-header
+            tr.ui-table-row
+              for col in columns key col.k
+                th.ui-table-head(aria-sort=col.sort)
+                  button.vb-th(type="button" @click=onSort(id, col.k)) {col.label}
+              if hasActions
+                th.ui-table-head Actions
+          tbody.ui-table-body
+            for r in rows key r.k
+              tr.ui-table-row.vb-tr(@click=onItem(id, r.index))
+                for c in r.cells key c.k
+                  td.ui-table-cell {c.text}
+                if hasActions
+                  td.ui-table-cell
+                    for a in rowActions key a
+                      button.ui-button.ui-button-outline.ui-button-sm(type="button" @click.stop=onRowAction(id, r.index, a)) {a}
+      if isEmpty
+        p.vb-empty {empty}
+      if paged
+        div.vb-pager
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={prevOff} @click=onPage(id, -1)) Previous
+          span Page {pageNo} of {pages} ({total})
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={nextOff} @click=onPage(id, 1)) Next
+  else if kind === "chart"
+    div.vb-chart
+      h3.vb-chart__title {title}
+      div.vb-chart__plot(id=chartId role="img" aria-label="{title}: {summary}" @click=onClick(id))
+  else if kind === "tabs"
+    div.vb-tabs
+      div.vb-tabs__bar(role="tablist")
+        for t in tabs key t.k
+          button.vb-tabs__tab(type="button" role="tab" aria-selected={t.active ? "true" : "false"} @click=onTab(id, t.label)) {t.label}
+      p.vb-tabs__panel(role="tabpanel") {panel}
+  else if kind === "accordion"
+    div.vb-acc
+      for t in tabs key t.k
+        div.vb-acc__item
+          button.vb-acc__head(type="button" aria-expanded={t.active ? "true" : "false"} @click=onTab(id, t.label)) {t.label}
+          if t.active
+            p.vb-acc__panel {t.panel}
+  else if kind === "modal"
+    if open
+      div.vb-modal(role="dialog" aria-modal="true" aria-label=title data-inline={design ? "true" : null})
+        div.vb-modal__box
+          h3 {title}
+          p {text}
+          button.ui-button.ui-button-default(type="button" @click=onClose(id)) {closeLabel}
+    else if design
+      div.vb-modal(role="dialog" aria-label=title data-inline="true")
+        div.vb-modal__box
+          h3 {title}
+          p {text}
+          button.ui-button.ui-button-default(type="button" @click=onClose(id)) {closeLabel}
+  else if kind === "form"
+    form.vb-form(novalidate @submit.prevent=onSubmit(id))
+      h3.vb-form__title {title}
+      for f in fields key f.k
+        div.vb-field(data-invalid={f.invalid})
+          if f.isCheck
+            label.vb-check
+              input(type="checkbox" checked={f.checked} @change=onField(id, f.name, "check"))
+              span {f.label}
+          else if f.isArea
+            label
+              span.vb-field__label {f.label}
+              textarea.ui-textarea-control(rows="3" value=f.value aria-invalid=f.invalid @input=onField(id, f.name, "text"))
+          else if f.isSelect
+            label
+              span.vb-field__label {f.label}
+              select.ui-select-control(aria-invalid=f.invalid @change=onField(id, f.name, "text"))
+                option(value="") -
+                for o in f.options key o.k
+                  option(value=o.label selected={o.selected}) {o.label}
+          else
+            label
+              span.vb-field__label {f.label}
+              input.ui-input(type=f.inputType value=f.value aria-invalid=f.invalid @input=onField(id, f.name, "text"))
+          if f.error
+            small.vb-error(role="alert") {f.error}
+      if formError
+        p.vb-error(role="alert") {formError}
+      button.ui-button.ui-button-default(type="submit") {submitLabel}

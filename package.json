@@ -5,6 +5,10 @@
   "workspaces": [
     "framework",
     "admin-app",
+    "phone-crm-app",
+    "social-network-app",
+    "maximus",
+    "server",
     "ui-kit"
   ],
   "scripts": {

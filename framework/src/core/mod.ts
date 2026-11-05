@@ -109,7 +109,11 @@ export function createApp<S = unknown>(opts: CreateAppOptions<S>): App {
           );
         }
         const msg = queue.shift()!;
-        const effects = app(msg, state);
+        const produced = app(msg, state);
+        // the context of a message rides on its effects (no-op without one)
+        const effects = msg.ctx
+          ? produced.map((e) => (e.ctx ? e : { ...e, ctx: msg.ctx }))
+          : produced;
         opts.onStep?.(msg, effects);
         for (const effect of effects) perform(effect);
         const next = getState();
@@ -134,7 +138,21 @@ export function createApp<S = unknown>(opts: CreateAppOptions<S>): App {
     if (!byName.has("dom")) {
       throw new Error("pavlus: `mount` needs the dom plugin (new DomPlugin())");
     }
-    perform(DomPlugin.mount(opts.mount, view, { onMounted: "mounted" }));
+    // A direct view (built by `create`, no `diff`) cannot compute paint
+    // effects, so its component opts into the plugin repainting on state
+    // changes instead.
+    const followState =
+      (
+        opts.app as Parameters<typeof viewOf>[0] & {
+          updateDomOnStateChange?: boolean;
+        }
+      ).updateDomOnStateChange === true;
+    perform(
+      DomPlugin.mount(opts.mount, view, {
+        onMounted: "mounted",
+        ...(followState && { followState: true }),
+      }),
+    );
   }
   if (opts.init) dispatch(opts.init);
 

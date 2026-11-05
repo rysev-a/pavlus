@@ -10,6 +10,8 @@ export interface NavItem {
   label: string;
   icon: string;
   badge?: string;
+  /** A real address for the link (an app with URL routing); default `#<id>`. */
+  href?: string;
 }
 export interface NavGroup {
   title: string;

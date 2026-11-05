@@ -9,7 +9,7 @@ summary: Все встроенные plugins в одном месте - dom, sto
 
 ```ts
 import {
-  domEffector as dom,
+  DomPlugin,
   httpEffector as http,
   loggerEffector as log,
   routerEffector as router,
@@ -19,7 +19,7 @@ import {
 } from "@service-laboratory/pavlus/plugins";
 ```
 
-Каждый plugin создаётся функцией с именем `createXPlugin(options)`, и каждая опция существует для того, чтобы тест мог подменить внешний мир. Опции тоже перечислены в конце страницы.
+Каждый plugin создаётся функцией с именем `createXPlugin(options)` — исключение: dom-плагин — это класс `new DomPlugin(options)` — и каждая опция существует для того, чтобы тест мог подменить внешний мир. Опции тоже перечислены в конце страницы.
 
 ## store
 
@@ -72,11 +72,11 @@ State **неизменяемый**. Каждое изменение строит
 
 ```ts
 open(): Effect[] {
-  return [dom.mount("#panel", panelView, { onMounted: "panelMounted" })];
+  return [DomPlugin.mount("#panel", panelView, { onMounted: "panelMounted" })];
 }
 
 panelMounted(): Effect[] {
-  return [dom.focus("input.filter")];
+  return [DomPlugin.focus("input.filter")];
 }
 ```
 
@@ -338,7 +338,7 @@ export const app = createApp<AppState>({
   app: shell,
   plugins: [
     store,
-    createDomPlugin(),
+    new DomPlugin(),
     // the site is served under a base path; the app routes without it
     createRouterPlugin({ window: windowAt(root) }),
     createHttpPlugin(),

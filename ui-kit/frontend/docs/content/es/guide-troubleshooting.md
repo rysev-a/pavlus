@@ -154,7 +154,7 @@ Se lanzan cuando la aplicación arranca o cuando se ejecuta un effect. Cada uno 
 ```text
 pavlus: no plugin "http" for effect "request"
 pavlus: duplicate plugin "store"
-pavlus: `mount` needs the dom plugin (createDomPlugin)
+pavlus: `mount` needs the dom plugin (new DomPlugin())
 pavlus/dom: target "#nope" not found
 pavlus: two children named "x" (routing "/x/:id"); give one a `name`
 pavlus: +outlet needs a component with a `routing` table; mount the component, not only its view
@@ -214,7 +214,7 @@ El plugin logger imprime entradas. No sabe lo que pasó, así que se lo pides. `
 ```ts
 createApp({
   app: withLogging(shell, "shell"),
-  plugins: [createStorePlugin(initialState), createLoggerPlugin(), createDomPlugin()],
+  plugins: [createStorePlugin(initialState), createLoggerPlugin(), new DomPlugin()],
   mount: "#app",
 });
 ```

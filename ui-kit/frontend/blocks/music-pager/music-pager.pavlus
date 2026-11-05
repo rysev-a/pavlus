@@ -1,0 +1,8 @@
+import Pager from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Pages of 2,413 songs
+    p.k-demo__note The count on the left, Previous / Next and a window of page numbers on the right.
+    div.k-preview.k-preview--block
+      +Pager#pager(...pager)

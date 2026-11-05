@@ -309,7 +309,7 @@ Schließlich der Browser. Er belebt den State wieder, falls es einen gibt, und m
 ```ts main.ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createHttpPlugin,
   createRouterPlugin,
   createStorePlugin,
@@ -325,7 +325,7 @@ createApp<AppState>({
     createStorePlugin(
       json ? reviveState<AppState>(json, components) : initialState,
     ),
-    createDomPlugin(),
+    new DomPlugin(),
     createRouterPlugin(),
     createHttpPlugin(),
   ],

@@ -226,7 +226,7 @@ export class DomPlugin implements Plugin<DomEffect, any> {
   stats(): DomStats { … }
 }
 // mod.ts — public API unchanged:
-export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin {
+export function new DomPlugin(opts: DomPluginOptions = {}): DomPlugin {
   return new DomPlugin(opts.document ?? globalThis.document);
 }
 ```

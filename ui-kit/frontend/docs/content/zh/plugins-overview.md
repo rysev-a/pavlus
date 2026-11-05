@@ -121,7 +121,7 @@ expect(toHandler(users)({ id: "load" }, state)).toEqual([
 | Plugin | Effector（别名） |
 | --- | --- |
 | store | `storeEffector` as `store` |
-| dom | `domEffector` as `dom` |
+| dom | `DomPlugin` (static builders) |
 | http | `httpEffector` as `http` |
 | ws | `wsEffector` as `ws` |
 | time | `timeEffector` as `time` |
@@ -137,14 +137,14 @@ plugin 在创建应用时列出：
 ```ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createHttpPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
 
 createApp({
   app: dashboard,
-  plugins: [createStorePlugin(initialState), createDomPlugin(), createHttpPlugin()],
+  plugins: [createStorePlugin(initialState), new DomPlugin(), createHttpPlugin()],
   mount: "#app",
 });
 ```

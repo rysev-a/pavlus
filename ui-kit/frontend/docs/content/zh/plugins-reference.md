@@ -9,7 +9,7 @@ summary: 所有内置 plugin 集中在一处：dom、store、http、router、tim
 
 ```ts
 import {
-  domEffector as dom,
+  DomPlugin,
   httpEffector as http,
   loggerEffector as log,
   routerEffector as router,
@@ -19,7 +19,7 @@ import {
 } from "@service-laboratory/pavlus/plugins";
 ```
 
-每个 plugin 都由名为 `createXPlugin(options)` 的函数创建，每个选项的存在，都是为了让测试可以替换外部世界。这些选项在本页末尾也有列出。
+每个 plugin 都由名为 `createXPlugin(options)` 的函数创建——dom 插件是例外，它是类：`new DomPlugin(options)`——每个选项的存在，都是为了让测试可以替换外部世界。这些选项在本页末尾也有列出。
 
 ## store
 
@@ -72,11 +72,11 @@ state 是**不可变**的。每次改动都会沿着路径构建新对象，其�
 
 ```ts
 open(): Effect[] {
-  return [dom.mount("#panel", panelView, { onMounted: "panelMounted" })];
+  return [DomPlugin.mount("#panel", panelView, { onMounted: "panelMounted" })];
 }
 
 panelMounted(): Effect[] {
-  return [dom.focus("input.filter")];
+  return [DomPlugin.focus("input.filter")];
 }
 ```
 
@@ -338,7 +338,7 @@ export const app = createApp<AppState>({
   app: shell,
   plugins: [
     store,
-    createDomPlugin(),
+    new DomPlugin(),
     // the site is served under a base path; the app routes without it
     createRouterPlugin({ window: windowAt(root) }),
     createHttpPlugin(),

@@ -355,3 +355,30 @@ describe("createApp({ mount })", () => {
     expect(dom.mounts[1].target).toBeUndefined();
   });
 });
+
+describe("message context", () => {
+  test("is stamped on the effects of a message and kept by a reply", () => {
+    const seen: unknown[] = [];
+    const echo: Plugin<any, any> = {
+      name: "echo",
+      handle(e, ctx) {
+        seen.push(e.ctx);
+        if (e.type === "x") ctx.dispatch({ id: "back", ctx: e.ctx });
+      },
+    };
+    const app = createApp({
+      app: (m: Message) =>
+        m.id === "go"
+          ? [{ plugin: "echo", type: "x" }]
+          : m.id === "back"
+            ? [{ plugin: "echo", type: "y", ctx: { rid: "other" } }]
+            : [],
+      plugins: [echo],
+    });
+    app.dispatch({ id: "go", ctx: { rid: "r1" } });
+    expect(seen[0]).toEqual({ rid: "r1" });
+    // an effect that already has a context keeps it; messages without one are untouched
+    app.dispatch({ id: "back" });
+    expect(seen[seen.length - 1]).toEqual({ rid: "other" });
+  });
+});

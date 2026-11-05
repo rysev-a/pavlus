@@ -21,7 +21,7 @@ You register it with the others:
 ```ts
 createApp({
   app: shell,
-  plugins: [createStorePlugin(initialState), createDomPlugin(), titlePlugin],
+  plugins: [createStorePlugin(initialState), new DomPlugin(), titlePlugin],
   mount: "#app",
 });
 ```

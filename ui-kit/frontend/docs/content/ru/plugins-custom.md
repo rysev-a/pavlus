@@ -21,7 +21,7 @@ export const titlePlugin: Plugin = {
 ```ts
 createApp({
   app: shell,
-  plugins: [createStorePlugin(initialState), createDomPlugin(), titlePlugin],
+  plugins: [createStorePlugin(initialState), new DomPlugin(), titlePlugin],
   mount: "#app",
 });
 ```

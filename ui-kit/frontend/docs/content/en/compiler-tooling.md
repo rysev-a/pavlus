@@ -147,7 +147,7 @@ import {
   type Effect,
   type Message,
 } from "@service-laboratory/pavlus";
-import { createDomPlugin } from "@service-laboratory/pavlus/plugins/dom";
+import { DomPlugin } from "@service-laboratory/pavlus/plugins/dom";
 import {
   createStorePlugin,
   storeEffector as store,
@@ -167,7 +167,7 @@ class Counter extends Component<State> {
 
 createApp<State>({
   app: new Counter(),
-  plugins: [createStorePlugin<State>({ count: 0 }), createDomPlugin()],
+  plugins: [createStorePlugin<State>({ count: 0 }), new DomPlugin()],
   mount: "#app",
 });
 ```

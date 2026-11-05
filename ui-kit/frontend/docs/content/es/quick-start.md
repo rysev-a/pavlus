@@ -110,14 +110,14 @@ Crea `main.ts`. `createApp` conecta el componente con sus plugins. Ahora necesit
 ```ts main.ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
 import { counter, type CounterState } from "./counter.ts";
 
 createApp<CounterState>({
   app: counter,
-  plugins: [createStorePlugin<CounterState>({ count: 0 }), createDomPlugin()],
+  plugins: [createStorePlugin<CounterState>({ count: 0 }), new DomPlugin()],
   mount: "#app",
 });
 ```

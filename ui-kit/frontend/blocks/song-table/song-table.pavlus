@@ -1,0 +1,13 @@
+import Table from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title A library listing
+    p.k-demo__note Title with the artist under it, album, genre, year and time. Play and Add to playlist on every row; the playing song is highlighted.
+    div.k-preview.k-preview--block
+      +Table#library(...library)
+  section.k-demo
+    h2.k-demo__title The rows of a playlist
+    p.k-demo__note With numbers, and remove / move up / move down.
+    div.k-preview.k-preview--block
+      +Table#playlist(...playlist)

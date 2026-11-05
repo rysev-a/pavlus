@@ -1,0 +1,30 @@
+{
+  "name": "pavlus-server",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A backend framework with the pavlus ideology: the application is a pure function, http, websockets, Postgres and Redis are plugins, and a request id rides on every message",
+  "type": "module",
+  "exports": {
+    ".": "./src/mod.ts",
+    "./testing": "./src/testing/mod.ts",
+    "./plugins/*": "./src/plugins/*/mod.ts",
+    "./ctx": "./src/ctx.ts",
+    "./routing": "./src/routing.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "bench": "node bench/run.ts",
+    "example": "node examples/todo-api/main.ts"
+  },
+  "dependencies": {
+    "@service-laboratory/pavlus": "*",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

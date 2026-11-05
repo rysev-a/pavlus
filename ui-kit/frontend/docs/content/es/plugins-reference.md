@@ -9,7 +9,7 @@ Todos los ejemplos usan el alias corto del effector, como en [Cómo funcionan lo
 
 ```ts
 import {
-  domEffector as dom,
+  DomPlugin,
   httpEffector as http,
   loggerEffector as log,
   routerEffector as router,
@@ -19,7 +19,7 @@ import {
 } from "@service-laboratory/pavlus/plugins";
 ```
 
-Cada plugin se crea con una función llamada `createXPlugin(options)`, y cada opción existe para que un test pueda reemplazar el mundo exterior. Las opciones también se listan al final de la página.
+Cada plugin se crea con una función llamada `createXPlugin(options)` — el plugin dom es la excepción, una clase: `new DomPlugin(options)` — y cada opción existe para que un test pueda reemplazar el mundo exterior. Las opciones también se listan al final de la página.
 
 ## store
 
@@ -72,11 +72,11 @@ La raíz de tu aplicación la monta `createApp({ mount })`. Los effects de abajo
 
 ```ts
 open(): Effect[] {
-  return [dom.mount("#panel", panelView, { onMounted: "panelMounted" })];
+  return [DomPlugin.mount("#panel", panelView, { onMounted: "panelMounted" })];
 }
 
 panelMounted(): Effect[] {
-  return [dom.focus("input.filter")];
+  return [DomPlugin.focus("input.filter")];
 }
 ```
 
@@ -338,7 +338,7 @@ export const app = createApp<AppState>({
   app: shell,
   plugins: [
     store,
-    createDomPlugin(),
+    new DomPlugin(),
     // the site is served under a base path; the app routes without it
     createRouterPlugin({ window: windowAt(root) }),
     createHttpPlugin(),

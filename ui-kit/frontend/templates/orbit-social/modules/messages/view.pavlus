@@ -1,0 +1,190 @@
+// The "messages" screen of Orbit. State = the props: the module's slice, spread (see index.ts).
+// Events (the message is `messages.<event>`): openConv(id), back, setQuery, moreRows, setDraft,
+// keyDraft (Enter sends), send, deleteMessage(id), loadEarlier, toggleInfo, startRename, setRenameTitle,
+// saveRename, cancelRename, setAddQuery, addMember(id), removeMember(id), leave, openDmPanel, openChatPanel,
+// closePanel, setDmQuery, startDm(id), setChatTitle, setChatQuery, togglePick(id), createChat.
+div.orbm
+  div.orbm__body(data-pane={pane})
+    aside.ui-card.orbm__side
+      if panel === "dm"
+        div.orbm__sidehead
+          button.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-label="Back to conversations" @click=closePanel)
+            span.k-icon.k-icon-chevron-left
+          h2.orbm__h New message
+        div.orbm__pad
+          div.k-input-group.orbm__search
+            span.k-input-group__addon.k-input-group__addon--start
+              span.k-icon.k-icon-search
+            input.ui-input(type="search" placeholder="Search people by name" aria-label="Search people" autocomplete="off" value={dmQuery} @input=setDmQuery)
+        if dmResults.length === 0
+          p.orbm__empty Nobody matches.
+        else
+          ul.orbm__people
+            for p in dmResults key p.id
+              li
+                button.orbm__person(type="button" @click=startDm(p.id))
+                  span.orbm__av(style={p.pic}) {p.glyph}
+                  span.orbm__ptext
+                    strong {p.name}
+                    span {p.sub}
+      else if panel === "chat"
+        div.orbm__sidehead
+          button.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-label="Back to conversations" @click=closePanel)
+            span.k-icon.k-icon-chevron-left
+          h2.orbm__h New chat
+        div.orbm__pad
+          div.ui-field
+            label.ui-label Chat title
+            input.ui-input(type="text" maxlength="60" placeholder="Weekend trip" value={chatTitle} @input=setChatTitle)
+          div.k-input-group.orbm__search
+            span.k-input-group__addon.k-input-group__addon--start
+              span.k-icon.k-icon-search
+            input.ui-input(type="search" placeholder="Search people to add" aria-label="Search people to add" autocomplete="off" value={chatQuery} @input=setChatQuery)
+          if chatPickedRows.length > 0
+            div.orbm__chips
+              for p in chatPickedRows key p.id
+                button.orbm__chip(type="button" aria-label="Remove {p.name}" @click=togglePick(p.id))
+                  span.orbm__av.orbm__av-sm(style={p.pic}) {p.glyph}
+                  | {p.name}
+                  span.k-icon.k-icon-x
+        if chatResults.length === 0
+          p.orbm__empty Nobody matches.
+        else
+          ul.orbm__people
+            for p in chatResults key p.id
+              li
+                button.orbm__person(type="button" class:is-picked={p.picked} aria-pressed={p.picked ? "true" : "false"} @click=togglePick(p.id))
+                  span.orbm__av(style={p.pic}) {p.glyph}
+                  span.orbm__ptext
+                    strong {p.name}
+                    span {p.sub}
+                  if p.picked
+                    span.k-icon.k-icon-check
+        div.orbm__pad.orbm__foot
+          p.orbm__hint {chatNeed}
+          if chatError
+            p.ui-field-error(role="alert") {chatError}
+          button.ui-button.ui-button-default(type="button" @click=createChat) Create chat
+      else
+        div.orbm__sidehead
+          h2.orbm__h Chats
+          div.orbm__tools
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=openDmPanel)
+              span.k-icon.k-icon-plus
+              | Message
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=openChatPanel)
+              span.k-icon.k-icon-plus
+              | Chat
+        div.orbm__pad
+          div.k-input-group.orbm__search
+            span.k-input-group__addon.k-input-group__addon--start
+              span.k-icon.k-icon-search
+            input.ui-input(type="search" placeholder="Search conversations" aria-label="Search conversations" autocomplete="off" value={query} @input=setQuery)
+        if rows.length === 0
+          p.orbm__empty No conversations yet. Start with New message.
+        else
+          ul.orbm__list
+            for r in rows key r.id
+              li
+                button.orbm__row(type="button" class:is-active={r.active} aria-current={r.active ? "true" : null} @click=openConv(r.id))
+                  if r.isChat
+                    span.orbm__stack
+                      for a in r.stack key a.id
+                        span.orbm__av.orbm__av-sm(style={a.pic}) {a.glyph}
+                  else
+                    span.orbm__av(style={r.pic}) {r.glyph}
+                  span.orbm__rtext
+                    span.orbm__rtop
+                      strong.orbm__rname {r.title}
+                      span.orbm__time {r.time}
+                    span.orbm__preview {r.preview}
+          if moreRows
+            div.orbm__pad
+              button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=moreRows) Show more conversations
+    section.ui-card.orbm__main
+      if thread
+        header.orbm__head
+          button.ui-button.ui-button-ghost.ui-button-sm.orbm__back(type="button" aria-label="Back to conversations" @click=back)
+            span.k-icon.k-icon-chevron-left
+          if thread.isChat
+            span.orbm__stack
+              for a in thread.stack key a.id
+                span.orbm__av.orbm__av-sm(style={a.pic}) {a.glyph}
+          else
+            span.orbm__av(style={thread.pic}) {thread.glyph}
+          div.orbm__who
+            strong.orbm__title {thread.title}
+            span.orbm__sub {thread.subtitle}
+          if thread.isChat
+            button.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-label="Chat info" aria-pressed={info ? "true" : "false"} @click=toggleInfo)
+              span.k-icon.k-icon-info
+        if info
+          if thread.isChat
+            div.orbm__info
+              if renaming
+                div.orbm__rename
+                  input.ui-input(type="text" maxlength="60" aria-label="Chat title" value={renameTitle} @input=setRenameTitle)
+                  button.ui-button.ui-button-default.ui-button-sm(type="button" @click=saveRename) Save
+                  button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=cancelRename) Cancel
+              else
+                div.orbm__inforow
+                  h3.orbm__h {thread.title}
+                  if thread.isCreator
+                    button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=startRename) Rename
+              h4.orbm__sech Members ({thread.count})
+              ul.orbm__members
+                for m in thread.members key m.id
+                  li.orbm__member
+                    span.orbm__av.orbm__av-sm(style={m.pic}) {m.glyph}
+                    span.orbm__mname {m.name}
+                    if m.creator
+                      span.ui-badge.ui-badge-secondary Creator
+                    if m.you
+                      span.ui-badge.ui-badge-outline You
+                    if m.canRemove
+                      button.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-label="Remove {m.name}" @click=removeMember(m.id))
+                        span.k-icon.k-icon-x
+              if thread.isCreator
+                h4.orbm__sech Add people
+                div.k-input-group.orbm__search
+                  span.k-input-group__addon.k-input-group__addon--start
+                    span.k-icon.k-icon-search
+                  input.ui-input(type="search" placeholder="Search users" aria-label="Search users to add" autocomplete="off" value={addQuery} @input=setAddQuery)
+                if thread.addResults.length === 0
+                  p.orbm__empty Nobody matches.
+                else
+                  ul.orbm__people
+                    for p in thread.addResults key p.id
+                      li
+                        button.orbm__person(type="button" @click=addMember(p.id))
+                          span.orbm__av.orbm__av-sm(style={p.pic}) {p.glyph}
+                          span.orbm__ptext
+                            strong {p.name}
+                            span {p.sub}
+                          span.k-icon.k-icon-plus
+              button.ui-button.ui-button-destructive.ui-button-sm.orbm__leave(type="button" @click=leave) Leave chat
+        div.orbm__log(role="log" aria-live="polite")
+          div.orbm__inner
+            if thread.hasMore
+              button.ui-button.ui-button-outline.ui-button-sm.orbm__earlier(type="button" @click=loadEarlier) Load earlier messages ({thread.earlier})
+            if thread.messages.length === 0
+              p.orbm__empty No messages yet. Say hello.
+            for m in thread.messages key m.id
+              div.orbm__msg(class:is-mine={m.mine})
+                if m.showAuthor
+                  span.orbm__av.orbm__av-sm(style={m.pic}) {m.glyph}
+                div.orbm__bubble
+                  if m.showAuthor
+                    strong.orbm__author {m.name}
+                  p.orbm__text {m.text}
+                  span.orbm__mtime {m.time}
+                if m.mine
+                  button.ui-button.ui-button-ghost.ui-button-sm.orbm__del(type="button" aria-label="Delete message" @click=deleteMessage(m.id))
+                    span.k-icon.k-icon-x
+        div.orbm__composer
+          input.ui-input(type="text" aria-label="Message" placeholder="Write a message..." autocomplete="off" maxlength="2000" value={draft} @input=setDraft @keydown=keyDraft)
+          button.ui-button.ui-button-default(type="button" disabled={!canSend} @click=send) Send
+      else
+        div.orbm__none
+          span.k-icon.k-icon-mail
+          p Pick a conversation, or start a new one.

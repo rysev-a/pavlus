@@ -137,14 +137,14 @@ Plugins werden aufgelistet, wenn die Anwendung erzeugt wird:
 ```ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createHttpPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
 
 createApp({
   app: dashboard,
-  plugins: [createStorePlugin(initialState), createDomPlugin(), createHttpPlugin()],
+  plugins: [createStorePlugin(initialState), new DomPlugin(), createHttpPlugin()],
   mount: "#app",
 });
 ```

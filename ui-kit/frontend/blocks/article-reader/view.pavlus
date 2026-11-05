@@ -1,0 +1,34 @@
+// A whole article, to embed: `+Reader#reader(...article)`. State = id, title, coverStyle,
+// coverGlyph, authorId, authorName, avatarStyle, avatarText, when, tags (strings), paragraphs
+// (strings), likes, liked, canEdit, canDelete. Events (with the name of the embed in front):
+// back, author(authorId), like(id), tag(name), edit(id), remove(id).
+article.ui-card.k-areader
+  div.k-areader__cover(style={coverStyle}) {coverGlyph}
+  div.k-areader__body
+    button.ui-button.ui-button-ghost.ui-button-sm.k-areader__back(type="button" @click=back)
+      span.k-icon.k-icon-chevron-left
+      | Back to the list
+    h2.k-areader__title {title}
+    div.k-areader__by
+      button.k-areader__av(type="button" aria-label="Open the wall of {authorName}" style={avatarStyle} @click=author(authorId)) {avatarText}
+      button.k-areader__author(type="button" @click=author(authorId)) {authorName}
+      span.k-areader__when {when}
+    div.k-areader__text
+      for para, i in paragraphs key i
+        p {para}
+    div.k-areader__tags
+      for t in tags key t
+        button.k-areader__tag(type="button" @click=tag(t)) {"#" + t}
+    div.k-areader__foot
+      button.ui-button.ui-button-outline.ui-button-sm(type="button" aria-pressed={liked ? "true" : "false"} @click=like(id))
+        span.k-icon.k-icon-heart(class:k-icon-heart-fill={liked})
+        | {likes}
+      span.k-areader__spacer
+      if canEdit
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=edit(id))
+          span.k-icon.k-ai-edit
+          | Edit
+      if canDelete
+        button.ui-button.ui-button-destructive.ui-button-sm(type="button" @click=remove(id))
+          span.k-icon.k-ai-trash
+          | Delete

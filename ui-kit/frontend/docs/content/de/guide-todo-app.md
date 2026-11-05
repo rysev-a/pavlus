@@ -169,14 +169,14 @@ export const todos = new Todos();
 ```ts src/main.ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
 import { initialTodos, todos } from "./todos.ts";
 
 createApp({
   app: todos,
-  plugins: [createStorePlugin(initialTodos), createDomPlugin()],
+  plugins: [createStorePlugin(initialTodos), new DomPlugin()],
   mount: "#app",
 });
 ```
@@ -724,7 +724,7 @@ test("loaded puts the saved list into the state", () => {
 ```ts src/main.ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createLoggerPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
@@ -735,7 +735,7 @@ createApp({
   app: todos,
   plugins: [
     createStorePlugin(initialTodos),
-    createDomPlugin(),
+    new DomPlugin(),
     createLoggerPlugin(),
     createStoragePlugin(),
   ],
@@ -748,7 +748,7 @@ Um das Speichern ohne echten Storage zu testen, gib dem Plugin ein Objekt mit `g
 ```ts src/persistence.test.ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
 import { expect, test } from "vitest";
@@ -765,7 +765,7 @@ function start(saved: Record<string, string>) {
     app: todos,
     plugins: [
       createStorePlugin(initialTodos),
-      createDomPlugin(),
+      new DomPlugin(),
       createStoragePlugin({ storage }),
     ],
     mount: "#app",
@@ -885,7 +885,7 @@ Die Seite ändert sich um ein Wort. Eine geroutete Seite ist nicht die Wurzel de
 ```ts src/main.ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createLoggerPlugin,
   createRouterPlugin,
   createStorePlugin,
@@ -897,7 +897,7 @@ createApp<AppState>({
   app,
   plugins: [
     createStorePlugin(initialState),
-    createDomPlugin(),
+    new DomPlugin(),
     createRouterPlugin(),
     createLoggerPlugin(),
     createStoragePlugin(),
@@ -921,7 +921,7 @@ Ein neuer Test steuert die ganze Anwendung, einschließlich des Routers und des 
 ```ts src/app.test.ts
 import { createApp } from "@service-laboratory/pavlus";
 import {
-  createDomPlugin,
+  DomPlugin,
   createRouterPlugin,
   createStorePlugin,
 } from "@service-laboratory/pavlus/plugins";
@@ -940,7 +940,7 @@ function start(saved: Record<string, string> = {}) {
     app,
     plugins: [
       createStorePlugin(initialState),
-      createDomPlugin(),
+      new DomPlugin(),
       createRouterPlugin(),
       createStoragePlugin({ storage }),
     ],

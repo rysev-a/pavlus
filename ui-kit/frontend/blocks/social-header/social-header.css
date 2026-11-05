@@ -1,0 +1,13 @@
+.ui-card.k-shead { gap: 0; padding: 0; overflow: hidden; min-width: 0; }
+.k-shead__cover { height: calc(110px * var(--k-block, 1)); opacity: .9; }
+.k-shead__main { display: flex; flex-wrap: wrap; align-items: flex-start; gap: calc(14px * var(--k-block, 1)); padding: 0 calc(18px * var(--k-block, 1)) calc(18px * var(--k-block, 1)); min-width: 0; }
+.k-shead__avatar { display: grid; place-items: center; flex: none; width: 88px; height: 88px; margin-top: -44px; border: 4px solid var(--card); border-radius: 999px; background: var(--muted); color: var(--primary-foreground); font-size: 36px; font-weight: 700; overflow: hidden; }
+.k-shead__info { flex: 1 1 220px; display: grid; gap: 6px; min-width: 0; padding-top: 10px; }
+.k-shead__titleline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.k-shead__title { margin: 0; font-size: 22px; font-weight: 700; overflow-wrap: anywhere; }
+.k-shead__sub { margin: 0; font-size: 14px; color: var(--muted-foreground); }
+.k-shead__about { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
+.k-shead__stats { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 4px 0 0; padding: 0; list-style: none; font-size: 14px; }
+.k-shead__stats li { display: flex; gap: 6px; align-items: baseline; }
+.k-shead__stats span { color: var(--muted-foreground); }
+.k-shead__actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; }
