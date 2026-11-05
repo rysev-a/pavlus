@@ -11,7 +11,12 @@ export interface History<T> {
 
 export const LIMIT = 100;
 
-export const start = <T>(present: T): History<T> => ({ past: [], present, future: [], tag: "" });
+export const start = <T>(present: T): History<T> => ({
+  past: [],
+  present,
+  future: [],
+  tag: "",
+});
 
 /**
  * Records `next`. With a `tag` equal to the tag of the previous commit (typing
@@ -32,10 +37,20 @@ export const canRedo = <T>(h: History<T>): boolean => h.future.length > 0;
 export function undo<T>(h: History<T>): History<T> {
   if (!canUndo(h)) return h;
   const past = h.past.slice(0, -1);
-  return { past, present: h.past[h.past.length - 1], future: [h.present, ...h.future], tag: "" };
+  return {
+    past,
+    present: h.past[h.past.length - 1],
+    future: [h.present, ...h.future],
+    tag: "",
+  };
 }
 
 export function redo<T>(h: History<T>): History<T> {
   if (!canRedo(h)) return h;
-  return { past: [...h.past, h.present], present: h.future[0], future: h.future.slice(1), tag: "" };
+  return {
+    past: [...h.past, h.present],
+    present: h.future[0],
+    future: h.future.slice(1),
+    tag: "",
+  };
 }

@@ -31,7 +31,8 @@ const visibleOn = (e: El, bp: Bp): boolean => !e.hide[bp];
 /** the elements stacked full width in reading order (the default mobile layout) */
 export function stacked(elements: El[]): Layout {
   const sorted = [...elements].sort(
-    (a, b) => a.pos.desktop.y - b.pos.desktop.y || a.pos.desktop.x - b.pos.desktop.x,
+    (a, b) =>
+      a.pos.desktop.y - b.pos.desktop.y || a.pos.desktop.x - b.pos.desktop.x,
   );
   const out: Layout = {};
   let y = 0;
@@ -91,7 +92,13 @@ export function resolve(layout: Layout, id: string): Layout {
 }
 
 /** The layout after `id` moved to (x, y); null when the element is not on `bp`. */
-export function moveTo(section: Section, bp: Bp, id: string, x: number, y: number): Section | null {
+export function moveTo(
+  section: Section,
+  bp: Bp,
+  id: string,
+  x: number,
+  y: number,
+): Section | null {
   const layout = layoutOf(section, bp);
   const r = layout[id];
   if (!r) return null;
@@ -99,7 +106,13 @@ export function moveTo(section: Section, bp: Bp, id: string, x: number, y: numbe
   return withLayout(section, bp, resolve(layout, id));
 }
 
-export function resizeTo(section: Section, bp: Bp, id: string, w: number, h: number): Section | null {
+export function resizeTo(
+  section: Section,
+  bp: Bp,
+  id: string,
+  w: number,
+  h: number,
+): Section | null {
   const layout = layoutOf(section, bp);
   const r = layout[id];
   if (!r) return null;
@@ -107,7 +120,12 @@ export function resizeTo(section: Section, bp: Bp, id: string, w: number, h: num
   return withLayout(section, bp, resolve(layout, id));
 }
 
-export function setRect(section: Section, bp: Bp, id: string, rect: Partial<Rect>): Section | null {
+export function setRect(
+  section: Section,
+  bp: Bp,
+  id: string,
+  rect: Partial<Rect>,
+): Section | null {
   const layout = layoutOf(section, bp);
   const r = layout[id];
   if (!r) return null;
@@ -115,13 +133,23 @@ export function setRect(section: Section, bp: Bp, id: string, rect: Partial<Rect
   return withLayout(section, bp, resolve(layout, id));
 }
 
-export const nudge = (section: Section, bp: Bp, id: string, dx: number, dy: number): Section | null => {
+export const nudge = (
+  section: Section,
+  bp: Bp,
+  id: string,
+  dx: number,
+  dy: number,
+): Section | null => {
   const r = layoutOf(section, bp)[id];
   return r ? moveTo(section, bp, id, r.x + dx, r.y + dy) : null;
 };
 
 /** The first free spot of size w x h, scanning rows from the top. */
-export function freeSpot(layout: Layout, w: number, h: number): { x: number; y: number } {
+export function freeSpot(
+  layout: Layout,
+  w: number,
+  h: number,
+): { x: number; y: number } {
   const cw = Math.min(COLS, w);
   const rects = Object.values(layout);
   for (let y = 0; y < MAX_ROWS; y++)
@@ -155,9 +183,14 @@ export function addElement(
   for (const bp of ["tablet", "mobile"] as const) {
     if (section.elements.some((e) => e.pos[bp])) {
       const l = layoutOf(out, bp);
-      l[el.id] = bp === "mobile" ? { x: 0, y: rowsUsed(layoutOf(section, bp)), w: COLS, h } : rect;
+      l[el.id] =
+        bp === "mobile"
+          ? { x: 0, y: rowsUsed(layoutOf(section, bp)), w: COLS, h }
+          : rect;
       out = withLayout(out, bp, resolve(l, el.id));
     }
   }
-  return at ? withLayout(out, "desktop", resolve(layoutOf(out, "desktop"), el.id)) : out;
+  return at
+    ? withLayout(out, "desktop", resolve(layoutOf(out, "desktop"), el.id))
+    : out;
 }

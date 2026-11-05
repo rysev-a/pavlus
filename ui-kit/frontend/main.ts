@@ -10,6 +10,7 @@ import {
   createRouterPlugin,
   createStorePlugin,
   createHttpPlugin,
+  createSvgPlugin,
   createTimePlugin,
 } from "@service-laboratory/pavlus/plugins";
 import { app as shell, type AppState, initialState } from "./app.ts";
@@ -19,6 +20,7 @@ import { initialLang } from "./docs/pages.ts";
 import { createExportPlugin } from "./export.ts";
 import { createFilesPlugin } from "./files.ts";
 import { createIdbPlugin } from "./idb.ts";
+import { createLocalPlugin } from "./local.ts";
 import { createRandomPlugin } from "./random.ts";
 import { createSourcePlugin } from "./source.ts";
 import { createThemePlugin, initialLook } from "./theme.ts";
@@ -51,6 +53,8 @@ export const app = createApp<AppState>({
     createSourcePlugin(),
     createExportPlugin(),
     createIdbPlugin(),
+    createLocalPlugin(),
+    createSvgPlugin(),
     createFilesPlugin(),
     createDocsPlugin(),
     createThemePlugin(),

@@ -34,7 +34,10 @@ export function parseUrl(url: string): Parsed {
 }
 
 /** Matches `/api/users/:id` or `/api/*` against a path; the params, or null. */
-export function matchPath(pattern: string, path: string): Record<string, string> | null {
+export function matchPath(
+  pattern: string,
+  path: string,
+): Record<string, string> | null {
   const p = parseUrl(pattern).path.split("/").filter(Boolean);
   const a = path.split("/").filter(Boolean);
   const params: Record<string, string> = {};
@@ -47,7 +50,11 @@ export function matchPath(pattern: string, path: string): Record<string, string>
   return p.length === a.length ? params : null;
 }
 
-function fillTokens(v: unknown, params: Record<string, string>, query: Record<string, string>): unknown {
+function fillTokens(
+  v: unknown,
+  params: Record<string, string>,
+  query: Record<string, string>,
+): unknown {
   if (typeof v === "string") {
     const m = /^\$(param|query):(\w+)$/.exec(v);
     if (!m) return v;
@@ -62,7 +69,11 @@ function fillTokens(v: unknown, params: Record<string, string>, query: Record<st
   return v;
 }
 
-export function routeMock(routes: MockRoute[], method: string, url: string): MockResponse {
+export function routeMock(
+  routes: MockRoute[],
+  method: string,
+  url: string,
+): MockResponse {
   const { path, query } = parseUrl(url);
   const m = method.toUpperCase() || "GET";
   for (const r of routes) {
@@ -71,13 +82,25 @@ export function routeMock(routes: MockRoute[], method: string, url: string): Moc
     if (!params) continue;
     let data: unknown = null;
     try {
-      data = r.body.trim() ? fillTokens(JSON.parse(r.body), params, query) : null;
+      data = r.body.trim()
+        ? fillTokens(JSON.parse(r.body), params, query)
+        : null;
     } catch {
-      return { status: 500, data: { error: `Mock route ${r.path} has invalid JSON` }, delay: r.delay, route: r.id };
+      return {
+        status: 500,
+        data: { error: `Mock route ${r.path} has invalid JSON` },
+        delay: r.delay,
+        route: r.id,
+      };
     }
     return { status: r.status, data, delay: r.delay, route: r.id };
   }
-  return { status: 404, data: { error: `No mock route for ${m} ${path}` }, delay: 0, route: "" };
+  return {
+    status: 404,
+    data: { error: `No mock route for ${m} ${path}` },
+    delay: 0,
+    route: "",
+  };
 }
 
 export const isOk = (status: number): boolean => status >= 200 && status < 300;

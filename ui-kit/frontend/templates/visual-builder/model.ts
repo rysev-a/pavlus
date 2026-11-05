@@ -58,7 +58,8 @@ export type EventName =
   | "invalid"
   | "remove"
   | "rowAction"
-  | "close";
+  | "close"
+  | "load";
 
 export const EVENT_LABEL: Record<EventName, string> = {
   click: "click",
@@ -73,18 +74,13 @@ export const EVENT_LABEL: Record<EventName, string> = {
   remove: "remove item",
   rowAction: "row action",
   close: "close",
+  load: "page load / preview start",
 };
 
 // ---- actions ----
 
 export type ActionType =
-  | "set"
-  | "toggle"
-  | "push"
-  | "remove"
-  | "http"
-  | "navigate"
-  | "notice";
+  "set" | "toggle" | "push" | "remove" | "http" | "navigate" | "notice";
 
 export interface Action {
   t: ActionType;
@@ -147,7 +143,14 @@ export interface MockRoute {
 export interface FormField {
   name: string;
   label: string;
-  type: "text" | "email" | "number" | "password" | "textarea" | "select" | "checkbox";
+  type:
+    | "text"
+    | "email"
+    | "number"
+    | "password"
+    | "textarea"
+    | "select"
+    | "checkbox";
   required: "yes" | "no";
   minLength: string;
   maxLength: string;
@@ -259,7 +262,12 @@ export const ELEMENTS: Record<ElType, ElDef> = {
     h: 1,
     props: [
       { name: "text", label: "Text", kind: "text" },
-      { name: "level", label: "Level", kind: "choice", choices: ["1", "2", "3"] },
+      {
+        name: "level",
+        label: "Level",
+        kind: "choice",
+        choices: ["1", "2", "3"],
+      },
     ],
     defaults: { text: "A heading", level: "2" },
     events: ["click", "hover"],
@@ -288,7 +296,12 @@ export const ELEMENTS: Record<ElType, ElDef> = {
         kind: "choice",
         choices: ["default", "secondary", "outline", "destructive"],
       },
-      { name: "disabled", label: "Disabled when", kind: "expr", hint: "expression" },
+      {
+        name: "disabled",
+        label: "Disabled when",
+        kind: "expr",
+        hint: "expression",
+      },
     ],
     defaults: { text: "Button", variant: "default", disabled: "" },
     events: ["click", "hover", "focus", "blur"],
@@ -332,7 +345,14 @@ export const ELEMENTS: Record<ElType, ElDef> = {
         name: "variant",
         label: "Variant",
         kind: "choice",
-        choices: ["default", "secondary", "outline", "destructive", "success", "warning"],
+        choices: [
+          "default",
+          "secondary",
+          "outline",
+          "destructive",
+          "success",
+          "warning",
+        ],
       },
     ],
     defaults: { text: "New", variant: "default" },
@@ -407,7 +427,12 @@ export const ELEMENTS: Record<ElType, ElDef> = {
     h: 2,
     props: [
       { name: "label", label: "Label", kind: "text" },
-      { name: "options", label: "Options", kind: "text", hint: "a, b, c  or  {state.list}" },
+      {
+        name: "options",
+        label: "Options",
+        kind: "text",
+        hint: "a, b, c  or  {state.list}",
+      },
     ],
     defaults: { label: "Choose", options: "One, Two, Three" },
     events: ["change", "focus", "blur", "hover"],
@@ -437,7 +462,12 @@ export const ELEMENTS: Record<ElType, ElDef> = {
       { name: "errorsKey", label: "Errors key (json)", kind: "key" },
       { name: "okText", label: "Message after a valid submit", kind: "text" },
     ],
-    defaults: { title: "Contact us", submitLabel: "Send", errorsKey: "", okText: "" },
+    defaults: {
+      title: "Contact us",
+      submitLabel: "Send",
+      errorsKey: "",
+      okText: "",
+    },
     events: ["submit", "invalid", "input", "hover"],
     primary: "submit",
     bindable: true,
@@ -450,12 +480,32 @@ export const ELEMENTS: Record<ElType, ElDef> = {
     w: 5,
     h: 5,
     props: [
-      { name: "source", label: "Array (expression)", kind: "expr", hint: "state.todos" },
-      { name: "itemText", label: "Item text", kind: "text", hint: "{item.title}" },
-      { name: "removable", label: "Remove button", kind: "choice", choices: ["no", "yes"] },
+      {
+        name: "source",
+        label: "Array (expression)",
+        kind: "expr",
+        hint: "state.todos",
+      },
+      {
+        name: "itemText",
+        label: "Item text",
+        kind: "text",
+        hint: "{item.title}",
+      },
+      {
+        name: "removable",
+        label: "Remove button",
+        kind: "choice",
+        choices: ["no", "yes"],
+      },
       { name: "empty", label: "Empty text", kind: "text" },
     ],
-    defaults: { source: "state.items", itemText: "{item}", removable: "no", empty: "Nothing here yet." },
+    defaults: {
+      source: "state.items",
+      itemText: "{item}",
+      removable: "no",
+      empty: "Nothing here yet.",
+    },
     events: ["click", "remove", "hover"],
     primary: "click",
   },
@@ -465,12 +515,37 @@ export const ELEMENTS: Record<ElType, ElDef> = {
     w: 8,
     h: 7,
     props: [
-      { name: "source", label: "Array (expression)", kind: "expr", hint: "state.users" },
-      { name: "columns", label: "Columns", kind: "text", hint: "name, email  (blank = all)" },
-      { name: "filter", label: "Row filter (row)", kind: "expr", hint: "contains(row.name, state.q)" },
-      { name: "search", label: "Search box", kind: "choice", choices: ["no", "yes"] },
+      {
+        name: "source",
+        label: "Array (expression)",
+        kind: "expr",
+        hint: "state.users",
+      },
+      {
+        name: "columns",
+        label: "Columns",
+        kind: "text",
+        hint: "name, email  (blank = all)",
+      },
+      {
+        name: "filter",
+        label: "Row filter (row)",
+        kind: "expr",
+        hint: "contains(row.name, state.q)",
+      },
+      {
+        name: "search",
+        label: "Search box",
+        kind: "choice",
+        choices: ["no", "yes"],
+      },
       { name: "pageSize", label: "Rows per page (0 = all)", kind: "text" },
-      { name: "rowActions", label: "Row actions", kind: "text", hint: "Edit, Delete" },
+      {
+        name: "rowActions",
+        label: "Row actions",
+        kind: "text",
+        hint: "Edit, Delete",
+      },
       { name: "empty", label: "Empty text", kind: "text" },
     ],
     defaults: {
@@ -491,12 +566,22 @@ export const ELEMENTS: Record<ElType, ElDef> = {
     w: 12,
     h: 4,
     props: [
-      { name: "source", label: "Array (expression)", kind: "expr", hint: "state.plans" },
+      {
+        name: "source",
+        label: "Array (expression)",
+        kind: "expr",
+        hint: "state.plans",
+      },
       { name: "title", label: "Card title", kind: "text", hint: "{item.name}" },
       { name: "text", label: "Card text", kind: "text", hint: "{item.price}" },
       { name: "footer", label: "Card footer", kind: "text" },
     ],
-    defaults: { source: "state.items", title: "{item.title}", text: "{item.text}", footer: "" },
+    defaults: {
+      source: "state.items",
+      title: "{item.title}",
+      text: "{item.text}",
+      footer: "",
+    },
     events: ["click", "hover"],
     primary: "click",
   },
@@ -507,7 +592,12 @@ export const ELEMENTS: Record<ElType, ElDef> = {
     h: 3,
     props: [
       { name: "label", label: "Label", kind: "text" },
-      { name: "value", label: "Value", kind: "text", hint: '{sum(state.orders, "amount")}' },
+      {
+        name: "value",
+        label: "Value",
+        kind: "text",
+        hint: '{sum(state.orders, "amount")}',
+      },
       { name: "delta", label: "Note", kind: "text" },
     ],
     defaults: { label: "Total", value: "{len(state.items)}", delta: "" },
@@ -520,9 +610,19 @@ export const ELEMENTS: Record<ElType, ElDef> = {
     w: 6,
     h: 6,
     props: [
-      { name: "kind", label: "Kind", kind: "choice", choices: ["bar", "line", "pie"] },
+      {
+        name: "kind",
+        label: "Kind",
+        kind: "choice",
+        choices: ["bar", "line", "pie"],
+      },
       { name: "title", label: "Title", kind: "text" },
-      { name: "source", label: "Array (expression)", kind: "expr", hint: "state.sales" },
+      {
+        name: "source",
+        label: "Array (expression)",
+        kind: "expr",
+        hint: "state.sales",
+      },
       { name: "labelField", label: "Label field", kind: "text" },
       { name: "valueField", label: "Value field", kind: "text" },
       { name: "filter", label: "Row filter (row)", kind: "expr" },
@@ -547,7 +647,10 @@ export const ELEMENTS: Record<ElType, ElDef> = {
       { name: "tabs", label: "Tab labels", kind: "text", hint: "One, Two" },
       { name: "panels", label: "Panels (| between)", kind: "area" },
     ],
-    defaults: { tabs: "Overview, Details", panels: "Overview text | Details text" },
+    defaults: {
+      tabs: "Overview, Details",
+      panels: "Overview text | Details text",
+    },
     events: ["change", "hover"],
     primary: "change",
     bindable: true,
@@ -562,7 +665,10 @@ export const ELEMENTS: Record<ElType, ElDef> = {
       { name: "titles", label: "Titles", kind: "text", hint: "First, Second" },
       { name: "panels", label: "Panels (| between)", kind: "area" },
     ],
-    defaults: { titles: "First, Second", panels: "First answer | Second answer" },
+    defaults: {
+      titles: "First, Second",
+      panels: "First answer | Second answer",
+    },
     events: ["change", "hover"],
     primary: "change",
     bindable: true,
@@ -586,6 +692,12 @@ export const ELEMENTS: Record<ElType, ElDef> = {
   },
 };
 
+/** the events an element can have: its own and `load` */
+export const eventsOf = (type: ElType): EventName[] => [
+  ...ELEMENTS[type].events,
+  "load",
+];
+
 export const EL_TYPES = Object.keys(ELEMENTS) as ElType[];
 
 export const STYLE_CHOICES = {
@@ -596,7 +708,14 @@ export const STYLE_CHOICES = {
   weight: ["", "normal", "medium", "bold"],
 };
 
-export const BG_CHOICES = ["none", "muted", "card", "primary", "secondary", "accent"];
+export const BG_CHOICES = [
+  "none",
+  "muted",
+  "card",
+  "primary",
+  "secondary",
+  "accent",
+];
 export const PAD_CHOICES = ["none", "sm", "md", "lg"];
 
 export const SECTION_LABEL: Record<SectionKind, string> = {
@@ -617,11 +736,22 @@ export function newId(m: Model, prefix: string): { model: Model; id: string } {
 }
 
 export function emptyModel(): Model {
-  const m: Model = { name: "Untitled", pages: [], keys: [], mocks: [], mockOn: true, seq: 0 };
+  const m: Model = {
+    name: "Untitled",
+    pages: [],
+    keys: [],
+    mocks: [],
+    mockOn: true,
+    seq: 0,
+  };
   return addPage(m, "Home", "/").model;
 }
 
-export function addPage(m: Model, name: string, slug: string): { model: Model; id: string } {
+export function addPage(
+  m: Model,
+  name: string,
+  slug: string,
+): { model: Model; id: string } {
   const { model, id } = newId(m, "p");
   const page: Page = { id, name, slug, sections: [] };
   return { model: { ...model, pages: [...model.pages, page] }, id };
@@ -648,7 +778,10 @@ export function makeElement(m: Model, type: ElType): { model: Model; el: El } {
 export function defaultFormFields(): FormField[] {
   return [
     blankField("name", "Name", "text", "yes"),
-    { ...blankField("email", "Email", "email", "yes"), message: "Enter a valid email" },
+    {
+      ...blankField("email", "Email", "email", "yes"),
+      message: "Enter a valid email",
+    },
   ];
 }
 
@@ -688,7 +821,10 @@ export function findElement(m: Model, id: string): Found | null {
   return null;
 }
 
-export function findSection(m: Model, id: string): { page: Page; section: Section } | null {
+export function findSection(
+  m: Model,
+  id: string,
+): { page: Page; section: Section } | null {
   for (const page of m.pages) {
     const section = page.sections.find((s) => s.id === id);
     if (section) return { page, section };
@@ -699,10 +835,16 @@ export function findSection(m: Model, id: string): { page: Page; section: Sectio
 export const allElements = (m: Model): El[] =>
   m.pages.flatMap((p) => p.sections.flatMap((s) => s.elements));
 
-export function mapSections(m: Model, fn: (s: Section, p: Page) => Section): Model {
+export function mapSections(
+  m: Model,
+  fn: (s: Section, p: Page) => Section,
+): Model {
   return {
     ...m,
-    pages: m.pages.map((p) => ({ ...p, sections: p.sections.map((s) => fn(s, p)) })),
+    pages: m.pages.map((p) => ({
+      ...p,
+      sections: p.sections.map((s) => fn(s, p)),
+    })),
   };
 }
 
@@ -723,7 +865,10 @@ export function removeElement(m: Model, id: string): Model {
 }
 
 /** A copy of an element with new ids, one row below the original. */
-export function duplicateElement(m: Model, id: string): { model: Model; id: string } | null {
+export function duplicateElement(
+  m: Model,
+  id: string,
+): { model: Model; id: string } | null {
   const f = findElement(m, id);
   if (!f) return null;
   const { model, id: nid } = newId(m, "e");
@@ -746,4 +891,5 @@ export function stateKey(m: Model, path: string): StateKey | undefined {
   return m.keys.find((k) => k.key === root);
 }
 
-export const isIdent = (s: string): boolean => /^[A-Za-z_][A-Za-z0-9_]*$/.test(s);
+export const isIdent = (s: string): boolean =>
+  /^[A-Za-z_][A-Za-z0-9_]*$/.test(s);

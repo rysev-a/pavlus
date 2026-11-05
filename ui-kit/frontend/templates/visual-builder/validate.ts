@@ -8,15 +8,21 @@ export function validateField(f: FormField, value: unknown): string {
   const text = value === null || value === undefined ? "" : String(value);
   const custom = (fallback: string): string => f.message || fallback;
   if (f.type === "checkbox") {
-    return f.required === "yes" && value !== true ? custom(`${f.label} is required`) : "";
+    return f.required === "yes" && value !== true
+      ? custom(`${f.label} is required`)
+      : "";
   }
-  if (text.trim() === "") return f.required === "yes" ? custom(`${f.label} is required`) : "";
-  if (f.type === "email" && !EMAIL.test(text)) return custom("Enter a valid email");
+  if (text.trim() === "")
+    return f.required === "yes" ? custom(`${f.label} is required`) : "";
+  if (f.type === "email" && !EMAIL.test(text))
+    return custom("Enter a valid email");
   if (f.type === "number") {
     const n = Number(text);
     if (!Number.isFinite(n)) return custom("Enter a number");
-    if (f.min !== "" && n < Number(f.min)) return custom(`Must be at least ${f.min}`);
-    if (f.max !== "" && n > Number(f.max)) return custom(`Must be at most ${f.max}`);
+    if (f.min !== "" && n < Number(f.min))
+      return custom(`Must be at least ${f.min}`);
+    if (f.max !== "" && n > Number(f.max))
+      return custom(`Must be at most ${f.max}`);
   }
   if (f.minLength !== "" && text.length < Number(f.minLength))
     return custom(`At least ${f.minLength} characters`);
@@ -24,7 +30,8 @@ export function validateField(f: FormField, value: unknown): string {
     return custom(`At most ${f.maxLength} characters`);
   if (f.pattern !== "") {
     try {
-      if (!new RegExp(f.pattern).test(text)) return custom(`${f.label} has the wrong format`);
+      if (!new RegExp(f.pattern).test(text))
+        return custom(`${f.label} has the wrong format`);
     } catch {
       return "";
     }

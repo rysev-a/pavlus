@@ -15,13 +15,19 @@ import { type KeyType, type StateKey } from "./model.ts";
 
 const asList = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
 const field = (row: unknown, f: unknown): unknown =>
-  f === undefined || f === "" ? row : (row as Record<string, unknown> | null)?.[String(f)];
+  f === undefined || f === ""
+    ? row
+    : (row as Record<string, unknown> | null)?.[String(f)];
 const numOf = (x: unknown): number => {
   const n = typeof x === "number" ? x : parseFloat(String(x));
   return Number.isFinite(n) ? n : 0;
 };
 const text = (x: unknown): string =>
-  x === null || x === undefined ? "" : typeof x === "object" ? JSON.stringify(x) : String(x);
+  x === null || x === undefined
+    ? ""
+    : typeof x === "object"
+      ? JSON.stringify(x)
+      : String(x);
 
 export const HELPERS: Record<string, (...a: any[]) => unknown> = {
   contains: (a, b) => text(a).toLowerCase().includes(text(b).toLowerCase()),
@@ -38,7 +44,9 @@ export const HELPERS: Record<string, (...a: any[]) => unknown> = {
   sum: (l, f) => asList(l).reduce<number>((s, r) => s + numOf(field(r, f)), 0),
   avg: (l, f) => {
     const xs = asList(l);
-    return xs.length ? xs.reduce<number>((s, r) => s + numOf(field(r, f)), 0) / xs.length : 0;
+    return xs.length
+      ? xs.reduce<number>((s, r) => s + numOf(field(r, f)), 0) / xs.length
+      : 0;
   },
   max: (l, f) => Math.max(0, ...asList(l).map((r) => numOf(field(r, f)))),
   min: (l, f) => {
@@ -46,10 +54,20 @@ export const HELPERS: Record<string, (...a: any[]) => unknown> = {
     return xs.length ? Math.min(...xs) : 0;
   },
   count: (l, f, v) =>
-    v === undefined ? asList(l).length : asList(l).filter((r) => field(r, f) === v).length,
+    v === undefined
+      ? asList(l).length
+      : asList(l).filter((r) => field(r, f) === v).length,
   where: (l, f, v) => asList(l).filter((r) => field(r, f) === v),
   pick: (l, f) => asList(l).map((r) => field(r, f)),
-  join: (l, sep) => asList(l).map(text).join(sep === undefined ? ", " : text(sep)),
+  join: (l, sep) =>
+    asList(l)
+      .map(text)
+      .join(sep === undefined ? ", " : text(sep)),
+  obj: (...kv) => {
+    const o: Record<string, unknown> = {};
+    for (let i = 0; i + 1 < kv.length; i += 2) o[text(kv[i])] = kv[i + 1];
+    return o;
+  },
   at: (l, i) => asList(l)[numOf(i)],
   first: (l) => asList(l)[0],
   last: (l) => asList(l)[asList(l).length - 1],
@@ -65,13 +83,17 @@ export const HELPERS: Record<string, (...a: any[]) => unknown> = {
 
 export type Scope = Record<string, unknown>;
 
-export function scopeOf(state: Record<string, unknown>, extras: Scope = {}): Scope {
+export function scopeOf(
+  state: Record<string, unknown>,
+  extras: Scope = {},
+): Scope {
   return { ...HELPERS, ...extras, state };
 }
 
 // ---- expressions ----
 
-export type Result = { ok: true; value: unknown } | { ok: false; error: string };
+export type Result =
+  { ok: true; value: unknown } | { ok: false; error: string };
 
 type Compiled = ((scope: Scope) => unknown) | Error;
 const cache = new Map<string, Compiled>();
@@ -82,7 +104,11 @@ const cache = new Map<string, Compiled>();
  * member access.
  */
 export function unsafeExpr(src: string): string {
-  if (/\b(constructor|__proto__|prototype|globalThis|window|document|Function|eval)\b/.test(src))
+  if (
+    /\b(constructor|__proto__|prototype|globalThis|window|document|Function|eval)\b/.test(
+      src,
+    )
+  )
     return "This name is not allowed in an expression";
   if (/[\w)\]]\s*\[/.test(src) || /\?\.\s*\[/.test(src))
     return "Bracket access is not available: use at(list, i) or a path";
@@ -105,7 +131,9 @@ function compile(src: string): Compiled {
         return node.events.x.payload;
       };
     } catch (e) {
-      out = new Error(e instanceof Error ? e.message.replace(/^.*?: /, "") : String(e));
+      out = new Error(
+        e instanceof Error ? e.message.replace(/^.*?: /, "") : String(e),
+      );
     }
   if (cache.size > 2000) cache.clear();
   cache.set(src, out);
@@ -130,7 +158,11 @@ export function exprError(src: string): string {
   return c instanceof Error ? c.message : "";
 }
 
-export const truthy = (src: string, scope: Scope, whenEmpty = true): boolean => {
+export const truthy = (
+  src: string,
+  scope: Scope,
+  whenEmpty = true,
+): boolean => {
   if (!src.trim()) return whenEmpty;
   const r = evalExpr(src, scope);
   return r.ok ? Boolean(r.value) : whenEmpty;
@@ -188,12 +220,16 @@ export function splitTemplate(src: string): Part[] {
   return parts;
 }
 
-export const hasHoles = (src: string): boolean => splitTemplate(src).some((p) => typeof p !== "string");
+export const hasHoles = (src: string): boolean =>
+  splitTemplate(src).some((p) => typeof p !== "string");
 
 export const toText = text;
 
 /** Fills the holes. A failing hole shows as `⚠ message` and is also returned. */
-export function interpolate(src: string, scope: Scope): { text: string; errors: string[] } {
+export function interpolate(
+  src: string,
+  scope: Scope,
+): { text: string; errors: string[] } {
   const errors: string[] = [];
   const out = splitTemplate(src)
     .map((p) => {
@@ -209,7 +245,8 @@ export function interpolate(src: string, scope: Scope): { text: string; errors: 
   return { text: out, errors };
 }
 
-export const fill = (src: string, scope: Scope): string => interpolate(src, scope).text;
+export const fill = (src: string, scope: Scope): string =>
+  interpolate(src, scope).text;
 
 /** The expression errors of a template (for the inspector). */
 export function templateError(src: string): string {
@@ -224,7 +261,8 @@ export function templateError(src: string): string {
 /** The state keys a template or expression reads: `state.user.name` -> `user`. */
 export function refsOf(src: string): string[] {
   const found = new Set<string>();
-  for (const m of src.matchAll(/(?<![\w.])state\.([A-Za-z_]\w*)/g)) found.add(m[1]);
+  for (const m of src.matchAll(/(?<![\w.])state\.([A-Za-z_]\w*)/g))
+    found.add(m[1]);
   return [...found];
 }
 
@@ -245,7 +283,13 @@ export function setPath(
   value: unknown,
 ): Record<string, unknown> {
   const [head, ...rest] = path.split(".");
-  if (!head || head === "__proto__" || head === "constructor" || head === "prototype") return data;
+  if (
+    !head ||
+    head === "__proto__" ||
+    head === "constructor" ||
+    head === "prototype"
+  )
+    return data;
   if (rest.length === 0) return { ...data, [head]: value };
   const child = data[head];
   const base =
@@ -265,16 +309,25 @@ export function parseInitial(k: StateKey): { value: unknown; error: string } {
     case "number": {
       if (t === "") return { value: 0, error: "" };
       const n = Number(t);
-      return Number.isFinite(n) ? { value: n, error: "" } : { value: 0, error: "Not a number" };
+      return Number.isFinite(n)
+        ? { value: n, error: "" }
+        : { value: 0, error: "Not a number" };
     }
     case "boolean":
-      return { value: t === "true", error: t === "true" || t === "false" || t === "" ? "" : "Use true or false" };
+      return {
+        value: t === "true",
+        error:
+          t === "true" || t === "false" || t === "" ? "" : "Use true or false",
+      };
     case "json":
       if (t === "") return { value: null, error: "" };
       try {
         return { value: JSON.parse(t), error: "" };
       } catch (e) {
-        return { value: null, error: e instanceof Error ? e.message : "Invalid JSON" };
+        return {
+          value: null,
+          error: e instanceof Error ? e.message : "Invalid JSON",
+        };
       }
   }
 }
