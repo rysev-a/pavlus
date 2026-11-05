@@ -1,0 +1,18 @@
+// One field of the inspector. What it edits is in `ctx` and `name`: the page
+// answers `f.edit` for all of them, with the typed value in `msg.event.value`.
+div.vb-f
+  label.vb-f__label(for=id) {label}
+  if isText
+    input.ui-input(id=id type="text" value=value placeholder=hint aria-invalid=invalid @input=edit(ctx, name))
+  else if isNumber
+    input.ui-input(id=id type="number" value=value aria-invalid=invalid @input=edit(ctx, name))
+  else if isKey
+    input.ui-input(id=id type="text" list="vb-keys" value=value placeholder=hint aria-invalid=invalid @input=edit(ctx, name))
+  else if isArea
+    textarea.ui-textarea-control(id=id rows="3" value=value placeholder=hint aria-invalid=invalid @input=edit(ctx, name))
+  else if isChoice
+    select.ui-select-control(id=id @change=edit(ctx, name))
+      for c in choices key c.v
+        option(value=c.v selected={c.selected}) {c.label}
+  if error
+    small.vb-f__error(role="alert") {error}
