@@ -13,9 +13,10 @@ export type LocalEffect = Effect & { plugin: "local" } & (
     | { type: "load"; key: string; onSuccess: string }
     | { type: "copy"; text: string; onSuccess?: string; onError?: string }
     | { type: "open"; url: string }
-    | { type: "keys"; onMessage: string }
+    | { type: "keys"; onMessage: string; root?: string; keys?: string[] }
     | { type: "unkeys" }
     | { type: "prefix"; name: string; onSuccess: string }
+    | { type: "media"; query: string; onSuccess: string }
   );
 
 export const localEffector = {
@@ -41,11 +42,28 @@ export const localEffector = {
     onError,
   }),
   open: (url: string): LocalEffect => ({ plugin: "local", type: "open", url }),
-  /** Starts sending `{ key, ctrl, shift }` for the keys outside text fields to `onMessage`. */
-  keys: (onMessage: string): LocalEffect => ({
+  /**
+   * Starts sending `{ key, ctrl, shift }` for the keys outside text fields to
+   * `onMessage`. Only while an element matching `root` (default `.vb`, the Visual
+   * Builder) is on the page; `keys` lists the wanted keys (default: Delete, the
+   * arrows, Escape and Ctrl+Z / Y / D). Space and Enter are left to a focused
+   * button or link.
+   */
+  keys: (
+    onMessage: string,
+    opts: { root?: string; keys?: string[] } = {},
+  ): LocalEffect => ({
     plugin: "local",
     type: "keys",
     onMessage,
+    ...opts,
+  }),
+  /** Replies `{ matches }` for a media query (`(prefers-reduced-motion: reduce)`). */
+  media: (query: string, onSuccess: string): LocalEffect => ({
+    plugin: "local",
+    type: "media",
+    query,
+    onSuccess,
   }),
   unkeys: (): LocalEffect => ({ plugin: "local", type: "unkeys" }),
   /** Replies the prefix that messages of the asking component carry (`name` is the reply id without it). */
@@ -55,6 +73,20 @@ export const localEffector = {
     name,
     onSuccess: name,
   }),
+};
+
+const DEFAULT_KEYS = [
+  "Delete",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "Escape",
+];
+
+const nativeTarget = (t: EventTarget | null): boolean => {
+  const el = t as HTMLElement | null;
+  return !!el?.tagName && /^(BUTTON|A|SUMMARY)$/i.test(el.tagName);
 };
 
 export interface KeyPayload {
@@ -155,23 +187,21 @@ export function createLocalPlugin(
         case "keys": {
           off?.();
           if (!doc) return;
+          const root = effect.root ?? ".vb";
+          const keys = effect.keys ?? DEFAULT_KEYS;
           const fn = (e: Event): void => {
             const k = e as KeyboardEvent;
-            if (textTarget(k.target) || !doc.querySelector(".vb")) return;
+            if (textTarget(k.target) || !doc.querySelector(root)) return;
             const ctrl = Boolean(k.ctrlKey || k.metaKey);
             const key = k.key.length === 1 ? k.key.toLowerCase() : k.key;
+            // a focused button or link keeps its own Space and Enter
+            if ((key === " " || key === "Enter") && nativeTarget(k.target))
+              return;
             const wanted =
-              [
-                "Delete",
-                "ArrowUp",
-                "ArrowDown",
-                "ArrowLeft",
-                "ArrowRight",
-                "Escape",
-              ].includes(key) ||
-              (ctrl && ["z", "y", "d"].includes(key));
+              keys.includes(key) || (ctrl && ["z", "y", "d"].includes(key));
             if (!wanted) return;
-            if (ctrl || key.startsWith("Arrow")) k.preventDefault();
+            if (ctrl || key.startsWith("Arrow") || key === " ")
+              k.preventDefault();
             ctx.dispatch({
               id: effect.onMessage,
               payload: {
@@ -183,6 +213,19 @@ export function createLocalPlugin(
           };
           doc.addEventListener("keydown", fn);
           off = () => doc.removeEventListener("keydown", fn);
+          return;
+        }
+        case "media": {
+          let matches = false;
+          try {
+            matches =
+              typeof window !== "undefined" &&
+              typeof window.matchMedia === "function" &&
+              window.matchMedia(effect.query).matches;
+          } catch {
+            matches = false;
+          }
+          ctx.dispatch({ id: effect.onSuccess, payload: { matches } });
           return;
         }
         case "unkeys":
