@@ -3,7 +3,7 @@
 import { createHash } from "node:crypto";
 import { serializeCookie, type CookieOptions } from "./cookies.ts";
 
-export interface RespondEffect {
+export type RespondEffect = {
   status?: number;
   headers?: Record<string, string | number | readonly string[]>;
   body?: string | Uint8Array;
@@ -20,7 +20,7 @@ export interface RespondEffect {
   download?: string;
   /** Add an ETag (GET/HEAD 200) and answer 304 on a match. */
   etag?: boolean;
-}
+};
 
 export interface NormalizedResponse {
   status: number;

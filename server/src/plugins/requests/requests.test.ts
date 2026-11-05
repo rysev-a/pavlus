@@ -19,6 +19,15 @@ describe("requests slice", () => {
     expect(p.getState().requests).toEqual({});
     p.drop("r1");
   });
+  it("shared.remove deletes the key, not just its value", () => {
+    let s: ServerState = {
+      requests: {},
+      shared: { conns: { a: { n: 1 }, b: { n: 2 } } },
+    };
+    s = applyRequestsEffect(s, rq.sharedRemove("conns.a") as never);
+    expect(s.shared).toEqual({ conns: { b: { n: 2 } } });
+    expect("a" in (s.shared.conns as object)).toBe(false);
+  });
   it("req.set / req.merge write under the rid only", () => {
     let s: ServerState = { requests: { r1: {}, r2: {} }, shared: {} };
     s = applyRequestsEffect(s, stamp(rq.set("user.id", 7)) as never);

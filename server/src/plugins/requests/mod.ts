@@ -20,6 +20,8 @@ export type RequestsEffect =
     }
   | { plugin: "requests"; type: "req.clear" }
   | { plugin: "requests"; type: "shared.set"; path: Path; value: unknown }
+  /** Deletes the key at `path` from `state.shared` (a real removal, not `undefined`). */
+  | { plugin: "requests"; type: "shared.remove"; path: Path }
   | {
       plugin: "requests";
       type: "shared.merge";
@@ -99,6 +101,12 @@ export function applyRequestsEffect<S extends ServerState>(
         path: ["shared", ...segs(e.path)],
         value: e.value,
       }) as S;
+    case "shared.remove":
+      return applyChange(state, {
+        plugin: "store",
+        type: "remove",
+        path: ["shared", ...segs(e.path)],
+      }) as S;
     case "shared.merge":
       return applyChange(state, {
         plugin: "store",
@@ -141,6 +149,11 @@ export const requestsEffector = {
     type: "shared.set",
     path,
     value,
+  }),
+  sharedRemove: (path: Path): RequestsEffect => ({
+    plugin: "requests",
+    type: "shared.remove",
+    path,
   }),
   sharedMerge: (
     value: Record<string, unknown>,

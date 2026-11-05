@@ -403,7 +403,11 @@ export function createServerApp<S extends ServerState = ServerState>(
       if (router && msg.id === "http.request") {
         const r = dispatchRoute(router, msg);
         if ("effects" in r) effects = r.effects;
-        else msg = r.message;
+        else {
+          msg = r.message;
+          if (rid !== undefined)
+            trace?.add(rid, { kind: "note", name: `route:${msg.id}` });
+        }
       }
       effects ??= handler(msg, requests.getState() as S);
       if (!Array.isArray(effects)) effects = [];
