@@ -105,7 +105,11 @@ export function createApp<S = unknown>(opts: CreateAppOptions<S>): App {
           );
         }
         const msg = queue.shift()!;
-        const effects = app(msg, state);
+        const produced = app(msg, state);
+        // the context of a message rides on its effects (no-op without one)
+        const effects = msg.ctx
+          ? produced.map((e) => (e.ctx ? e : { ...e, ctx: msg.ctx }))
+          : produced;
         opts.onStep?.(msg, effects);
         for (const effect of effects) perform(effect);
         const next = getState();
