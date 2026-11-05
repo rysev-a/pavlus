@@ -145,8 +145,12 @@ button:disabled {
 .tab {
   display: none;
   flex: 1;
+  /* a flex item of #view (row): without min-width: 0 the long nowrap rows
+     of a pane push the whole panel many thousands of px wide */
+  min-width: 0;
   min-height: 0;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .tab.active {
@@ -155,8 +159,10 @@ button:disabled {
 
 #view {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: flex;
+  overflow: hidden;
 }
 
 /* rows / lists --------------------------------------------------------- */
@@ -401,6 +407,39 @@ button:disabled {
 
 .v-brace {
   color: var(--fg);
+  /* a collapsed preview of huge entries must not push the tree wide */
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.v-close {
+  padding: 0 4px;
+  color: var(--fg);
+}
+
+/* long folded strings: click the row to unfold */
+.v-row.longstr {
+  cursor: pointer;
+}
+
+.v-row.longstr:hover {
+  background: var(--bg3);
+}
+
+.v-more {
+  flex: none;
+  color: var(--dim);
+}
+
+/* urls inside string values */
+.v-url {
+  color: #4da6ff;
+  text-decoration: none;
+}
+
+.v-url:hover {
+  text-decoration: underline;
 }
 
 .v-str {
@@ -429,9 +468,10 @@ button:disabled {
 }
 
 .v-kids {
-  margin-left: 10px;
-  padding-left: 8px;
-  border-left: 1px dotted var(--line);
+  margin-left: 4px;
+  padding-left: 13px;
+  /* indent guide tying children to their parent's arrow column */
+  border-left: 1px solid var(--line);
 }
 
 #store-state h3,

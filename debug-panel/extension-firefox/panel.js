@@ -110,11 +110,20 @@ const appIds = () =>
 // console-style text filter: case-insensitive substring over any field
 const matchesFilter = (q, ...fields) =>
   !q ||
-  fields.some((f) =>
-    String(f ?? "")
+  fields.some((f) => {
+    if (f !== null && typeof f === "object") {
+      // dig into nested payload content — a plain String() would only ever
+      // see "[object Object]"
+      try {
+        return jsonOf(f).toLowerCase().includes(q);
+      } catch {
+        return false; // circular or exotic — nothing text-wise to match on
+      }
+    }
+    return String(f ?? "")
       .toLowerCase()
-      .includes(q),
-  );
+      .includes(q);
+  });
 
 // the 🚫 button on Messages / Effects: drop the recorded steps (and the io
 // counts and http waits derived from them). Store history survives — the
@@ -809,6 +818,92 @@ const vPreview = (v) => {
   return String(v);
 };
 
+// the collapsed-branch summary: instead of a bare "{…}" it shows the first
+// few entries inline, chrome-style — `{id: 1, name: "ann", …}` — so the eye
+// can find a branch without opening it
+const PREVIEW_PAIRS = 3;
+const PREVIEW_VAL = 24;
+
+const escPart = (s) => JSON.stringify(s).slice(1, -1);
+
+// one value inside a collapsed preview, capped at a few dozen chars
+const shortLeaf = (v, max) => {
+  const k = kindOf(v);
+  if (k === "string") {
+    const s =
+      v.length > max
+        ? JSON.stringify(v.slice(0, max)) + "…"
+        : JSON.stringify(v);
+    return s.length > max + 3 ? JSON.stringify(v.slice(0, max - 1)) + "…" : s;
+  }
+  if (k === "number" || k === "boolean" || k === "null" || k === "undefined")
+    return String(v);
+  if (k === "date") return v.toISOString();
+  if (k === "function") return v.name ? `ƒ ${v.name}()` : "ƒ ()";
+  if (k === "array") return "[…]";
+  if (k === "map") return "Map(…)";
+  if (k === "set") return "Set(…)";
+  return "{…}";
+};
+
+// the spans of a collapsed branch summary: colored key/value pairs instead
+// of the bare ellipsis
+function collapsedParts(kind, entries) {
+  const p = [];
+  const push = (cls, txt) => p.push(el("span", cls, txt));
+  push(
+    "",
+    kind === "array"
+      ? "["
+      : kind === "map"
+        ? "Map("
+        : kind === "set"
+          ? "Set("
+          : "{",
+  );
+  const shown = entries.slice(0, PREVIEW_PAIRS);
+  shown.forEach(([k, v], i) => {
+    if (i) push("v-punc", ", ");
+    if (kind === "object") {
+      push("v-key", k);
+      push("v-punc", ": ");
+    } else if (kind === "map") {
+      push("v-key", JSON.stringify(k));
+      push("v-punc", " => ");
+    }
+    push("v-" + valClass(v), shortLeaf(v, PREVIEW_VAL));
+  });
+  if (entries.length > shown.length) push("v-punc", ", …");
+  push("", kind === "array" ? "]" : kind === "object" ? "}" : ")");
+  return p;
+}
+
+const URL_RE = /https?:\/\/[^\s"'<>\\]+/g;
+// strings longer than this fold with a click-to-expand marker
+const LONG_STR = 140;
+
+// fills a value span with a quoted string, wrapping any http(s) URLs it
+// contains in clickable links
+function fillStringSpan(span, raw) {
+  span.replaceChildren();
+  span.append(el("span", "", '"'));
+  let i = 0;
+  for (const m of raw.matchAll(URL_RE)) {
+    if (m.index > i)
+      span.append(el("span", "", escPart(raw.slice(i, m.index))));
+    const a = el("a", "v-url", m[0]);
+    a.href = m[0];
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    // the row may have its own click (fold/unfold) — keep the link usable
+    a.addEventListener("click", (ev) => ev.stopPropagation());
+    span.append(a);
+    i = m.index + m[0].length;
+  }
+  if (i < raw.length) span.append(el("span", "", escPart(raw.slice(i))));
+  span.append(el("span", "", '"'));
+}
+
 // full JSON of a viewer value, with the exotic kinds made printable
 const jsonOf = (v) =>
   JSON.stringify(
@@ -846,10 +941,12 @@ function fallbackCopy(text) {
 function viewer(key, value) {
   const wrap = el("div", "v-wrap");
   const root = el("div", "viewer");
-  root.append(vRow(null, value, "", key, 0, new Set()));
-  // the branch rows of the built tree (children appear lazily as branches
-  // open, which is why expanding keeps clicking until a pass finds nothing)
-  const branchRows = () => [...root.querySelectorAll(".v-branch > .v-row.tog")];
+  // per-viewer registry of branches, filled as rows are built — [0] is the
+  // root (it registers before its children render). Search and the
+  // expand/collapse-all buttons drive the tree through it instead of
+  // synthesizing clicks
+  const ctx = { branches: [] };
+  root.append(vRow(null, value, "", key, 0, new Set(), ctx));
   const tools = el("div", "v-tools");
   const flash = (b) => {
     b.classList.add("copied");
@@ -861,11 +958,9 @@ function viewer(key, value) {
       '<svg viewBox="0 0 16 16" width="11" height="11"><path d="M3 3l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 9l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
       () => {
         for (let pass = 0; pass < 1000; pass++) {
-          const closed = branchRows().filter(
-            (r) => r.nextElementSibling.style.display === "none",
-          );
+          const closed = ctx.branches.filter((b) => !b.isOpen());
           if (!closed.length) break;
-          for (const r of closed) r.click();
+          for (const b of closed) b.setOpen(true);
         }
       },
     ),
@@ -873,10 +968,8 @@ function viewer(key, value) {
       "collapse all branches",
       '<svg viewBox="0 0 16 16" width="11" height="11"><path d="M3 6l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
       () => {
-        const rows = branchRows(); // rows[0] is the root — keep it open
-        for (let i = 1; i < rows.length; i++)
-          if (rows[i].nextElementSibling.style.display !== "none")
-            rows[i].click();
+        // ctx.branches[0] is the root — keep it open
+        for (const b of ctx.branches.slice(1)) b.setOpen(false);
       },
     ),
     (() => {
@@ -891,11 +984,12 @@ function viewer(key, value) {
       return b;
     })(),
   );
+
   wrap.append(tools, root);
   return wrap;
 }
 
-function vRow(key, v, path, vkey, depth, seen) {
+function vRow(key, v, path, vkey, depth, seen, ctx) {
   const row = el("div", "v-row");
   if (v !== null && typeof v === "object" && seen.has(v)) {
     if (key !== null)
@@ -909,21 +1003,35 @@ function vRow(key, v, path, vkey, depth, seen) {
   if (key !== null)
     row.append(el("span", "v-key", key), el("span", "v-punc", ": "));
   if (!branch) {
-    const preview = vPreview(v);
-    row.append(el("span", "v-" + valClass(v), preview));
-    // the row clips with an ellipsis — the full value goes to the tooltip
-    row.title = preview;
+    const valEl = el("span", "v-" + valClass(v));
+    row.append(valEl);
+    if (kind === "string") {
+      // urls become links; long strings fold — click the row to unfold
+      if (v.length > LONG_STR) {
+        row.classList.add("longstr");
+        let long = false;
+        const render = () => {
+          fillStringSpan(valEl, long ? v : v.slice(0, LONG_STR));
+          if (!long)
+            valEl.append(
+              el("span", "v-more", ` … +${v.length - LONG_STR} chars`),
+            );
+        };
+        row.addEventListener("click", () => {
+          long = !long;
+          render();
+        });
+        render();
+      } else fillStringSpan(valEl, v);
+      row.title = v;
+    } else {
+      const preview = vPreview(v);
+      valEl.textContent = preview;
+      row.title = preview;
+    }
     return row;
   }
   const entries = vEntries(v);
-  const brace =
-    kind === "array"
-      ? "[…]"
-      : kind === "map"
-        ? "Map(…)"
-        : kind === "set"
-          ? "Set(…)"
-          : "{…}";
   if (!entries.length) {
     row.append(
       el(
@@ -942,10 +1050,38 @@ function vRow(key, v, path, vkey, depth, seen) {
   }
   const pk = `${vkey}@${path}`;
   let open = S.viewerOpen.has(pk) || (depth < 2 && !S.viewerShut.has(pk));
+  // devtools-style braces: collapsed shows the "{id: 1, …}" summary,
+  // expanded shows the plain opening brace, the children, and the closer on
+  // its own line at the parent's indent
+  const openBrace =
+    kind === "array"
+      ? "["
+      : kind === "map"
+        ? "Map("
+        : kind === "set"
+          ? "Set("
+          : "{";
+  const closeBrace =
+    kind === "array" ? "]" : kind === "map" ? ")" : kind === "set" ? ")" : "}";
   const arrow = el("span", "v-arrow", open ? "▾" : "▸");
-  row.append(arrow, el("span", "v-brace", brace));
-  if (kind === "array" || kind === "object")
-    row.append(el("span", "v-count", String(entries.length)));
+  const braceEl = el("span", "v-brace");
+  const renderBrace = () => {
+    braceEl.replaceChildren(
+      ...(open ? [el("span", "", openBrace)] : collapsedParts(kind, entries)),
+    );
+  };
+  renderBrace();
+  row.append(arrow, braceEl);
+  // the count belongs to the collapsed summary — with the entries visible
+  // it would just be noise next to the opening brace
+  let countEl = null;
+  if (kind === "array" || kind === "object") {
+    countEl = el("span", "v-count", String(entries.length));
+    if (open) countEl.style.display = "none";
+    row.append(countEl);
+  }
+  const closer = el("div", "v-close", closeBrace);
+  if (!open) closer.style.display = "none";
   const kids = el("div", "v-kids");
   let built = false;
   const build = () => {
@@ -955,29 +1091,40 @@ function vRow(key, v, path, vkey, depth, seen) {
     next.add(v);
     for (const [k, v2] of entries)
       kids.append(
-        vRow(k, v2, path ? `${path}.${k}` : k, vkey, depth + 1, next),
+        vRow(k, v2, path ? `${path}.${k}` : k, vkey, depth + 1, next, ctx),
       );
   };
-  row.classList.add("tog");
-  row.addEventListener("click", () => {
-    open = !open;
+  const setOpen = (want) => {
+    if (want === open) {
+      if (want) build();
+      return;
+    }
+    open = want;
     if (open) {
       S.viewerShut.delete(pk);
       S.viewerOpen.add(pk);
       arrow.textContent = "▾";
+      if (countEl) countEl.style.display = "none";
+      closer.style.display = "";
       build();
       kids.style.display = "";
     } else {
       S.viewerOpen.delete(pk);
       S.viewerShut.add(pk);
       arrow.textContent = "▸";
+      if (countEl) countEl.style.display = "";
+      closer.style.display = "none";
       kids.style.display = "none";
     }
-  });
+    renderBrace();
+  };
+  row.classList.add("tog");
+  row.addEventListener("click", () => setOpen(!open));
+  ctx.branches.push({ isOpen: () => open, setOpen, build });
   if (open) build();
   else kids.style.display = "none";
   const wrap = el("div", "v-branch");
-  wrap.append(row, kids);
+  wrap.append(row, kids, closer);
   return wrap;
 }
 
