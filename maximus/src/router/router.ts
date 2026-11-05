@@ -15,6 +15,7 @@ import {
   createContext,
   getOwner,
   onCleanup,
+  registerPending,
   signal,
   untrack,
 } from "../core/mod.ts";
@@ -371,22 +372,32 @@ export function createRouter(options: RouterOptions): Router {
   };
 
   // ------------------------------------------------------------ transitions
-  const runTransition = (apply: () => void): void | Promise<void> => {
+  const runTransition = (
+    apply: () => void,
+    mode: Mode,
+  ): void | Promise<void> => {
     const d = typeof document !== "undefined" ? document : null;
     const start = (
       d as unknown as {
         startViewTransition?: (cb: () => void) => {
           updateCallbackDone: Promise<void>;
+          ready?: Promise<void>;
+          finished?: Promise<void>;
         };
       } | null
     )?.startViewTransition;
+    // the first page has nothing to transition from (and hydration needs it committed synchronously)
     if (
+      mode !== "init" &&
       options.viewTransitions !== false &&
       d !== null &&
       typeof start === "function" &&
       !prefersReducedMotion()
     ) {
       const t = start.call(d, apply);
+      // a transition that is skipped (a newer navigation starts one) rejects these: nobody listens, so swallow
+      t.ready?.catch(() => {});
+      t.finished?.catch(() => {});
       return t.updateCallbackDone.catch(() => {});
     }
     apply();
@@ -621,7 +632,7 @@ export function createRouter(options: RouterOptions): Router {
       afterCommit(prev, next, mode, o, matched);
       return true;
     };
-    const r = runTransition(apply);
+    const r = runTransition(apply, mode);
     if (r instanceof Promise) return r.then(after);
     return after();
   }
@@ -909,6 +920,8 @@ export function createRouter(options: RouterOptions): Router {
     () => undefined,
   );
   ready.catch(report);
+  // while server rendering, the page waits for the first navigation's guards and loaders
+  if (serverUrl !== undefined) registerPending(ready.catch(() => {}));
   (router as { ready: Promise<void> }).ready = ready;
   return router;
 }

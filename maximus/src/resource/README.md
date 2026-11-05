@@ -60,6 +60,10 @@ Options: `key(source)` (default: private to this resource), `staleTime` (default
 - `concurrency`: `"latest"` (default) aborts and rolls back the previous run when a new one starts; `"queue"` runs them one after another (a failure does not block the queue); `"parallel"` runs them side by side (the newest started run owns `result`).
 - Actions do not abort when their owner is disposed (a save should survive navigating away); use the `signal` yourself if you want that.
 
+## Server rendering
+
+With a `key`, a resource that resolves during `renderToString`/`renderToStream` is written into the request's `TransferState`; the client's `hydrate` starts the same resource from it (no fetch within `staleTime`; the default `staleTime: 0` revalidates in the background). Resources without `key` are not transferred. While rendering on the server the cache is per request, not process-wide. See [ssr](../ssr/README.md).
+
 ## Cache helpers
 
 `invalidate(prefix?)` marks matching entries stale and refetches the ones in use (resolves when done; no argument = everything). `prefetch(key, fetcher, { staleTime })` warms an entry (deduped, never rejects). `clearCache()`, `cacheSize()`, `getCached(key)` for tests and diagnostics.

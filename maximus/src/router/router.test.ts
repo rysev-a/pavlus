@@ -1372,6 +1372,39 @@ describe("view transitions", () => {
     expect(start2).not.toHaveBeenCalled();
   });
 
+  it("the first navigation is committed synchronously, outside a view transition (regression: hydration needs the page at once)", () => {
+    const start = vi.fn(() => ({
+      updateCallbackDone: new Promise<void>(() => {}),
+    }));
+    (
+      document as unknown as { startViewTransition: unknown }
+    ).startViewTransition = start;
+    const r = make([{ path: "/", component: page("a") }], {
+      viewTransitions: undefined,
+    });
+    expect(start).not.toHaveBeenCalled();
+    expect(r.path()).toBe("/");
+    expect(mount(() => r.outlet()).text()).toBe("a");
+  });
+
+  it("a skipped transition does not leave an unhandled rejection (regression: browsers reject ready/finished)", async () => {
+    (
+      document as unknown as { startViewTransition: unknown }
+    ).startViewTransition = (cb: () => void) => {
+      cb();
+      const skipped = () => Promise.reject(new Error("Transition was skipped"));
+      return {
+        updateCallbackDone: Promise.resolve(),
+        ready: skipped(),
+        finished: skipped(),
+      };
+    };
+    const r = make(routes, { viewTransitions: undefined });
+    await r.navigate("/b");
+    await flush();
+    expect(r.path()).toBe("/b");
+  });
+
   it("a navigation superseded during the transition does not commit", async () => {
     const callbacks: Array<() => void> = [];
     (

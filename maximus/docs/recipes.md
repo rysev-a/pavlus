@@ -1,6 +1,6 @@
 # Recipes
 
-Ten short patterns. Every one is **code that runs**: the source is in [`recipes/`](./recipes) and the behaviour is pinned by [`recipes/recipes.test.ts`](./recipes/recipes.test.ts) (vitest + jsdom, using `maximus/testing`). They only use APIs that exist in 0.1; async parts are implemented with plain signals until `resource` and the router land (wave 2). Imports point at `../../src/mod.ts`; in your project use `maximus`.
+Ten short patterns. Every one is **code that runs**: the source is in [`recipes/`](./recipes) and the behaviour is pinned by [`recipes/recipes.test.ts`](./recipes/recipes.test.ts) (vitest + jsdom, using `maximus/testing`). Async parts are implemented with plain signals on purpose, to show the primitives; `resource` and `action` (see [async](./concepts/async.md)) automate most of them. Imports point at `../../src/mod.ts`; in your project use `maximus`.
 
 Run them: `npx vitest run docs`.
 
@@ -65,7 +65,7 @@ export function SearchBox(props: { items: string[]; delay?: number }) {
 }
 ```
 
-Pattern: derive a *slower* signal from a fast one. The only tracked read in the effect is `source()`; the timer is plain state.
+Pattern: derive a _slower_ signal from a fast one. The only tracked read in the effect is `source()`; the timer is plain state.
 
 ## 2. Infinite scroll
 
@@ -138,7 +138,7 @@ export function InfiniteList(props: {
 }
 ```
 
-Plain signals stand in for `resource` (wave 2). `ref=${fn}` gets the element before attachment; observing at that point is fine, the observer is stopped with `onCleanup`.
+Plain signals stand in for `resource`. `ref=${fn}` gets the element before attachment; observing at that point is fine, the observer is stopped with `onCleanup`.
 
 ## 3. Modal with focus trap
 
@@ -374,7 +374,7 @@ export function OptimisticList(props: {
 }
 ```
 
-This is what `resource.mutate` + `action` automate in wave 2; with signals it is 15 lines.
+This is what `resource.mutate` + `action` automate; with signals it is 15 lines.
 
 ## 6. Dark mode with context
 

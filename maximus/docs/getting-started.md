@@ -2,7 +2,7 @@
 
 ## Install
 
-Maximus 0.1 is not published to npm yet. Use it from the repository: `maximus/package.json` exposes `maximus`, `maximus/core`, `maximus/dom`, `maximus/store` and `maximus/testing` (the `resource`, `router`, `form`, `ssr` entries point at modules that land in wave 2). The source is TypeScript (`.ts` files with `.ts` import specifiers, `erasableSyntaxOnly`), so something has to strip types before a browser sees it.
+Maximus 0.1 is not published to npm yet. Use it from the repository: `maximus/package.json` exposes `maximus`, `maximus/core`, `maximus/dom`, `maximus/store` and `maximus/testing` (plus `maximus/resource`, `maximus/router`, `maximus/form`, `maximus/ssr` and `maximus/devtools`). The source is TypeScript (`.ts` files with `.ts` import specifiers, `erasableSyntaxOnly`), so something has to strip types before a browser sees it.
 
 ## A counter in 15 lines
 
@@ -16,7 +16,9 @@ function Counter(props: { start?: number }) {
     <button @click=${() => count.update((n) => n + 1)}>
       Clicked ${count} times
     </button>
-    <button ?disabled=${() => count() === 0} @click=${() => count.set(0)}>reset</button>
+    <button ?disabled=${() => count() === 0} @click=${() => count.set(0)}>
+      reset
+    </button>
   `;
 }
 
@@ -57,7 +59,11 @@ A browser cannot import `.ts`, so produce one JavaScript file from the Maximus s
 // vite.config.mjs, in an empty folder
 export default {
   build: {
-    lib: { entry: "/path/to/maximus/src/mod.ts", formats: ["es"], fileName: "maximus" },
+    lib: {
+      entry: "/path/to/maximus/src/mod.ts",
+      formats: ["es"],
+      fileName: "maximus",
+    },
     minify: true,
   },
 };

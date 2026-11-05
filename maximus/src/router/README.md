@@ -86,7 +86,7 @@ A click is handled client-side only for the primary button without Ctrl/Meta/Shi
 
 ## History drivers
 
-`createMemoryHistory(entries?, index?)` (tests and SSR; pops notify synchronously), `createBrowserHistory(window?)`, `createHashHistory(window?)`; one `History` interface: `location()`, `push`, `replace`, `go/back/forward`, `listen` (pops only, with the delta), `href`, `destroy`. Without `history` the router uses the browser driver when a `window` exists, otherwise memory. Entry keys and indexes live in `history.state`, which is how pops know their delta and which scroll position to restore.
+`createMemoryHistory(entries?, index?)` (tests and SSR; pops notify synchronously), `createBrowserHistory(window?)`, `createHashHistory(window?)`; one `History` interface: `location()`, `push`, `replace`, `go/back/forward`, `listen` (pops only, with the delta), `href`, `destroy`. Without `history` the router uses the browser driver when a `window` exists, otherwise memory. During server rendering (`useServer()` is set) it always uses a memory history started at the request URL (base stripped as usual), does not touch `document.title`, and the render waits for the first navigation (guards and loaders). The first navigation is committed synchronously and never inside a View Transition, so `hydrate` finds the page at once. Entry keys and indexes live in `history.state`, which is how pops know their delta and which scroll position to restore.
 
 ## Lifecycle
 

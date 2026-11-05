@@ -47,6 +47,28 @@ describe("router during SSR", () => {
   });
 });
 
+describe("router loaders during SSR", () => {
+  it("waits for the guards and loaders of the requested page", async () => {
+    const out = await renderToString(
+      () => {
+        const r = createRouter({
+          routes: [
+            {
+              path: "/p/:id",
+              load: ({ params }) =>
+                sleep(5).then(() => ({ name: `item ${params.id}` })),
+              component: (p) => html`<h1>${() => p.data()?.name}</h1>`,
+            },
+          ],
+        });
+        return r.outlet();
+      },
+      { url: "/p/4" },
+    );
+    expect(out).toContain("item 4");
+  });
+});
+
 describe("resource during SSR", () => {
   it("serialises keyed results into the transfer state", async () => {
     const out = await renderToString(

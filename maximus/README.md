@@ -2,7 +2,7 @@
 
 A small frontend framework on **fine-grained signals** and **real DOM**. Components are functions that run once, templates are tagged template literals, and every effect, listener and child belongs to an owner that cleans up after itself. No virtual DOM, no dependency arrays, no compiler required.
 
-> **Status: 0.1 (wave 1).** `core`, `dom`, `store` and `testing` are implemented, tested (200+ tests, jsdom) and documented. `resource`, `router`, `form`, `ssr` and devtools are being built (wave 2) and appear in the docs as *API as designed*. Not published to npm yet.
+> **Status: 0.1.** `core`, `dom`, `store`, `testing`, `resource`, `router`, `form`, `ssr` and `devtools` are implemented, tested (450+ tests, jsdom and Node) and documented, and three example apps (a routed shop, a dashboard, server rendering with hydration) are built on them. Not published to npm yet; the API may still change.
 
 ## Install
 
@@ -20,10 +20,20 @@ In an app, alias `maximus` to `maximus/src/mod.ts` (Vite: `resolve.alias`), or b
 ## A 30-line example
 
 ```ts
-import { signal, computed, html, render, each, show, createStore } from "maximus";
+import {
+  signal,
+  computed,
+  html,
+  render,
+  each,
+  show,
+  createStore,
+} from "maximus";
 
 function TodoApp() {
-  const state = createStore({ todos: [{ id: 1, text: "try Maximus", done: false }] });
+  const state = createStore({
+    todos: [{ id: 1, text: "try Maximus", done: false }],
+  });
   const text = signal("");
   const left = computed(() => state.todos.filter((t) => !t.done).length);
   let nextId = 2;
@@ -37,26 +47,39 @@ function TodoApp() {
 
   return html`
     <form @submit=${add}>
-      <input .value=${text} @input=${(e: Event) => text.set((e.target as HTMLInputElement).value)} />
+      <input
+        .value=${text}
+        @input=${(e: Event) => text.set((e.target as HTMLInputElement).value)}
+      />
       <button ?disabled=${() => !text().trim()}>add</button>
     </form>
     <ul>
-      ${each(() => state.todos, (t) => t.id, (todo) => html`
-        <li class=${() => (todo().done ? "done" : "")}>
-          <input type="checkbox" .checked=${() => todo().done}
-                 @change=${() => (todo().done = !todo().done)} />
-          ${() => todo().text}
-        </li>`)}
+      ${each(
+        () => state.todos,
+        (t) => t.id,
+        (todo) =>
+          html` <li class=${() => (todo().done ? "done" : "")}>
+            <input
+              type="checkbox"
+              .checked=${() => todo().done}
+              @change=${() => (todo().done = !todo().done)}
+            />
+            ${() => todo().text}
+          </li>`,
+      )}
     </ul>
     <p>${left} left</p>
-    ${show(() => left() === 0, () => html`<p>All done.</p>`)}
+    ${show(
+      () => left() === 0,
+      () => html`<p>All done.</p>`,
+    )}
   `;
 }
 
 render(TodoApp, document.getElementById("app")!);
 ```
 
-More: [`examples/counter`](./examples/counter), [`examples/todo`](./examples/todo) (keyed list, filters, persistence), and ten tested [recipes](./docs/recipes.md).
+More: [`examples/counter`](./examples/counter), [`examples/todo`](./examples/todo) (keyed list, filters, persistence), [`examples/shop`](./examples/shop) (router, resource, store, form, action with optimistic update), [`examples/dashboard`](./examples/dashboard) (SVG charts, live stream, keyed sortable table), [`examples/ssr`](./examples/ssr) (Node script, no jsdom, plus a hydrating client), and ten tested [recipes](./docs/recipes.md).
 
 ## Features
 
@@ -73,27 +96,31 @@ More: [`examples/counter`](./examples/counter), [`examples/todo`](./examples/tod
 - Devtools hook (`globalThis.__MAXIMUS__`): signal writes, effect runs, owner create/dispose, errors, mount/unmount, with owner paths.
 - Size: core 2.9 kB, core+dom 11.1 kB, +store 12.1 kB (gzip, nothing tree-shaken); a counter app is 7.9 kB.
 
-**As designed, wave 2 (not shipped)**: `resource`/`action`, router, forms, SSR/hydration/streaming, devtools panel. Docs: [async](./docs/concepts/async.md), [routing](./docs/concepts/routing.md), [forms](./docs/concepts/forms.md), [SSR](./docs/concepts/ssr.md).
+**Shipped (wave 2)**
+
+- `resource` (keyed shared cache, dedupe, abort, stale-while-revalidate, `mutate`) and `action` (pending/error/result, optimistic updates with rollback, invalidation); [async](./docs/concepts/async.md).
+- Router: nested layouts, guards, loaders, typed params, query signals, prefetching links, focus/announcer/scroll handling, view transitions; reads the request URL when server rendering; [routing](./docs/concepts/routing.md).
+- Forms: per-field signals, sync/async validators, Standard Schema, arrays, `bind` directive with ARIA wiring; [forms](./docs/concepts/forms.md).
+- SSR: `renderToString`, `renderToStream` (suspense streaming) without jsdom, `hydrate` that keeps node identity, resource results transferred to the client; [SSR](./docs/concepts/ssr.md).
+- Devtools: `installDevtools()` timeline, snapshot, time travel over named signals, a panel.
 
 ## Documentation
 
-[Index](./docs/index.md) · [Getting started](./docs/getting-started.md) · Concepts: [signals](./docs/concepts/signals.md), [ownership](./docs/concepts/ownership.md), [templates](./docs/concepts/templates.md), [stores](./docs/concepts/stores.md), [async](./docs/concepts/async.md), [routing](./docs/concepts/routing.md), [forms](./docs/concepts/forms.md), [SSR](./docs/concepts/ssr.md) · [Testing](./docs/testing.md) · [Performance](./docs/performance.md) · [Recipes](./docs/recipes.md) · [Comparison](./docs/comparison.md) · [DESIGN.md](./DESIGN.md) · module READMEs: [core](./src/core/README.md), [dom](./src/dom/README.md).
+[Index](./docs/index.md) · [Getting started](./docs/getting-started.md) · Concepts: [signals](./docs/concepts/signals.md), [ownership](./docs/concepts/ownership.md), [templates](./docs/concepts/templates.md), [stores](./docs/concepts/stores.md), [async](./docs/concepts/async.md), [routing](./docs/concepts/routing.md), [forms](./docs/concepts/forms.md), [SSR](./docs/concepts/ssr.md) · [Testing](./docs/testing.md) · [Performance](./docs/performance.md) · [Recipes](./docs/recipes.md) · [Comparison](./docs/comparison.md) · [DESIGN.md](./DESIGN.md) · module READMEs: [core](./src/core/README.md), [dom](./src/dom/README.md), [resource](./src/resource/README.md), [router](./src/router/README.md), [form](./src/form/README.md), [ssr](./src/ssr/README.md), [devtools](./src/devtools/README.md).
 
 ## Status and roadmap
 
-Done: wave 1 as above.
-
-In progress (wave 2): resource/action, router, form, ssr, devtools UI.
+Done: waves 1 and 2 (core, dom, store, testing, resource, router, form, ssr, devtools) and wave 3 (integration: router + resource + hydration wired together, three example apps verified in a real browser).
 
 **What is not done (honest list)**
 
-- No `resource`/`action`, router, forms or SSR in the shipped code; the docs for them describe the design, not behaviour you can run.
-- No hydration or streaming; `hydrate` only has a marker design.
+- Hydration is all-or-nothing per container: no selective or progressive hydration, and streamed boundaries must be complete before `hydrate`. Router loader data is not transferred to the client (only keyed `resource`s are).
+- `resource` has no retry/backoff, polling or refetch-on-focus; there is no infinite-query helper.
 - Not published; no pre-built `dist/` for plain `<script>` use (you build it once; see getting started).
 - core + dom is 11.1 kB gzip, above the 9 kB target. No compiler exists; a compiler is only an idea.
 - Benchmarks run in jsdom only; there are no browser numbers and no cross-framework comparison.
-- No devtools UI, no HMR with state, no editor support for templates, no compile-time template type checking.
-- No accessibility helpers yet (focus management on route change, announcer) because they depend on the router.
+- The devtools panel is minimal; no browser extension, no HMR with state, no editor support for templates, no compile-time template type checking.
+- Accessibility helpers exist for routing (focus, announcer) and forms (`aria-invalid`, `aria-describedby`), but there is no component set and no screen-reader test beyond DOM assertions.
 - No security audit; the safety rules are tested but unreviewed by third parties.
 - API may change before 1.0.
 

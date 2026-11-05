@@ -1,143 +1,122 @@
 # Async: resource, action, suspense, errorBoundary
 
-> **API as designed.** `suspense`, `errorBoundary`, `lazy`, `registerPending`/`useSuspense` are **shipped** (wave 1, `maximus/dom` and `maximus/core`). `resource` and `action` are **wave 2** (`maximus/resource`) and are documented here from the contract in `DESIGN.md`. Names and shapes below are fixed by the design; details that the design does not pin down are marked "unspecified". Once the module lands, this page will be reconciled with the code.
-
-## The model
-
 Async work is split in two:
 
-- **Queries** (`resource`): read data keyed by some reactive input. Cached, de-duplicated, abortable.
-- **Mutations** (`action`): do something once when asked. Track pending/error/result and *invalidate* queries when they succeed.
+- **Queries** (`resource`): read data derived from reactive input. Cached under a key, de-duplicated, abortable, stale-while-revalidate.
+- **Mutations** (`action`): do something when asked. Track pending/error/result, support optimistic updates with rollback, and _invalidate_ queries when they succeed.
 
-Both live in the owner tree, so unmounting a component aborts its in-flight requests and drops its subscriptions, and both report to the nearest `suspense` and `errorBoundary`.
+Both live in the owner tree: unmounting a component aborts its in-flight requests and drops its subscriptions, and both report to the nearest `suspense` and `errorBoundary`. The snippets on this page run as tests in `docs/concepts/concepts.test.ts`.
 
-## resource (as designed)
+## resource
 
 ```ts
 import { resource } from "maximus/resource";
 
 const id = signal(1);
 const user = resource(
-  () => id(),                                              // source: re-fetches when it changes
-  (id, { signal }) => fetch(`/u/${id}`, { signal }).then((r) => r.json()),
+  () => id(), // source: re-fetches when it changes; false/null/undefined disables
+  (id, { signal }) => fetchUser(id, signal),
   { key: (id) => ["user", id], staleTime: 30_000 },
 );
 
-user();          // T | undefined  (tracked read)
-user.loading();  // boolean
-user.error();    // unknown
-user.refetch();
-user.mutate(v);  // write the cached value (optimistic update)
+html`<p>${() => (user.loading() ? "loading..." : user()?.name)}</p>`;
 ```
 
-Contract from the design:
+`user()` is the data (`undefined` until there is some, never throws), `user.loading()` is "fetching and no data yet", `user.fetching()` includes background revalidation, `user.error()`, `user.latest()` keeps the previous source's value while the next loads, `user.refetch()`, `user.mutate(v | fn)` writes into the cache and returns a rollback.
 
-| capability | meaning |
-| --- | --- |
-| keyed cache | the `key` function maps the source value to a cache key; same key shares data |
-| dedupe | concurrent reads of the same key share one request |
-| abort | the fetcher receives an `AbortSignal`; changing the source or disposing the owner aborts the previous request |
-| stale-while-revalidate | with `staleTime`, cached data is returned immediately while a refresh may run in the background |
-| `refetch()` | force a reload |
-| `mutate(v)` | replace the cached value now (optimistic UI) |
+- **Keyed cache and dedupe.** Resources with equal keys (compared structurally) share data, loading state and the single in-flight request. Without `key` the resource is private.
+- **Abort.** The fetcher receives an `AbortSignal` that fires when the source changes to another key, when the owner is disposed and nobody else uses the entry, or when `refetch`/`mutate`/`invalidate` supersedes the request. Results of aborted requests are dropped.
+- **Stale-while-revalidate.** Data older than `staleTime` (default 0) is returned immediately and refreshed in the background; `loading()` stays false, `fetching()` is true. Going back to a cached, fresh key (`id.set(1)` above) does no request at all.
+- **Eviction.** An unused entry is dropped after `cacheTime` (default 5 minutes).
+- **Errors.** They land in `error()` and `onError`; older data stays. With `throwOnError: true` they also go to the nearest `errorBoundary`. There is no automatic retry; call `refetch()`.
 
-Unspecified in the design today: exact cache eviction (`cacheTime`), retry policy, how a `null` source disables the query, and the precise argument list of the fetcher beyond `{ signal }`.
+See [`src/resource/README.md`](../../src/resource/README.md) for the complete option list and the cache helpers (`invalidate`, `prefetch`, `clearCache`, `getCached`).
 
-## action (as designed)
+## action
 
 ```ts
 import { action } from "maximus/resource";
 
-const save = action(
-  async (input: { name: string }, { signal }) => {
-    const r = await fetch("/u", { method: "POST", body: JSON.stringify(input), signal });
-    return r.json();
+const rename = action(
+  async (name: string, { optimistic, signal }) => {
+    optimistic(() => user.mutate((u) => ({ ...u!, name }))); // rolled back if this throws
+    await saveUser({ id: 1, name }, signal);
   },
-  { invalidates: [["user"]] }, // cache keys (prefixes) to refetch after success
+  { invalidates: [["user"]] }, // refetch everything keyed ["user", ...] afterwards
 );
 
-save.run({ name: "Ada" });
-save.pending();  // boolean
-save.error();    // unknown
-save.result();   // last result
+rename.run("Ada L."); // resolves with the result, never rejects
+rename.pending(); // true until the run, including the invalidation refetch, is done
+rename.error();
+rename.result();
 ```
 
-`invalidates` names resource keys; a successful run marks matching cached entries stale so mounted readers refetch.
+`run` never rejects (read `error()`), so `@click=${() => rename.run(x)}` is safe. The `concurrency` option decides what a second `run` does while one is pending: `"latest"` (default) aborts and rolls back the first, `"queue"`, `"parallel"`. Actions are _not_ aborted when their owner goes away: a save should survive navigating off the page.
 
-## suspense (shipped)
+## suspense
 
 ```ts
 import { suspense, html } from "maximus";
 
 suspense(
-  () => html`<p>loading...</p>`,       // fallback
-  () => html`<h1>${() => user()?.name}</h1>`, // view
+  () => html`<p>loading...</p>`, // fallback
+  () => {
+    const user = resource(
+      () => 1,
+      (id) => fetchUser(id),
+    ); // created inside the boundary
+    return html`<h1>${() => user()?.name}</h1>`;
+  },
 );
 ```
 
-`suspense(fallback, view)`:
+`suspense(fallback, view)` creates `view` **immediately**, so loading starts right away, keeps it detached while anything registered below it is pending, shows the fallback meanwhile, and swaps back when everything settles. The nearest boundary wins.
 
-1. creates `view` **immediately**, so loading begins right away;
-2. keeps it alive but **detached** while anything registered below it is pending, and shows the fallback;
-3. swaps the view back when all registered promises settle; a later registration shows the fallback again;
-4. nearest boundary wins.
+A `resource` registers with the boundary that is current **when the resource is created**. A resource created outside the boundary (a parent component, module scope) does not trigger its fallback: create it inside the view function, as above. Revalidation never brings the fallback back.
 
-The contract between async primitives and boundaries is two functions exported from `maximus` (and `maximus/core`):
+The contract with your own async work is two functions:
 
 ```ts
-registerPending(promise);   // tell the nearest boundary something is loading
-useSuspense();              // { register(promise), pending() } or null; pending() is the number of unsettled promises
+registerPending(promise); // tell the nearest boundary something is loading
+useSuspense(); // { register(promise), pending() } or null
 ```
 
-`resource` and `lazy` use `registerPending`. A rejected promise counts as settled (the boundary does not show errors): the resource surfaces its own error through `user.error()` and the `errorBoundary`. You can use it for your own async work:
-
 ```ts
-function Avatar(props: { src: string }) {
-  const img = new Image();
-  registerPending(
-    new Promise<void>((resolve) => {
-      img.onload = img.onerror = () => resolve();
-      img.src = props.src;
-    }),
-  );
-  return img;
+function Avatar() {
+  const el = document.createElement("img");
+  registerPending(loaded(el)); // any promise
+  return el;
 }
 ```
 
-Streaming suspense on the server (`renderToStream`) is designed but not implemented; see [SSR](./ssr.md).
+A rejected promise counts as settled; the failing resource reports through `error()` / `throwOnError`.
 
-## lazy (shipped)
+## lazy
 
 ```ts
 const Chart = lazy(() => import("./chart.ts")); // default export, or the component itself
-Chart.preload();                                // start early (for example on hover)
+Chart.preload(); // start early, for example on hover
 suspense(fallback, () => Chart({ data }));
 ```
 
 A failed import throws into the nearest `errorBoundary`.
 
-## errorBoundary (shipped)
+## errorBoundary
 
 ```ts
 errorBoundary(
-  (err, reset) => html`<p>${String(err)} <button @click=${reset}>retry</button></p>`,
-  () => Page(),
-);
-```
-
-Catches errors from rendering, effects, event handlers and (wave 2) resources created under it. `reset()` discards the fallback and renders the view afresh, which for a resource-backed view starts loading again. An error thrown by the fallback goes to the next boundary up.
-
-## Typical composition
-
-```ts
-errorBoundary(
-  (e, reset) => ErrorPage(e, reset),
+  (err, reset) =>
+    html`<p>${String(err)} <button @click=${reset}>retry</button></p>`,
   () => suspense(Skeleton, () => UserPage()),
 );
 ```
 
-Put `errorBoundary` outside `suspense`: errors are handled at the outer level while pending states are handled at the inner one.
+It catches errors from rendering, effects, event handlers and resources with `throwOnError`. `reset()` discards the fallback and builds the view again, which starts a resource-backed view loading again (clear or `invalidate` the cache entry first if the failed result should not be reused). An error thrown by the fallback goes to the next boundary up. Put `errorBoundary` outside `suspense`: errors are handled at the outer level, pending states at the inner one.
 
-## Today, without resource
+## On the server
 
-Everything above except `resource`/`action` works now. Plain signals plus `registerPending` cover simple cases; the [infinite scroll](../recipes.md#2-infinite-scroll) and [optimistic list](../recipes.md#5-optimistic-list) recipes do exactly that.
+`renderToString` waits for everything registered with a boundary, `renderToStream` flushes the shell and streams each boundary as it becomes ready, and keyed resources travel to the browser in the HTML so hydration does not fetch again. See [SSR](./ssr.md).
+
+## Not there yet
+
+No automatic retry/backoff, no polling or refetch-on-focus options (write them with `effect` and `refetch()`), no infinite-query helper (see the [infinite scroll recipe](../recipes.md)), no persistence of the cache across reloads.
