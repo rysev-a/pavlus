@@ -482,6 +482,7 @@ const svgCache = [
 
 function instantiate(c: Compiled, values: readonly unknown[]): View {
   const claim = env.claim !== null ? env.claim(c) : null;
+  const seq = env.seq !== null ? env.seq() : 0;
   let content: DocumentFragment | null = null;
   let nodes: Node[];
   if (claim !== null) nodes = claim.nodes;
@@ -539,7 +540,7 @@ function instantiate(c: Compiled, values: readonly unknown[]): View {
     content!.removeChild(el);
     result = el;
   } else result = content!;
-  return env.tag !== null ? env.tag(c, result) : result;
+  return env.tag !== null ? env.tag(c, result, seq) : result;
 }
 
 /**

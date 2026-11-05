@@ -7,6 +7,8 @@
  */
 import { batch, signal } from "../core/mod.ts";
 import type { Signal } from "../core/mod.ts";
+import { ServerCtx } from "../ssr/context.ts";
+import type { ServerInfo } from "../ssr/context.ts";
 
 /** A cache key: an array of JSON-like values, e.g. `["user", 42]`. */
 export type QueryKey = readonly unknown[];
@@ -24,6 +26,8 @@ export type Fetcher<T> = (ctx: FetchContext<T>) => Promise<T> | T;
 
 export interface Entry<T = unknown> {
   readonly hash: string;
+  /** The cache this entry lives in (the global one, or the one of a server request). */
+  readonly home: Map<string, Entry<any>>;
   /** Per-element hashes, for prefix matching. */
   readonly parts: readonly string[];
   data: Signal<T | undefined>;
@@ -47,6 +51,21 @@ export interface Entry<T = unknown> {
 // Entries of every value type live in one map; the type parameter is erased here only.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const cache = new Map<string, Entry<any>>();
+
+/** One cache per server request, so results never leak between users. */
+const requestCaches = new WeakMap<ServerInfo, Map<string, Entry<any>>>();
+
+/**
+ * The cache for the code running now: the request's own cache while a server
+ * render owns the current owner chain, else the process-wide one (browser).
+ */
+export function activeCache(): Map<string, Entry<any>> {
+  const info = ServerCtx.use();
+  if (info === null) return cache;
+  let c = requestCaches.get(info);
+  if (c === undefined) requestCaches.set(info, (c = new Map()));
+  return c;
+}
 
 /** Deterministic string for one key element (object keys sorted). */
 export function hashPart(v: unknown): string {
@@ -75,10 +94,12 @@ export function acquireEntry<T>(
 ): Entry<T> {
   const parts = key.map(hashPart);
   const hash = parts.join("\u0001");
-  let e: Entry<T> | undefined = cache.get(hash);
+  const home = activeCache();
+  let e: Entry<T> | undefined = home.get(hash);
   if (e === undefined) {
     e = {
       hash,
+      home,
       parts,
       data: signal<T | undefined>(undefined),
       error: signal<unknown>(undefined, { equals: false }),
@@ -95,7 +116,7 @@ export function acquireEntry<T>(
       settle: null,
       gc: null,
     };
-    cache.set(hash, e);
+    home.set(hash, e);
   } else if (cacheTime > e.cacheTime) e.cacheTime = cacheTime;
   if (e.gc !== null) {
     clearTimeout(e.gc);
@@ -196,7 +217,7 @@ export function scheduleGc<T>(e: Entry<T>): void {
     e.gc = null;
     if (e.subscribers > 0) return;
     if (e.controller !== null) return scheduleGc(e);
-    if (cache.get(e.hash) === e) cache.delete(e.hash);
+    if (e.home.get(e.hash) === e) e.home.delete(e.hash);
   };
   if (e.cacheTime <= 0) sweep();
   else {
@@ -229,7 +250,7 @@ function matches<T>(e: Entry<T>, prefix: readonly string[]): boolean {
 export function invalidate(prefix: QueryKey = []): Promise<void> {
   const p = prefix.map(hashPart);
   const pending: Promise<void>[] = [];
-  for (const e of [...cache.values()]) {
+  for (const e of [...activeCache().values()]) {
     if (!matches(e, p)) continue;
     e.invalidated = true;
     if (e.subscribers > 0 && e.fetcher !== null)
@@ -260,20 +281,21 @@ export function prefetch<T>(
 
 /** Remove every cached entry (aborting fetches). Mostly for tests and logout. */
 export function clearCache(): void {
-  for (const e of cache.values()) {
+  const home = activeCache();
+  for (const e of home.values()) {
     abortFetch(e);
     if (e.gc !== null) clearTimeout(e.gc);
   }
-  cache.clear();
+  home.clear();
 }
 
 /** Number of cached entries (diagnostics, leak tests). */
 export function cacheSize(): number {
-  return cache.size;
+  return activeCache().size;
 }
 
 /** The cached data for an exact key, if any. */
 export function getCached<T>(key: QueryKey): T | undefined {
   const hash = key.map(hashPart).join("\u0001");
-  return cache.get(hash)?.data.peek() as T | undefined;
+  return activeCache().get(hash)?.data.peek() as T | undefined;
 }

@@ -38,8 +38,10 @@ export interface DomEnv {
   doc: Document | null;
   /** True while rendering on the server. */
   server: boolean;
+  /** Server: the sequence number of a template instance, taken when its `html` call starts (the moment the client claims it). */
+  seq: (() => number) | null;
   /** Server: tag a freshly built template instance so that `hydrate` can find it. */
-  tag: ((info: TemplateInfo, result: Node) => Node) | null;
+  tag: ((info: TemplateInfo, result: Node, seq: number) => Node) | null;
   /** Client hydration: take the server nodes of the next template instance, or null to build it fresh. */
   claim: ((info: TemplateInfo) => Claim | null) | null;
   /** Server: every promise registered with any suspense boundary. */
@@ -53,6 +55,7 @@ export interface DomEnv {
 export const env: DomEnv = {
   doc: null,
   server: false,
+  seq: null,
   tag: null,
   claim: null,
   pending: null,

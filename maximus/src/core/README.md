@@ -3,7 +3,15 @@
 Fine-grained reactivity and ownership. No DOM, no dependencies.
 
 ```ts
-import { signal, computed, effect, batch, untrack, root, onCleanup } from "maximus/core";
+import {
+  signal,
+  computed,
+  effect,
+  batch,
+  untrack,
+  root,
+  onCleanup,
+} from "maximus/core";
 ```
 
 ## Signals, computeds, effects
@@ -33,12 +41,12 @@ What you can rely on:
 
 ### When do effects run?
 
-| situation | when the effect runs |
-| --- | --- |
-| `effect(fn)` called at top level | `fn` runs **immediately**, once |
+| situation                                                                   | when the effect runs                                                                   |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `effect(fn)` called at top level                                            | `fn` runs **immediately**, once                                                        |
 | `effect(fn)` called inside a `batch`, a `render`, or another effect's flush | first run is **deferred** to the end of it (so `onMount`-style code sees attached DOM) |
-| a signal it read is written | queued; runs in a **microtask**, or right away at the end of the enclosing `batch` |
-| `flushSync()` | runs everything queued now (re-entrant calls from inside an effect are ignored) |
+| a signal it read is written                                                 | queued; runs in a **microtask**, or right away at the end of the enclosing `batch`     |
+| `flushSync()`                                                               | runs everything queued now (re-entrant calls from inside an effect are ignored)        |
 
 `await tick()` resolves after the next flush. `renderEffect(fn)` is the same as `effect` but always runs first and synchronously at creation, and its updates run **before** user effects in a flush; the DOM layer uses it for bindings, so user effects always observe an up-to-date DOM.
 
@@ -83,7 +91,10 @@ Context rides on the owner tree, so it reaches effects and components created la
 ### Errors
 
 ```ts
-catchError(() => risky(), (err) => report(err));
+catchError(
+  () => risky(),
+  (err) => report(err),
+);
 ```
 
 `catchError` runs `fn` in a new owner that carries the handler. A synchronous throw is passed to the handler (and the partial result is disposed); an error thrown later by any effect, event handler or cleanup created under it is routed to the **nearest** handler up the owner chain. A handler that throws escalates to the next one up. With no handler, the error is thrown: synchronously for an effect's first run, from `flushSync` (after the queue drained, so other effects still ran) otherwise. `errorBoundary` in `maximus/dom` is built on this.

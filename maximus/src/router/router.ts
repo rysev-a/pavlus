@@ -18,6 +18,7 @@ import {
   signal,
   untrack,
 } from "../core/mod.ts";
+import { useServer } from "../ssr/context.ts";
 import { html } from "../dom/mod.ts";
 import type { Child } from "../dom/mod.ts";
 import {
@@ -185,15 +186,18 @@ export function createRouter(options: RouterOptions): Router {
       console.error(e);
     });
 
-  const hasWindow = typeof window !== "undefined";
+  const serverUrl = useServer()?.url;
+  const hasWindow = typeof window !== "undefined" && serverUrl === undefined;
   const history: History =
     typeof options.history === "object"
       ? options.history
-      : options.history === "memory" || !hasWindow
-        ? createMemoryHistory()
-        : options.history === "hash"
-          ? createHashHistory()
-          : createBrowserHistory();
+      : serverUrl !== undefined
+        ? createMemoryHistory([serverUrl])
+        : options.history === "memory" || !hasWindow
+          ? createMemoryHistory()
+          : options.history === "hash"
+            ? createHashHistory()
+            : createBrowserHistory();
 
   const scroller: Scroller | null =
     options.scroll === false
@@ -630,8 +634,8 @@ export function createRouter(options: RouterOptions): Router {
     matched: Matched[],
   ): void {
     const pathChanged = prev === null || prev.path !== next.path;
-    // Title.
-    if (typeof document !== "undefined") {
+    // Title (not while server rendering: there is no real document to write to).
+    if (typeof document !== "undefined" && serverUrl === undefined) {
       for (let i = matched.length - 1; i >= 0; i--) {
         const m = matched[i]!;
         const title = m.def.title;

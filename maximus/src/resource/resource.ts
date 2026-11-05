@@ -22,6 +22,8 @@ import {
   startFetch,
 } from "./cache.ts";
 import type { Entry, FetchContext, QueryKey } from "./cache.ts";
+import { env } from "../dom/env.ts";
+import { TransferCtx } from "../ssr/state.ts";
 
 export interface ResourceOptions<T, S> {
   /** Cache key for a source value. Resources with equal keys share data, dedupe fetches and stay in sync. Default: private to this resource (`[id, source]`). */
@@ -81,6 +83,8 @@ export function resource<T, S>(
   const cacheTime = options.cacheTime ?? DEFAULT_CACHE_TIME;
   const owner = getOwner();
   const sus = options.suspense === false ? null : useSuspense();
+  const transfer = options.key ? TransferCtx.use() : null;
+  const onServer = env.server;
   const current = signal<Entry<T> | null>(null);
   let held: Entry<T> | null = null;
   let lastSeen: T | undefined;
@@ -104,6 +108,12 @@ export function resource<T, S>(
   const track = (e: Entry<T>): void => {
     const p = e.promise;
     if (p === null) return;
+    if (onServer && transfer !== null)
+      void p.then(() => {
+        const v = e.data.peek();
+        if (v !== undefined && e.error.peek() === undefined)
+          transfer.set(e.hash, v);
+      });
     if (sus !== null && e.data.peek() === undefined) sus.register(p);
     const run = e.runId;
     void p.then(() => {
@@ -139,6 +149,17 @@ export function resource<T, S>(
         cacheTime,
       );
       e.fetcher = (ctx) => fetcher(s, ctx);
+      // client: start from what the server fetched (once per entry)
+      if (
+        !onServer &&
+        transfer !== null &&
+        e.data.peek() === undefined &&
+        e.promise === null &&
+        transfer.has(e.hash)
+      ) {
+        e.data.set(transfer.take<T>(e.hash));
+        e.updatedAt = Date.now();
+      }
       if (old === e) return; // same key: only the fetcher closure changed
       if (old !== null) remember(old);
       e.subscribers++;

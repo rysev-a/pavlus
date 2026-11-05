@@ -17,6 +17,8 @@ import { env, hashStrings } from "../dom/env.ts";
 import type { TemplateInfo } from "../dom/env.ts";
 import { toNodes } from "../dom/insert.ts";
 import type { Child } from "../dom/mod.ts";
+import { ServerCtx, useServer } from "./context.ts";
+import type { ServerInfo } from "./context.ts";
 import { serialize, serializeChildren } from "./serialize.ts";
 import {
   DEFAULT_STATE_ID,
@@ -44,18 +46,8 @@ export interface RenderOptions {
   onTimeout?: (pending: number) => void;
 }
 
-export interface ServerInfo {
-  url: string;
-  request: unknown;
-}
-
-/** Provided during server rendering: the request URL and friends. */
-export const ServerCtx = createContext<ServerInfo | null>(null);
-
-/** The server request info, or `null` on the client. Call during component setup. */
-export function useServer(): ServerInfo | null {
-  return ServerCtx.use();
-}
+export { ServerCtx, useServer };
+export type { ServerInfo };
 
 /** True while this code runs inside `renderToString`/`renderToStream`. Effects run on the server too: guard browser-only work with it. */
 export function isServer(): boolean {
@@ -184,10 +176,9 @@ function getDocument(): VDocument {
 
 const hashCache = new WeakMap<readonly string[], string>();
 
-function tag(info: TemplateInfo, result: Node): Node {
+function tag(info: TemplateInfo, result: Node, seq: number): Node {
   const rc = RenderCtx.use();
-  if (rc === null) return result;
-  const seq = ++rc.seq;
+  if (rc === null || seq === 0) return result;
   let hash = hashCache.get(info.strings);
   if (hash === undefined)
     hashCache.set(info.strings, (hash = hashStrings(info.strings)));
@@ -206,6 +197,7 @@ let refs = 0;
 const saved = {
   doc: null as Document | null,
   server: false,
+  seq: null as typeof env.seq,
   tag: null as typeof env.tag,
   pending: null as typeof env.pending,
   suspense: null as typeof env.suspense,
@@ -215,11 +207,16 @@ function enter(): void {
   if (refs++ > 0) return;
   saved.doc = env.doc;
   saved.server = env.server;
+  saved.seq = env.seq;
   saved.tag = env.tag;
   saved.pending = env.pending;
   saved.suspense = env.suspense;
   env.doc = getDocument() as unknown as Document;
   env.server = true;
+  env.seq = () => {
+    const rc = RenderCtx.use();
+    return rc === null ? 0 : ++rc.seq;
+  };
   env.tag = tag;
   env.pending = (p) => RenderCtx.use()?.track(p, true);
   env.suspense = (b) => {
@@ -245,6 +242,7 @@ function leave(): void {
   if (--refs > 0) return;
   env.doc = saved.doc;
   env.server = saved.server;
+  env.seq = saved.seq;
   env.tag = saved.tag;
   env.pending = saved.pending;
   env.suspense = saved.suspense;
