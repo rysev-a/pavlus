@@ -83,3 +83,59 @@ docs/site/scripts/build.ts`).
   (listen socket closed while an HMR connection held the process) after the
   edit window where `app.pavlus` imported a not-yet-created sidebar file —
   needs Ctrl-C + `npm run dev`.
+
+## Done & green: restyled onto the ui-kit (shadcn "new-york")
+
+- `public/styles.css` rewritten from `ui-kit/frontend/styles.css`: sections
+  1 (tokens incl. dark), 2 (shell), 3 (button), 4 (form), 5 (card/badge/
+  page-header), 6 (data table), 9 (sidebar), 14 (icon masks) — trimmed to the
+  rules used, section numbers follow the kit file; section 13 = the app's own
+  few rules (status, td.id/th.sortable, `users`+`pencil` masks, form card
+  width, centered reset). Deviation (commented in-file): no floating header →
+  ≤800px the sidebar unfolds into a block instead of the kit's drawer.
+- Templates carry kit classes next to the test hooks (`button.new`,
+  `input.flt`, `select.pages`, `td.id`, …): list = ui-page-header/actions +
+  ui-data-table (toolbar + ui-data-search with search icon, ui-data-check +
+  `data-selected` rows, ui-badge-secondary, ghost icon-sm row actions
+  pencil/trash + row-delete, ui-resource-footer with ui-data-rows +
+  Previous/Next outline-sm); forms = ui-card (header/title/content) +
+  ui-field-group + ui-input / ui-select-control + ui-form-actions
+  (default/outline buttons); sidebar root is `nav.ui-sidebar` per the kit.
+- app.pavlus / app.ts / user-list.ts untouched → docs excerpts (12–16 /
+  38–55 / 70–77) still valid; site not rebuilt.
+- README: `public/` line added to the tree.
+- Validation: vitest 2/2, `tsc --noEmit` clean, `npm run build`, prod SSR
+  smoke on :3212/:3213 (kit markup in HTML, styles.css 200/25KB), prettier
+  clean (repo checks `**/*.ts`; the css passes too).
+
+## Done & green: the table's row is a child component (user-list-row/)
+
+- Goal: see how patch ids build when there is a parent component in the
+  chain (embed inside a keyed `for`).
+- `user-list/user-list-row/`: `user-list-row.pavlus` (the view half: the tr,
+  checkbox, tds, star/edit/del) + `user-list-row.ts` (UserListRow — the
+  behavior half; no view, no `key`: a row is not state, it reads/writes the
+  page's `list` slice directly, so its store paths land beside the page's).
+- `user-list.pavlus`: the loop body became `+Row#row(user=user
+selected={selected.includes(user.id)} starred={starred.includes(user.id)})`
+  - `import Row` line. Embed nid = 38 → row DOM ids =
+    `/4#<user.id>/38<nid-in-row-template>`: tr `/4#1/380`, checkbox `/4#1/382`,
+    star `/4#1/3813`, edit `/4#1/3815`, del `/4#1/3817`; nodes after the loop
+    shifted −16 (footer text 57→41, count text 67→55).
+- Message chain: row events arrive as `list.row.{pick,star,edit,remove}`
+  (embed adds `row.`, outlet adds `list.`; the for key does NOT enter the
+  prefix — the payload carries user.id). UserList renamed `pick/edit/remove`
+  to quoted `"row.pick"/"row.edit"/"row.remove"`; UserListRow.star writes
+  `starred` (added to ListState + initial) answering "paint" → the reply
+  climbs as `list.row.paint` → `"row.paint"` on UserList delegates to paint.
+  Guard check: the embed's diff guard in common() is
+  `user || selected || starred` — a star click re-diffs every row's props but
+  only the touched row yields patches (2 attr on `/4#1/3813`).
+- `removed`/`resetDone` filter/clear `starred`. styles.css: `star` icon mask
+  - `.row-star.starred { color: var(--warning) }`. Tests: star toggle block
+    after the sidebar checks + reset clears starred.
+- Docs: childPaint excerpt moved 70–77 → 84–93 (paint shifted by the new
+  fields/import), site rebuilt. paint's two `console.log`s kept — the user's
+  live window into the patches.
+- Validation: vitest 2/2, tsc clean, build, SSR smoke :3214 (star buttons in
+  HTML), prettier clean.

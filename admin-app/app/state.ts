@@ -67,6 +67,8 @@ export interface ListState {
   error: string;
   /** The checked rows' ids, in click order. */
   selected: number[];
+  /** The starred rows' ids — the row component's own write. */
+  starred: number[];
   /** Whether every row on the page is checked — the header's box. */
   allOn: boolean;
   /** The column the table is sorted by, and its direction (1 up, -1 down). */
@@ -113,6 +115,7 @@ export const initialState: AppState = {
     status: "idle",
     error: "",
     selected: [],
+    starred: [],
     allOn: false,
     sortKey: "id",
     sortDir: 1,

@@ -1,60 +1,60 @@
 // The users page (`/`): the shell's header and the table, one mini-application
 // that owns its slice (`list`). Every write answers "paint", and the paint
 // handler diffs the slice and hands the patches to the dom plugin; the page is
-// routed, so the outlet's boundary scopes them. The table is a data table in
-// the tasks-example style: a toolbar filter, checkboxes to select rows,
-// headers that sort, a badge for the role and a footer with the selection
-// count, the rows-per-page select and the pager. The header's "new user"
-// button and a row's edit button navigate to their pages; the bottom "reset"
-// button rebuilds the demo database.
+// routed, so the outlet's boundary scopes them. The table is the ui-kit's data
+// table: a toolbar filter, checkboxes that select rows, headers that sort, a
+// badge for the role and a footer with the selection count, the rows-per-page
+// select and the pager. The body of the rows loop is an embedded child view
+// (`+Row#row`, user-list-row/): the page passes the row's props per iteration
+// and the row's events arrive prefixed `row.` — the page handles the table's
+// concerns, the row's own component the star. The header's "new user" button
+// and a row's edit button navigate to their pages; the bottom "reset" button
+// rebuilds the demo database.
+import Row from "./user-list-row/user-list-row.pavlus"
 if status == "loading"
   p.status Loading...
 else
   if error
     p.status.status--error {error}
-  header.top
-    h1 Users
-    button.new(@click=newUser) new user
-  if total == 0
-    p.empty No users match — change the filter or create one.
-  div.table-card
-    div.toolbar
-      input.flt(value=filter placeholder="Filter users..." @input=search)
-    table.users
-      thead
-        tr
-          th.chk
-            input.sel-all(type="checkbox" checked=allOn @change=pickAll)
-          th.col-id.sortable(@click=sort("id")) Id {sortKey == "id" ? (sortDir == 1 ? " ▲" : " ▼") : ""}
-          th.sortable(@click=sort("name")) Name {sortKey == "name" ? (sortDir == 1 ? " ▲" : " ▼") : ""}
-          th.sortable(@click=sort("email")) Email {sortKey == "email" ? (sortDir == 1 ? " ▲" : " ▼") : ""}
-          th.sortable(@click=sort("role")) Role {sortKey == "role" ? (sortDir == 1 ? " ▲" : " ▼") : ""}
-          th
-      tbody
-        for user in rows key user.id
-          tr(class:on=selected.includes(user.id))
-            td.chk
-              input(type="checkbox" checked=selected.includes(user.id) @change=pick(user.id))
-            td.id {user.id}
-            td {user.name}
-            td {user.email}
-            td
-              span.badge {user.role}
-            td.actions
-              button.edit(@click=edit(user)) edit
-              button.del(@click=remove(user.id)) delete
-    div.table-foot
+  header.ui-page-header
+    h1.ui-page-title Users
+    div.ui-page-actions
+      button.new.ui-button.ui-button-default(@click=newUser) new user
+  div.table-card.ui-data-table
+    div.toolbar.ui-data-toolbar
+      div.ui-data-search
+        span.ui-icon(data-icon="search")
+        input.flt.ui-input(type="search" value=filter placeholder="Filter users..." @input=search)
+    div.ui-data-scroll
+      table.users
+        thead
+          tr
+            th.ui-resource-check
+              input.sel-all.ui-data-check(type="checkbox" aria-label="Select all rows on this page" checked=allOn @change=pickAll)
+            th.sortable(@click=sort("id")) Id {sortKey == "id" ? (sortDir == 1 ? " ▲" : " ▼") : ""}
+            th.sortable(@click=sort("name")) Name {sortKey == "name" ? (sortDir == 1 ? " ▲" : " ▼") : ""}
+            th.sortable(@click=sort("email")) Email {sortKey == "email" ? (sortDir == 1 ? " ▲" : " ▼") : ""}
+            th.sortable(@click=sort("role")) Role {sortKey == "role" ? (sortDir == 1 ? " ▲" : " ▼") : ""}
+            th
+        tbody
+          if rows.length == 0
+            tr
+              td.ui-resource-empty(colspan="6") No users match — change the filter or create one.
+          for user in rows key user.id
+            +Row#row(user=user selected={selected.includes(user.id)} starred={starred.includes(user.id)})
+    div.table-foot.ui-resource-footer
       span.sel
         {selected.length} of {total} row(s) selected
-      div.pager
-        span.per-page
+      div.pager.ui-data-footer-controls
+        label.ui-data-rows
           | Rows per page
-          select.pages(@change=resize)
+          select.pages.ui-select-control.ui-data-rows-select(@change=resize)
             option(value="10" selected=(pageSize == 10)) 10
             option(value="20" selected=(pageSize == 20)) 20
             option(value="50" selected=(pageSize == 50)) 50
             option(value="100" selected=(pageSize == 100)) 100
         span.count Page {page} of {pages}
-        button.pg(@click=turn(-1) disabled=(page == 1)) ‹
-        button.pg(@click=turn(1) disabled=(page >= pages)) ›
-  button.reset(@click=reset) reset data
+        div.ui-resource-pager
+          button.pg.ui-button.ui-button-outline.ui-button-sm(type="button" disabled=(page == 1) @click=turn(-1)) Previous
+          button.pg.ui-button.ui-button-outline.ui-button-sm(type="button" disabled=(page >= pages) @click=turn(1)) Next
+  button.reset.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=reset) reset data

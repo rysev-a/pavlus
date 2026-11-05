@@ -7,14 +7,17 @@ app/        the application — pure, isomorphic code:
             state.ts (data only; each page reads one slice),
             app.ts + app.pavlus (the shell: a sidebar, an outlet and a
             routing table), sidebar/ (the menu column, a view-only child),
-            user-list/ (the users page, `/`), user-edit/ (`/:id/edit`),
-            user-new/ (`/new`) — a component per folder: its own .pavlus
-            template and .ts file, entry-server.ts (what the server loads)
+            user-list/ (the users page, `/` — its rows an embedded child,
+            user-list-row/), user-edit/ (`/:id/edit`), user-new/ (`/new`) —
+            a component per folder: its own .pavlus template and .ts file,
+            entry-server.ts (what the server loads)
 frontend/   the browser shell: main.ts wires the plugins (store, dom, http,
             router, the devtools agent) and mounts the app into #app
 backend/    the server: server.ts (plain node:http), api.ts (the JSON API
             over Postgres), ssr.ts (renders pages from the same app/ code),
             db/ (schema, seed)
+public/     the stylesheet — the ui-kit look (the shadcn "new-york" tokens and
+            .ui-* classes, copied from ui-kit/frontend/styles.css)
 tests/      the app over the real API on the real database, and the server render
 ```
 
@@ -31,7 +34,10 @@ state key the shell gave it:
 
 - `/` — `UserList`: the users table, a data table with selection and
   sorting. Its `enter` loads the users; a row's edit button and the header's
-  "new user" navigate to their pages.
+  "new user" navigate to their pages. The row itself is an embedded child
+  (`+Row#row`, user-list-row/): the page passes its props per iteration and
+  its events come back prefixed `row.` — the page handles the table's
+  concerns (pick, edit, remove), the row's own component the star.
 - `/new` — `UserNew`: an empty form, written by its `enter`.
 - `/:id/edit` — `UserEdit`: its `enter` fetches that user and fills the form.
 
@@ -60,6 +66,13 @@ paint(msg: Message): Effect[] {
 
 The dom plugin still never reads the state: it mounts, and applies the
 patches it is given.
+
+A child without a slice of its own composes the same way from the other
+side: the table's row (user-list-row.ts) reads and writes beside its page
+and lets the page paint — the row's DOM is part of the page's view (the
+`+Row#row` embed renders it there), so its patches come out of the page's
+diff, their ids walking the whole chain: the outlet (`/4`), the loop's key
+(`#1`), the embed (`/38`), the row's own nodes.
 
 ## Run it
 

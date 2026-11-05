@@ -6,10 +6,15 @@
  * hands the patches to the dom plugin without a target; the boundary scopes
  * them to the right nodes. The slice is the full user list plus the table's
  * knobs — filter, page, page size — and `rows`, the current page's slice,
- * computed here so the template stays a pure function of the state.
+ * computed here so the template stays a pure function of the state. The rows
+ * themselves are a child component (user-list-row.ts, the `+Row#row` of the
+ * template): its events arrive prefixed `row.`, handled here for the table's
+ * concerns and by the child for its own; its writes answer `row.paint`,
+ * handled here because the row's DOM is part of this page's view.
  */
 import {
   Component,
+  type Children,
   type Effect,
   type Message,
 } from "@service-laboratory/pavlus";
@@ -20,6 +25,7 @@ import {
   storeEffector as store,
 } from "@service-laboratory/pavlus/plugins";
 import view from "./user-list.pavlus";
+import { UserListRow } from "./user-list-row/user-list-row.ts";
 import type { ListState, SortKey, User } from "../state.ts";
 
 /** The users matching the filter text: name, email, role or id. */
@@ -67,13 +73,33 @@ const allOf = (selected: number[], s: { rows: User[] }): boolean =>
 export class UserList extends Component<ListState> {
   view = view;
 
+  /** The table's rows: one behavior for every `+Row#row` iteration. */
+  private readonly row = new UserListRow();
+
+  /** The template's embedded children, by instance name (`row.*` routes there). */
+  children: Children<ListState> = {
+    row: { component: this.row, tag: "user-row" },
+  };
+
   /** The answer of a write: diff the slice, hand over the patches. */
   paint(msg: Message): Effect[] {
     const { prev, next } = msg.payload as {
       prev: ListState;
       next: ListState;
     };
+    console.log(prev, next);
+    console.log(view.diff(prev, next));
     return [DomPlugin.update(view.diff(prev, next))];
+  }
+
+  /**
+   * A row's write answered: the reply comes back as `row.paint` (the row's
+   * boundary prefixed it), and the page repaints — the row's DOM is part of
+   * its view, so this diff produces the row's patches too, with ids that
+   * carry the loop key and the embed (see UserListRow).
+   */
+  "row.paint"(msg: Message): Effect[] {
+    return this.paint(msg);
   }
 
   /** The router activated this page (also on the first route). */
@@ -121,7 +147,7 @@ export class UserList extends Component<ListState> {
   }
 
   /** A row's edit button: that user's page. */
-  edit(msg: Message): Effect[] {
+  "row.edit"(msg: Message): Effect[] {
     const user = msg.payload as User;
     return [router.navigate(`/${user.id}/edit`)];
   }
@@ -158,7 +184,7 @@ export class UserList extends Component<ListState> {
   }
 
   /** A row's checkbox: add or drop the row from the selection. */
-  pick(msg: Message, s: ListState): Effect[] {
+  "row.pick"(msg: Message, s: ListState): Effect[] {
     const id = msg.payload as number;
     const selected = s.selected.includes(id)
       ? s.selected.filter((x) => x !== id)
@@ -183,7 +209,7 @@ export class UserList extends Component<ListState> {
   }
 
   /** A row's delete button: a request, nothing to change yet. */
-  remove(msg: Message): Effect[] {
+  "row.remove"(msg: Message): Effect[] {
     return [
       http.request({
         id: "remove",
@@ -203,6 +229,11 @@ export class UserList extends Component<ListState> {
       store.set(
         "selected",
         s.selected.filter((x) => x !== id),
+        { onSuccess: "paint" },
+      ),
+      store.set(
+        "starred",
+        s.starred.filter((x) => x !== id),
         { onSuccess: "paint" },
       ),
       ...this.repage(s, { users }),
@@ -230,6 +261,7 @@ export class UserList extends Component<ListState> {
       store.set("pages", 1, { onSuccess: "paint" }),
       store.set("pageSize", 10, { onSuccess: "paint" }),
       store.set("selected", [], { onSuccess: "paint" }),
+      store.set("starred", [], { onSuccess: "paint" }),
       store.set("sortKey", "id", { onSuccess: "paint" }),
       store.set("sortDir", 1, { onSuccess: "paint" }),
       ...this.load(),

@@ -122,7 +122,7 @@ const excerpts = {
     from: 1,
   },
   routingDecl: { code: sliceApp("app.ts", 38, 55), from: 38 },
-  childPaint: { code: sliceApp("user-list/user-list.ts", 70, 77), from: 70 },
+  childPaint: { code: sliceApp("user-list/user-list.ts", 84, 93), from: 84 },
   pluginCtx: { code: slice("core/types.ts", 24, 35), from: 24 },
   pluginType: { code: slice("core/types.ts", 47, 54), from: 47 },
 };

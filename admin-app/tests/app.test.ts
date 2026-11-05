@@ -82,8 +82,27 @@ test("the app over the real API: pages, filter, CRUD, reset", async () => {
     expect(menuLink().textContent).toContain("Users");
     expect(menuLink().dataset.active).toBe("true");
 
+    // The row's star: the row's own component (the `row` child of the page)
+    // owns it — the click arrives as `list.row.star`, its write answers
+    // `list.row.paint`, and the page repaints the row it embedded (the first
+    // row's button flips its class and aria-pressed, nothing else changes).
+    const star = () =>
+      document.querySelector("button.star") as HTMLButtonElement;
+    click("button.star");
+    await until("user 1 is starred", () =>
+      store.getState().list.starred.includes(1),
+    );
+    expect(star().getAttribute("aria-pressed")).toBe("true");
+    expect(star().classList.contains("starred")).toBe(true);
+    click("button.star");
+    await until(
+      "the star is gone",
+      () => store.getState().list.starred.length === 0,
+    );
+    expect(star().getAttribute("aria-pressed")).toBe("false");
+    expect(star().classList.contains("starred")).toBe(false);
+
     // The pager: one page forward lands on user 11, back again on user 1.
-    const pager = () => document.querySelectorAll("button.pg");
     click("button.pg", 1); // next
     await until(
       "page 2 (user 11)",
@@ -205,6 +224,12 @@ test("the app over the real API: pages, filter, CRUD, reset", async () => {
     await until("the table is back again", () => rows().length === 10);
 
     // Reset: the bottom button rebuilds the seed — everything is as it was.
+    // A starred user goes first, to see the star go with the reset.
+    click("button.star");
+    await until(
+      "a user is starred",
+      () => store.getState().list.starred.length === 1,
+    );
     click("button.reset");
     await until(
       "the database is reseeded",
@@ -220,6 +245,7 @@ test("the app over the real API: pages, filter, CRUD, reset", async () => {
     ).toBe("Bob");
     expect(store.getState().list.filter).toBe("");
     expect(store.getState().list.sortKey).toBe("id");
+    expect(store.getState().list.starred).toEqual([]);
 
     app.dispose();
   } finally {
