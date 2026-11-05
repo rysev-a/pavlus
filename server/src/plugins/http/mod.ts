@@ -502,6 +502,9 @@ export function createHttpServerPlugin(
     if (conn.queued + chunk.length > lim.streamBufferBytes) {
       // a client that cannot keep up must not make the server buffer forever
       st.slowConsumers++;
+      conn.state = "done";
+      conn.queue.length = 0;
+      conn.queued = 0;
       conn.res.destroy();
       return;
     }
