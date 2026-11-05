@@ -25,9 +25,7 @@ const sleep = (ms: number): Promise<void> =>
 
 /** A tiny Standard Schema implementation for the tests. */
 function schemaOf<T>(
-  check: (
-    v: T,
-  ) => Array<{
+  check: (v: T) => Array<{
     message: string;
     path?: Array<string | number | { key: string | number }>;
   }>,
