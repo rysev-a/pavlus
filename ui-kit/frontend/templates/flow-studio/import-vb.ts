@@ -5,7 +5,6 @@
 // route when it has one), so the imported flow runs end to end. Pure.
 import { autoLayout } from "./layout.ts";
 import {
-  type FlowNode,
   type Model,
   addEdge,
   addNode,
@@ -27,9 +26,17 @@ import {
 export const VB_PREFIX = "vb-";
 
 const camel = (s: string): string => {
-  const parts = s.replace(/[^A-Za-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
+  const parts = s
+    .replace(/[^A-Za-z0-9]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
   const id = parts
-    .map((p, i) => (i === 0 ? p[0].toLowerCase() + p.slice(1) : p[0].toUpperCase() + p.slice(1)))
+    .map((p, i) =>
+      i === 0
+        ? p[0].toLowerCase() + p.slice(1)
+        : p[0].toUpperCase() + p.slice(1),
+    )
     .join("");
   return /^[A-Za-z_]/.test(id) ? id : `h${id}`;
 };
@@ -131,12 +138,15 @@ export function importVisualBuilder(
   const routeIds = new Map<string, string>();
   const stateIds = new Map<string, string>();
   const starts: string[] = [];
+  const quiet: string[] = [];
 
   const routeFor = (c: Call): string => {
     const title = `${c.method} ${c.path}`;
     const known = routeIds.get(title);
     if (known) return known;
-    const existing = m.nodes.find((n) => n.kind === "route" && n.title === title);
+    const existing = m.nodes.find(
+      (n) => n.kind === "route" && n.title === title,
+    );
     if (existing) {
       routeIds.set(title, existing.id);
       return existing.id;
@@ -159,7 +169,10 @@ export function importVisualBuilder(
       status: mock?.status ?? 200,
       detail: mock?.body || "{}",
     }).model;
-    m = addEdge(m, `${slug}-h`, `${slug}-ok`, { kind: "effect", msg: "http.respond" })!.model;
+    m = addEdge(m, `${slug}-h`, `${slug}-ok`, {
+      kind: "effect",
+      msg: "http.respond",
+    })!.model;
     routeIds.set(title, slug);
     return slug;
   };
@@ -186,27 +199,36 @@ export function importVisualBuilder(
         clientSet: clientSetOf(chain),
         note: `from the ${ELEMENTS[el.type].label} ${el.id}`,
       }).model;
-      m = addEdge(m, evId, fhId, { kind: "request", msg: `ui.${event}` })!.model;
+      m = addEdge(m, evId, fhId, {
+        kind: "request",
+        msg: `ui.${event}`,
+      })!.model;
       events++;
-      starts.push(evId);
+      (callsOf(chain).length ? starts : quiet).push(evId);
       for (const c of callsOf(chain)) {
         calls++;
         const rt = routeFor(c);
-        m = addEdge(m, fhId, rt, {
-          kind: "request",
-          msg: "http.request",
-          payload: fieldsOf(
-            `method=${c.method}; path=${c.path}${c.body ? `; body:any=${c.body}` : ""}`,
-          ),
-        })?.model ?? m;
+        m =
+          addEdge(m, fhId, rt, {
+            kind: "request",
+            msg: "http.request",
+            payload: fieldsOf(
+              `method=${c.method}; path=${c.path}${c.body ? `; body:any=${c.body}` : ""}`,
+            ),
+          })?.model ?? m;
         const ok = findNode(m, `${rt}-ok`);
         if (ok && c.okKey) {
           const okH = `${fhId}-ok-${calls}`;
           m = addNode(m, "fe-handler", `${name}Ok`, { id: okH }).model;
-          m = addEdge(m, ok.id, okH, { kind: "reply", msg: `${name}Ok` })?.model ?? m;
-          m = addEdge(m, okH, stateFor(c.okKey), { kind: "effect", msg: "store.set" })?.model ?? m;
+          m =
+            addEdge(m, ok.id, okH, { kind: "reply", msg: `${name}Ok` })
+              ?.model ?? m;
+          const sid = stateFor(c.okKey);
+          m =
+            addEdge(m, okH, sid, { kind: "effect", msg: "store.set" })?.model ??
+            m;
         }
-        if (c.errKey) {
+        if (c.errKey && findNode(m, `${rt}-h`)) {
           const errId = `${rt}-err`;
           if (!findNode(m, errId)) {
             m = addNode(m, "effect", "http.respond", {
@@ -214,28 +236,43 @@ export function importVisualBuilder(
               status: 500,
               detail: '{"error":"unavailable"}',
             }).model;
-            m = addEdge(m, `${rt}-h`, errId, { kind: "effect", msg: "http.respond", cond: "failed" })!.model;
+            m =
+              addEdge(m, `${rt}-h`, errId, {
+                kind: "effect",
+                msg: "http.respond",
+                cond: "failed",
+              })?.model ?? m;
           }
           const errH = `${fhId}-err-${calls}`;
           m = addNode(m, "fe-handler", `${name}Failed`, { id: errH }).model;
-          m = addEdge(m, errId, errH, { kind: "reply", msg: `${name}Failed` })?.model ?? m;
-          m = addEdge(m, errH, stateFor(c.errKey), { kind: "effect", msg: "store.set" })?.model ?? m;
+          m =
+            addEdge(m, errId, errH, { kind: "reply", msg: `${name}Failed` })
+              ?.model ?? m;
+          const sid = stateFor(c.errKey);
+          m =
+            addEdge(m, errH, sid, { kind: "effect", msg: "store.set" })
+              ?.model ?? m;
         }
       }
     }
   }
   // a client and the externals the imported routes need
   if (!m.nodes.some((n) => n.kind === "external" && n.plugin === "http"))
-    m = addNode(m, "external", "Client", { id: `${VB_PREFIX}x-client`, plugin: "http" }).model;
+    m = addNode(m, "external", "Client", {
+      id: `${VB_PREFIX}x-client`,
+      plugin: "http",
+    }).model;
   m = {
     ...m,
     name: into.nodes.length === 0 ? vb.name : m.name,
-    conds: m.edges.some((e) => e.cond === "failed") ? { ...m.conds, failed: false } : m.conds,
+    conds: m.edges.some((e) => e.cond === "failed")
+      ? { ...m.conds, failed: false }
+      : m.conds,
     scenario: {
       ...m.scenario,
       requests: [
         ...m.scenario.requests,
-        ...starts.slice(0, 2).map((entry, i) => ({
+        ...(starts.length ? starts : quiet).slice(0, 2).map((entry, i) => ({
           rid: `v${m.scenario.requests.length + i + 1}`,
           entry,
           at: i * 12,

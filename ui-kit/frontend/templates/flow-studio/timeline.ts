@@ -14,13 +14,7 @@ import { type Step, type Trace, stepsOf } from "./engine.ts";
 import { type Model, findNode } from "./model.ts";
 
 export type BarKind =
-  | "hop"
-  | "work"
-  | "wait"
-  | "cancelled"
-  | "error"
-  | "timeout"
-  | "retry";
+  "hop" | "work" | "wait" | "cancelled" | "error" | "timeout" | "retry";
 
 export interface Bar {
   t0: number;
@@ -63,7 +57,9 @@ export function buildTimeline(m: Model, trace: Trace, rid: string): Timeline {
   const marks: Mark[] = [];
   const nodeLabel = (id: string): string => {
     const n = findNode(m, id);
-    return n ? `${n.title}${n.kind === "effect" && n.detail ? ` ${n.detail.slice(0, 18)}` : ""}` : id;
+    return n
+      ? `${n.title}${n.kind === "effect" && n.detail ? ` ${n.detail.slice(0, 18)}` : ""}`
+      : id;
   };
   let lastRetry: Step | null = null;
   for (const s of mine) {
@@ -72,7 +68,7 @@ export function buildTimeline(m: Model, trace: Trace, rid: string): Timeline {
       case "work":
       case "retry": {
         const r = row(s.to, nodeLabel(s.to));
-        if (lastRetry && lastRetry.to === s.to && s.type === "work" && s.tStart > lastRetry.t)
+        if (lastRetry && lastRetry.to === s.to && s.tStart > lastRetry.t)
           r.bars.push({
             t0: lastRetry.t,
             t1: s.tStart,
@@ -109,7 +105,12 @@ export function buildTimeline(m: Model, trace: Trace, rid: string): Timeline {
         break;
       }
       case "abort":
-        marks.push({ t: s.t, label: "client aborts", kind: "abort", step: s.i });
+        marks.push({
+          t: s.t,
+          label: "client aborts",
+          kind: "abort",
+          step: s.i,
+        });
         break;
       case "rollback":
         marks.push({ t: s.t, label: "rollback", kind: "rollback", step: s.i });
@@ -134,8 +135,13 @@ export function buildTimeline(m: Model, trace: Trace, rid: string): Timeline {
           });
     }
   }
-  const list = [...rows.values()].filter((r) => r.bars.length > 0 || r.id === "net");
-  const all = [...list.flatMap((r) => r.bars.flatMap((b) => [b.t0, b.t1])), ...marks.map((k) => k.t)];
+  const list = [...rows.values()].filter(
+    (r) => r.bars.length > 0 || r.id === "net",
+  );
+  const all = [
+    ...list.flatMap((r) => r.bars.flatMap((b) => [b.t0, b.t1])),
+    ...marks.map((k) => k.t),
+  ];
   const t0 = all.length ? Math.min(...all) : 0;
   const t1 = all.length ? Math.max(...all) : 1;
   return { rid, rows: list, marks, t0, t1: Math.max(t1, t0 + 1) };
@@ -145,7 +151,6 @@ export interface TimelineUi {
   /** the step shown by the debugger: a cursor at its time */
   cursor: number | null;
   prefix: string;
-  color: string;
 }
 
 const LABEL_W = 170;
@@ -179,7 +184,13 @@ export function timelineTree(tl: Timeline, ui: TimelineUi): SvgNode {
         y2: height - 30,
       }),
       text(
-        { key: `TL${t}`, class: "fs-tl__tick", x: x(t), y: TOP - 12, "text-anchor": "middle" },
+        {
+          key: `TL${t}`,
+          class: "fs-tl__tick",
+          x: x(t),
+          y: TOP - 12,
+          "text-anchor": "middle",
+        },
         `${Math.round(t * 10) / 10}ms`,
       ),
     );
@@ -193,10 +204,20 @@ export function timelineTree(tl: Timeline, ui: TimelineUi): SvgNode {
           width: Math.max(3, x(b.t1) - x(b.t0)),
           height: ROW_H - 10,
           rx: 3,
-          on: { click: { id: `${ui.prefix}tlStep`, payload: { i: b.step }, stop: true } },
+          on: {
+            click: {
+              id: `${ui.prefix}tlStep`,
+              payload: { i: b.step },
+              stop: true,
+            },
+          },
         }),
         text(
-          { class: "fs-tl__barlabel", x: x(b.t0) + 4, y: TOP + i * ROW_H + ROW_H / 2 + 3 },
+          {
+            class: "fs-tl__barlabel",
+            x: x(b.t0) + 4,
+            y: TOP + i * ROW_H + ROW_H / 2 + 3,
+          },
           b.kind === "hop" || b.kind === "wait" ? "" : b.label.slice(0, 30),
         ),
       ),
@@ -219,7 +240,12 @@ export function timelineTree(tl: Timeline, ui: TimelineUi): SvgNode {
     ...ticks,
     ...tl.rows.map((r, i) =>
       text(
-        { key: `R${r.id}`, class: "fs-tl__row", x: 6, y: TOP + i * ROW_H + ROW_H / 2 + 3 },
+        {
+          key: `R${r.id}`,
+          class: "fs-tl__row",
+          x: 6,
+          y: TOP + i * ROW_H + ROW_H / 2 + 3,
+        },
         r.label.slice(0, 26),
       ),
     ),

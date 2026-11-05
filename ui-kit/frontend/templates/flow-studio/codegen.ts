@@ -11,7 +11,6 @@ import {
   effectDef,
   findNode,
   inEdges,
-  laneOf,
   outEdges,
   slugify,
 } from "./model.ts";
@@ -34,9 +33,17 @@ export interface GenFile {
 
 const q = (s: string): string => JSON.stringify(s);
 const ident = (s: string): string => {
-  const parts = s.replace(/[^A-Za-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
+  const parts = s
+    .replace(/[^A-Za-z0-9]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
   const id = parts
-    .map((p, i) => (i === 0 ? p[0].toLowerCase() + p.slice(1) : p[0].toUpperCase() + p.slice(1)))
+    .map((p, i) =>
+      i === 0
+        ? p[0].toLowerCase() + p.slice(1)
+        : p[0].toUpperCase() + p.slice(1),
+    )
     .join("");
   return /^[A-Za-z_]/.test(id) ? id : `_${id}`;
 };
@@ -100,7 +107,12 @@ export function textExpr(template: string, side: Side): string {
 /** `12` -> 12, `true` -> true, text -> a string literal */
 function literalExpr(text: string): string {
   const t = text.trim();
-  if (/^-?\d+(\.\d+)?$/.test(t) || t === "true" || t === "false" || t === "null")
+  if (
+    /^-?\d+(\.\d+)?$/.test(t) ||
+    t === "true" ||
+    t === "false" ||
+    t === "null"
+  )
     return t;
   return q(text);
 }
@@ -148,7 +160,10 @@ export function jsonExpr(detail: string, side: Side): string {
           .replace(/\\/g, "\\\\")
           .replace(/`/g, "\\`")
           .replace(/\$\{/g, "\\${")
-          .replace(/\u00a7(\d+)\u00a7/g, (_, n: string) => `\${${pathExpr(refs[Number(n)], side)}}`);
+          .replace(
+            /\u00a7(\d+)\u00a7/g,
+            (_, n: string) => `\${${pathExpr(refs[Number(n)], side)}}`,
+          );
         return `\`${body}\``;
       }
       return q(v);
@@ -193,13 +208,21 @@ function fieldsExpr(edge: FlowEdge, side: Side, prefix = ""): string {
 
 function valueExpr(f: FlowEdge["payload"][number], side: Side): string {
   if (f.example.includes("{")) return textExpr(f.example, side);
-  if (f.type === "number") return Number.isFinite(Number(f.example)) && f.example !== "" ? String(Number(f.example)) : "0";
-  if (f.type === "boolean") return f.example.trim() === "true" ? "true" : "false";
+  if (f.type === "number")
+    return Number.isFinite(Number(f.example)) && f.example !== ""
+      ? String(Number(f.example))
+      : "0";
+  if (f.type === "boolean")
+    return f.example.trim() === "true" ? "true" : "false";
   if (f.type === "array" || f.type === "object" || f.type === "any") {
     try {
       return JSON.stringify(JSON.parse(f.example));
     } catch {
-      return f.example === "" ? (f.type === "array" ? "[]" : "{}") : q(f.example);
+      return f.example === ""
+        ? f.type === "array"
+          ? "[]"
+          : "{}"
+        : q(f.example);
     }
   }
   return q(f.example);
@@ -291,7 +314,10 @@ interface EffCall {
 }
 
 /** `GET key` / `SET key value EX 60` as the redis effector call */
-function redisCall(detail: string, opts: string): { code: string; arg?: undefined } {
+function redisCall(
+  detail: string,
+  opts: string,
+): { code: string; arg?: undefined } {
   const toks = detail.trim().split(/\s+/).filter(Boolean);
   const cmd = (toks[0] ?? "GET").toUpperCase();
   const a = toks.slice(1);
@@ -307,13 +333,22 @@ function redisCall(detail: string, opts: string): { code: string; arg?: undefine
     case "EXPIRE":
       return { code: `redis.expire(${k(0)}, ${Number(a[1]) || 60}${o})` };
     case "LRANGE":
-      return { code: `redis.lrange(${k(0)}, ${Number(a[1]) || 0}, ${Number(a[2]) || -1}${o})` };
+      return {
+        code: `redis.lrange(${k(0)}, ${Number(a[1]) || 0}, ${Number(a[2]) || -1}${o})`,
+      };
     case "LPUSH":
-      return { code: `redis.lpush(${k(0)}, ${textExpr(a.slice(1).join(" ") || "value", "server")}${o})` };
+      return {
+        code: `redis.lpush(${k(0)}, ${textExpr(a.slice(1).join(" ") || "value", "server")}${o})`,
+      };
     case "SET": {
       const exI = a.findIndex((x) => x.toUpperCase() === "EX");
       const nx = a.some((x) => x.toUpperCase() === "NX");
-      const valToks = a.slice(1, [exI, a.findIndex((x) => x.toUpperCase() === "NX")].filter((i) => i > 0).sort((x, y) => x - y)[0] ?? a.length);
+      const valToks = a.slice(
+        1,
+        [exI, a.findIndex((x) => x.toUpperCase() === "NX")]
+          .filter((i) => i > 0)
+          .sort((x, y) => x - y)[0] ?? a.length,
+      );
       const set = [
         exI > 0 ? `ex: ${Number(a[exI + 1]) || 60}` : "",
         nx ? "nx: true" : "",
@@ -342,7 +377,10 @@ function effectCall(m: Model, n: FlowNode): EffCall {
   ].filter(Boolean);
   const opts = optList.length ? `{ ${optList.join(", ")} }` : "";
   const tmo = n.timeoutMs ? `timeoutMs: ${n.timeoutMs}` : "";
-  const optsT = optList.length || tmo ? `{ ${[...optList, tmo].filter(Boolean).join(", ")} }` : "";
+  const optsT =
+    optList.length || tmo
+      ? `{ ${[...optList, tmo].filter(Boolean).join(", ")} }`
+      : "";
   switch (n.title) {
     case "pg.query": {
       const count = new Set(n.detail.match(/\$\d+/g) ?? []).size;
@@ -351,15 +389,21 @@ function effectCall(m: Model, n: FlowNode): EffCall {
         : "";
       return {
         uses: "pg",
-        code: `pg.query(${q(n.detail)}, ${opts || "{ replyTo: \"\" }"}${params})`,
+        code: `pg.query(${q(n.detail)}, ${opts || '{ replyTo: "" }'}${params})`,
       };
     }
     case "pg.tx.begin":
-      return { uses: "pg", code: `pg.begin(${opts || "{ replyTo: \"\" }"})` };
+      return { uses: "pg", code: `pg.begin(${opts || '{ replyTo: "" }'})` };
     case "pg.tx.commit":
-      return { uses: "pg", code: `pg.commit(String(req.tx), ${opts || "{ replyTo: \"\" }"})` };
+      return {
+        uses: "pg",
+        code: `pg.commit(String(req.tx), ${opts || '{ replyTo: "" }'})`,
+      };
     case "pg.tx.rollback":
-      return { uses: "pg", code: `pg.rollback(String(req.tx)${opts ? `, ${opts}` : ""})` };
+      return {
+        uses: "pg",
+        code: `pg.rollback(String(req.tx)${opts ? `, ${opts}` : ""})`,
+      };
     case "redis.cmd":
       return { uses: "redis", code: redisCall(n.detail, optsT).code };
     case "redis.pipeline": {
@@ -367,7 +411,13 @@ function effectCall(m: Model, n: FlowNode): EffCall {
         .split(";")
         .map((c) => c.trim())
         .filter(Boolean)
-        .map((c) => `[${c.split(/\s+/).map((t) => textExpr(t, "server")).join(", ")}]`);
+        .map(
+          (c) =>
+            `[${c
+              .split(/\s+/)
+              .map((t) => textExpr(t, "server"))
+              .join(", ")}]`,
+        );
       return {
         uses: "redis",
         code: `redis.pipeline([${cmds.join(", ")}], ${opts || "{}"})`,
@@ -375,11 +425,13 @@ function effectCall(m: Model, n: FlowNode): EffCall {
     }
     case "fetch.request": {
       const mm = /^([A-Z]+)\s+(\S+)/.exec(n.detail.trim());
-      const o = [`method: ${q(mm?.[1] ?? "GET")}`, ...optList, tmo].filter(Boolean);
+      const o = [`method: ${q(mm?.[1] ?? "GET")}`, ...optList, tmo].filter(
+        Boolean,
+      );
       return {
         uses: "fetch",
         // the FetchEffect type has no index signature, so it needs the cast to Effect
-        code: `fetch.request(${textExpr(mm?.[2] ?? n.detail, "server")}, { ${o.join(", ")} }) as Effect`,
+        code: `fetch.request(${textExpr(mm?.[2] ?? n.detail, "server")}, { ${o.join(", ")} }) as unknown as Effect`,
       };
     }
     case "timer.after":
@@ -388,7 +440,10 @@ function effectCall(m: Model, n: FlowNode): EffCall {
         code: `time.after(${Number(n.detail) || 1000}, ${q(reply?.msg ?? "request.timeout")})`,
       };
     case "crypto.hash":
-      return { uses: "crypto", code: `crypto.hash(String(req.secret), ${opts || "{}"})` };
+      return {
+        uses: "crypto",
+        code: `crypto.hash(String(req.secret), ${opts || "{}"})`,
+      };
     case "crypto.verify":
       return {
         uses: "crypto",
@@ -404,7 +459,10 @@ function effectCall(m: Model, n: FlowNode): EffCall {
     case "http.sse":
       return { uses: "http", code: "http.sseStart()" };
     case "ws.send":
-      return { uses: "ws", code: `ws.send(${textExpr(n.detail || "ok", "server")})` };
+      return {
+        uses: "ws",
+        code: `ws.send(${textExpr(n.detail || "ok", "server")})`,
+      };
     case "ws.broadcast": {
       const room = /^room\s+(.+)$/.exec(n.detail)?.[1] ?? "general";
       return {
@@ -413,7 +471,9 @@ function effectCall(m: Model, n: FlowNode): EffCall {
       };
     }
     case "log": {
-      const mm = /^(trace|debug|info|warn|error|fatal)\s+(.*)$/.exec(n.detail.trim());
+      const mm = /^(trace|debug|info|warn|error|fatal)\s+(.*)$/.exec(
+        n.detail.trim(),
+      );
       const level = mm?.[1] ?? "info";
       return {
         uses: "log",
@@ -437,7 +497,12 @@ const IMPORT_AS: Record<keyof Imports, string> = {
 };
 
 /** the body of the `case` of a handler node */
-function caseBody(m: Model, h: FlowNode, used: Imports, conds: Set<string>): string {
+function caseBody(
+  m: Model,
+  h: FlowNode,
+  used: Imports,
+  conds: Set<string>,
+): string {
   const lines: string[] = [];
   const pre: string[] = [];
   const reqKeys = Object.entries(h.reqSet);
@@ -451,7 +516,10 @@ function caseBody(m: Model, h: FlowNode, used: Imports, conds: Set<string>): str
     used.rq = true;
     lines.push(`rq.sharedSet(${q(k)}, ${textExpr(v, "server")})`);
   }
-  const items: { cond: string; code: string }[] = lines.map((code) => ({ cond: "", code }));
+  const items: { cond: string; code: string }[] = lines.map((code) => ({
+    cond: "",
+    code,
+  }));
   for (const e of outEdges(m, h.id)) {
     const to = findNode(m, e.to);
     if (!to || to.kind !== "effect") continue;
@@ -463,7 +531,8 @@ function caseBody(m: Model, h: FlowNode, used: Imports, conds: Set<string>): str
   const anyCond = items.some((i) => i.cond);
   const hasPayload = items.some((i) => /\bp\b/.test(i.code));
   const hasReq = items.some((i) => /\breq\b/.test(i.code));
-  if (hasPayload) pre.push("const p = (msg.payload ?? {}) as Record<string, any>;");
+  if (hasPayload)
+    pre.push("const p = (msg.payload ?? {}) as Record<string, any>;");
   if (hasReq)
     pre.push(
       "const req = (state.requests[msg.ctx!.rid as string] ?? {}) as Record<string, any>;",
@@ -517,7 +586,9 @@ function handlerModule(
     `import type { Effect, Message } from "@service-laboratory/pavlus";`,
     `import {\n${["type ServerState", ...names, ...(used.pg ? [] : [])].map((n) => `  ${n},`).join("\n")}\n} from "pavlus-server";`,
     ...(condNames.length
-      ? [`import { ${[...new Set(condNames)].join(", ")} } from "${condImport}";`]
+      ? [
+          `import { ${[...new Set(condNames)].join(", ")} } from "${condImport}";`,
+        ]
       : []),
     "",
   ];
@@ -550,27 +621,48 @@ export function generateServer(m: Model): GenFile[] {
 export const routes: Record<string, string> = {
 ${httpRoutes.map((r) => `  ${q(r.title.trim())}: ${q(routeMsg(r))},`).join("\n")}
 };
-${plan.routes.some(isWs) ? `
+${
+  plan.routes.some(isWs)
+    ? `
 // websocket routes: the ws plugin sends ws.open / ws.message with the same ctx.
 export const wsRoutes: Record<string, string> = {
-${plan.routes.filter(isWs).map((r) => `  ${q(r.title.trim())}: ${q(routeMsg(r))},`).join("\n")}
+${plan.routes
+  .filter(isWs)
+  .map((r) => `  ${q(r.title.trim())}: ${q(routeMsg(r))},`)
+  .join("\n")}
 };
-` : ""}`,
+`
+    : ""
+}`,
   });
 
   const mods = [
     ...plan.modules.filter((x) => x.handlers.length),
     ...(plan.common.length
-      ? [{ slug: "common", title: "messages shared by several routes", handlers: plan.common }]
+      ? [
+          {
+            slug: "common",
+            title: "messages shared by several routes",
+            handlers: plan.common,
+          },
+        ]
       : []),
   ];
   for (const mod of mods) {
-    // the route message is also a handler of its module: add a case for it
-    const route = plan.routes.find((r) => slugify(routeMsg(r)) === mod.slug.replace(/-\d+$/, ""));
-    const { code, conds } = handlerModule(m, mod.title, mod.handlers, "../conditions.ts");
+    const { code, conds } = handlerModule(
+      m,
+      mod.title,
+      mod.handlers,
+      "../conditions.ts",
+    );
     conds.forEach((c) => allConds.add(condName(c)));
     const path = `server/handlers/${mod.slug}.ts`;
-    files.push({ path, group: "server", title: `handlers/${mod.slug}.ts`, code });
+    files.push({
+      path,
+      group: "server",
+      title: `handlers/${mod.slug}.ts`,
+      code,
+    });
     imports.push({ name: ident(mod.slug), path: `./handlers/${mod.slug}.ts` });
   }
 
@@ -648,7 +740,9 @@ export const app = (msg: Message, state: ServerState): Effect[] => {
     pimports.push("createCryptoPlugin");
   }
   pimports.push("createHttpServerPlugin");
-  wires.push("const http = createHttpServerPlugin({ port: Number(process.env.PORT ?? 3000) });");
+  wires.push(
+    "const http = createHttpServerPlugin({ port: Number(process.env.PORT ?? 3000) });",
+  );
   plugins.push("http");
   if (usedPlugins.has("ws") || plan.routes.some(isWs)) {
     plugins.push("createWsServerPlugin({ http })");
@@ -716,7 +810,11 @@ const pattern = (n: FlowNode): string => {
     case "timer.after":
       return parts({ plugin: q("time"), type: q("timer.after") });
     case "http.respond":
-      return parts({ plugin: q("http"), type: q("respond"), status: String(n.status || 200) });
+      return parts({
+        plugin: q("http"),
+        type: q("respond"),
+        status: String(n.status || 200),
+      });
     case "http.sse":
       return parts({ plugin: q("http"), type: q("sse.start") });
     case "log":
@@ -736,7 +834,9 @@ export function scenarioSteps(
   const mine = stepsOf(trace, rid);
   const notes: string[] = [];
   const steps: TestStep[] = [];
-  const routeIdx = mine.findIndex((s) => findNode(m, s.to)?.kind === "route" && s.edge);
+  const routeIdx = mine.findIndex(
+    (s) => findNode(m, s.to)?.kind === "route" && s.edge,
+  );
   const flags: Record<string, boolean> = {};
   for (const [k, val] of Object.entries(v.scenario.conds)) flags[k] = val;
   if (routeIdx < 0) {
@@ -769,10 +869,15 @@ export function scenarioSteps(
     return !!n && ["handler", "reply", "error"].includes(n.kind);
   };
   const aborted = v.scenario.faults.some((f) => f.on && f.kind === "abort");
-  const deadlined = v.scenario.faults.some((f) => f.on && f.kind === "deadline");
+  const deadlined = v.scenario.faults.some(
+    (f) => f.on && f.kind === "deadline",
+  );
   while (i < mine.length) {
     const h = mine[i];
-    if (!isApp(h) || !["message", "reply", "error", "timeout"].includes(h.type)) {
+    if (
+      !isApp(h) ||
+      !["message", "reply", "error", "timeout"].includes(h.type)
+    ) {
       i++;
       continue;
     }
@@ -783,7 +888,11 @@ export function scenarioSteps(
     // the effects this handler emitted, in order
     const emitted: Step[] = [];
     let k = i + 1;
-    while (k < mine.length && mine[k].type === "effect" && mine[k].from === node.id) {
+    while (
+      k < mine.length &&
+      mine[k].type === "effect" &&
+      mine[k].from === node.id
+    ) {
       emitted.push(mine[k]);
       k++;
     }
@@ -824,7 +933,9 @@ export function scenarioSteps(
       steps.push({
         code: `{ send: { id: "http.aborted", ctx } }`,
       });
-      const ab = m.nodes.find((x) => x.kind === "handler" && x.title === "http.aborted");
+      const ab = m.nodes.find(
+        (x) => x.kind === "handler" && x.title === "http.aborted",
+      );
       const fx = ab
         ? outEdges(m, ab.id)
             .map((e) => findNode(m, e.to))
@@ -838,7 +949,9 @@ export function scenarioSteps(
       break;
     }
     if (!answer && !responds && deadlined) {
-      notes.push("the deadline is a runtime timer: here it is delivered as request.timeout");
+      notes.push(
+        "the deadline is a runtime timer: here it is delivered as request.timeout",
+      );
       const at = mine.findIndex((s, idx) => idx > i && s.type === "timeout");
       if (at >= 0) {
         i = at;
@@ -855,13 +968,19 @@ export function scenarioSteps(
 export function generateTests(m: Model): GenFile[] {
   const variants = variantsOf(m);
   const blocks: string[] = [];
-  const flagsOf = (v: Variant): Record<string, boolean> => ({ ...m.conds, ...v.scenario.conds });
+  const flagsOf = (v: Variant): Record<string, boolean> => ({
+    ...m.conds,
+    ...v.scenario.conds,
+  });
   const hasFlags = Object.keys(m.conds).length > 0;
   for (const v of variants) {
     const trace = simulate(m, v.scenario, v.scenario.seed);
     const { steps, notes } = scenarioSteps(m, v, trace);
     if (steps.length === 0) continue;
-    if (v.id === "deadline" && !m.nodes.some((n) => n.title === "request.timeout")) {
+    if (
+      v.id === "deadline" &&
+      !m.nodes.some((n) => n.title === "request.timeout")
+    ) {
       // no handler for the deadline: the runtime answers 504 itself, nothing to assert on the app
       continue;
     }
@@ -899,7 +1018,10 @@ ${blocks.join("\n\n")}
 // ---- the frontend ----
 
 /** the fe-handlers a response reaches, split by the status of the respond node */
-function replyHandlers(m: Model, route: FlowNode): { ok: string; fail: string } {
+function replyHandlers(
+  m: Model,
+  route: FlowNode,
+): { ok: string; fail: string } {
   const sub = new Set<string>([route.id]);
   const todo = [route.id];
   while (todo.length) {
@@ -914,7 +1036,8 @@ function replyHandlers(m: Model, route: FlowNode): { ok: string; fail: string } 
   let fail = "";
   for (const id of sub) {
     const n = findNode(m, id);
-    if (!n || n.kind !== "effect" || effectDef(n.title)?.responds !== true) continue;
+    if (!n || n.kind !== "effect" || effectDef(n.title)?.responds !== true)
+      continue;
     for (const e of outEdges(m, id)) {
       const to = findNode(m, e.to);
       if (!to || to.kind !== "fe-handler") continue;
@@ -953,10 +1076,15 @@ export function generateFrontend(m: Model): GenFile[] {
         const { method, path } = routeParts(to);
         const { ok, fail } = replyHandlers(m, to);
         if (method === "WS") {
-          fx.push(`/* TODO: send a websocket frame to ${path} */ store.set("pending", true)`);
+          fx.push(
+            `/* TODO: send a websocket frame to ${path} */ store.set("pending", true)`,
+          );
           continue;
         }
-        const url = path.replace(/:(\w+)/g, (_, p: string) => `\${(state as Record<string, any>).${p} ?? ""}`);
+        const url = path.replace(
+          /:(\w+)/g,
+          (_, p: string) => `\${(state as Record<string, any>).${p} ?? ""}`,
+        );
         const bodyFields = e.payload.filter((f) => f.name.startsWith("body."));
         fx.push(
           `http.request({\n    id: ${q(name)},\n    method: ${q(method)},\n    url: ${url.includes("${") ? `\`${url}\`` : q(url)},${bodyFields.length ? `\n    body: ${fieldsExpr(e, "client", "body")},` : ""}\n    onSuccess: ${q(ok || "onSuccess")},\n    onError: ${q(fail || "onError")},\n  })`,
@@ -972,7 +1100,9 @@ export function generateFrontend(m: Model): GenFile[] {
       `${ui.length ? `  // UI: ${ui.join(", ")}  (bind it in the template: @${ui[0].split(" ")[0]}=${name})\n` : ""}  ${name}(msg: Message, state: State): Effect[] {\n    return [${fx.length ? `\n${fx.map((f) => `      ${f},`).join("\n")}\n    ` : ""}];\n  }`,
     );
   }
-  const stateLines = [...keys].map((k) => `  ${/^[A-Za-z_]\w*$/.test(k) ? k : q(k)}: unknown;`);
+  const stateLines = [...keys].map(
+    (k) => `  ${/^[A-Za-z_]\w*$/.test(k) ? k : q(k)}: unknown;`,
+  );
   const code = `// Frontend handlers of the design (pavlus): a UI event is a message, the handler is a
 // pure method (msg, state) => effects, and the answer of the server comes back as a
 // message with the status and the data.
@@ -994,11 +1124,16 @@ export class AppHandlers extends Component<State> {
 ${methods.join("\n\n")}
 }
 `;
-  return [{ path: "frontend/handlers.ts", group: "frontend", title: "handlers.ts", code }];
+  return [
+    {
+      path: "frontend/handlers.ts",
+      group: "frontend",
+      title: "handlers.ts",
+      code,
+    },
+  ];
 }
 
 export function generateAll(m: Model): GenFile[] {
   return [...generateServer(m), ...generateTests(m), ...generateFrontend(m)];
 }
-
-export { laneOf };

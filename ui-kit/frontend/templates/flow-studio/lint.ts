@@ -29,13 +29,23 @@ export const RULES: { rule: string; title: string }[] = [
   { rule: "no-reply-consumer", title: "An effect whose reply nobody handles" },
   { rule: "no-producer", title: "A message with no producer" },
   { rule: "missing-onerror", title: "An effect with no onError" },
-  { rule: "route-never-responds", title: "A route that never calls http.respond" },
-  { rule: "route-path-no-respond", title: "A path of a route that does not respond" },
+  {
+    rule: "route-never-responds",
+    title: "A route that never calls http.respond",
+  },
+  {
+    rule: "route-path-no-respond",
+    title: "A path of a route that does not respond",
+  },
   { rule: "unreachable", title: "A node nothing leads to" },
-  { rule: "tx-not-closed", title: "A transaction without commit or rollback on a path" },
+  {
+    rule: "tx-not-closed",
+    title: "A transaction without commit or rollback on a path",
+  },
   { rule: "loop", title: "A loop with no condition" },
   { rule: "fan-out", title: "Unbounded fan-out" },
   { rule: "secret-in-log", title: "A secret that is logged" },
+  { rule: "secret-in-state", title: "A secret kept in the request slice" },
   { rule: "msg-mismatch", title: "A message id that no handler takes" },
   { rule: "duplicate", title: "Two nodes with the same name" },
   { rule: "no-timeout", title: "A call with no timeout" },
@@ -52,7 +62,8 @@ export const RUNTIME_MESSAGES = [
   "http.listening",
 ];
 
-const SECRET = /password|passwd|secret|token|authorization|cookie|credit|card|cvv|hash|api[-_]?key|signature/i;
+const SECRET =
+  /password|passwd|secret|token|authorization|cookie|credit|card|cvv|hash|api[-_]?key|signature/i;
 const HANDLER_LIKE = ["handler", "reply", "error"];
 const FAN_OUT = 5;
 
@@ -80,21 +91,24 @@ function leads(
   if (pred(n)) return true;
   if (stack.has(id)) return false;
   stack.add(id);
-  const taken = outEdges(m, id).filter((e) => condHolds(e.cond, m.conds, assign));
+  const taken = outEdges(m, id).filter((e) =>
+    condHolds(e.cond, m.conds, assign),
+  );
   let res: boolean;
   if (n.kind === "effect") {
     const replies = taken.filter((e) => e.kind === "reply");
     const errs = taken.filter((e) => e.kind === "error");
     if (replies.length === 0) res = false;
     else {
-      const ok = replies.some((e) => leads(m, e.to, pred, assign, runtime, stack));
+      const ok = replies.some((e) =>
+        leads(m, e.to, pred, assign, runtime, stack),
+      );
       const bad = errs.length
         ? errs.some((e) => leads(m, e.to, pred, assign, runtime, stack))
         : runtime;
       res = ok && bad;
     }
-  } else
-    res = taken.some((e) => leads(m, e.to, pred, assign, runtime, stack));
+  } else res = taken.some((e) => leads(m, e.to, pred, assign, runtime, stack));
   stack.delete(id);
   return res;
 }
@@ -183,8 +197,9 @@ export function lint(m: Model): Issue[] {
     }
     if (
       errors.length === 0 &&
-      !def?.noFail &&
-      (replies.length > 0 || (def?.replies && !def.optionalReply))
+      def?.replies &&
+      !def.noFail &&
+      !(def.optionalReply && replies.length === 0)
     )
       add(
         "missing-onerror",
@@ -193,11 +208,7 @@ export function lint(m: Model): Issue[] {
         `If ${n.plugin} fails, no message comes back and the runtime ends the request with a 500. Set an onError target in the inspector (drag from the red port).`,
         { node: n.id },
       );
-    if (
-      (n.plugin === "fetch" || n.plugin === "pg" || n.plugin === "redis") &&
-      n.timeoutMs === 0 &&
-      n.title !== "pg.tx.rollback"
-    )
+    if (n.plugin === "fetch" && n.timeoutMs === 0)
       add(
         "no-timeout",
         "info",
@@ -262,10 +273,14 @@ export function lint(m: Model): Issue[] {
       (n.kind === "external" && outEdges(m, n.id).length > 0) ||
       (HANDLER_LIKE.includes(n.kind) && RUNTIME_MESSAGES.includes(n.title)),
   );
-  const seen = reach(m, starts.map((s) => s.id));
+  const seen = reach(
+    m,
+    starts.map((s) => s.id),
+  );
   for (const n of m.nodes) {
     if (seen.has(n.id) || n.kind === "external") continue;
-    if (HANDLER_LIKE.includes(n.kind) && inEdges(m, n.id).length === 0) continue; // reported as no-producer
+    if (HANDLER_LIKE.includes(n.kind) && inEdges(m, n.id).length === 0)
+      continue; // reported as no-producer
     add(
       "unreachable",
       "warn",
@@ -307,7 +322,9 @@ export function lint(m: Model): Issue[] {
   }
 
   // ---- transactions ----
-  for (const b of m.nodes.filter((n) => n.kind === "effect" && n.title === "pg.tx.begin")) {
+  for (const b of m.nodes.filter(
+    (n) => n.kind === "effect" && n.title === "pg.tx.begin",
+  )) {
     const closes = (n: FlowNode): boolean =>
       n.kind === "effect" &&
       (n.title === "pg.tx.commit" || n.title === "pg.tx.rollback");
@@ -380,7 +397,9 @@ export function lint(m: Model): Issue[] {
   }
 
   // ---- secrets ----
-  for (const n of m.nodes.filter((x) => x.kind === "effect" && x.title === "log")) {
+  for (const n of m.nodes.filter(
+    (x) => x.kind === "effect" && x.title === "log",
+  )) {
     const hit = SECRET.exec(n.detail);
     if (hit)
       add(
@@ -405,9 +424,13 @@ export function lint(m: Model): Issue[] {
   // a secret kept in the request slice is a smell too
   for (const n of m.nodes)
     for (const k of Object.keys(n.reqSet))
-      if (/password|secret/i.test(k) && n.reqSet[k] !== "")
+      if (
+        /password|secret/i.test(k) &&
+        n.reqSet[k] !== "" &&
+        !m.nodes.some((o) => o.reqSet[k] === "")
+      )
         add(
-          "secret-in-log",
+          "secret-in-state",
           "info",
           `${n.title} keeps ${k} in state.requests[rid]`,
           `A credential in the request slice can end up in a trace. Clear it (set it to an empty value) as soon as it was used.`,
@@ -431,7 +454,11 @@ export function lint(m: Model): Issue[] {
     .filter(
       (i, k, all) =>
         all.findIndex(
-          (o) => o.rule === i.rule && o.title === i.title && o.node === i.node && o.edge === i.edge,
+          (o) =>
+            o.rule === i.rule &&
+            o.title === i.title &&
+            o.node === i.node &&
+            o.edge === i.edge,
         ) === k,
     )
     .sort((a, b) => order[a.severity] - order[b.severity]);
@@ -443,4 +470,16 @@ export function counts(issues: Issue[]): Record<Severity, number> {
     warn: issues.filter((i) => i.severity === "warn").length,
     info: issues.filter((i) => i.severity === "info").length,
   };
+}
+
+const memo = new WeakMap<Model, Issue[]>();
+
+/** `lint` of a model, remembered by identity: the player asks again every tick. */
+export function lintCached(m: Model): Issue[] {
+  let r = memo.get(m);
+  if (!r) {
+    r = lint(m);
+    memo.set(m, r);
+  }
+  return r;
 }

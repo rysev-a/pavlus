@@ -55,7 +55,11 @@ export type Item =
       rid: boolean;
       dashed?: boolean;
     }
-  | { t: "frag"; op: "alt" | "opt"; branches: { guard: string; items: Item[] }[] };
+  | {
+      t: "frag";
+      op: "alt" | "opt";
+      branches: { guard: string; items: Item[] }[];
+    };
 
 export interface Row {
   item: Extract<Item, { t: "arrow" | "self" }>;
@@ -112,7 +116,8 @@ export function lifelinesOf(m: Model): Lifeline[] {
     },
     { id: "app", label: "App" },
   ];
-  if (used.has("pg")) list.push({ id: "pg", label: ext("pg")?.title ?? "Postgres" });
+  if (used.has("pg"))
+    list.push({ id: "pg", label: ext("pg")?.title ?? "Postgres" });
   if (used.has("redis"))
     list.push({ id: "redis", label: ext("redis")?.title ?? "Redis" });
   if (used.has("fetch"))
@@ -125,7 +130,8 @@ export function lifelinesOf(m: Model): Lifeline[] {
 /** the lifeline an effect node talks to */
 export const lifelineOfEffect = (n: FlowNode): string => {
   if (n.plugin === "http" || n.plugin === "ws") return "client";
-  return n.plugin in EXTERNAL_OF || ["crypto", "timer", "log"].includes(n.plugin)
+  return n.plugin in EXTERNAL_OF ||
+    ["crypto", "timer", "log"].includes(n.plugin)
     ? n.plugin
     : "app";
 };
@@ -182,7 +188,10 @@ export function itemsOf(m: Model): Item[] {
           },
         ];
       if (to.kind === "effect") {
-        const detail = to.detail && to.title !== "http.respond" ? ` ${short(to.detail, 30)}` : "";
+        const detail =
+          to.detail && to.title !== "http.respond"
+            ? ` ${short(to.detail, 30)}`
+            : "";
         const tail = to.title === "http.respond" ? ` ${to.status || 200}` : "";
         return [
           {
@@ -200,7 +209,10 @@ export function itemsOf(m: Model): Item[] {
         {
           t: "self",
           at: lane === "browser" ? "client" : "app",
-          label: from.kind === "fe-handler" && to.kind === "fe-state" ? `${label} ${to.title}` : label,
+          label:
+            from.kind === "fe-handler" && to.kind === "fe-state"
+              ? `${label} ${to.title}`
+              : label,
           kind: e.kind,
           edge: e.id,
           rid: e.rid,
@@ -219,7 +231,8 @@ export function itemsOf(m: Model): Item[] {
         const yes = cond.filter((e) => e.cond.trim() === name);
         const no = cond.filter((e) => e.cond.trim() === `!${name}`);
         const other = cond.filter(
-          (e) => condName(e.cond) === name && !yes.includes(e) && !no.includes(e),
+          (e) =>
+            condName(e.cond) === name && !yes.includes(e) && !no.includes(e),
         );
         const mk = (list: FlowEdge[]): Item[] => list.flatMap((e) => follow(e));
         if (yes.length && no.length)
@@ -355,11 +368,13 @@ export function buildSequence(m: Model): Sequence {
     }
   };
   place(itemsOf(m), 0);
-  for (const [id, y1] of open) acts.push({ lifeline: id, y1, y2: y1 + 16, depth: 0 });
+  for (const [id, y1] of open)
+    acts.push({ lifeline: id, y1, y2: y1 + 16, depth: 0 });
   // the app is busy from its first to its last arrow
   const appRows = rows.filter(
     (r) =>
-      (r.item.t === "arrow" && (r.item.from === "app" || r.item.to === "app")) ||
+      (r.item.t === "arrow" &&
+        (r.item.from === "app" || r.item.to === "app")) ||
       (r.item.t === "self" && r.item.at === "app"),
   );
   if (appRows.length)
@@ -413,10 +428,7 @@ export function sequenceTree(s: Sequence, ui: SeqUi): SvgNode {
       g(
         { key: `H${l.id}`, class: "fs-sq__head" },
         rect({ x: l.x - 62, y: 14, width: 124, height: 34, rx: 8 }),
-        text(
-          { x: l.x, y: 36, "text-anchor": "middle" },
-          short(l.label, 16),
-        ),
+        text({ x: l.x, y: 36, "text-anchor": "middle" }, short(l.label, 16)),
       ),
     );
   }
@@ -434,8 +446,17 @@ export function sequenceTree(s: Sequence, ui: SeqUi): SvgNode {
           height: f.y2 - f.y1,
           rx: 3,
         }),
-        rect({ class: "fs-sq__tag", x: xMin + inset, y: f.y1, width: 34, height: 16 }),
-        text({ class: "fs-sq__tagtext", x: xMin + inset + 6, y: f.y1 + 12 }, f.op),
+        rect({
+          class: "fs-sq__tag",
+          x: xMin + inset,
+          y: f.y1,
+          width: 34,
+          height: 16,
+        }),
+        text(
+          { class: "fs-sq__tagtext", x: xMin + inset + 6, y: f.y1 + 12 },
+          f.op,
+        ),
         ...f.guards.flatMap((gd, k) => [
           k > 0
             ? line({
@@ -447,7 +468,11 @@ export function sequenceTree(s: Sequence, ui: SeqUi): SvgNode {
               })
             : null,
           text(
-            { class: "fs-sq__guard", x: xMin + inset + 42, y: gd.y + (k === 0 ? 0 : 6) + 6 },
+            {
+              class: "fs-sq__guard",
+              x: xMin + inset + 42,
+              y: gd.y + (k === 0 ? 0 : 6) + 6,
+            },
             `[${gd.guard}]`,
           ),
         ]),
@@ -478,9 +503,7 @@ export function sequenceTree(s: Sequence, ui: SeqUi): SvgNode {
     ]
       .filter(Boolean)
       .join(" ");
-    const on = it.edge
-      ? { click: msg("sqEdge", { id: it.edge }) }
-      : undefined;
+    const on = it.edge ? { click: msg("sqEdge", { id: it.edge }) } : undefined;
     const label = short(it.label, 44);
     const badge = it.rid
       ? [
@@ -570,13 +593,14 @@ export function markerDefs(prefix: string): SvgNode {
         "marker",
         {
           id: `${prefix}-${k}`,
-          markerWidth: 9,
-          markerHeight: 9,
-          refX: 8,
-          refY: 4.5,
+          markerUnits: "userSpaceOnUse",
+          markerWidth: 10,
+          markerHeight: 10,
+          refX: 9,
+          refY: 5,
           orient: "auto",
         },
-        path({ d: "M0 0 L9 4.5 L0 9 z", class: `fs-arrow fs-arrow--${k}` }),
+        path({ d: "M0 0 L10 5 L0 10 z", class: `fs-arrow fs-arrow--${k}` }),
       ),
     ),
   );
@@ -585,4 +609,3 @@ export function markerDefs(prefix: string): SvgNode {
 /** For the tests and the catalog: the labels of the arrows in order. */
 export const labelsOf = (s: Sequence): string[] =>
   s.rows.map((r) => r.item.label);
-

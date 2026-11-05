@@ -88,12 +88,7 @@ export const EDGE_LABEL: Record<EdgeKind, string> = {
 };
 
 export type FieldType =
-  | "string"
-  | "number"
-  | "boolean"
-  | "object"
-  | "array"
-  | "any";
+  "string" | "number" | "boolean" | "object" | "array" | "any";
 export const FIELD_TYPES: FieldType[] = [
   "string",
   "number",
@@ -551,7 +546,8 @@ export function addNode(
       : {}),
     ...patch,
   });
-  if (kind === "route" && !node.detail) node = { ...node, detail: msgOfRoute(t) };
+  if (kind === "route" && !node.detail)
+    node = { ...node, detail: msgOfRoute(t) };
   // a new node goes to the right of the others in its lane
   if (patch.x === undefined) {
     const lane = KIND_LANE[kind];
@@ -656,7 +652,9 @@ export function defaultMsg(
       ? to.title
       : `${from.title}.failed`;
   if (kind === "reply")
-    return to.kind === "handler" || to.kind === "reply" || to.kind === "fe-handler"
+    return to.kind === "handler" ||
+      to.kind === "reply" ||
+      to.kind === "fe-handler"
       ? to.title
       : `${from.title}.done`;
   return `${from.title}.cancel`;
@@ -672,8 +670,11 @@ export function addEdge(
   m: Model,
   from: string,
   to: string,
-  opts: { kind?: EdgeKind; msg?: string; port?: "out" | "ok" | "err" } &
-    Partial<FlowEdge> = {},
+  opts: {
+    kind?: EdgeKind;
+    msg?: string;
+    port?: "out" | "ok" | "err";
+  } & Partial<FlowEdge> = {},
 ): { model: Model; id: string } | null {
   const a = findNode(m, from);
   const b = findNode(m, to);
@@ -792,7 +793,8 @@ export function exampleValue(f: PayloadField): unknown {
     return t !== "" && Number.isFinite(n) ? n : 0;
   }
   if (f.type === "boolean") return t === "true";
-  if (t === "") return f.type === "array" ? [] : f.type === "object" ? {} : null;
+  if (t === "")
+    return f.type === "array" ? [] : f.type === "object" ? {} : null;
   try {
     return JSON.parse(t);
   } catch {
@@ -962,7 +964,11 @@ function scenarioFrom(v: unknown, ids: Set<string>): Scenario {
 }
 
 export function readModel(value: unknown): Model | string {
-  if (!isObj(value) || !Array.isArray(value.nodes) || !Array.isArray(value.edges))
+  if (
+    !isObj(value) ||
+    !Array.isArray(value.nodes) ||
+    !Array.isArray(value.edges)
+  )
     return "This is not a Flow Studio project (it needs nodes and edges).";
   const nodes = value.nodes
     .map(nodeFrom)
@@ -974,7 +980,7 @@ export function readModel(value: unknown): Model | string {
     .filter((e): e is FlowEdge => !!e)
     .filter((e, i, all) => all.findIndex((o) => o.id === e.id) === i);
   const top = [...nodes.map((n) => n.id), ...edges.map((e) => e.id)].reduce(
-    (mx, id) => Math.max(mx, Number(/\d+$/.exec(id)?.[0] ?? 0)),
+    (mx, id) => Math.max(mx, Number(/^[ne](\d+)$/.exec(id)?.[1] ?? 0)),
     0,
   );
   return {

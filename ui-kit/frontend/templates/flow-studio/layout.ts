@@ -18,13 +18,13 @@ import {
 
 /** the width of the lane labels on the left */
 export const GUTTER = 92;
-export const COL_W = NODE_W + 40;
+export const COL_W = NODE_W + 68;
 export const LANE_PAD = 16;
 export const STACK_GAP = 14;
 export const LANE_MIN = NODE_H + LANE_PAD * 2;
 /** the size of the view at zoom 1, in world units */
-export const VIEW_W = 1000;
-export const VIEW_H = 520;
+export const VIEW_W = 800;
+export const VIEW_H = 460;
 
 export interface Band {
   lane: Lane;
@@ -142,8 +142,16 @@ export function pointAt(
 ): { x: number; y: number } {
   const { c1x, c2x } = controls(e.x1, e.y1, e.x2, e.y2);
   const u = 1 - t;
-  const x = u * u * u * e.x1 + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * e.x2;
-  const y = u * u * u * e.y1 + 3 * u * u * t * e.y1 + 3 * u * t * t * e.y2 + t * t * t * e.y2;
+  const x =
+    u * u * u * e.x1 +
+    3 * u * u * t * c1x +
+    3 * u * t * t * c2x +
+    t * t * t * e.x2;
+  const y =
+    u * u * u * e.y1 +
+    3 * u * u * t * e.y1 +
+    3 * u * t * t * e.y2 +
+    t * t * t * e.y2;
   return { x, y };
 }
 const r = (n: number): number => Math.round(n * 10) / 10;
@@ -171,7 +179,8 @@ export function layoutOf(m: Model, over: Offsets = {}): Placed {
     const a = byId.get(edge.from);
     const b = byId.get(edge.to);
     if (!a || !b) continue;
-    const want = a.node.kind === "effect" ? (edge.kind === "error" ? "err" : "ok") : "out";
+    const want =
+      a.node.kind === "effect" ? (edge.kind === "error" ? "err" : "ok") : "out";
     const pt = ports.find((p) => p.nodeId === a.id && p.port === want)!;
     const geo = {
       x1: pt.x,
@@ -201,7 +210,15 @@ export function layoutOf(m: Model, over: Offsets = {}): Placed {
     GUTTER + 4 * COL_W,
     ...nodes.map((n) => n.x + n.w + 48),
   );
-  return { bands, nodes, ports, edges, wires, width, height: last.top + last.h };
+  return {
+    bands,
+    nodes,
+    ports,
+    edges,
+    wires,
+    width,
+    height: last.top + last.h,
+  };
 }
 
 /** The external node an effect talks to (the first of its plugin). */
@@ -211,9 +228,7 @@ export function externalFor(m: Model, effect: FlowNode): FlowNode | undefined {
   return (
     m.nodes.find((n) => n.kind === "external" && n.plugin === effect.plugin) ??
     m.nodes.find(
-      (n) =>
-        n.kind === "external" &&
-        EXTERNAL_OF[n.plugin]?.id === want.id,
+      (n) => n.kind === "external" && EXTERNAL_OF[n.plugin]?.id === want.id,
     )
   );
 }
@@ -258,16 +273,20 @@ export function depthsOf(m: Model): Map<string, number> {
   };
   for (const n of m.nodes)
     if (!hasIn.has(n.id) && n.kind !== "external") visit(n.id, 0, new Set());
-  for (const n of m.nodes) if (!depth.has(n.id) && n.kind !== "external") visit(n.id, 0, new Set());
+  for (const n of m.nodes)
+    if (!depth.has(n.id) && n.kind !== "external") visit(n.id, 0, new Set());
   // an external sits under the first effect of its plugin
   for (const n of m.nodes) {
     if (n.kind !== "external") continue;
     const users = m.nodes.filter(
       (e) =>
         e.kind === "effect" &&
-        (e.plugin === n.plugin || EXTERNAL_OF[e.plugin]?.id === EXTERNAL_OF[n.plugin]?.id),
+        (e.plugin === n.plugin ||
+          EXTERNAL_OF[e.plugin]?.id === EXTERNAL_OF[n.plugin]?.id),
     );
-    const entry = m.edges.some((e) => e.from === n.id) && !m.edges.some((e) => e.to === n.id);
+    const entry =
+      m.edges.some((e) => e.from === n.id) &&
+      !m.edges.some((e) => e.to === n.id);
     const ds = users.map((u) => depth.get(u.id) ?? 0);
     depth.set(n.id, entry ? 0 : ds.length ? Math.min(...ds) : 0);
   }
@@ -301,11 +320,12 @@ export interface Viewport {
   y: number;
   z: number;
 }
-export const MIN_Z = 0.3;
+export const MIN_Z = 0.15;
 export const MAX_Z = 2.4;
 export const HOME: Viewport = { x: 0, y: 0, z: 1 };
 
-export const clampZ = (z: number): number => Math.min(MAX_Z, Math.max(MIN_Z, z));
+export const clampZ = (z: number): number =>
+  Math.min(MAX_Z, Math.max(MIN_Z, z));
 export const viewBoxOf = (v: Viewport): string =>
   `${r(v.x)} ${r(v.y)} ${r(VIEW_W / v.z)} ${r(VIEW_H / v.z)}`;
 export const viewSize = (v: Viewport): { w: number; h: number } => ({
@@ -324,9 +344,11 @@ export function zoomBy(v: Viewport, factor: number): Viewport {
 /** Shows the whole world. */
 export function fitView(width: number, height: number): Viewport {
   const pad = 12;
-  const z = clampZ(Math.min(VIEW_W / (width + pad * 2), VIEW_H / (height + pad * 2)));
+  const z = clampZ(
+    Math.min(VIEW_W / (width + pad * 2), VIEW_H / (height + pad * 2)),
+  );
   return {
-    x: -pad - (VIEW_W / z - (width + pad * 2)) / 2 + 0,
+    x: -pad - Math.max(0, VIEW_W / z - (width + pad * 2)) / 2,
     y: -pad,
     z,
   };
@@ -352,11 +374,20 @@ export function reveal(
   return centerOn(v, rect.x + rect.w / 2, rect.y + rect.h / 2);
 }
 
-export const clampView = (v: Viewport, width: number, height: number): Viewport => {
+/** Keeps the world in view: the view may not leave it by more than a margin. */
+export const clampView = (
+  v: Viewport,
+  width: number,
+  height: number,
+): Viewport => {
   const { w, h } = viewSize(v);
-  const x = Math.min(Math.max(v.x, -w + 80), Math.max(width - 80, 0));
-  const y = Math.min(Math.max(v.y, -h + 80), Math.max(height - 80, 0));
-  return { ...v, x, y };
+  const edge = 24;
+  const fit = (pos: number, view: number, world: number): number => {
+    const lo = view >= world ? world - view - edge : -edge;
+    const hi = view >= world ? edge : world - view + edge;
+    return Math.min(hi, Math.max(lo, pos));
+  };
+  return { ...v, x: fit(v.x, w, width), y: fit(v.y, h, height) };
 };
 
 // ---- the keyboard ----
@@ -374,8 +405,10 @@ export function neighbor(nodes: PNode[], id: string, dir: Dir): string | null {
     if (n.id === id) continue;
     const dx = n.x + n.w / 2 - cx;
     const dy = n.y + n.h / 2 - cy;
-    const along = dir === "right" ? dx : dir === "left" ? -dx : dir === "down" ? dy : -dy;
-    const across = dir === "left" || dir === "right" ? Math.abs(dy) : Math.abs(dx);
+    const along =
+      dir === "right" ? dx : dir === "left" ? -dx : dir === "down" ? dy : -dy;
+    const across =
+      dir === "left" || dir === "right" ? Math.abs(dy) : Math.abs(dx);
     if (along <= 4) continue;
     const score = along + across * 2.2;
     if (!best || score < best.score) best = { id: n.id, score };

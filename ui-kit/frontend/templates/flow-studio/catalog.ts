@@ -60,9 +60,7 @@ export function catalogOf(m: Model, withTests = true): CatalogRow[] {
     rows.push({
       kind,
       id: edges[0].msg,
-      producers: uniq(
-        edges.map((e) => findNode(m, e.from)?.title ?? e.from),
-      ),
+      producers: uniq(edges.map((e) => findNode(m, e.from)?.title ?? e.from)),
       consumers: uniq(edges.map((e) => findNode(m, e.to)?.title ?? e.to)),
       edgeKinds: [...new Set(edges.map((e) => e.kind))],
       fields,

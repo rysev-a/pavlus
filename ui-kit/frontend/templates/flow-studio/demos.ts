@@ -52,7 +52,8 @@ class Draw {
       payload: o.payload ? fieldsOf(o.payload) : [],
     });
     if (r) this.m = r.model;
-    else throw new Error(`demo edge ${from} -> ${to} ${msg ?? ""} was not made`);
+    else
+      throw new Error(`demo edge ${from} -> ${to} ${msg ?? ""} was not made`);
     return this;
   }
   /** the onError edge of an effect */
@@ -100,7 +101,9 @@ export function loginDemo(): Model {
         status: "loading",
       },
     })
-    .n("fok", "fe-handler", "onLoggedIn", { clientSet: { status: "signed in" } })
+    .n("fok", "fe-handler", "onLoggedIn", {
+      clientSet: { status: "signed in" },
+    })
     .n("ffail", "fe-handler", "onLoginFailed", {
       clientSet: { status: "failed", error: "{payload.body.error}" },
     })
@@ -216,7 +219,12 @@ export function loginDemo(): Model {
     .e("r401", "ffail", "onLoginFailed")
     .e("r500", "ffail", "onLoginFailed")
     .e("fok", "fs", "store.set");
-  d.conds({ firstHit: true, limited: false, userFound: true, passwordOk: true });
+  d.conds({
+    firstHit: true,
+    limited: false,
+    userFound: true,
+    passwordOk: true,
+  });
   d.requests([
     req("r1", "ev", 0, { email: "ann@example.com", password: "correct horse" }),
     req("r2", "ev", 6, { email: "bob@example.com", password: "hunter2" }),
@@ -254,7 +262,8 @@ export function todoDemo(): Model {
       detail: '{"todos":[{"id":1,"title":"cached"}],"cache":"hit"}',
     })
     .n("pgl", "effect", "pg.query", {
-      detail: "select id, title, done, position from todos where user_id = $1 order by position",
+      detail:
+        "select id, title, done, position from todos where user_id = $1 order by position",
     })
     .n("hq", "handler", "todos.list.loaded", {
       detail: "fill the cache, answer",
@@ -281,7 +290,8 @@ export function todoDemo(): Model {
       reqSet: { step: "update" },
     })
     .n("pgu", "effect", "pg.query", {
-      detail: "update todos set position = v.pos from (values ...) v where todos.id = v.id",
+      detail:
+        "update todos set position = v.pos from (values ...) v where todos.id = v.id",
     })
     .n("hu", "handler", "todos.reorder.updated", {
       detail: "all rows belong to the user?",
@@ -298,7 +308,8 @@ export function todoDemo(): Model {
       reqSet: { step: "sync" },
     })
     .n("cdel", "effect", "redis.pipeline", {
-      detail: "DEL cache:todos:{req.userId}; PUBLISH todos:{req.userId} reordered",
+      detail:
+        "DEL cache:todos:{req.userId}; PUBLISH todos:{req.userId} reordered",
     })
     .n("hs", "handler", "todos.synced", { reqSet: { step: "answer" } })
     .n("r204", "effect", "http.respond", { status: 204, detail: "{}" })
@@ -317,14 +328,18 @@ export function todoDemo(): Model {
     .n("xr", "external", "Redis", { plugin: "redis" });
   d.e("evl", "fl", "ui.mount")
     .e("fl", "rl", "http.request", {
-      payload: "method=GET; path=/todos; headers.authorization=Bearer tok_9d41c7",
+      payload:
+        "method=GET; path=/todos; headers.authorization=Bearer tok_9d41c7",
     })
     .e("rl", "hl", "todos.list")
     .e("hl", "cget", "redis.cmd")
     .e("cget", "hc", "todos.list.cached", {
       payload: "value:any=null",
     })
-    .e("cget", "efail", "todos.failed", { port: "err", payload: "code:string=ETIMEDOUT; message:string=cache unavailable" })
+    .e("cget", "efail", "todos.failed", {
+      port: "err",
+      payload: "code:string=ETIMEDOUT; message:string=cache unavailable",
+    })
     .e("hc", "rhit", "http.respond", { cond: "cacheHit" })
     .e("hc", "pgl", "pg.query", { cond: "!cacheHit" })
     .e("pgl", "hq", "todos.list.loaded", {
@@ -334,7 +349,10 @@ export function todoDemo(): Model {
     .err("pgl", "efail")
     .e("hq", "cset", "redis.cmd")
     .e("cset", "hf", "todos.list.filled", { payload: "ok:string=OK" })
-    .e("cset", "hf", undefined, { port: "err", payload: "code:string=ETIMEDOUT; message:string=cache unavailable" })
+    .e("cset", "hf", undefined, {
+      port: "err",
+      payload: "code:string=ETIMEDOUT; message:string=cache unavailable",
+    })
     .e("hf", "rmiss", "http.respond")
     .e("evr", "fr", "ui.drop")
     .e("fr", "rr", "http.request", {
@@ -351,7 +369,9 @@ export function todoDemo(): Model {
     .e("hu", "tcommit", "pg.tx.commit", { cond: "ownsRows" })
     .e("hu", "trb", "pg.tx.rollback", { cond: "!ownsRows" })
     .e("hu", "r409", "http.respond", { cond: "!ownsRows" })
-    .e("tcommit", "hco", "todos.reorder.committed", { payload: "ok:boolean=true" })
+    .e("tcommit", "hco", "todos.reorder.committed", {
+      payload: "ok:boolean=true",
+    })
     .err("tcommit", "efail")
     .e("hco", "cdel", "redis.pipeline")
     .e("cdel", "hs", "todos.synced", { payload: "results:array=[1,1]" })
@@ -365,10 +385,7 @@ export function todoDemo(): Model {
     .e("r204", "fok", "onTodos")
     .e("fok", "fs", "store.set");
   d.conds({ cacheHit: false, ownsRows: true });
-  d.requests([
-    req("r1", "evl", 0),
-    req("r2", "evr", 10, { order: "[3,1,2]" }),
-  ]);
+  d.requests([req("r1", "evl", 0), req("r2", "evr", 10, { order: "[3,1,2]" })]);
   return d.done();
 }
 
@@ -405,7 +422,8 @@ export function chatDemo(): Model {
       },
     })
     .n("pgi", "effect", "pg.query", {
-      detail: "insert into messages (room, author, body) values ($1, $2, $3) returning id",
+      detail:
+        "insert into messages (room, author, body) values ($1, $2, $3) returning id",
     })
     .n("hsv", "handler", "chat.saved", {
       detail: "keep the last messages in Redis",
@@ -449,7 +467,7 @@ export function chatDemo(): Model {
     })
     .e("rm", "hm", "chat.message")
     .e("hm", "pgi", "pg.query")
-    .e("pgi", "hsv", "chat.saved", { payload: "rows:array=[{\"id\":42}]" })
+    .e("pgi", "hsv", "chat.saved", { payload: 'rows:array=[{"id":42}]' })
     .err("pgi", "efail")
     .e("hsv", "lp", "redis.cmd")
     .e("lp", "hpu", "chat.pushed", { payload: "length:number=21" })
@@ -495,7 +513,8 @@ export function paymentDemo(): Model {
       detail: '{"status":"duplicate"}',
     })
     .n("pgi", "effect", "pg.query", {
-      detail: "insert into payments (id, amount) values ($1, $2) on conflict do nothing",
+      detail:
+        "insert into payments (id, amount) values ($1, $2) on conflict do nothing",
     })
     .n("h4", "handler", "payment.stored", {
       detail: "tell the billing system (it may be flaky)",
@@ -600,7 +619,8 @@ export function abortDemo(): Model {
     .n("tbegin", "effect", "pg.tx.begin")
     .n("h2", "handler", "report.began", { reqSet: { step: "aggregate" } })
     .n("agg", "effect", "pg.query", {
-      detail: "select date_trunc('day', created_at), count(*) from events group by 1",
+      detail:
+        "select date_trunc('day', created_at), count(*) from events group by 1",
       latency: 900,
       timeoutMs: 2500,
     })
@@ -640,12 +660,15 @@ export function abortDemo(): Model {
     .e("rt", "h1", "report.get")
     .e("h1", "timer", "timer.after")
     .e("h1", "tbegin", "pg.tx.begin")
-    .e("timer", "htime", "request.timeout", { payload: "deadline:boolean=true" })
+    .e("timer", "htime", "request.timeout", {
+      payload: "deadline:boolean=true",
+    })
     .e("tbegin", "h2", "report.began", { payload: "tx:string=tx1" })
     .err("tbegin", "efail")
     .e("h2", "agg", "pg.query")
     .e("agg", "h3", "report.rows", {
-      payload: 'rows:array=[{"day":"2026-11-01","count":1204}]; rowCount:number=1',
+      payload:
+        'rows:array=[{"day":"2026-11-01","count":1204}]; rowCount:number=1',
     })
     .err("agg", "efail")
     .e("h3", "tcommit", "pg.tx.commit")

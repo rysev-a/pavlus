@@ -110,7 +110,11 @@ export function parseQuick(input: string): QuickNode | string {
       return {
         kind: "effect",
         title: "fetch.request",
-        patch: { detail: /^[A-Z]+\s/.test(rest) ? rest : `GET ${rest || "https://api.example.com"}` },
+        patch: {
+          detail: /^[A-Z]+\s/.test(rest)
+            ? rest
+            : `GET ${rest || "https://api.example.com"}`,
+        },
       };
     case "timer":
     case "after":

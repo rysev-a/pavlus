@@ -55,12 +55,7 @@ export type StepType =
   | "budget";
 
 export type StepStatus =
-  | "ok"
-  | "error"
-  | "cancelled"
-  | "timeout"
-  | "dropped"
-  | "retry";
+  "ok" | "error" | "cancelled" | "timeout" | "dropped" | "retry";
 
 export interface Step {
   i: number;
@@ -98,12 +93,7 @@ export interface Step {
 export type Trace = Step[];
 
 export type Result =
-  | "responded"
-  | "aborted"
-  | "timeout"
-  | "failed"
-  | "incomplete"
-  | "completed";
+  "responded" | "aborted" | "timeout" | "failed" | "incomplete" | "completed";
 
 export interface Outcome {
   rid: string;
@@ -213,6 +203,69 @@ export function literal(text: string): unknown {
   return text;
 }
 
+/**
+ * A JSON text with `{refs}` (a response body): a reference that stands for a whole
+ * value keeps its type, one inside a string is interpolated. Text that is not JSON
+ * is read as a plain template.
+ */
+export function jsonFill(text: string, scope: Scope): unknown {
+  const refs: string[] = [];
+  let out = "";
+  let inStr = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === "\\" && inStr) {
+      out += c + (text[++i] ?? "");
+      continue;
+    }
+    if (c === '"') inStr = !inStr;
+    if (c === "{") {
+      const m = /^\{([A-Za-z_][\w.]*)\}/.exec(text.slice(i));
+      if (m) {
+        refs.push(m[1]);
+        const tag = `\u00a7${refs.length - 1}\u00a7`;
+        out += inStr ? tag : `"${tag}"`;
+        i += m[0].length - 1;
+        continue;
+      }
+    }
+    out += c;
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(out);
+  } catch {
+    return fill(text, scope);
+  }
+  const walk = (v: unknown): unknown => {
+    if (typeof v === "string") {
+      const whole = /^\u00a7(\d+)\u00a7$/.exec(v);
+      if (whole) {
+        const r = lookup(scope, refs[Number(whole[1])]);
+        return r === undefined ? `{${refs[Number(whole[1])]}}` : r;
+      }
+      return v.replace(/\u00a7(\d+)\u00a7/g, (_, n: string) => {
+        const r = lookup(scope, refs[Number(n)]);
+        return r === undefined
+          ? `{${refs[Number(n)]}}`
+          : typeof r === "object"
+            ? JSON.stringify(r)
+            : String(r);
+      });
+    }
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === "object")
+      return Object.fromEntries(
+        Object.entries(v as Record<string, unknown>).map(([k, x]) => [
+          k,
+          walk(x),
+        ]),
+      );
+    return v;
+  };
+  return walk(value);
+}
+
 function payloadWith(fields: PayloadField[], scope: Scope): unknown {
   const o: Record<string, unknown> = {};
   for (const f of fields) {
@@ -236,7 +289,8 @@ function payloadWith(fields: PayloadField[], scope: Scope): unknown {
 export function defaultRequests(m: Model): RequestSpec[] {
   const starts = m.nodes.filter(
     (n) =>
-      (n.kind === "ui-event" || (n.kind === "external" && n.plugin === "http")) &&
+      (n.kind === "ui-event" ||
+        (n.kind === "external" && n.plugin === "http")) &&
       inEdges(m, n.id).length === 0 &&
       outEdges(m, n.id).length > 0,
   );
@@ -252,7 +306,8 @@ export function requestsOf(m: Model, s: Scenario): RequestSpec[] {
 
 function startPayload(r: RequestSpec): Record<string, unknown> {
   const o: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(r.payload ?? {})) setDeep(o, k, literal(v));
+  for (const [k, v] of Object.entries(r.payload ?? {}))
+    setDeep(o, k, literal(v));
   return o;
 }
 
@@ -341,7 +396,8 @@ export function simulate(
   let clock = 0;
 
   const faults = scenario.faults.filter((f) => f.on);
-  const hold = (c: string): boolean => condHolds(c, model.conds, scenario.conds);
+  const hold = (c: string): boolean =>
+    condHolds(c, model.conds, scenario.conds);
 
   const enqueue = (ev: Ev): void => {
     let i = queue.length;
@@ -439,7 +495,13 @@ export function simulate(
     const type = rest.join(".") || n.title;
     switch (n.title) {
       case "pg.query":
-        return { plugin: "pg", type: "query", sql: detail, params: [], ...base };
+        return {
+          plugin: "pg",
+          type: "query",
+          sql: detail,
+          params: [],
+          ...base,
+        };
       case "redis.cmd":
         return {
           plugin: "redis",
@@ -476,7 +538,7 @@ export function simulate(
           ...base,
         };
       case "http.respond": {
-        const body = fill(n.detail || "{}", sc);
+        const body = jsonFill(n.detail || "{}", sc);
         return {
           plugin: "http",
           type: "respond",
@@ -676,12 +738,18 @@ export function simulate(
     if (tmo) {
       dur = limit || tmo.ms || 1000;
       outcome = "timeout";
-      error = { code: "ETIMEDOUT", message: `${n.title} timed out after ${dur}ms` };
+      error = {
+        code: "ETIMEDOUT",
+        message: `${n.title} timed out after ${dur}ms`,
+      };
       fault = tmo.id;
     } else if (limit > 0 && dur > limit && n.plugin !== "timer") {
       dur = limit;
       outcome = "timeout";
-      error = { code: "ETIMEDOUT", message: `${n.title} timed out after ${dur}ms` };
+      error = {
+        code: "ETIMEDOUT",
+        message: `${n.title} timed out after ${dur}ms`,
+      };
     } else if (err) {
       outcome = "error";
       const code = err.code || DEFAULT_ERROR_CODE[n.plugin] || "ERR";
@@ -709,7 +777,13 @@ export function simulate(
       payload,
     };
     ctx.inflight.set(f.id, f);
-    enqueue({ kind: "finish", t: f.tEnd, seq: seq++, rid: ctx.rid, flight: f.id });
+    enqueue({
+      kind: "finish",
+      t: f.tEnd,
+      seq: seq++,
+      rid: ctx.rid,
+      flight: f.id,
+    });
   };
 
   const finish = (ev: Finish): void => {
@@ -735,7 +809,14 @@ export function simulate(
         fault: f.fault,
         note: `${n.title} failed (${f.error?.code}); the plugin retries after ${n.backoffMs * 2 ** f.attempt}ms`,
       });
-      plan(ctx, n, f.edge, f.payload, round(t + n.backoffMs * 2 ** f.attempt), f.attempt + 1);
+      plan(
+        ctx,
+        n,
+        f.edge,
+        f.payload,
+        round(t + n.backoffMs * 2 ** f.attempt),
+        f.attempt + 1,
+      );
       return;
     }
     const def = effectDef(n.title);
@@ -850,7 +931,7 @@ export function simulate(
     }
     ctx.responded = true;
     const status = n.status || 200;
-    const body = fill(n.detail || "{}", sc);
+    const body = jsonFill(n.detail || "{}", sc);
     // the response travels to the browser
     emit(ctx, n, t, { status, body }, false, ["reply"]);
     finishRequest(
@@ -907,6 +988,8 @@ export function simulate(
     ensureSlice(ctx, n, ev.payload);
     applySets(ctx, n, ev.payload);
     const timedOut = synth?.id.startsWith("timeout:") ?? false;
+    // an effect is in flight from the moment it arrives
+    if (n.kind === "effect") plan(ctx, n, e, ev.payload, t, 0);
     const type: StepType = timedOut
       ? "timeout"
       : synth?.kind === "cancel"
@@ -937,8 +1020,6 @@ export function simulate(
     });
     switch (n.kind) {
       case "effect":
-        plan(ctx, n, e, ev.payload, t, 0);
-        break;
       case "external":
         break;
       default:
@@ -1032,7 +1113,11 @@ export function simulate(
     switch (ev.kind) {
       case "arrive": {
         // the very first arrival of a request is its start
-        if (ev.edge === null && !ev.synth && steps.every((s) => s.rid !== ev.rid)) {
+        if (
+          ev.edge === null &&
+          !ev.synth &&
+          steps.every((s) => s.rid !== ev.rid)
+        ) {
           const n = findNode(model, ev.node)!;
           applySets(ctx, n, ev.payload);
           push(ctx, {
@@ -1221,91 +1306,107 @@ export interface Variant {
 }
 
 /**
- * The scenarios worth a test: the happy path; each effect failing (when it has an
- * `onError`); each condition flipped; the client aborting; the request timing out.
+ * The scenarios worth a test, for each request of the scenario that starts somewhere
+ * new: the happy path; each effect of that path failing (when it has an `onError`);
+ * each condition flipped that the path meets; the client aborting; the deadline.
  */
 export function variantsOf(m: Model): Variant[] {
-  const base: Scenario = {
-    requests: requestsOf(m, m.scenario).slice(0, 1),
-    faults: [],
-    conds: { ...m.scenario.conds },
-    seed: m.scenario.seed,
-  };
-  const out: Variant[] = [{ id: "happy", title: "happy path", scenario: base }];
+  const specs = requestsOf(m, m.scenario).filter(
+    (r, i, all) => all.findIndex((o) => o.entry === r.entry) === i,
+  );
+  const out: Variant[] = [];
   const fid = (k: string) => `v-${k}`;
-  for (const n of m.nodes) {
-    if (n.kind !== "effect") continue;
-    const def = effectDef(n.title);
-    if (def?.responds || n.title === "log") continue;
-    const hasErr = m.edges.some((e) => e.from === n.id && e.kind === "error");
-    if (!hasErr) continue;
+  for (const spec of specs) {
+    const tag = specs.length > 1 ? `${spec.rid}-` : "";
+    const entry = findNode(m, spec.entry)?.title ?? spec.rid;
+    const pre = specs.length > 1 ? `${entry}: ` : "";
+    const base: Scenario = {
+      requests: [spec],
+      faults: [],
+      conds: { ...m.scenario.conds },
+      seed: m.scenario.seed,
+    };
+    const happy = simulate(m, base, base.seed);
+    const visited = new Set(happy.flatMap((s) => [s.from, s.to]));
+    out.push({ id: `${tag}happy`, title: `${pre}happy path`, scenario: base });
+    for (const n of m.nodes) {
+      if (n.kind !== "effect" || !visited.has(n.id)) continue;
+      const def = effectDef(n.title);
+      if (def?.responds || n.title === "log") continue;
+      if (!m.edges.some((e) => e.from === n.id && e.kind === "error")) continue;
+      out.push({
+        id: `${tag}fail-${n.id}`,
+        title: `${pre}${n.title} fails (${n.detail.slice(0, 28) || n.id})`,
+        scenario: {
+          ...base,
+          faults: [
+            {
+              id: fid(n.id),
+              kind: n.plugin === "redis" ? "timeout" : "error",
+              target: n.id,
+              rid: "",
+              code: n.plugin === "pg" ? "40001" : "",
+              ms: 0,
+              on: true,
+            },
+          ],
+        },
+      });
+    }
+    for (const c of Object.keys(m.conds)) {
+      const used = m.edges.some(
+        (e) =>
+          visited.has(e.from) &&
+          e.cond.trim() &&
+          e.cond.replace(/^!\s*/, "") === c,
+      );
+      if (!used) continue;
+      out.push({
+        id: `${tag}cond-${c}`,
+        title: `${pre}${c} is ${(base.conds[c] ?? m.conds[c]) ? "false" : "true"}`,
+        scenario: {
+          ...base,
+          conds: { ...base.conds, [c]: !(base.conds[c] ?? m.conds[c]) },
+        },
+      });
+    }
     out.push({
-      id: `fail-${n.id}`,
-      title: `${n.title} fails (${n.detail.slice(0, 28) || n.id})`,
+      id: `${tag}abort`,
+      title: `${pre}client aborts mid-flight`,
       scenario: {
         ...base,
         faults: [
           {
-            id: fid(n.id),
-            kind: n.plugin === "redis" ? "timeout" : "error",
-            target: n.id,
+            id: fid("abort"),
+            kind: "abort",
+            target: "",
             rid: "",
-            code: n.plugin === "pg" ? "40001" : "",
-            ms: 0,
+            code: "",
+            ms: 20,
+            on: true,
+          },
+        ],
+      },
+    });
+    out.push({
+      id: `${tag}deadline`,
+      title: `${pre}request deadline passes`,
+      scenario: {
+        ...base,
+        faults: [
+          {
+            id: fid("deadline"),
+            kind: "deadline",
+            target: "",
+            rid: "",
+            code: "",
+            ms: 25,
             on: true,
           },
         ],
       },
     });
   }
-  for (const c of Object.keys(m.conds)) {
-    if (!m.edges.some((e) => e.cond.trim() && e.cond.replace(/^!\s*/, "") === c))
-      continue;
-    out.push({
-      id: `cond-${c}`,
-      title: `${c} is ${m.conds[c] ? "false" : "true"}`,
-      scenario: {
-        ...base,
-        conds: { ...base.conds, [c]: !(base.conds[c] ?? m.conds[c]) },
-      },
-    });
-  }
-  out.push({
-    id: "abort",
-    title: "client aborts mid-flight",
-    scenario: {
-      ...base,
-      faults: [
-        {
-          id: fid("abort"),
-          kind: "abort",
-          target: "",
-          rid: "",
-          code: "",
-          ms: 20,
-          on: true,
-        },
-      ],
-    },
-  });
-  out.push({
-    id: "deadline",
-    title: "request deadline passes",
-    scenario: {
-      ...base,
-      faults: [
-        {
-          id: fid("deadline"),
-          kind: "deadline",
-          target: "",
-          rid: "",
-          code: "",
-          ms: 25,
-          on: true,
-        },
-      ],
-    },
-  });
   return out;
 }
 

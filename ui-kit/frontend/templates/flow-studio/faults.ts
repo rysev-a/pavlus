@@ -108,7 +108,11 @@ export function toggleChip(m: Model, id: string): Model {
 }
 
 /** A fault on one hop (an effect node), toggled from the inspector. */
-export function toggleNodeFault(m: Model, nodeId: string, kind: FaultKind): Model {
+export function toggleNodeFault(
+  m: Model,
+  nodeId: string,
+  kind: FaultKind,
+): Model {
   const node = findNode(m, nodeId);
   if (!node) return m;
   const id = `n-${nodeId}-${kind}`;
@@ -133,10 +137,18 @@ export function toggleNodeFault(m: Model, nodeId: string, kind: FaultKind): Mode
   ]);
 }
 
-export const nodeFault = (m: Model, nodeId: string, kind: FaultKind): Fault | undefined =>
+export const nodeFault = (
+  m: Model,
+  nodeId: string,
+  kind: FaultKind,
+): Fault | undefined =>
   m.scenario.faults.find((f) => f.id === `n-${nodeId}-${kind}`);
 
-export function updateFault(m: Model, id: string, patch: Partial<Fault>): Model {
+export function updateFault(
+  m: Model,
+  id: string,
+  patch: Partial<Fault>,
+): Model {
   return withFaults(
     m,
     m.scenario.faults.map((f) => (f.id === id ? { ...f, ...patch } : f)),

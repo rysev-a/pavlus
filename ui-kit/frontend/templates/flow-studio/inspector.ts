@@ -28,7 +28,6 @@ import {
   laneOf,
   onErrorOf,
   setOnError,
-  specOf,
   updateEdge,
   updateNode,
 } from "./model.ts";
@@ -180,14 +179,39 @@ const detailLabel = (n: FlowNode): string => {
   }
 };
 
-export function nodeInspector(m: Model, n: FlowNode, breakpoint: boolean): InspectorView {
+/** the faults that can be injected on a plugin hop, with their state */
+export function faultRows(m: Model, n: FlowNode): FaultRow[] {
+  if (n.kind !== "effect" || n.plugin === "log") return [];
+  return (
+    [
+      ["error", n.plugin === "pg" ? "Postgres error (SQLSTATE)" : "Error"],
+      ["timeout", "Timeout"],
+      ["slow", "Slow (+1.5 s)"],
+    ] as const
+  ).map(([kind, label]) => ({
+    k: `${n.id}-${kind}`,
+    label,
+    on: nodeFault(m, n.id, kind)?.on ?? false,
+    kind,
+    node: n.id,
+  }));
+}
+
+export function nodeInspector(
+  m: Model,
+  n: FlowNode,
+  breakpoint: boolean,
+): InspectorView {
   const ctx = `n:${n.id}`;
   const fields: FieldView[] = [];
   if (n.kind === "effect")
     fields.push(
       mk(ctx, "title", titleLabel(n), n.title, "choice", {
         choices: [
-          ...EFFECTS.map((e) => ({ v: e.type, label: `${e.type}  (${e.hint})` })),
+          ...EFFECTS.map((e) => ({
+            v: e.type,
+            label: `${e.type}  (${e.hint})`,
+          })),
           ...(EFFECTS.some((e) => e.type === n.title)
             ? []
             : [{ v: n.title, label: n.title }]),
@@ -204,67 +228,111 @@ export function nodeInspector(m: Model, n: FlowNode, breakpoint: boolean): Inspe
   if (n.kind === "effect") {
     const def = effectDef(n.title);
     if (def?.responds)
-      fields.push(mk(ctx, "status", "HTTP status", String(n.status || 200), "number"));
+      fields.push(
+        mk(ctx, "status", "HTTP status", String(n.status || 200), "number"),
+      );
     fields.push(
-      mk(ctx, "latency", "Latency (ms, 0 = plugin default)", String(n.latency), "number", {
-        hint: `default ${model(m, n.plugin)} ms`,
-      }),
-      mk(ctx, "timeoutMs", "Timeout (ms, 0 = plugin default)", String(n.timeoutMs), "number", {
-        hint: `default ${DEFAULT_TIMEOUT[n.plugin] || "none"} ms`,
-      }),
+      mk(
+        ctx,
+        "latency",
+        "Latency (ms, 0 = plugin default)",
+        String(n.latency),
+        "number",
+        {
+          hint: `default ${model(m, n.plugin)} ms`,
+        },
+      ),
+      mk(
+        ctx,
+        "timeoutMs",
+        "Timeout (ms, 0 = plugin default)",
+        String(n.timeoutMs),
+        "number",
+        {
+          hint: `default ${DEFAULT_TIMEOUT[n.plugin] || "none"} ms`,
+        },
+      ),
     );
     if (def?.replies && !def.noFail)
       fields.push(
-        mk(ctx, "retries", "Retries before onError", String(n.retries), "number"),
-        mk(ctx, "backoffMs", "Backoff (ms, doubles each retry)", String(n.backoffMs), "number"),
-        mk(ctx, "onError", "onError: the node that gets the failure", onErrorOf(m, n.id), "choice", {
-          choices: [
-            { v: "", label: "(none: the runtime answers 500)" },
-            ...m.nodes
-              .filter(isHandlerLike)
-              .map((h) => ({ v: h.id, label: `${KIND_LABEL[h.kind]}: ${h.title}` })),
-          ],
-        }),
+        mk(
+          ctx,
+          "retries",
+          "Retries before onError",
+          String(n.retries),
+          "number",
+        ),
+        mk(
+          ctx,
+          "backoffMs",
+          "Backoff (ms, doubles each retry)",
+          String(n.backoffMs),
+          "number",
+        ),
+        mk(
+          ctx,
+          "onError",
+          "onError: the node that gets the failure",
+          onErrorOf(m, n.id),
+          "choice",
+          {
+            choices: [
+              { v: "", label: "(none: the runtime answers 500)" },
+              ...m.nodes.filter(isHandlerLike).map((h) => ({
+                v: h.id,
+                label: `${KIND_LABEL[h.kind]}: ${h.title}`,
+              })),
+            ],
+          },
+        ),
       );
   }
   if (n.kind === "external")
     fields.push(
       mk(ctx, "plugin", "Stands behind the plugin", n.plugin, "choice", {
-        choices: ["pg", "redis", "fetch", "http"].map((p) => ({ v: p, label: p })),
+        choices: ["pg", "redis", "fetch", "http"].map((p) => ({
+          v: p,
+          label: p,
+        })),
       }),
     );
   const stateFields: FieldView[] = [];
   if (isHandlerLike(n) || n.kind === "route") {
     stateFields.push(
-      mk(ctx, "reqSet", "Writes to state.requests[rid] (key = value)", lines(n.reqSet), "area", {
-        hint: "value: text, or {payload.body.email}, {req.x}, {shared.x}, {rid}",
-      }),
-      mk(ctx, "sharedSet", "Writes to state.shared (key = value)", lines(n.sharedSet), "area"),
+      mk(
+        ctx,
+        "reqSet",
+        "Writes to state.requests[rid] (key = value)",
+        lines(n.reqSet),
+        "area",
+        {
+          hint: "value: text, or {payload.body.email}, {req.x}, {shared.x}, {rid}",
+        },
+      ),
+      mk(
+        ctx,
+        "sharedSet",
+        "Writes to state.shared (key = value)",
+        lines(n.sharedSet),
+        "area",
+      ),
     );
   }
   if (n.kind === "fe-handler")
     stateFields.push(
-      mk(ctx, "clientSet", "Sets browser state (key = value)", lines(n.clientSet), "area", {
-        hint: "value: text, or {payload.x}",
-      }),
+      mk(
+        ctx,
+        "clientSet",
+        "Sets browser state (key = value)",
+        lines(n.clientSet),
+        "area",
+        {
+          hint: "value: text, or {payload.x}",
+        },
+      ),
     );
   fields.push(mk(ctx, "note", "Note", n.note, "text"));
-  const faults: FaultRow[] =
-    n.kind === "effect" && n.plugin !== "log"
-      ? (
-          [
-            ["error", `${n.plugin === "pg" ? "Postgres error (SQLSTATE)" : "Error"}`],
-            ["timeout", "Timeout"],
-            ["slow", "Slow (+1.5 s)"],
-          ] as const
-        ).map(([kind, label]) => ({
-          k: `${n.id}-${kind}`,
-          label,
-          on: nodeFault(m, n.id, kind)?.on ?? false,
-          kind,
-          node: n.id,
-        }))
-      : [];
+  const faults = faultRows(m, n);
   return {
     mode: "node",
     title: n.title || "(unnamed)",
@@ -297,21 +365,46 @@ export function edgeInspector(m: Model, e: FlowEdge): InspectorView {
       e.kind === "effect" ? "Effect type" : "Message id",
       e.msg,
       "text",
-      { error: e.msg.trim() === "" ? "An edge needs a message id or an effect type" : "" },
+      {
+        error:
+          e.msg.trim() === ""
+            ? "An edge needs a message id or an effect type"
+            : "",
+      },
     ),
     mk(ctx, "cond", "Condition (name, or !name)", e.cond, "key", {
       hint: "empty = always. A name is true or false in the Scenario panel",
     }),
-    mk(ctx, "rid", "The request context (rid) rides on it", e.rid ? "yes" : "no", "choice", {
-      choices: [
-        { v: "yes", label: "yes: ctx.rid is stamped on it" },
-        { v: "no", label: "no: it happens outside the request" },
-      ],
-    }),
-    mk(ctx, "latency", "Delivery time (ms, 0 = default)", String(e.latency), "number"),
-    mk(ctx, "payload", "Payload fields (name:type=example, one per line)", payloadLines(e), "area", {
-      hint: `types: ${FIELD_TYPES.join(", ")}. A dotted name nests (body.email). {payload.x} / {req.x} are filled in at run time`,
-    }),
+    mk(
+      ctx,
+      "rid",
+      "The request context (rid) rides on it",
+      e.rid ? "yes" : "no",
+      "choice",
+      {
+        choices: [
+          { v: "yes", label: "yes: ctx.rid is stamped on it" },
+          { v: "no", label: "no: it happens outside the request" },
+        ],
+      },
+    ),
+    mk(
+      ctx,
+      "latency",
+      "Delivery time (ms, 0 = default)",
+      String(e.latency),
+      "number",
+    ),
+    mk(
+      ctx,
+      "payload",
+      "Payload fields (name:type=example, one per line)",
+      payloadLines(e),
+      "area",
+      {
+        hint: `types: ${FIELD_TYPES.join(", ")}. A dotted name nests (body.email). {payload.x} / {req.x} are filled in at run time`,
+      },
+    ),
   ];
   return {
     mode: "edge",
@@ -320,7 +413,8 @@ export function edgeInspector(m: Model, e: FlowEdge): InspectorView {
     id: e.id,
     fields,
     stateFields: [],
-    faults: [],
+    // an edge into a plugin node: the fault is a fault of that hop
+    faults: to ? faultRows(m, to) : [],
     isEffect: false,
     breakpoint: false,
     lane: "",
@@ -350,16 +444,32 @@ export interface ScenarioView {
   conds: FieldView[];
   requests: { k: string; index: number; fields: FieldView[] }[];
   latency: FieldView[];
-  faults: { k: string; id: string; label: string; on: boolean; fields: FieldView[] }[];
+  faults: {
+    k: string;
+    id: string;
+    label: string;
+    on: boolean;
+    fields: FieldView[];
+  }[];
   general: FieldView[];
 }
 
-export const LATENCY_KEYS = ["net", "app", "pg", "redis", "fetch", "crypto", "http", "ws"];
+export const LATENCY_KEYS = [
+  "net",
+  "app",
+  "pg",
+  "redis",
+  "fetch",
+  "crypto",
+  "http",
+  "ws",
+];
 
 export function scenarioView(m: Model): ScenarioView {
   const sc = m.scenario;
   const entries = m.nodes.filter(
-    (n) => n.kind === "ui-event" || (n.kind === "external" && n.plugin === "http"),
+    (n) =>
+      n.kind === "ui-event" || (n.kind === "external" && n.plugin === "http"),
   );
   const nodeChoices: Choice[] = [
     { v: "", label: "the whole request" },
@@ -369,20 +479,36 @@ export function scenarioView(m: Model): ScenarioView {
     })),
     ...m.nodes
       .filter((n) => n.kind === "effect")
-      .map((n) => ({ v: n.id, label: `${n.title}: ${n.detail.slice(0, 26) || n.id}` })),
+      .map((n) => ({
+        v: n.id,
+        label: `${n.title}: ${n.detail.slice(0, 26) || n.id}`,
+      })),
   ];
   return {
     general: [
-      mk("m", "seed", "Seed (the same seed gives the same latencies)", String(sc.seed), "number"),
+      mk(
+        "m",
+        "seed",
+        "Seed (the same seed gives the same latencies)",
+        String(sc.seed),
+        "number",
+      ),
     ],
     conds: condNames(m).map((c) =>
-      mk(`sc:${c}`, "cond", `Condition ${c}`, c in sc.conds ? String(sc.conds[c]) : "", "choice", {
-        choices: [
-          { v: "", label: `design: ${m.conds[c] ?? false}` },
-          { v: "true", label: "true" },
-          { v: "false", label: "false" },
-        ],
-      }),
+      mk(
+        `sc:${c}`,
+        "cond",
+        `Condition ${c}`,
+        c in sc.conds ? String(sc.conds[c]) : "",
+        "choice",
+        {
+          choices: [
+            { v: "", label: `design: ${m.conds[c] ?? false}` },
+            { v: "true", label: "true" },
+            { v: "false", label: "false" },
+          ],
+        },
+      ),
     ),
     requests: sc.requests.map((r, i) => ({
       k: `${i}-${r.rid}`,
@@ -393,14 +519,24 @@ export function scenarioView(m: Model): ScenarioView {
           choices: entries.map((n) => ({ v: n.id, label: n.title })),
         }),
         mk(`rq:${i}`, "at", "Starts at (ms)", String(r.at), "number"),
-        mk(`rq:${i}`, "payload", "What the user brings (key = value)", lines(r.payload), "area"),
+        mk(
+          `rq:${i}`,
+          "payload",
+          "What the user brings (key = value)",
+          lines(r.payload),
+          "area",
+        ),
       ],
     })),
     latency: LATENCY_KEYS.map((p) =>
       mk(
         "m",
         `lat:${p}`,
-        p === "net" ? "network hop (ms)" : p === "app" ? "handler hop (ms)" : `${p} plugin (ms)`,
+        p === "net"
+          ? "network hop (ms)"
+          : p === "app"
+            ? "handler hop (ms)"
+            : `${p} plugin (ms)`,
         String(m.latency[p] ?? DEFAULT_LATENCY[p] ?? 1),
         "number",
       ),
@@ -467,7 +603,10 @@ export function applyEdit(
           const def = effectDef(value);
           // a new effect type brings its own example detail and status
           next = updateNode(next, id, {
-            detail: def && n.detail === (effectDef(n.title)?.detail ?? "") ? def.detail : n.detail,
+            detail:
+              def && n.detail === (effectDef(n.title)?.detail ?? "")
+                ? def.detail
+                : n.detail,
             status: def?.responds ? n.status || 200 : 0,
           });
         }
@@ -485,7 +624,9 @@ export function applyEdit(
         return { model: updateNode(m, id, { [name]: toNum(value) }), tag };
       case "retries":
         return {
-          model: updateNode(m, id, { retries: Math.min(10, Math.round(toNum(value))) }),
+          model: updateNode(m, id, {
+            retries: Math.min(10, Math.round(toNum(value))),
+          }),
           tag,
         };
       case "onError":
@@ -515,7 +656,10 @@ export function applyEdit(
       case "latency":
         return { model: updateEdge(m, id, { latency: toNum(value) }), tag };
       case "payload":
-        return { model: updateEdge(m, id, { payload: parsePayload(value) }), tag };
+        return {
+          model: updateEdge(m, id, { payload: parsePayload(value) }),
+          tag,
+        };
     }
     return null;
   }
