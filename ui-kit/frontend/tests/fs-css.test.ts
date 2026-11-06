@@ -27,6 +27,7 @@ describe("the stylesheet", () => {
           "is-done",
           "is-work",
           "is-armed",
+          "is-unbound",
           "is-dashed",
           "is-passed",
           "has-bp",

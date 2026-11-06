@@ -9,6 +9,8 @@
 // work; `state.requests[rid]` is the memory of one request, `state.shared` the
 // process-wide one.
 
+import { type Db, dbFrom } from "./store.ts";
+
 export type Lane = "browser" | "app" | "plugins" | "externals";
 export const LANES: Lane[] = ["browser", "app", "plugins", "externals"];
 export const LANE_LABEL: Record<Lane, string> = {
@@ -33,7 +35,8 @@ export type NodeKind =
   | "reply"
   | "error"
   | "effect"
-  | "external";
+  | "external"
+  | "module";
 
 export const NODE_KINDS: NodeKind[] = [
   "ui-event",
@@ -45,6 +48,7 @@ export const NODE_KINDS: NodeKind[] = [
   "error",
   "effect",
   "external",
+  "module",
 ];
 
 export const KIND_LANE: Record<NodeKind, Lane> = {
@@ -57,6 +61,8 @@ export const KIND_LANE: Record<NodeKind, Lane> = {
   error: "app",
   effect: "plugins",
   external: "externals",
+  // the default; a module instance has its own lane (the side of its module)
+  module: "app",
 };
 
 export const KIND_LABEL: Record<NodeKind, string> = {
@@ -69,6 +75,7 @@ export const KIND_LABEL: Record<NodeKind, string> = {
   error: "Error message",
   effect: "Plugin effect",
   external: "External",
+  module: "Module",
 };
 
 export type EdgeKind = "request" | "effect" | "reply" | "error" | "cancel";
@@ -88,7 +95,12 @@ export const EDGE_LABEL: Record<EdgeKind, string> = {
 };
 
 export type FieldType =
-  "string" | "number" | "boolean" | "object" | "array" | "any";
+  | "string"
+  | "number"
+  | "boolean"
+  | "object"
+  | "array"
+  | "any";
 export const FIELD_TYPES: FieldType[] = [
   "string",
   "number",
@@ -143,6 +155,23 @@ export interface FlowNode {
   clientSet: Record<string, string>;
   /** free text for the designer */
   note: string;
+  /** module: the id of the module (`modules`) this node is an instance of */
+  ref: string;
+  /** module: the lane of the instance, the side of its module ("" = default) */
+  lane: "" | Lane;
+  /**
+   * Only in a flattened model, never saved: this node stands for a module with a
+   * code body. The engine runs the code when a message reaches it.
+   */
+  code?: CodeBody;
+}
+
+/** What the engine needs of a module with a code body. */
+export interface CodeBody {
+  source: string;
+  side: "frontend" | "backend";
+  inputs: ModulePort[];
+  outputs: ModulePort[];
 }
 
 export interface FlowEdge {
@@ -159,6 +188,10 @@ export interface FlowEdge {
   payload: PayloadField[];
   /** ms to deliver; 0 = the default */
   latency: number;
+  /** when `from` is a module: the id of its output port the edge leaves by */
+  fromPort: string;
+  /** when `to` is a module: the id of its input port the edge arrives at */
+  toPort: string;
 }
 
 export type FaultKind = "error" | "timeout" | "slow" | "abort" | "deadline";
@@ -199,6 +232,8 @@ export interface RequestSpec {
   at: number;
   /** what the user brings to the first node (dotted paths -> text), e.g. `email` */
   payload: Record<string, string>;
+  /** a payload as data (a request made by the Visual Builder): used instead of `payload` */
+  data?: Record<string, unknown>;
 }
 
 export interface Scenario {
@@ -209,10 +244,69 @@ export interface Scenario {
   seed: number;
 }
 
+/**
+ * One port of a module: how the outside talks to it. An input port is a message
+ * the module accepts, an output port a message (or an effect) it emits; both are
+ * bound to a node inside, which is where an arriving message goes to and where a
+ * leaving edge starts.
+ */
+export interface ModulePort {
+  id: string;
+  /** the message id (an effect type for an output that is an effect) */
+  name: string;
+  /** the payload that crosses the port */
+  fields: PayloadField[];
+  /** the node inside the module the port is bound to ("" = not bound yet) */
+  node: string;
+  /** the bound node is an instance of a module: the id of that module's port */
+  via: string;
+  /** an output that carries the message on down a pipe (middleware `next`) */
+  pass: boolean;
+}
+
+/**
+ * A module: a named piece of the design with an interface (ports, the state it
+ * touches, the plugins it needs) and a body, a graph of its own. An instance of it
+ * is a node of kind `module` that points here by `ref`; instances share the body.
+ */
+export interface ModuleDef {
+  id: string;
+  name: string;
+  /** which side it runs on: the browser (pavlus frontend) or the server */
+  side: "frontend" | "backend";
+  about: string;
+  inputs: ModulePort[];
+  outputs: ModulePort[];
+  /** the state keys it reads and writes (`requests.user`, `shared.limits`) */
+  reads: string[];
+  writes: string[];
+  /** the plugins it needs from the world (`pg`, `redis`) */
+  plugins: string[];
+  /**
+   * What the body is: a graph (nodes and edges), code (`source`, a pure function
+   * body `(msg, state) => effects`) or a pipe (`stages`, a chain of modules).
+   */
+  body: "graph" | "code" | "pipe";
+  /** body = code: the function body */
+  source: string;
+  /** code that came in with an import and is not run until it is enabled */
+  held: string;
+  /** body = pipe: the ids of the instance nodes, in the order of the chain */
+  stages: string[];
+  nodes: FlowNode[];
+  edges: FlowEdge[];
+}
+
 export interface Model {
   name: string;
   nodes: FlowNode[];
   edges: FlowEdge[];
+  /** the library of modules; instances in any graph point to them */
+  modules: ModuleDef[];
+  /** the plugins of the project beside the built-in ones */
+  plugins: PluginManifest[];
+  /** the tables the `pg.query` nodes run against in the simulation (see store.ts) */
+  db: Db;
   /** the value each condition has on the happy path */
   conds: Record<string, boolean>;
   /** the initial `state.shared` (values are JSON or text) */
@@ -240,7 +334,7 @@ export type PluginName = (typeof PLUGIN_NAMES)[number];
 
 export interface EffectDef {
   type: string;
-  plugin: PluginName;
+  plugin: string;
   hint: string;
   /** an example of `detail` */
   detail: string;
@@ -377,6 +471,58 @@ export const EFFECTS: EffectDef[] = [
 export const effectDef = (type: string): EffectDef | undefined =>
   EFFECTS.find((e) => e.type === type);
 
+/**
+ * A plugin of the project, beside the built-in ones: what the design needs to know
+ * about it (its effects, how long they take, what it talks to), and what the code
+ * generator needs to stub it. Plain data, saved with the project.
+ */
+export interface PluginManifest {
+  name: string;
+  about: string;
+  /** the external it talks to (a node in the Externals lane); "" = none */
+  external: string;
+  /** ms an effect of it takes unless a node or the project says otherwise */
+  latency: number;
+  /** ms before an effect of it times out; 0 = never */
+  timeout: number;
+  /** the code an injected error of it has */
+  errorCode: string;
+  effects: EffectDef[];
+}
+
+export const customOf = (
+  custom: PluginManifest[],
+  plugin: string,
+): PluginManifest | undefined => custom.find((p) => p.name === plugin);
+
+/** every effect the design can use: the built-in ones and those of the project */
+export const effectsIn = (custom: PluginManifest[]): EffectDef[] => [
+  ...EFFECTS,
+  ...custom.flatMap((p) => p.effects),
+];
+export const effectDefIn = (
+  custom: PluginManifest[],
+  type: string,
+): EffectDef | undefined =>
+  effectDef(type) ??
+  custom.flatMap((p) => p.effects).find((e) => e.type === type);
+export const latencyIn = (custom: PluginManifest[], plugin: string): number =>
+  DEFAULT_LATENCY[plugin] ?? customOf(custom, plugin)?.latency ?? 1;
+export const timeoutIn = (custom: PluginManifest[], plugin: string): number =>
+  DEFAULT_TIMEOUT[plugin] ?? customOf(custom, plugin)?.timeout ?? 0;
+export const errorCodeIn = (custom: PluginManifest[], plugin: string): string =>
+  DEFAULT_ERROR_CODE[plugin] ?? customOf(custom, plugin)?.errorCode ?? "ERR";
+export const externalIn = (
+  custom: PluginManifest[],
+  plugin: string,
+): { title: string; id: string } | undefined => {
+  const p = customOf(custom, plugin);
+  return (
+    EXTERNAL_OF[plugin] ??
+    (p?.external ? { title: p.external, id: `x-${p.name}` } : undefined)
+  );
+};
+
 export const pluginOfType = (type: string): string => type.split(".")[0];
 
 /** The external a plugin talks to. */
@@ -435,6 +581,41 @@ export const SQLSTATES: { code: string; label: string }[] = [
 
 // ---- building ----
 
+export function blankPort(
+  id: string,
+  name: string,
+  node = "",
+  patch: Partial<ModulePort> = {},
+): ModulePort {
+  return { id, name, fields: [], node, via: "", pass: false, ...patch };
+}
+
+export function blankDef(
+  id: string,
+  name: string,
+  side: ModuleDef["side"] = "backend",
+  patch: Partial<ModuleDef> = {},
+): ModuleDef {
+  return {
+    id,
+    name,
+    side,
+    about: "",
+    inputs: [],
+    outputs: [],
+    reads: [],
+    writes: [],
+    plugins: [],
+    body: "graph",
+    source: "",
+    held: "",
+    stages: [],
+    nodes: [],
+    edges: [],
+    ...patch,
+  };
+}
+
 export function emptyScenario(): Scenario {
   return { requests: [], faults: [], conds: {}, seed: 1 };
 }
@@ -444,6 +625,9 @@ export function emptyModel(): Model {
     name: "Untitled flow",
     nodes: [],
     edges: [],
+    modules: [],
+    plugins: [],
+    db: {},
     conds: {},
     shared: {},
     latency: {},
@@ -479,6 +663,8 @@ export function blankNode(
     sharedSet: {},
     clientSet: {},
     note: "",
+    ref: "",
+    lane: "",
     ...patch,
   };
 }
@@ -501,6 +687,8 @@ export function blankEdge(
     rid: true,
     payload: [],
     latency: 0,
+    fromPort: "",
+    toPort: "",
     ...patch,
   };
 }
@@ -509,7 +697,13 @@ export const findNode = (m: Model, id: string): FlowNode | undefined =>
   m.nodes.find((n) => n.id === id);
 export const findEdge = (m: Model, id: string): FlowEdge | undefined =>
   m.edges.find((e) => e.id === id);
-export const laneOf = (n: FlowNode): Lane => KIND_LANE[n.kind];
+export const findDef = (m: Model, id: string): ModuleDef | undefined =>
+  m.modules.find((d) => d.id === id);
+/** The module an instance node stands for. */
+export const defOf = (m: Model, n: FlowNode): ModuleDef | undefined =>
+  n.kind === "module" ? findDef(m, n.ref) : undefined;
+export const laneOf = (n: FlowNode): Lane =>
+  n.kind === "module" && n.lane ? n.lane : KIND_LANE[n.kind];
 export const outEdges = (m: Model, id: string): FlowEdge[] =>
   m.edges.filter((e) => e.from === id);
 export const inEdges = (m: Model, id: string): FlowEdge[] =>
@@ -526,6 +720,7 @@ export const DEFAULT_TITLE: Record<NodeKind, string> = {
   error: "items.failed",
   effect: "pg.query",
   external: "Postgres",
+  module: "module",
 };
 
 /** Adds a node (the id is made for it unless one is given). */
@@ -537,7 +732,7 @@ export function addNode(
 ): { model: Model; id: string } {
   const made = patch.id ? { model: m, id: patch.id } : newId(m, "n");
   const t = title || DEFAULT_TITLE[kind];
-  const def = kind === "effect" ? effectDef(t) : undefined;
+  const def = kind === "effect" ? effectDefIn(m.plugins, t) : undefined;
   let node = blankNode(made.id, kind, t, {
     detail: def?.detail ?? "",
     status: def?.responds ? 200 : 0,
@@ -550,7 +745,7 @@ export function addNode(
     node = { ...node, detail: msgOfRoute(t) };
   // a new node goes to the right of the others in its lane
   if (patch.x === undefined) {
-    const lane = KIND_LANE[kind];
+    const lane = laneOf(node);
     const right = made.model.nodes
       .filter((n) => laneOf(n) === lane)
       .reduce((mx, n) => Math.max(mx, n.x + NODE_W + 28), 0);
@@ -681,14 +876,41 @@ export function addEdge(
   if (!a || !b || from === to) return null;
   const { kind: k, msg: mm, port, ...rest } = opts;
   const kind = k ?? inferKind(a, b, port);
-  const msg = mm ?? defaultMsg(m, a, b, kind);
+  // a module end of the edge uses one of its ports (the first unless told)
+  const outDef = defOf(m, a);
+  const inDef = defOf(m, b);
+  const outPort =
+    outDef?.outputs.find((p) => p.id === rest.fromPort) ??
+    (outDef && kind !== "effect"
+      ? outDef.outputs.find((p) => p.name === mm)
+      : undefined) ??
+    outDef?.outputs[0];
+  const inPort =
+    inDef?.inputs.find((p) => p.id === rest.toPort) ??
+    inDef?.inputs.find((p) => p.name === mm) ??
+    inDef?.inputs[0];
+  const msg =
+    mm ??
+    (inPort
+      ? inPort.name
+      : outPort && kind !== "effect"
+        ? outPort.name
+        : defaultMsg(m, a, b, kind));
   const dup = m.edges.find(
-    (e) => e.from === from && e.to === to && e.kind === kind && e.msg === msg,
+    (e) =>
+      e.from === from &&
+      e.to === to &&
+      e.kind === kind &&
+      e.msg === msg &&
+      (!outPort || e.fromPort === outPort.id) &&
+      (!inPort || e.toPort === inPort.id),
   );
   if (dup) return null;
   const made = rest.id ? { model: m, id: rest.id } : newId(m, "e");
   const edge = blankEdge(made.id, from, to, kind, msg, {
     rid: carriesRid(a, b),
+    fromPort: outPort?.id ?? "",
+    toPort: inPort?.id ?? "",
     ...rest,
   });
   return {
@@ -829,11 +1051,20 @@ export const specOf = (fields: PayloadField[]): string =>
     .map((f) => `${f.name}:${f.type}${f.example ? `=${f.example}` : ""}`)
     .join("; ");
 
+/**
+ * A condition is a name (`limited`, `!cacheHit`) whose value the scenario sets, or an
+ * expression over the data (`payload.rowCount == 0`) that is worked out when the
+ * message travels.
+ */
+export const isExprCond = (c: string): boolean =>
+  c.trim() !== "" && !/^!?\s*[A-Za-z_]\w*$/.test(c.trim());
+
 /** The condition names an edge list uses (`!x` and `x` are the same name). */
 export const condName = (c: string): string => c.trim().replace(/^!\s*/, "");
 export function condNames(m: Model): string[] {
   const set = new Set<string>(Object.keys(m.conds));
-  for (const e of m.edges) if (e.cond.trim()) set.add(condName(e.cond));
+  for (const e of m.edges)
+    if (e.cond.trim() && !isExprCond(e.cond)) set.add(condName(e.cond));
   return [...set].filter(Boolean).sort();
 }
 
@@ -845,6 +1076,9 @@ export function condHolds(
 ): boolean {
   const c = cond.trim();
   if (!c) return true;
+  // an expression is worked out by the engine, with the message; seen from the
+  // outside (the checks) it is assumed to hold
+  if (isExprCond(c)) return true;
   const neg = c.startsWith("!");
   const name = condName(c);
   const v = name in over ? over[name] : (base[name] ?? false);
@@ -906,6 +1140,11 @@ function nodeFrom(v: unknown): FlowNode | null {
     sharedSet: strMap(v.sharedSet),
     clientSet: strMap(v.clientSet),
     note: str(v.note),
+    ref: kind === "module" ? str(v.ref) : "",
+    lane:
+      kind === "module" && (LANES as string[]).includes(str(v.lane))
+        ? (v.lane as Lane)
+        : "",
   });
 }
 
@@ -926,8 +1165,110 @@ function edgeFrom(v: unknown, ids: Set<string>): FlowEdge | null {
       rid: v.rid !== false,
       payload: fieldList(v.payload),
       latency: Math.max(0, num(v.latency, 0)),
+      fromPort: str(v.fromPort),
+      toPort: str(v.toPort),
     },
   );
+}
+
+/** The nodes and edges of a graph read from JSON, edges only between known nodes. */
+function graphFrom(
+  nodesV: unknown,
+  edgesV: unknown,
+): { nodes: FlowNode[]; edges: FlowEdge[] } {
+  const nodes = (Array.isArray(nodesV) ? nodesV : [])
+    .map(nodeFrom)
+    .filter((n): n is FlowNode => !!n)
+    .filter((n, i, all) => all.findIndex((o) => o.id === n.id) === i);
+  const ids = new Set(nodes.map((n) => n.id));
+  const edges = (Array.isArray(edgesV) ? edgesV : [])
+    .map((e) => edgeFrom(e, ids))
+    .filter((e): e is FlowEdge => !!e)
+    .filter((e, i, all) => all.findIndex((o) => o.id === e.id) === i);
+  return { nodes, edges };
+}
+
+const strList = (v: unknown): string[] =>
+  Array.isArray(v)
+    ? v.filter((x): x is string => typeof x === "string" && x !== "")
+    : [];
+
+function portsFrom(v: unknown, nodeIds: Set<string>): ModulePort[] {
+  return (Array.isArray(v) ? v : [])
+    .filter(isObj)
+    .filter((p) => typeof p.id === "string" && p.id !== "")
+    .map((p) => ({
+      id: str(p.id),
+      name: str(p.name),
+      fields: fieldList(p.fields),
+      node: nodeIds.has(str(p.node)) ? str(p.node) : "",
+      via: str(p.via),
+      pass: p.pass === true,
+    }))
+    .filter((p, i, all) => all.findIndex((o) => o.id === p.id) === i);
+}
+
+function effectsFrom(v: unknown, plugin: string): EffectDef[] {
+  return (Array.isArray(v) ? v : [])
+    .filter(isObj)
+    .filter((e) => typeof e.type === "string" && e.type !== "")
+    .map((e) => ({
+      type: str(e.type),
+      plugin,
+      hint: str(e.hint),
+      detail: str(e.detail),
+      replies: e.replies === true,
+      ...(e.optionalReply === true ? { optionalReply: true } : {}),
+      ...(e.noFail === true ? { noFail: true } : {}),
+      ...(e.responds === true ? { responds: true } : {}),
+    }));
+}
+
+function pluginsFrom(v: unknown): PluginManifest[] {
+  return (Array.isArray(v) ? v : [])
+    .filter(isObj)
+    .filter(
+      (p) =>
+        /^[a-z][a-z0-9]*$/.test(str(p.name)) &&
+        !(PLUGIN_NAMES as readonly string[]).includes(str(p.name)),
+    )
+    .map((p) => ({
+      name: str(p.name),
+      about: str(p.about),
+      external: str(p.external),
+      latency: Math.max(0, num(p.latency, 20)),
+      timeout: Math.max(0, num(p.timeout, 0)),
+      errorCode: str(p.errorCode, "ERR"),
+      effects: effectsFrom(p.effects, str(p.name)),
+    }))
+    .filter((p, i, all) => all.findIndex((o) => o.name === p.name) === i);
+}
+
+function modulesFrom(v: unknown): ModuleDef[] {
+  return (Array.isArray(v) ? v : [])
+    .filter(isObj)
+    .filter((d) => typeof d.id === "string" && d.id !== "")
+    .map((d): ModuleDef => {
+      const g = graphFrom(d.nodes, d.edges);
+      const ids = new Set(g.nodes.map((n) => n.id));
+      return {
+        id: str(d.id),
+        name: str(d.name, "module"),
+        side: d.side === "frontend" ? "frontend" : "backend",
+        about: str(d.about),
+        inputs: portsFrom(d.inputs, ids),
+        outputs: portsFrom(d.outputs, ids),
+        reads: strList(d.reads),
+        writes: strList(d.writes),
+        plugins: strList(d.plugins),
+        body: d.body === "code" || d.body === "pipe" ? d.body : "graph",
+        source: str(d.source),
+        held: str(d.held),
+        stages: strList(d.stages),
+        ...g,
+      };
+    })
+    .filter((d, i, all) => all.findIndex((o) => o.id === d.id) === i);
 }
 
 function scenarioFrom(v: unknown, ids: Set<string>): Scenario {
@@ -970,23 +1311,31 @@ export function readModel(value: unknown): Model | string {
     !Array.isArray(value.edges)
   )
     return "This is not a Flow Studio project (it needs nodes and edges).";
-  const nodes = value.nodes
-    .map(nodeFrom)
-    .filter((n): n is FlowNode => !!n)
-    .filter((n, i, all) => all.findIndex((o) => o.id === n.id) === i);
+  const { nodes, edges } = graphFrom(value.nodes, value.edges);
   const ids = new Set(nodes.map((n) => n.id));
-  const edges = value.edges
-    .map((e) => edgeFrom(e, ids))
-    .filter((e): e is FlowEdge => !!e)
-    .filter((e, i, all) => all.findIndex((o) => o.id === e.id) === i);
-  const top = [...nodes.map((n) => n.id), ...edges.map((e) => e.id)].reduce(
-    (mx, id) => Math.max(mx, Number(/^[ne](\d+)$/.exec(id)?.[1] ?? 0)),
+  const modules = modulesFrom(value.modules);
+  const all = [
+    ...nodes.map((n) => n.id),
+    ...edges.map((e) => e.id),
+    ...modules.flatMap((d) => [
+      d.id,
+      ...d.nodes.map((n) => n.id),
+      ...d.edges.map((e) => e.id),
+      ...d.inputs.map((p) => p.id),
+      ...d.outputs.map((p) => p.id),
+    ]),
+  ];
+  const top = all.reduce(
+    (mx, id) => Math.max(mx, Number(/^(?:mod|[nep])(\d+)$/.exec(id)?.[1] ?? 0)),
     0,
   );
   return {
     name: str(value.name, "Imported flow"),
     nodes,
     edges,
+    modules,
+    plugins: pluginsFrom(value.plugins),
+    db: dbFrom(value.db),
     conds: boolMap(value.conds),
     shared: strMap(value.shared),
     latency: Object.fromEntries(
@@ -997,6 +1346,20 @@ export function readModel(value: unknown): Model | string {
     scenario: scenarioFrom(value.scenario, ids),
     seq: Math.max(num(value.seq, 0), top),
   };
+}
+
+/** The manifests in a JSON text (an array, or one manifest), or a message. */
+export function parsePlugins(text: string): PluginManifest[] | string {
+  let v: unknown;
+  try {
+    v = JSON.parse(text);
+  } catch (e) {
+    return `Not valid JSON: ${e instanceof Error ? e.message : String(e)}`;
+  }
+  const list = pluginsFrom(Array.isArray(v) ? v : [v]);
+  return list.length
+    ? list
+    : "No plugin in it: a plugin needs a name (lower case letters and digits, not a built-in one) and effects.";
 }
 
 export function parseProject(text: string): Model | string {

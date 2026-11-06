@@ -4,6 +4,12 @@
 // template needs no code per field.
 import { exprError, parseInitial, refsOf, templateError } from "./bind.ts";
 import {
+  type FlowRoute,
+  routeAction,
+  routesOf,
+} from "../flow-studio/flowlink.ts";
+import { matchPath, parseUrl } from "./mock.ts";
+import {
   type Chain,
   blankAction,
   getAction,
@@ -160,7 +166,23 @@ const NONE: InspectorView = {
 
 // ---- the fields of an action ----
 
-export function actionFields(ctx: string, a: Action): FieldView[] {
+/** the route an action calls, when it is one of the diagram: `GET /customers` */
+function routeLabel(routes: FlowRoute[], a: Action): string {
+  const url = a.url ?? "";
+  const path = parseUrl(url.replace(/\{[^}]*\}/g, "x")).path;
+  const hit = routes.find(
+    (r) =>
+      r.method === (a.method || "GET").toUpperCase() &&
+      matchPath(r.path, path) !== null,
+  );
+  return hit ? `${hit.method} ${hit.path}` : "";
+}
+
+export function actionFields(
+  ctx: string,
+  a: Action,
+  routes: FlowRoute[] = [],
+): FieldView[] {
   const f = (
     name: keyof Action,
     label: string,
@@ -213,6 +235,19 @@ export function actionFields(ctx: string, a: Action): FieldView[] {
       return [f("text", "Text", "text", [], "Saved {state.name}")];
     case "http":
       return [
+        ...(routes.length
+          ? [
+              field(
+                ctx,
+                "flowRoute",
+                "Route of the diagram",
+                routeLabel(routes, a),
+                "choice",
+                ["", ...routes.map((r) => `${r.method} ${r.path}`)],
+                "Fills in the method, the url, the body and where the answer goes",
+              ),
+            ]
+          : []),
         f("method", "Method", "choice", [
           "GET",
           "POST",
@@ -235,6 +270,7 @@ function chainView(
   elId: string,
   event: EventName,
   chain: Chain,
+  routes: FlowRoute[] = [],
 ): ChainRowView[] {
   const out: ChainRowView[] = [];
   const emit = (list: Chain, prefix: string, depth: number): void => {
@@ -250,7 +286,7 @@ function chainView(
         chain: prefix,
         indent: `margin-left: ${depth * 14}px`,
         title: `${i + 1}. ${ACTION_LABEL[a.t]}`,
-        fields: actionFields(ctx, a),
+        fields: actionFields(ctx, a, routes),
         canUp: i > 0,
         canDown: i < list.length - 1,
         label: "",
@@ -436,7 +472,7 @@ export function inspectorOf(
       })),
       events,
       evLabel: EVENT_LABEL[active],
-      chain: chainView(el.id, active, chain),
+      chain: chainView(el.id, active, chain, m.flow ? routesOf(m.flow) : []),
       chainEmpty: chain.length === 0,
     };
   }
@@ -782,6 +818,20 @@ export function applyEdit(
       };
     case "act": {
       const [elId, event, path] = rest;
+      if (name === "flowRoute") {
+        // a route of the diagram fills in the action
+        const route = m.flow
+          ? routesOf(m.flow).find((r) => `${r.method} ${r.path}` === value)
+          : undefined;
+        return {
+          tag: "",
+          model: editEvent(m, elId, event as EventName, (c) =>
+            updateAction(c, path, (a) =>
+              route ? { ...a, ...routeAction(route) } : a,
+            ),
+          ),
+        };
+      }
       return {
         tag,
         model: editEvent(m, elId, event as EventName, (c) =>

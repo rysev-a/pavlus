@@ -34,6 +34,7 @@ import {
 } from "../visual-builder/history.ts";
 import { DEMOS as VB_DEMOS } from "../visual-builder/demos.ts";
 import { canvasTree, minimapTree, ridColor } from "./canvas.ts";
+import { type CodeView, codeViewOf } from "./code.ts";
 import { catalogOf, schemaText } from "./catalog.ts";
 import { generateAll } from "./codegen.ts";
 import { DEMOS, demoOf, loginDemo } from "./demos.ts";
@@ -57,9 +58,11 @@ import {
 import { importVisualBuilder, importVisualBuilderText } from "./import-vb.ts";
 import {
   type InspectorView,
+  type PluginsView,
   type ScenarioView,
   applyEdit,
   inspectorOf,
+  pluginsView,
   scenarioView,
 } from "./inspector.ts";
 import {
@@ -78,6 +81,42 @@ import {
 } from "./layout.ts";
 import { counts, lintCached as lint } from "./lint.ts";
 import {
+  addPlugin,
+  mergePlugins,
+  pluginsText,
+  removePlugin,
+} from "./plugins.ts";
+import {
+  type Dir as PortDir,
+  addInstance,
+  addModule,
+  addPipe,
+  addPort,
+  addStage,
+  badgesOf,
+  canNest,
+  crumbs,
+  defAt,
+  flatten,
+  flatId,
+  heldCount,
+  holdCode,
+  localId,
+  locate,
+  modelAt,
+  moveStage,
+  putAt,
+  releaseCode,
+  removeModule,
+  removePort,
+  removeStage,
+  scopeValid,
+  syncPipe,
+  syncPorts,
+  traceIn,
+  updateModule,
+} from "./modules.ts";
+import {
   type FlowNode,
   type Model,
   type NodeKind,
@@ -88,11 +127,13 @@ import {
   addNode,
   condNames,
   emptyModel,
+  findDef,
   findEdge,
   findNode,
   laneOf,
   moveNode,
   newId,
+  parsePlugins,
   parseProject,
   projectText,
   removeEdge,
@@ -117,8 +158,13 @@ const TICK_MS = 50;
 export const SPEEDS = [0.5, 1, 2, 4];
 
 export type View =
-  "flow" | "sequence" | "catalog" | "timeline" | "checks" | "source";
-export type Side = "inspect" | "debug" | "scenario";
+  | "flow"
+  | "sequence"
+  | "catalog"
+  | "timeline"
+  | "checks"
+  | "source";
+export type Side = "inspect" | "debug" | "scenario" | "plugins";
 
 export const VIEWS: { id: View; label: string }[] = [
   { id: "flow", label: "Flow" },
@@ -149,12 +195,14 @@ export type Drag =
       kind: "link";
       from: string;
       port: "out" | "ok" | "err";
+      /** a module: the output port the link was dragged from */
+      pid: string;
       x: number;
       y: number;
     };
 
 export interface Sheet {
-  open: "" | "demos" | "import" | "vb";
+  open: "" | "demos" | "import" | "vb" | "plugins";
   text: string;
   error: string;
 }
@@ -162,6 +210,8 @@ export interface Sheet {
 /** the part of the state the user changes; everything else follows from it */
 export interface Core {
   hist: History<Model>;
+  /** the instances to open to get to the module being edited ([] = the top level) */
+  scope: string[];
   tab: View;
   sel: Sel;
   side: Side;
@@ -240,6 +290,7 @@ interface Derived {
   palette: PaletteGroup[];
   inspector: InspectorView;
   scenarioV: ScenarioView;
+  pluginsV: PluginsView;
   chips: { id: string; label: string; hint: string; on: boolean }[];
   activeFaults: { k: string; text: string }[];
   runbar: {
@@ -295,6 +346,45 @@ interface Derived {
   firstField: string;
   hasSel: boolean;
   condOptions: { k: string }[];
+  /** the breadcrumb of the modules that are open: the top level is not in it */
+  crumbs: {
+    k: string;
+    i: number;
+    title: string;
+    module: string;
+    last: boolean;
+  }[];
+  inModule: boolean;
+  moduleTitle: string;
+  /** the selected node is an instance of a module that can be opened */
+  canOpen: boolean;
+  library: {
+    k: string;
+    id: string;
+    name: string;
+    side: string;
+    uses: string;
+    ok: boolean;
+  }[];
+  hasLibrary: boolean;
+  /** the open module has a body of code: the board is replaced by its editor */
+  isCodeBody: boolean;
+  code: CodeView | null;
+  /** the open module is a pipe: its stages, to reorder and extend */
+  pipe: {
+    name: string;
+    stages: {
+      k: string;
+      i: number;
+      title: string;
+      module: string;
+      first: boolean;
+      last: boolean;
+    }[];
+    options: { id: string; name: string }[];
+  } | null;
+  /** how many modules hold code that came in with an import */
+  heldCount: number;
 }
 
 export type FsState = Core & Derived;
@@ -343,6 +433,41 @@ export const PALETTE: PaletteGroup[] = [
   },
 ];
 
+/** the palette of a project: the built-in plugins and externals, and its own */
+export function paletteOf(m: Model): PaletteGroup[] {
+  return PALETTE.map((g) =>
+    g.lane === LANE_LABEL.plugins
+      ? {
+          ...g,
+          items: [
+            ...g.items,
+            ...m.plugins.flatMap((p) =>
+              p.effects.map((e) => ({
+                kind: "effect" as const,
+                title: e.type,
+                label: e.type,
+              })),
+            ),
+          ],
+        }
+      : g.lane === LANE_LABEL.externals
+        ? {
+            ...g,
+            items: [
+              ...g.items,
+              ...m.plugins
+                .filter((p) => p.external)
+                .map((p) => ({
+                  kind: "external" as const,
+                  title: p.external,
+                  label: p.external,
+                })),
+            ],
+          }
+        : g,
+  );
+}
+
 const NO_SEL: Sel = { kind: "none", id: "" };
 const NO_SHEET: Sheet = { open: "", text: "", error: "" };
 
@@ -355,9 +480,26 @@ const fmt = (n: number): string => `${Math.round(n * 10) / 10} ms`;
 const pretty = (v: unknown): string =>
   v === undefined ? "" : JSON.stringify(v, null, 2);
 
+/** the scope of a core, or the top level when the module it points to is gone */
+export const scopeOf = (c: {
+  hist: History<Model>;
+  scope: string[];
+}): string[] => (scopeValid(c.hist.present, c.scope) ? c.scope : []);
+
+/** the model the board shows: the top level, or the body of the open module */
+export const viewModel = (c: {
+  hist: History<Model>;
+  scope: string[];
+}): Model => modelAt(c.hist.present, scopeOf(c));
+
+/** `m1/` for the module at [m1]: what the flat ids of its nodes start with */
+const prefixOf = (scope: string[]): string =>
+  scope.length ? `${scope.join("/")}/` : "";
+
 export function coreOf(model: Model): Core {
   return {
     hist: start(model),
+    scope: [],
     tab: "flow",
     sel: NO_SEL,
     side: "inspect",
@@ -443,31 +585,43 @@ function stepView(m: Model, trace: Trace | null, pos: number): StepView {
 
 /** Pure: everything the template shows that follows from the core. */
 export function derive(c: Core): Derived {
-  const model = c.hist.present;
+  const root = c.hist.present;
+  const scope = scopeOf(c);
+  const model = modelAt(root, scope);
+  const flat = flatten(root);
+  const open = defAt(root, scope);
   const trace = c.trace;
   const has = trace !== null;
   const rids = trace ? ridsOf(trace) : [];
   const flowOrSeq = c.tab;
   const nRoutes = model.nodes.filter((n) => n.kind === "route").length;
-  const iss = c.tab === "checks" || c.tab === "flow" ? lint(model) : [];
+  const iss = c.tab === "checks" || c.tab === "flow" ? lint(root) : [];
   const issueCounts = counts(iss);
   const outs = trace ? outcomesOf(trace) : [];
-  const files = c.tab === "source" ? generateAll(model) : [];
+  const files = c.tab === "source" ? generateAll(root) : [];
   const srcPath = files.some((f) => f.path === c.srcPath)
     ? c.srcPath
     : (files[0]?.path ?? "");
   const cur = files.find((f) => f.path === srcPath);
-  const cat = c.tab === "catalog" ? catalogOf(model) : [];
+  const cat = c.tab === "catalog" ? catalogOf(root) : [];
   const tlRid = rids.includes(c.tlRid) ? c.tlRid : (rids[0] ?? "");
   const atEnd = has && c.pos >= (trace?.length ?? 0) - 1;
   const lastStep =
     trace && c.pos >= 0 ? trace[Math.min(c.pos, trace.length - 1)] : null;
+  const selNode = c.sel.kind === "node" ? findNode(model, c.sel.id) : undefined;
+  const inspector = inspectorOf(
+    model,
+    c.sel,
+    c.breakpoints,
+    prefixOf(scope),
+    open?.id ?? "",
+  );
   return {
     model,
     canUndo: canUndo(c.hist),
     canRedo: canRedo(c.hist),
-    summary: `${model.nodes.length} nodes · ${model.edges.length} edges · ${nRoutes} ${nRoutes === 1 ? "route" : "routes"}`,
-    projectName: model.name,
+    summary: `${model.nodes.length} nodes · ${model.edges.length} edges · ${nRoutes} ${nRoutes === 1 ? "route" : "routes"}${root.modules.length ? ` · ${root.modules.length} ${root.modules.length === 1 ? "module" : "modules"}` : ""}`,
+    projectName: root.name,
     tabs: VIEWS.map((v) => ({
       id: v.id,
       label: v.label,
@@ -484,21 +638,23 @@ export function derive(c: Core): Derived {
     isTimeline: flowOrSeq === "timeline",
     isChecks: flowOrSeq === "checks",
     isSource: flowOrSeq === "source",
-    palette: PALETTE,
-    inspector: inspectorOf(model, c.sel, c.breakpoints),
+    palette: paletteOf(root),
+    inspector,
+    pluginsV:
+      c.side === "plugins" ? pluginsView(root) : { builtin: [], custom: [] },
     scenarioV:
       c.side === "scenario"
-        ? scenarioView(model)
+        ? scenarioView(flat)
         : { conds: [], requests: [], latency: [], faults: [], general: [] },
     chips: CHIPS.map((x) => ({
       id: x.id,
       label: x.label,
       hint: x.hint,
-      on: chipOn(model, x),
+      on: chipOn(root, x),
     })),
-    activeFaults: model.scenario.faults
+    activeFaults: root.scenario.faults
       .filter((f) => f.on)
-      .map((f) => ({ k: f.id, text: faultText(model, f) })),
+      .map((f) => ({ k: f.id, text: faultText(root, f) })),
     runbar: {
       has,
       atEnd,
@@ -518,7 +674,7 @@ export function derive(c: Core): Derived {
             .join(" · ")
         : "The design has not been run",
     },
-    cur: stepView(model, trace, c.pos),
+    cur: stepView(flat, trace, c.pos),
     stepLog: trace
       ? trace.slice(0, 600).map((s) => ({
           k: String(s.i),
@@ -539,8 +695,8 @@ export function derive(c: Core): Derived {
       text: `${o.result}${o.status ? ` ${o.status}` : ""} · ${fmt(o.ms)}${o.cancelled ? ` · ${o.cancelled} cancelled` : ""}${o.dropped ? ` · ${o.dropped} dropped` : ""}`,
     })),
     bpList: Object.keys(c.breakpoints)
-      .filter((id) => c.breakpoints[id] && findNode(model, id))
-      .map((id) => ({ id, title: findNode(model, id)!.title })),
+      .filter((id) => c.breakpoints[id] && findNode(flat, id))
+      .map((id) => ({ id, title: findNode(flat, id)!.title })),
     checks: {
       rows: iss.map((i, k) => ({
         k: `${k}`,
@@ -595,12 +751,54 @@ export function derive(c: Core): Derived {
       label: `${v}x`,
       selected: v === c.speed,
     })),
-    firstField:
-      c.sel.kind === "none"
-        ? ""
-        : (inspectorOf(model, c.sel, c.breakpoints).fields[0]?.id ?? ""),
+    firstField: c.sel.kind === "none" ? "" : (inspector.fields[0]?.id ?? ""),
     hasSel: c.sel.kind !== "none",
-    condOptions: condNames(model).map((k) => ({ k })),
+    condOptions: condNames(flat).map((k) => ({ k })),
+    crumbs: crumbs(root, scope).map((x, i, all) => ({
+      k: x.path.join("/"),
+      i,
+      title: x.title,
+      module: x.module,
+      last: i === all.length - 1,
+    })),
+    inModule: scope.length > 0,
+    moduleTitle: open?.name ?? "",
+    canOpen:
+      !!selNode && selNode.kind === "module" && !!findDef(root, selNode.ref),
+    library: root.modules.map((d) => ({
+      k: d.id,
+      id: d.id,
+      name: d.name,
+      side: d.side === "frontend" ? "browser" : "server",
+      uses: String(
+        root.nodes.filter((n) => n.kind === "module" && n.ref === d.id).length,
+      ),
+      ok: canNest(root, open?.id ?? "", d.id),
+    })),
+    hasLibrary: root.modules.length > 0,
+    isCodeBody: open?.body === "code",
+    code: open?.body === "code" ? codeViewOf(open, root.plugins) : null,
+    pipe:
+      open?.body === "pipe"
+        ? {
+            name: open.name,
+            stages: open.stages.map((sid, i) => {
+              const n = open.nodes.find((x) => x.id === sid);
+              return {
+                k: sid,
+                i,
+                title: n?.title ?? sid,
+                module: findDef(root, n?.ref ?? "")?.name ?? "(gone)",
+                first: i === 0,
+                last: i === open.stages.length - 1,
+              };
+            }),
+            options: root.modules
+              .filter((d) => canNest(root, open.id, d.id))
+              .map((d) => ({ id: d.id, name: d.name })),
+          }
+        : null,
+    heldCount: heldCount(root),
   };
 }
 
@@ -613,6 +811,7 @@ export const initial: FsState = stateOf(loginDemo());
 
 const CORE_KEYS = [
   "hist",
+  "scope",
   "tab",
   "sel",
   "side",
@@ -655,9 +854,13 @@ const MISS: Record<string, string> = {
 export function trees(
   c: Core,
 ): { target: string; tree: ReturnType<typeof canvasTree> }[] {
-  const m = c.hist.present;
+  const root = c.hist.present;
+  const scope = scopeOf(c);
+  const m = modelAt(root, scope);
   const out: { target: string; tree: ReturnType<typeof canvasTree> }[] = [];
+  // the sequence and the timeline show the flat design; the board shows the scope
   const trace = c.trace;
+  const seen = traceIn(trace, scope);
   const cur =
     trace && c.pos >= 0 ? trace[Math.min(c.pos, trace.length - 1)] : null;
   if (c.tab === "flow") {
@@ -666,9 +869,15 @@ export function trees(
         ? { [c.drag.id]: { x: c.drag.x, y: c.drag.y } }
         : {};
     const placed = layoutOf(m, over);
-    const faultNodes = m.scenario.faults
-      .filter((f) => f.on && findNode(m, f.target))
-      .map((f) => f.target);
+    const faultNodes = root.scenario.faults
+      .filter((f) => f.on)
+      .map((f) => localId(scope, f.target))
+      .filter((id) => id && findNode(m, id));
+    const marks = Object.fromEntries(
+      Object.entries(c.breakpoints)
+        .filter(([, on]) => on)
+        .map(([id]) => [localId(scope, id), true]),
+    );
     out.push(
       {
         target: FLOW,
@@ -677,17 +886,19 @@ export function trees(
           vp: c.vp,
           selNode: c.sel.kind === "node" ? c.sel.id : "",
           selEdge: c.sel.kind === "edge" ? c.sel.id : "",
-          breakpoints: c.breakpoints,
+          breakpoints: marks,
           link:
             c.drag?.kind === "link"
               ? {
                   from: c.drag.from,
                   port: c.drag.port,
+                  pid: c.drag.pid,
                   x: c.drag.x,
                   y: c.drag.y,
                 }
               : null,
-          trace,
+          trace: seen,
+          badges: badgesOf(defAt(root, scope)),
           pos: c.pos,
           progress: c.reduced ? 1 : c.progress,
           faultNodes,
@@ -709,7 +920,7 @@ export function trees(
       : [];
     out.push({
       target: SEQ,
-      tree: sequenceTree(buildSequence(m), {
+      tree: sequenceTree(buildSequence(root), {
         current: cur?.edge ?? "",
         passed,
         selEdge: c.sel.kind === "edge" ? c.sel.id : "",
@@ -721,7 +932,7 @@ export function trees(
     const rid = rids.includes(c.tlRid) ? c.tlRid : rids[0];
     out.push({
       target: TIME,
-      tree: timelineTree(buildTimeline(m, trace, rid), {
+      tree: timelineTree(buildTimeline(root, trace, rid), {
         cursor: cur && cur.rid === rid ? cur.t : null,
         prefix: c.prefix,
       }),
@@ -735,7 +946,13 @@ export class FlowStudio extends Component<FsState> {
 
   // ---- helpers ----
 
+  /** the model the board shows and the editor changes: the top level or an open module */
   _model(state: FsState): Model {
+    return viewModel(state);
+  }
+
+  /** the whole project, whatever module is open */
+  _root(state: FsState): Model {
     return state.hist.present;
   }
 
@@ -774,13 +991,44 @@ export class FlowStudio extends Component<FsState> {
     return [store.merge("", patch), ...this._paint(next, false)];
   }
 
-  /** a model edit: recorded in the history; the trace of the old design is dropped */
+  /**
+   * An edit of what the board shows: `model` is a change of `_model(state)`, so it
+   * goes back into the module that is open. Recorded in the history; the trace of
+   * the old design is dropped.
+   */
   _edit(
     state: FsState,
     model: Model,
     tag = "",
     patch: Partial<Core> = {},
     layoutOnly = false,
+  ): Effect[] {
+    const root = state.hist.present;
+    let full = putAt(root, scopeOf(state), model);
+    // the body of a pipe is generated from its stages: a stage added or deleted
+    // on the board rebuilds the chain
+    const open = defAt(root, scopeOf(state));
+    if (open?.body === "pipe") full = syncPipe(full, open.id);
+    return this._record(state, full, tag, patch, layoutOnly);
+  }
+
+  /** An edit of the whole project (the name, the scenario, the library of modules). */
+  _editRoot(
+    state: FsState,
+    model: Model,
+    tag = "",
+    patch: Partial<Core> = {},
+    layoutOnly = false,
+  ): Effect[] {
+    return this._record(state, model, tag, patch, layoutOnly);
+  }
+
+  _record(
+    state: FsState,
+    model: Model,
+    tag: string,
+    patch: Partial<Core>,
+    layoutOnly: boolean,
   ): Effect[] {
     const hist = commit(state.hist, model, tag);
     const stale = !layoutOnly && state.trace !== null;
@@ -798,14 +1046,17 @@ export class FlowStudio extends Component<FsState> {
   }
 
   _valid(c: Core): Core {
-    const m = c.hist.present;
+    const scope = scopeOf(c);
+    const m = modelAt(c.hist.present, scope);
     let sel = c.sel;
     if (sel.kind === "node" && !findNode(m, sel.id)) sel = NO_SEL;
     if (sel.kind === "edge" && !findEdge(m, sel.id)) sel = NO_SEL;
+    // breakpoints are kept by the id of the flat design
+    const flat = flatten(c.hist.present);
     const breakpoints = Object.fromEntries(
-      Object.entries(c.breakpoints).filter(([id]) => findNode(m, id)),
+      Object.entries(c.breakpoints).filter(([id]) => findNode(flat, id)),
     );
-    return { ...c, sel, breakpoints };
+    return { ...c, scope, sel, breakpoints };
   }
 
   _say(text: string): Partial<Core> {
@@ -838,6 +1089,7 @@ export class FlowStudio extends Component<FsState> {
           ".",
           "r",
           "p",
+          "o",
         ],
       }),
       local.media("(prefers-reduced-motion: reduce)", "gotMotion"),
@@ -912,7 +1164,7 @@ export class FlowStudio extends Component<FsState> {
     const patch: Partial<Core> = { tab: v, drag: null };
     // the timeline needs a trace: make one without starting the player
     if (v === "timeline" && !state.trace) {
-      const m = this._model(state);
+      const m = this._root(state);
       patch.trace = simulate(m, m.scenario, m.scenario.seed);
       patch.pos = -1;
     }
@@ -935,9 +1187,9 @@ export class FlowStudio extends Component<FsState> {
   }
 
   setName(msg: Message, state: FsState): Effect[] {
-    return this._edit(
+    return this._editRoot(
       state,
-      { ...this._model(state), name: msg.event?.value ?? "" },
+      { ...this._root(state), name: msg.event?.value ?? "" },
       "project-name",
       {},
       true,
@@ -984,6 +1236,7 @@ export class FlowStudio extends Component<FsState> {
       state,
       {
         hist,
+        scope: [],
         tab: "flow",
         sel: NO_SEL,
         trace: null,
@@ -1026,10 +1279,51 @@ export class FlowStudio extends Component<FsState> {
 
   importApply(_msg: Message, state: FsState): Effect[] {
     if (state.sheet.open === "vb") return this.vbApply(_msg, state);
+    if (state.sheet.open === "plugins") return this.pluginsApply(_msg, state);
     const r = parseProject(state.sheet.text);
     if (typeof r === "string")
       return this._commit(state, { sheet: { ...state.sheet, error: r } });
-    return this._open(state, r, `Imported "${r.name}".`);
+    const held = holdCode(r);
+    return this._open(
+      state,
+      held,
+      `Imported "${r.name}".${heldCount(held) ? " The code of its modules is held: read it, then enable it." : ""}`,
+    );
+  }
+
+  pluginsApply(_msg: Message, state: FsState): Effect[] {
+    const r = parsePlugins(state.sheet.text);
+    if (typeof r === "string")
+      return this._commit(state, { sheet: { ...state.sheet, error: r } });
+    return this._editRoot(state, mergePlugins(this._root(state), r), "", {
+      sheet: NO_SHEET,
+      message: `Added ${r.length} plugin${r.length === 1 ? "" : "s"}: ${r.map((p) => p.name).join(", ")}.`,
+    });
+  }
+
+  pluginAdd(_msg: Message, state: FsState): Effect[] {
+    const r = addPlugin(this._root(state));
+    return this._editRoot(state, r.model, "", {
+      side: "plugins",
+      sideOpen: true,
+      message: `Added the plugin ${r.name}. Describe its effects, then find them in the palette.`,
+    });
+  }
+
+  pluginDel(msg: Message, state: FsState): Effect[] {
+    const root = this._root(state);
+    const next = removePlugin(root, msg.payload as string);
+    return next === root
+      ? this._commit(state, {
+          message:
+            "An effect node still uses the plugin. Delete those nodes first.",
+        })
+      : this._editRoot(state, next);
+  }
+
+  pluginCopy(msg: Message, state: FsState): Effect[] {
+    const p = this._root(state).plugins.find((x) => x.name === msg.payload);
+    return p ? [local.copy(pluginsText([p]), "copiedJson")] : [];
   }
 
   importFile(): Effect[] {
@@ -1059,7 +1353,7 @@ export class FlowStudio extends Component<FsState> {
   }
 
   exportJson(_msg: Message, state: FsState): Effect[] {
-    const m = this._model(state);
+    const m = this._root(state);
     return [
       filesEffector.download(
         `${slugify(m.name)}.flow.json`,
@@ -1075,7 +1369,7 @@ export class FlowStudio extends Component<FsState> {
   }
 
   copyJson(_msg: Message, state: FsState): Effect[] {
-    return [local.copy(projectText(this._model(state)), "copiedJson")];
+    return [local.copy(projectText(this._root(state)), "copiedJson")];
   }
 
   copiedJson(_msg: Message, state: FsState): Effect[] {
@@ -1087,10 +1381,10 @@ export class FlowStudio extends Component<FsState> {
   vbApply(_msg: Message, state: FsState): Effect[] {
     const text = state.sheet.text.trim();
     const r = text
-      ? importVisualBuilderText(text, this._model(state))
+      ? importVisualBuilderText(text, this._root(state))
       : importVisualBuilder(
           VB_DEMOS.find((d) => d.id === "todo")!.make(),
-          this._model(state),
+          this._root(state),
         );
     if (typeof r === "string")
       return this._commit(state, { sheet: { ...state.sheet, error: r } });
@@ -1142,12 +1436,20 @@ export class FlowStudio extends Component<FsState> {
     const p = msg.payload as {
       id: string;
       port: "out" | "ok" | "err";
+      pid?: string;
       x: number;
       y: number;
     };
     return this._commit(state, {
       sel: { kind: "node", id: p.id },
-      drag: { kind: "link", from: p.id, port: p.port, x: p.x, y: p.y },
+      drag: {
+        kind: "link",
+        from: p.id,
+        port: p.port,
+        pid: p.pid ?? "",
+        x: p.x,
+        y: p.y,
+      },
     });
   }
 
@@ -1219,9 +1521,18 @@ export class FlowStudio extends Component<FsState> {
     const id = (msg.payload as { id: string }).id;
     if (d?.kind === "link") {
       if (d.from === id) return this._commit(state, { drag: null });
-      return this._connect(state, d.from, id, d.port);
+      return this._connect(state, d.from, id, d.port, d.pid);
     }
     return this._endDrag(state);
+  }
+
+  /** a link dropped on an input pin of a module: it arrives at that port */
+  pinUp(msg: Message, state: FsState): Effect[] {
+    const d = state.drag;
+    const p = msg.payload as { id: string; pid: string };
+    if (d?.kind !== "link") return this._endDrag(state);
+    if (d.from === p.id) return this._commit(state, { drag: null });
+    return this._connect(state, d.from, p.id, d.port, d.pid, p.pid);
   }
 
   _connect(
@@ -1229,9 +1540,15 @@ export class FlowStudio extends Component<FsState> {
     from: string,
     to: string,
     port: "out" | "ok" | "err" = "out",
+    fromPort = "",
+    toPort = "",
   ): Effect[] {
     const m = this._model(state);
-    const r = addEdge(m, from, to, { port });
+    const r = addEdge(m, from, to, {
+      port,
+      ...(fromPort ? { fromPort } : {}),
+      ...(toPort ? { toPort } : {}),
+    });
     if (!r)
       return this._commit(state, {
         drag: null,
@@ -1271,6 +1588,9 @@ export class FlowStudio extends Component<FsState> {
 
   nodeDbl(msg: Message, state: FsState): Effect[] {
     const id = (msg.payload as { id: string }).id;
+    const node = findNode(this._model(state), id);
+    if (node?.kind === "module" && findDef(this._root(state), node.ref))
+      return this._enter(state, [...scopeOf(state), id]);
     return this._commit(
       state,
       {
@@ -1329,7 +1649,17 @@ export class FlowStudio extends Component<FsState> {
 
   addNodeOf(msg: Message, state: FsState): Effect[] {
     const [kind, title] = msg.payload as [NodeKind, string];
-    const r = addNode(this._model(state), kind, title);
+    // an external of a plugin of the project stands behind that plugin
+    const owner =
+      kind === "external"
+        ? this._model(state).plugins.find((p) => p.external === title)
+        : undefined;
+    const r = addNode(
+      this._model(state),
+      kind,
+      title,
+      owner ? { plugin: owner.name } : {},
+    );
     const node = findNode(r.model, r.id)!;
     return this._edit(
       state,
@@ -1372,7 +1702,7 @@ export class FlowStudio extends Component<FsState> {
 
   quickAdd(msg: Message, state: FsState): Effect[] {
     const text = (msg.event?.value ?? state.quick.text).trim();
-    const q = parseQuick(text);
+    const q = parseQuick(text, this._model(state).plugins);
     if (typeof q === "string")
       return this._commit(state, { quick: { text, error: q } });
     let m = this._model(state);
@@ -1441,40 +1771,49 @@ export class FlowStudio extends Component<FsState> {
   "f.edit"(msg: Message, state: FsState): Effect[] {
     const [ctx, name] = msg.payload as [string, string];
     const value = msg.event?.value ?? "";
-    const r = applyEdit(this._model(state), ctx, name, value);
-    if (!r) return [];
-    return this._edit(state, r.model, r.tag);
+    // nodes and edges are those of the board; the scenario and the library of
+    // modules belong to the whole project
+    const kind = ctx.split(":")[0];
+    if (kind === "n" || kind === "e") {
+      const r = applyEdit(this._model(state), ctx, name, value);
+      return r ? this._edit(state, r.model, r.tag) : [];
+    }
+    const r = applyEdit(this._root(state), ctx, name, value);
+    return r ? this._editRoot(state, r.model, r.tag) : [];
   }
 
   faultNode(msg: Message, state: FsState): Effect[] {
     const [node, kind] = msg.payload as [string, "error" | "timeout" | "slow"];
-    return this._edit(state, toggleNodeFault(this._model(state), node, kind));
+    return this._editRoot(
+      state,
+      toggleNodeFault(this._root(state), flatId(scopeOf(state), node), kind),
+    );
   }
 
   chip(msg: Message, state: FsState): Effect[] {
-    return this._edit(
+    return this._editRoot(
       state,
-      toggleChip(this._model(state), msg.payload as string),
+      toggleChip(this._root(state), msg.payload as string),
     );
   }
 
   faultToggle(msg: Message, state: FsState): Effect[] {
     const id = msg.payload as string;
-    const f = this._model(state).scenario.faults.find((x) => x.id === id);
+    const f = this._root(state).scenario.faults.find((x) => x.id === id);
     return f
-      ? this._edit(state, updateFault(this._model(state), id, { on: !f.on }))
+      ? this._editRoot(state, updateFault(this._root(state), id, { on: !f.on }))
       : [];
   }
 
   faultDel(msg: Message, state: FsState): Effect[] {
-    return this._edit(
+    return this._editRoot(
       state,
-      removeFault(this._model(state), msg.payload as string),
+      removeFault(this._root(state), msg.payload as string),
     );
   }
 
   reqAdd(_msg: Message, state: FsState): Effect[] {
-    const m = this._model(state);
+    const m = this._root(state);
     const entry =
       m.scenario.requests[0]?.entry ??
       m.nodes.find((n) => n.kind === "ui-event")?.id ??
@@ -1484,7 +1823,7 @@ export class FlowStudio extends Component<FsState> {
         message: "Add a UI event or a client first.",
       });
     const n = m.scenario.requests.length + 1;
-    return this._edit(state, {
+    return this._editRoot(state, {
       ...m,
       scenario: {
         ...m.scenario,
@@ -1497,9 +1836,9 @@ export class FlowStudio extends Component<FsState> {
   }
 
   reqDel(msg: Message, state: FsState): Effect[] {
-    const m = this._model(state);
+    const m = this._root(state);
     const i = msg.payload as number;
-    return this._edit(state, {
+    return this._editRoot(state, {
       ...m,
       scenario: {
         ...m.scenario,
@@ -1512,19 +1851,270 @@ export class FlowStudio extends Component<FsState> {
     const id =
       (typeof msg.payload === "string" ? msg.payload : "") ||
       (state.sel.kind === "node" ? state.sel.id : "");
-    if (!id || !findNode(this._model(state), id)) return [];
-    const on = !state.breakpoints[id];
-    const title = findNode(this._model(state), id)!.title;
+    const node = id ? findNode(this._model(state), id) : undefined;
+    if (!node) return [];
+    // breakpoints are kept by the id of the flat design; a module has no node of
+    // its own there, so its breakpoint is on the node its first input port feeds
+    const def =
+      node.kind === "module" ? findDef(this._root(state), node.ref) : undefined;
+    const inner = node.kind === "module" ? (def?.inputs[0]?.node ?? "") : "";
+    if (node.kind === "module" && !inner)
+      return this._commit(state, {
+        message:
+          "Bind an input port of the module to a node to set a breakpoint on it.",
+      });
+    const key = flatId(
+      scopeOf(state),
+      node.kind === "module" ? `${id}/${inner}` : id,
+    );
+    const on = !state.breakpoints[key];
+    const title = node.title;
     return this._commit(state, {
-      breakpoints: { ...state.breakpoints, [id]: on },
+      breakpoints: { ...state.breakpoints, [key]: on },
       live: `Breakpoint ${on ? "set on" : "removed from"} ${title}`,
+    });
+  }
+
+  // ---- modules ----
+
+  /** shows the body of the module at `scope` (the top level for []) */
+  _enter(state: FsState, scope: string[]): Effect[] {
+    return this._commit(
+      state,
+      {
+        scope,
+        sel: NO_SEL,
+        drag: null,
+        vp: HOME,
+        side: "inspect",
+        sideOpen: false,
+        live: scope.length ? "Opened a module" : "Back at the top level",
+      },
+      [],
+      true,
+    );
+  }
+
+  /** the selected instance (or the one in the message) is opened */
+  openModule(msg: Message, state: FsState): Effect[] {
+    const id =
+      typeof msg.payload === "string" && msg.payload
+        ? msg.payload
+        : state.sel.kind === "node"
+          ? state.sel.id
+          : "";
+    const node = id ? findNode(this._model(state), id) : undefined;
+    if (
+      !node ||
+      node.kind !== "module" ||
+      !findDef(this._root(state), node.ref)
+    )
+      return [];
+    return this._enter(state, [...scopeOf(state), id]);
+  }
+
+  /** the breadcrumb: back up to the `i`-th open module (-1: the top level) */
+  goScope(msg: Message, state: FsState): Effect[] {
+    const i = msg.payload as number;
+    return this._enter(state, scopeOf(state).slice(0, i + 1));
+  }
+
+  /** a new module in the library, with an instance on the board, ready to open */
+  newModule(msg: Message, state: FsState): Effect[] {
+    return this._newModule(
+      state,
+      msg.payload === "frontend" ? "frontend" : "backend",
+      "graph",
+    );
+  }
+
+  /** a new pipe, with an instance on the board: add its stages when it is open */
+  newPipe(msg: Message, state: FsState): Effect[] {
+    const side = msg.payload === "frontend" ? "frontend" : "backend";
+    const root = this._root(state);
+    const n = root.modules.filter((d) => d.body === "pipe").length + 1;
+    const made = addPipe(root, `Pipe ${n}`, side);
+    const scoped = modelAt(made.model, scopeOf(state));
+    const inst = addInstance(scoped, made.id);
+    if (!inst) return [];
+    const node = findNode(inst.model, inst.id)!;
+    return this._edit(
+      state,
+      inst.model,
+      "",
+      {
+        sel: { kind: "node", id: inst.id },
+        side: "inspect",
+        sideOpen: true,
+        vp: this._reveal(state, inst.model, node),
+        message: `Created the pipe ${node.title}. Open it to add the stages.`,
+      },
+      true,
+    );
+  }
+
+  pipeAdd(msg: Message, state: FsState): Effect[] {
+    const open = defAt(this._root(state), scopeOf(state));
+    const stage = msg.event?.value ?? "";
+    if (!open || !stage) return [];
+    const next = addStage(this._root(state), open.id, stage);
+    return next === this._root(state)
+      ? this._commit(state, {
+          message: "That module cannot be a stage of this pipe.",
+        })
+      : this._editRoot(state, next);
+  }
+
+  pipeMove(msg: Message, state: FsState): Effect[] {
+    const open = defAt(this._root(state), scopeOf(state));
+    const [i, dir] = msg.payload as [number, -1 | 1];
+    return open
+      ? this._editRoot(state, moveStage(this._root(state), open.id, i, dir))
+      : [];
+  }
+
+  pipeDel(msg: Message, state: FsState): Effect[] {
+    const open = defAt(this._root(state), scopeOf(state));
+    return open
+      ? this._editRoot(
+          state,
+          removeStage(this._root(state), open.id, msg.payload as number),
+        )
+      : [];
+  }
+
+  newCodeModule(msg: Message, state: FsState): Effect[] {
+    return this._newModule(
+      state,
+      msg.payload === "frontend" ? "frontend" : "backend",
+      "code",
+    );
+  }
+
+  _newModule(
+    state: FsState,
+    side: "frontend" | "backend",
+    body: "graph" | "code",
+  ): Effect[] {
+    const root = this._root(state);
+    const n = root.modules.filter((d) => d.side === side).length + 1;
+    const made = addModule(
+      root,
+      `${side === "frontend" ? "Widget" : "Service"} ${n}`,
+      side,
+      body,
+    );
+    // the instance goes to the board that is open (the library is shared)
+    const scoped = modelAt(made.model, scopeOf(state));
+    const inst = addInstance(scoped, made.id);
+    if (!inst) return [];
+    const node = findNode(inst.model, inst.id)!;
+    return this._edit(
+      state,
+      inst.model,
+      "",
+      {
+        sel: { kind: "node", id: inst.id },
+        side: "inspect",
+        sideOpen: true,
+        vp: this._reveal(state, inst.model, node),
+        message: `Created the module ${node.title}. Double-click it to open the body.`,
+        live: `Created the module ${node.title}`,
+      },
+      true,
+    );
+  }
+
+  /** an instance of a module of the library */
+  addInstanceOf(msg: Message, state: FsState): Effect[] {
+    const defId = msg.payload as string;
+    const open = defAt(this._root(state), scopeOf(state));
+    if (!canNest(this._root(state), open?.id ?? "", defId))
+      return this._commit(state, {
+        message:
+          "A module cannot contain itself, not even through another module.",
+      });
+    const r = addInstance(this._model(state), defId);
+    if (!r) return [];
+    const node = findNode(r.model, r.id)!;
+    return this._edit(
+      state,
+      r.model,
+      "",
+      {
+        sel: { kind: "node", id: r.id },
+        side: "inspect",
+        vp: this._reveal(state, r.model, node),
+        message: `Added an instance of ${node.title}`,
+        live: `Added an instance of ${node.title}`,
+      },
+      true,
+    );
+  }
+
+  /** the textarea of a code body: the source of the open module */
+  codeEdit(msg: Message, state: FsState): Effect[] {
+    const open = defAt(this._root(state), scopeOf(state));
+    if (!open) return [];
+    return this._editRoot(
+      state,
+      updateModule(this._root(state), open.id, {
+        source: msg.event?.value ?? "",
+      }),
+      `mod:${open.id}:source`,
+    );
+  }
+
+  modSync(msg: Message, state: FsState): Effect[] {
+    const root = this._root(state);
+    const next = syncPorts(root, msg.payload as string);
+    return next === root
+      ? this._commit(state, {
+          message: "Every emitted port already has an output.",
+        })
+      : this._editRoot(state, next, "", {
+          message: "Added the output ports the code emits.",
+        });
+  }
+
+  enableCode(_msg: Message, state: FsState): Effect[] {
+    return this._editRoot(state, releaseCode(this._root(state)), "", {
+      message: "The code of the imported modules is enabled.",
+    });
+  }
+
+  modAddPort(msg: Message, state: FsState): Effect[] {
+    const [defId, dir] = msg.payload as [string, PortDir];
+    const r = addPort(this._root(state), defId, dir);
+    return r ? this._editRoot(state, r.model) : [];
+  }
+
+  modDelPort(msg: Message, state: FsState): Effect[] {
+    const [defId, dir, portId] = msg.payload as [string, PortDir, string];
+    return this._editRoot(
+      state,
+      removePort(this._root(state), defId, dir, portId),
+    );
+  }
+
+  modDelete(msg: Message, state: FsState): Effect[] {
+    const defId = msg.payload as string;
+    const root = this._root(state);
+    const next = removeModule(root, defId);
+    if (next === root)
+      return this._commit(state, {
+        message: "The module still has instances. Delete them first.",
+      });
+    return this._editRoot(state, next, "", {
+      message: "Deleted the module",
+      live: "Deleted the module",
     });
   }
 
   // ---- the player ----
 
   _simulate(state: FsState): Trace {
-    const m = this._model(state);
+    const m = this._root(state);
     return simulate(m, m.scenario, m.scenario.seed);
   }
 
@@ -1548,11 +2138,12 @@ export class FlowStudio extends Component<FsState> {
       trace,
       pos,
       progress: 0,
-      live: this._announce(trace, pos, m),
+      live: this._announce(trace, pos, flatten(this._root(state))),
       ...extra,
     };
     if (s && state.follow && state.tab === "flow") {
-      const target = layoutOf(m).nodes.find((n) => n.id === s.to);
+      const here = localId(scopeOf(state), s.to);
+      const target = layoutOf(m).nodes.find((n) => n.id === here);
       if (target) patch.vp = this._clamp(state, reveal(state.vp, target));
     }
     return patch;
@@ -1678,14 +2269,15 @@ export class FlowStudio extends Component<FsState> {
     const patch = this._show(state, trace, next);
     const s = trace[next];
     if (state.breakpoints[s.to]) {
-      const title = findNode(this._model(state), s.to)?.title ?? s.to;
+      const flat = flatten(this._root(state));
+      const title = findNode(flat, s.to)?.title ?? s.to;
       return this._commit(
         state,
         {
           ...patch,
           playing: false,
           progress: 1,
-          live: `Breakpoint at ${title}. ${this._announce(trace, next, this._model(state))}`,
+          live: `Breakpoint at ${title}. ${this._announce(trace, next, flat)}`,
         },
         [time.cancel(TICK)],
       );
@@ -1706,11 +2298,14 @@ export class FlowStudio extends Component<FsState> {
 
   focusIssue(msg: Message, state: FsState): Effect[] {
     const i = msg.payload as number;
-    const issue = lint(this._model(state))[i];
+    const issue = lint(this._root(state))[i];
     if (!issue) return [];
-    const m = this._model(state);
-    const node = issue.node ? findNode(m, issue.node) : undefined;
-    const edge = issue.edge ? findEdge(m, issue.edge) : undefined;
+    // an issue inside a module opens the module
+    const at = locate(issue.node || issue.edge);
+    const scope = scopeValid(this._root(state), at.path) ? at.path : [];
+    const m = modelAt(this._root(state), scope);
+    const node = issue.node ? findNode(m, at.id) : undefined;
+    const edge = issue.edge ? findEdge(m, at.id) : undefined;
     const target = node ?? (edge ? findNode(m, edge.from) : undefined);
     const placed = layoutOf(m);
     const p = target ? placed.nodes.find((n) => n.id === target.id) : undefined;
@@ -1718,6 +2313,7 @@ export class FlowStudio extends Component<FsState> {
       state,
       {
         tab: "flow",
+        scope,
         sel: node
           ? { kind: "node", id: node.id }
           : edge
@@ -1734,8 +2330,10 @@ export class FlowStudio extends Component<FsState> {
   }
 
   focusEdge(msg: Message, state: FsState): Effect[] {
-    const id = msg.payload as string;
-    const m = this._model(state);
+    const at = locate(msg.payload as string);
+    const scope = scopeValid(this._root(state), at.path) ? at.path : [];
+    const id = at.id;
+    const m = modelAt(this._root(state), scope);
     const e = findEdge(m, id);
     if (!e) return [];
     const from = layoutOf(m).nodes.find((n) => n.id === e.from);
@@ -1743,6 +2341,7 @@ export class FlowStudio extends Component<FsState> {
       state,
       {
         tab: "flow",
+        scope,
         sel: { kind: "edge", id },
         side: "inspect",
         vp: from
@@ -1755,8 +2354,13 @@ export class FlowStudio extends Component<FsState> {
   }
 
   sqEdge(msg: Message, state: FsState): Effect[] {
-    const id = (msg.payload as { id: string }).id;
-    return this._commit(state, { sel: { kind: "edge", id }, side: "inspect" });
+    const at = locate((msg.payload as { id: string }).id);
+    const scope = scopeValid(this._root(state), at.path) ? at.path : [];
+    return this._commit(state, {
+      scope,
+      sel: { kind: "edge", id: at.id },
+      side: "inspect",
+    });
   }
 
   tlStep(msg: Message, state: FsState): Effect[] {
@@ -1778,7 +2382,7 @@ export class FlowStudio extends Component<FsState> {
   }
 
   copyAll(_msg: Message, state: FsState): Effect[] {
-    const all = generateAll(this._model(state))
+    const all = generateAll(this._root(state))
       .map((f) => `// ===== ${f.path} =====\n${f.code}`)
       .join("\n");
     return [local.copy(all, "copyDone")];
@@ -1814,6 +2418,9 @@ export class FlowStudio extends Component<FsState> {
         return this.stepBack(msg, state);
       case "Escape":
         if (state.sheet.open) return this._commit(state, { sheet: NO_SHEET });
+        // nothing selected inside a module: Escape leaves it
+        if (state.sel.kind === "none" && scopeOf(state).length > 0)
+          return this._enter(state, scopeOf(state).slice(0, -1));
         return this._commit(state, {
           sel: NO_SEL,
           drag: null,
@@ -1836,6 +2443,8 @@ export class FlowStudio extends Component<FsState> {
         return this.fit(msg, state);
       case "b":
         return this.bpToggle({ id: "bpToggle", payload: "" }, state);
+      case "o":
+        return this.openModule(msg, state);
       case "ArrowLeft":
       case "ArrowRight":
       case "ArrowUp":

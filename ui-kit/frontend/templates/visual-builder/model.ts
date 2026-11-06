@@ -3,6 +3,8 @@
 // mock routes. Plain JSON-able data (it is saved, exported and undone as one
 // value). Everything here is pure; the other files work on this shape.
 
+import type { Model as FlowModel } from "../flow-studio/model.ts";
+
 export const COLS = 12;
 /** the height of one grid row, in px (the CSS uses the same number) */
 export const ROW_PX = 40;
@@ -80,7 +82,13 @@ export const EVENT_LABEL: Record<EventName, string> = {
 // ---- actions ----
 
 export type ActionType =
-  "set" | "toggle" | "push" | "remove" | "http" | "navigate" | "notice";
+  | "set"
+  | "toggle"
+  | "push"
+  | "remove"
+  | "http"
+  | "navigate"
+  | "notice";
 
 export interface Action {
   t: ActionType;
@@ -220,6 +228,11 @@ export interface Model {
   keys: StateKey[];
   mocks: MockRoute[];
   mockOn: boolean;
+  /**
+   * A Flow Studio design that answers the requests instead of the mock routes: the
+   * diagram is the backend, and its tables are kept for the length of a preview.
+   */
+  flow: FlowModel | null;
   /** the counter that makes ids */
   seq: number;
 }
@@ -742,6 +755,7 @@ export function emptyModel(): Model {
     keys: [],
     mocks: [],
     mockOn: true,
+    flow: null,
     seq: 0,
   };
   return addPage(m, "Home", "/").model;

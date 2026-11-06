@@ -1,5 +1,6 @@
 // The built-in demos. Each is a whole model; every HTTP call goes to a mock
 // route, so they work on a static site.
+import { coffeeUi } from "./demo-coffee.ts";
 import { builder, go, http, key, notice, set } from "./build.ts";
 import type { Action, MockRoute, Model } from "./model.ts";
 
@@ -159,6 +160,7 @@ export function counterDemo(): Model {
     keys: [key("count", "number", "0"), key("step", "number", "1")],
     mocks: [],
     mockOn: true,
+    flow: null,
     seq: b.seq(),
   };
 }
@@ -294,6 +296,7 @@ export function todoDemo(): Model {
       mock("m2", "POST", "/api/todos", { saved: true }, 201, 300),
     ],
     mockOn: true,
+    flow: null,
     seq: b.seq(),
   };
 }
@@ -444,6 +447,7 @@ export function directoryDemo(): Model {
       }),
     ],
     mockOn: true,
+    flow: null,
     seq: b.seq(),
   };
 }
@@ -751,6 +755,7 @@ export function landingDemo(): Model {
       ),
     ],
     mockOn: true,
+    flow: null,
     seq: b.seq(),
   };
 }
@@ -914,6 +919,7 @@ export function salesDemo(): Model {
     ],
     mocks: [mock("m1", "GET", "/api/orders", ORDERS, 200, 600)],
     mockOn: true,
+    flow: null,
     seq: b.seq(),
   };
 }
@@ -926,6 +932,13 @@ export interface Demo {
 }
 
 export const DEMOS: Demo[] = [
+  {
+    id: "coffee",
+    title: "Coffee shop CRM",
+    about:
+      "The front desk of a coffee shop: dashboard, customers, a new order, orders. No mock route: it is linked to the Flow Studio diagram of the same name, which is its backend.",
+    make: coffeeUi,
+  },
   {
     id: "counter",
     title: "Counter",

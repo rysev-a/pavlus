@@ -23,11 +23,13 @@ import {
   type PayloadField,
   type RequestSpec,
   type Scenario,
-  DEFAULT_ERROR_CODE,
   DEFAULT_LATENCY,
-  DEFAULT_TIMEOUT,
   condHolds,
-  effectDef,
+  isExprCond,
+  effectDefIn,
+  errorCodeIn,
+  latencyIn,
+  timeoutIn,
   exampleValue,
   findNode,
   getDeep,
@@ -37,6 +39,10 @@ import {
   payloadOf,
   setDeep,
 } from "./model.ts";
+import { evalExpr } from "../visual-builder/bind.ts";
+import { type CodeEffect, runCode } from "./code.ts";
+import { flatten } from "./modules.ts";
+import { type Db, type SqlResult, runSql } from "./store.ts";
 
 export type StepType =
   | "start"
@@ -55,7 +61,12 @@ export type StepType =
   | "budget";
 
 export type StepStatus =
-  "ok" | "error" | "cancelled" | "timeout" | "dropped" | "retry";
+  | "ok"
+  | "error"
+  | "cancelled"
+  | "timeout"
+  | "dropped"
+  | "retry";
 
 export interface Step {
   i: number;
@@ -93,7 +104,12 @@ export interface Step {
 export type Trace = Step[];
 
 export type Result =
-  "responded" | "aborted" | "timeout" | "failed" | "incomplete" | "completed";
+  | "responded"
+  | "aborted"
+  | "timeout"
+  | "failed"
+  | "incomplete"
+  | "completed";
 
 export interface Outcome {
   rid: string;
@@ -305,6 +321,7 @@ export function requestsOf(m: Model, s: Scenario): RequestSpec[] {
 }
 
 function startPayload(r: RequestSpec): Record<string, unknown> {
+  if (r.data) return JSON.parse(JSON.stringify(r.data));
   const o: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(r.payload ?? {}))
     setDeep(o, k, literal(v));
@@ -325,6 +342,8 @@ type Arrival = {
   synth?: { id: string; from: string; kind: EdgeKind; label: string };
   payload: unknown;
   late: boolean;
+  /** what the code of a module said the effect is (sql, args, json, ...) */
+  over?: Record<string, unknown>;
 };
 type Finish = {
   kind: "finish";
@@ -353,6 +372,7 @@ interface Flight {
   error: { code: string; message: string; constraint?: string } | null;
   fault: string;
   payload: unknown;
+  over?: Record<string, unknown>;
 }
 
 interface Ctx {
@@ -381,10 +401,30 @@ export const MESSAGE_BUDGET = 80;
 export const STEP_LIMIT = 4000;
 
 export function simulate(
-  model: Model,
+  source: Model,
   scenario: Scenario,
   seed: number | string = scenario.seed,
 ): Trace {
+  return runFlow(source, scenario, seed).trace;
+}
+
+/** The base of the clock of `now()`: the virtual time of the run is added to it. */
+const EPOCH = Date.UTC(2026, 1, 1, 9, 0, 0);
+
+/**
+ * Plays the design; the trace, and the tables as the run left them (the tables of
+ * the design are only the starting point: a caller that keeps them between runs, like
+ * the Visual Builder, gives them back).
+ */
+export function runFlow(
+  source: Model,
+  scenario: Scenario,
+  seed: number | string = scenario.seed,
+  tables?: Db,
+): { trace: Trace; db: Db } {
+  const model = flatten(source);
+  let db: Db = JSON.parse(JSON.stringify(tables ?? model.db));
+  const storeOn = Object.keys(db).length > 0;
   const rng = rngOf(seed);
   const steps: Step[] = [];
   const queue: Ev[] = [];
@@ -396,8 +436,21 @@ export function simulate(
   let clock = 0;
 
   const faults = scenario.faults.filter((f) => f.on);
-  const hold = (c: string): boolean =>
-    condHolds(c, model.conds, scenario.conds);
+  const hold = (c: string, sc?: Scope): boolean => {
+    if (isExprCond(c)) {
+      // an expression is worked out with the message; without one it holds
+      if (!sc) return true;
+      const r = evalExpr(c, {
+        payload: sc.payload,
+        req: sc.req ?? {},
+        shared: sc.shared,
+        client: sc.client,
+        rid: sc.rid,
+      });
+      return r.ok ? !!r.value : false;
+    }
+    return condHolds(c, model.conds, scenario.conds);
+  };
 
   const enqueue = (ev: Ev): void => {
     let i = queue.length;
@@ -456,7 +509,7 @@ export function simulate(
       const ms = Number(n.detail.trim());
       return Number.isFinite(ms) && ms > 0 ? ms : 1000;
     }
-    return model.latency[n.plugin] ?? DEFAULT_LATENCY[n.plugin] ?? 1;
+    return model.latency[n.plugin] ?? latencyIn(model.plugins, n.plugin);
   };
 
   /** the delay of a delivery along an edge */
@@ -471,13 +524,58 @@ export function simulate(
     return 0;
   };
 
-  const replyEdge = (n: FlowNode): FlowEdge | undefined =>
-    outEdges(model, n.id).find((e) => e.kind === "reply" && hold(e.cond));
-  const errorEdge = (n: FlowNode): FlowEdge | undefined =>
-    outEdges(model, n.id).find((e) => e.kind === "error" && hold(e.cond));
+  const replyEdge = (n: FlowNode, sc?: Scope): FlowEdge | undefined =>
+    outEdges(model, n.id).find((e) => e.kind === "reply" && hold(e.cond, sc));
+  const errorEdge = (n: FlowNode, sc?: Scope): FlowEdge | undefined =>
+    outEdges(model, n.id).find((e) => e.kind === "error" && hold(e.cond, sc));
 
   /** the effect as the plugin receives it (a description, for the debugger) */
   const effectOf = (
+    ctx: Ctx,
+    n: FlowNode,
+    payload: unknown,
+    over?: Record<string, unknown>,
+  ): Record<string, unknown> => {
+    const base = effectOfNode(ctx, n, payload);
+    return over ? { ...base, ...over } : base;
+  };
+
+  /**
+   * The sql of a `pg.query` node and its parameters. A `{ref}` in the sql becomes a
+   * parameter ($n after the ones the text numbers itself), so the value is never
+   * pasted into the text; the code of a module brings its own sql and parameters.
+   */
+  const prepare = (
+    ctx: Ctx,
+    n: FlowNode,
+    payload: unknown,
+    over?: Record<string, unknown>,
+  ): { sql: string; params: unknown[] } => {
+    if (over && typeof over.sql === "string")
+      return {
+        sql: over.sql,
+        params: Array.isArray(over.params) ? over.params : [],
+      };
+    const sc = scopeOf(ctx, payload);
+    const own = (n.detail.match(/\$\d+/g) ?? []).reduce(
+      (mx, x) => Math.max(mx, Number(x.slice(1))),
+      0,
+    );
+    const refs: unknown[] = [];
+    const sql = n.detail.replace(
+      /\{([A-Za-z_][\w.]*)\}/g,
+      (_, path: string) => {
+        refs.push(lookup(sc, path) ?? null);
+        return "$" + String(own + refs.length);
+      },
+    );
+    return {
+      sql,
+      params: [...Array.from({ length: own }, () => null), ...refs],
+    };
+  };
+
+  const effectOfNode = (
     ctx: Ctx,
     n: FlowNode,
     payload: unknown,
@@ -494,7 +592,11 @@ export function simulate(
     const [plugin, ...rest] = n.title.split(".");
     const type = rest.join(".") || n.title;
     switch (n.title) {
-      case "pg.query":
+      case "pg.query": {
+        if (storeOn) {
+          const { sql, params } = prepare(ctx, n, payload);
+          return { plugin: "pg", type: "query", sql, params, ...base };
+        }
         return {
           plugin: "pg",
           type: "query",
@@ -502,6 +604,7 @@ export function simulate(
           params: [],
           ...base,
         };
+      }
       case "redis.cmd":
         return {
           plugin: "redis",
@@ -682,7 +785,7 @@ export function simulate(
   ): void => {
     for (const e of outEdges(model, n.id)) {
       if (kinds && !kinds.includes(e.kind)) continue;
-      if (!hold(e.cond)) continue;
+      if (!hold(e.cond, scopeOf(ctx, payload))) continue;
       const to = findNode(model, e.to);
       if (!to) continue;
       const pl =
@@ -720,6 +823,7 @@ export function simulate(
     payload: unknown,
     t: number,
     attempt: number,
+    over?: Record<string, unknown>,
   ): void => {
     const base0 = latencyOf(n);
     const base =
@@ -730,7 +834,7 @@ export function simulate(
     const err = hits.find(
       (f) => f.kind === "error" && (f.ms === 0 || attempt < f.ms),
     );
-    const limit = n.timeoutMs || DEFAULT_TIMEOUT[n.plugin] || 0;
+    const limit = n.timeoutMs || timeoutIn(model.plugins, n.plugin);
     let dur = base + (slow ? slow.ms || 1500 : 0);
     let outcome: Flight["outcome"] = "ok";
     let error: Flight["error"] = null;
@@ -752,7 +856,7 @@ export function simulate(
       };
     } else if (err) {
       outcome = "error";
-      const code = err.code || DEFAULT_ERROR_CODE[n.plugin] || "ERR";
+      const code = err.code || errorCodeIn(model.plugins, n.plugin);
       error = {
         code,
         message:
@@ -775,6 +879,7 @@ export function simulate(
       error,
       fault,
       payload,
+      over,
     };
     ctx.inflight.set(f.id, f);
     enqueue({
@@ -793,6 +898,20 @@ export function simulate(
     ctx.inflight.delete(f.id);
     const n = f.node;
     const t = ev.t;
+    // a query runs against the tables when it completes; a failure of the statement
+    // (a unique violation, a syntax error) is the failure of the effect
+    let real: SqlResult | null = null;
+    if (storeOn && f.outcome === "ok" && n.title === "pg.query") {
+      const { sql, params } = prepare(ctx, n, f.payload, f.over);
+      real = runSql(db, sql, params, {
+        now: new Date(EPOCH + t).toISOString(),
+      });
+      if (real.error) {
+        f.outcome = "error";
+        f.error = real.error;
+        real = null;
+      } else db = real.db;
+    }
     const ok = f.outcome === "ok";
     // the failure policy: retry before the error reaches the app
     if (!ok && f.attempt < n.retries) {
@@ -816,10 +935,11 @@ export function simulate(
         f.payload,
         round(t + n.backoffMs * 2 ** f.attempt),
         f.attempt + 1,
+        f.over,
       );
       return;
     }
-    const def = effectDef(n.title);
+    const def = effectDefIn(model.plugins, n.title);
     const sc = scopeOf(ctx, f.payload);
     // transactions
     if (ok && n.title === "pg.tx.begin") {
@@ -832,14 +952,16 @@ export function simulate(
       if (ctx.req) delete ctx.req.tx;
     }
     if (!ok && n.title === "pg.tx.begin") ctx.tx = null;
-    const res = (() => {
-      const re = replyEdge(n);
-      return re && re.payload.length
-        ? payloadWith(re.payload, sc)
-        : n.title === "pg.query"
-          ? { rows: [], rowCount: 0 }
-          : {};
-    })();
+    const res = real
+      ? { rows: real.rows, rowCount: real.rowCount }
+      : (() => {
+          const re = replyEdge(n);
+          return re && re.payload.length
+            ? payloadWith(re.payload, sc)
+            : n.title === "pg.query"
+              ? { rows: [], rowCount: 0 }
+              : {};
+        })();
     push(ctx, {
       type: "work",
       t,
@@ -888,13 +1010,15 @@ export function simulate(
       return;
     }
     if (def?.responds) {
-      respond(ctx, n, t, sc);
+      respond(ctx, n, t, sc, f.over);
       return;
     }
     if (n.plugin === "ws" && !ctx.cancelled) ctx.sent = true;
     // fire-and-forget effects have no reply; the others reply with a payload
+    // the reply is the message of the plugin: a condition on its edge reads it
+    const replySc = scopeOf(ctx, res);
     for (const e of outEdges(model, n.id)) {
-      if (e.kind !== "reply" || !hold(e.cond)) continue;
+      if (e.kind !== "reply" || !hold(e.cond, replySc)) continue;
       const to = findNode(model, e.to);
       if (!to) continue;
       enqueue({
@@ -905,7 +1029,8 @@ export function simulate(
         rid: ctx.rid,
         node: to.id,
         edge: e,
-        payload: e.payload.length ? payloadWith(e.payload, sc) : res,
+        // a real answer of the store is not replaced by the example of the edge
+        payload: real || !e.payload.length ? res : payloadWith(e.payload, sc),
         late: false,
       });
     }
@@ -913,7 +1038,13 @@ export function simulate(
     emit(ctx, n, t, res, false, ["effect"]);
   };
 
-  const respond = (ctx: Ctx, n: FlowNode, t: number, sc: Scope): void => {
+  const respond = (
+    ctx: Ctx,
+    n: FlowNode,
+    t: number,
+    sc: Scope,
+    over?: Record<string, unknown>,
+  ): void => {
     if (ctx.cancelled || ctx.responded) {
       push(ctx, {
         type: "drop",
@@ -930,8 +1061,9 @@ export function simulate(
       return;
     }
     ctx.responded = true;
-    const status = n.status || 200;
-    const body = jsonFill(n.detail || "{}", sc);
+    const status = Number(over?.status) || n.status || 200;
+    const body =
+      over && "json" in over ? over.json : jsonFill(n.detail || "{}", sc);
     // the response travels to the browser
     emit(ctx, n, t, { status, body }, false, ["reply"]);
     finishRequest(
@@ -989,7 +1121,10 @@ export function simulate(
     applySets(ctx, n, ev.payload);
     const timedOut = synth?.id.startsWith("timeout:") ?? false;
     // an effect is in flight from the moment it arrives
-    if (n.kind === "effect") plan(ctx, n, e, ev.payload, t, 0);
+    if (n.kind === "effect") plan(ctx, n, e, ev.payload, t, 0, ev.over);
+    // a module with a body of code runs it here, before the step is written, so
+    // the step shows the state the code left and the effects it returned
+    const ran = n.code ? runModule(ctx, n, e, ev.payload) : null;
     const type: StepType = timedOut
       ? "timeout"
       : synth?.kind === "cancel"
@@ -1011,19 +1146,166 @@ export function simulate(
       kind: e?.kind ?? synth?.kind ?? "note",
       label: e?.msg ?? synth?.label ?? n.title,
       payload: ev.payload,
-      effect: n.kind === "effect" ? effectOf(ctx, n, ev.payload) : null,
-      status: timedOut ? "timeout" : "ok",
+      effect:
+        n.kind === "effect"
+          ? effectOf(ctx, n, ev.payload, ev.over)
+          : ran
+            ? {
+                module: n.title,
+                input: ran.input,
+                ...(ran.error
+                  ? { error: ran.error }
+                  : {
+                      returned: ran.effects.map((x) => ({
+                        port: x.port,
+                        ...x.args,
+                        ...(x.replyTo ? { replyTo: x.replyTo } : {}),
+                        ...(x.onError ? { onError: x.onError } : {}),
+                      })),
+                    }),
+              }
+            : null,
+      status: timedOut ? "timeout" : ran?.error ? "error" : "ok",
       ctx: e ? e.rid : true,
       note: timedOut
         ? `the deadline of ${ctx.rid} passed: the runtime delivers request.timeout to ${n.title}`
-        : describe(n, e, ctx),
+        : ran?.error
+          ? `the code of ${n.title} failed on ${ran.input}: ${ran.error}`
+          : describe(n, e, ctx),
     });
+    if (ran) {
+      if (ran.error) {
+        respondImplicit(ctx, t, 500, "failed", "the code of a module failed");
+        return;
+      }
+      deliverCode(ctx, n, t, ran.effects, ev.payload, ev.late);
+      return;
+    }
     switch (n.kind) {
       case "effect":
       case "external":
         break;
       default:
         emit(ctx, n, t, ev.payload, ev.late);
+    }
+  };
+
+  // ---- modules with code ----
+
+  /** the name of the output port an edge of a code module leaves by */
+  const portName = (n: FlowNode, e: FlowEdge): string =>
+    n.code?.outputs.find((p) => p.id === e.fromPort)?.name ?? e.msg;
+
+  /**
+   * Runs the code for the message that reached the module: the input port is the
+   * one the edge arrived at. Changes of state are applied now, the effects that
+   * leave by a port are returned to be delivered.
+   */
+  const runModule = (
+    ctx: Ctx,
+    n: FlowNode,
+    e: FlowEdge | null,
+    payload: unknown,
+  ): { input: string; error: string; effects: CodeEffect[] } => {
+    const body = n.code!;
+    const port =
+      body.inputs.find((p) => p.id === e?.toPort) ??
+      body.inputs.find((p) => p.name === e?.msg) ??
+      body.inputs[0];
+    const input = port?.name ?? e?.msg ?? n.title;
+    const r = runCode(
+      body.source,
+      { id: input, payload: clone(payload), ctx: { rid: ctx.rid } },
+      {
+        requests: { [ctx.rid]: clone(ctx.req ?? {}) },
+        shared: clone(shared),
+        client: clone(ctx.client),
+      },
+      model.plugins,
+    );
+    if ("error" in r) return { input, error: r.error, effects: [] };
+    for (const fx of r.effects) {
+      if (fx.plugin === "rq") {
+        if (!ctx.req) ctx.req = {};
+        if (fx.type === "merge")
+          for (const [k, v] of Object.entries(
+            (fx.args.values ?? {}) as Record<string, unknown>,
+          ))
+            setDeep(ctx.req, k, v);
+        else if (fx.type === "set")
+          setDeep(ctx.req, String(fx.args.key), fx.args.value);
+        else if (fx.type === "sharedSet")
+          setDeep(shared, String(fx.args.key), fx.args.value);
+      } else if (fx.plugin === "store") {
+        if (fx.type === "merge")
+          for (const [k, v] of Object.entries(
+            (fx.args.values ?? {}) as Record<string, unknown>,
+          ))
+            setDeep(ctx.client, k, v);
+        else setDeep(ctx.client, String(fx.args.key), fx.args.value);
+      }
+    }
+    return { input, error: "", effects: r.effects.filter((x) => x.port) };
+  };
+
+  /** the effects the code returned travel the edges that leave by their ports */
+  const deliverCode = (
+    ctx: Ctx,
+    n: FlowNode,
+    t: number,
+    effects: CodeEffect[],
+    incoming: unknown,
+    late: boolean,
+  ): void => {
+    for (const fx of effects) {
+      const outs = outEdges(model, n.id).filter(
+        (x) =>
+          hold(x.cond, scopeOf(ctx, incoming)) &&
+          (x.msg === fx.port || portName(n, x) === fx.port),
+      );
+      if (outs.length === 0) {
+        push(ctx, {
+          type: "drop",
+          t,
+          from: n.id,
+          to: n.id,
+          kind: "note",
+          label: fx.port,
+          status: "dropped",
+          note: `${n.title} emitted ${fx.port}, but no edge leaves that port: nothing happens`,
+        });
+        continue;
+      }
+      for (const x of outs) {
+        const to = findNode(model, x.to);
+        if (!to) continue;
+        const sc = scopeOf(ctx, incoming);
+        const payload =
+          fx.plugin === "app"
+            ? "payload" in fx.args
+              ? fx.args.payload
+              : x.payload.length
+                ? payloadWith(x.payload, sc)
+                : incoming
+            : fx.plugin === "http" && fx.type === "request"
+              ? fx.args
+              : x.payload.length
+                ? payloadWith(x.payload, sc)
+                : {};
+        enqueue({
+          kind: "arrive",
+          t: t + hopDelay(x, n, to),
+          tStart: t,
+          seq: seq++,
+          rid: ctx.rid,
+          node: to.id,
+          edge: x,
+          payload,
+          late,
+          over:
+            to.kind === "effect" && fx.plugin !== "app" ? fx.args : undefined,
+        });
+      }
     }
   };
 
@@ -1241,7 +1523,7 @@ export function simulate(
         "the flow ended without http.respond",
       );
   }
-  return steps;
+  return { trace: steps, db };
 }
 
 // ---- reading a trace ----
@@ -1310,7 +1592,8 @@ export interface Variant {
  * new: the happy path; each effect of that path failing (when it has an `onError`);
  * each condition flipped that the path meets; the client aborting; the deadline.
  */
-export function variantsOf(m: Model): Variant[] {
+export function variantsOf(source: Model): Variant[] {
+  const m = flatten(source);
   const specs = requestsOf(m, m.scenario).filter(
     (r, i, all) => all.findIndex((o) => o.entry === r.entry) === i,
   );
@@ -1331,7 +1614,7 @@ export function variantsOf(m: Model): Variant[] {
     out.push({ id: `${tag}happy`, title: `${pre}happy path`, scenario: base });
     for (const n of m.nodes) {
       if (n.kind !== "effect" || !visited.has(n.id)) continue;
-      const def = effectDef(n.title);
+      const def = effectDefIn(m.plugins, n.title);
       if (def?.responds || n.title === "log") continue;
       if (!m.edges.some((e) => e.from === n.id && e.kind === "error")) continue;
       out.push({

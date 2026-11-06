@@ -9,6 +9,7 @@ import {
   type Model,
   findNode,
 } from "./model.ts";
+import { flatten } from "./modules.ts";
 
 export interface CatalogRow {
   kind: "message" | "effect";
@@ -43,7 +44,8 @@ export function coverage(m: Model): Map<string, string[]> {
 
 const uniq = (xs: string[]): string[] => [...new Set(xs)];
 
-export function catalogOf(m: Model, withTests = true): CatalogRow[] {
+export function catalogOf(source: Model, withTests = true): CatalogRow[] {
+  const m = flatten(source);
   const cov = withTests ? coverage(m) : new Map<string, string[]>();
   const groups = new Map<string, FlowEdge[]>();
   for (const e of m.edges) {

@@ -3,6 +3,7 @@
 // Pure reducers: (run, actions) -> { run, requests, opens }. The component turns
 // a request into an effect (the mock router or the http plugin) and the answer
 // comes back through `finish`.
+import type { Db } from "../flow-studio/store.ts";
 import {
   coerce,
   evalExpr,
@@ -54,6 +55,8 @@ export interface Run {
   slots: (Slot | null)[];
   ui: Record<string, UiState>;
   log: string[];
+  /** the tables of the linked diagram, as the preview has changed them */
+  db: Db;
 }
 
 export interface Env {
@@ -91,6 +94,7 @@ export function startRun(m: Model): Run {
     slots: Array.from({ length: SLOTS }, () => null),
     ui: {},
     log: [],
+    db: m.flow ? (JSON.parse(JSON.stringify(m.flow.db)) as Db) : {},
   };
 }
 

@@ -7,11 +7,14 @@ import {
   type FlowNode,
   type Lane,
   type Model,
+  type ModuleDef,
   EXTERNAL_OF,
-  KIND_LANE,
+  type PluginManifest,
+  externalIn,
   LANES,
   NODE_H,
   NODE_W,
+  defOf,
   findNode,
   laneOf,
 } from "./model.ts";
@@ -40,6 +43,8 @@ export interface PNode {
   w: number;
   h: number;
   lane: Lane;
+  /** the module an instance node stands for */
+  def?: ModuleDef;
 }
 
 export interface Port {
@@ -48,6 +53,35 @@ export interface Port {
   nodeId: string;
   x: number;
   y: number;
+  /** a module: the id of the output port this handle is */
+  pid?: string;
+}
+
+/** a module box is wider than a node, and as tall as its longer side of ports */
+export const MOD_W = NODE_W + 36;
+export const MOD_ROW = 13;
+export const MOD_TOP = 44;
+
+export function sizeOf(m: Model, n: FlowNode): { w: number; h: number } {
+  if (n.kind !== "module") return { w: NODE_W, h: NODE_H };
+  const d = defOf(m, n);
+  const rows = Math.max(d?.inputs.length ?? 0, d?.outputs.length ?? 0);
+  return { w: MOD_W, h: rows ? MOD_TOP + rows * MOD_ROW : NODE_H };
+}
+
+/** The y of the pin of port `i` on a module box. */
+export const pinY = (p: { y: number }, i: number): number =>
+  p.y + MOD_TOP - 3 + i * MOD_ROW;
+
+/** The y an edge meets a node at: the port row on a module, else the middle. */
+export function anchorY(p: PNode, dir: "in" | "out", portId: string): number {
+  if (!p.def) return p.y + p.h / 2;
+  const list = dir === "in" ? p.def.inputs : p.def.outputs;
+  const i = Math.max(
+    0,
+    list.findIndex((x) => x.id === portId),
+  );
+  return list.length ? pinY(p, i) : p.y + p.h / 2;
 }
 
 export interface PEdge {
@@ -77,6 +111,8 @@ export interface Placed {
   ports: Port[];
   edges: PEdge[];
   wires: Wire[];
+  /** the plugins of the project, for the labels of the effects */
+  plugins: PluginManifest[];
   width: number;
   height: number;
 }
@@ -88,7 +124,7 @@ export function bandsOf(m: Model, over: Offsets = {}): Band[] {
   return LANES.map((lane) => {
     const mine = m.nodes.filter((n) => laneOf(n) === lane);
     const bottom = mine.reduce(
-      (mx, n) => Math.max(mx, (over[n.id]?.y ?? n.y) + NODE_H),
+      (mx, n) => Math.max(mx, (over[n.id]?.y ?? n.y) + sizeOf(m, n).h),
       0,
     );
     const h = Math.max(LANE_MIN, bottom + LANE_PAD);
@@ -99,12 +135,20 @@ export function bandsOf(m: Model, over: Offsets = {}): Band[] {
 }
 
 export const portsOf = (p: PNode): Port[] =>
-  p.node.kind === "effect"
-    ? [
-        { port: "ok", nodeId: p.id, x: p.x + p.w, y: p.y + p.h * 0.3 },
-        { port: "err", nodeId: p.id, x: p.x + p.w, y: p.y + p.h * 0.74 },
-      ]
-    : [{ port: "out", nodeId: p.id, x: p.x + p.w, y: p.y + p.h / 2 }];
+  p.node.kind === "module"
+    ? (p.def?.outputs ?? []).map((o, i) => ({
+        port: "out" as const,
+        nodeId: p.id,
+        x: p.x + p.w,
+        y: pinY(p, i),
+        pid: o.id,
+      }))
+    : p.node.kind === "effect"
+      ? [
+          { port: "ok", nodeId: p.id, x: p.x + p.w, y: p.y + p.h * 0.3 },
+          { port: "err", nodeId: p.id, x: p.x + p.w, y: p.y + p.h * 0.74 },
+        ]
+      : [{ port: "out", nodeId: p.id, x: p.x + p.w, y: p.y + p.h / 2 }];
 
 /** The control points of the curve from (x1, y1) to (x2, y2). */
 export function controls(
@@ -162,14 +206,16 @@ export function layoutOf(m: Model, over: Offsets = {}): Placed {
   const nodes: PNode[] = m.nodes.map((node) => {
     const lane = laneOf(node);
     const o = over[node.id];
+    const size = sizeOf(m, node);
     return {
       id: node.id,
       node,
       x: GUTTER + (o?.x ?? node.x),
       y: (top.get(lane) ?? 0) + (o?.y ?? node.y),
-      w: NODE_W,
-      h: NODE_H,
+      w: size.w,
+      h: size.h,
       lane,
+      def: defOf(m, node),
     };
   });
   const byId = new Map(nodes.map((n) => [n.id, n]));
@@ -181,12 +227,13 @@ export function layoutOf(m: Model, over: Offsets = {}): Placed {
     if (!a || !b) continue;
     const want =
       a.node.kind === "effect" ? (edge.kind === "error" ? "err" : "ok") : "out";
-    const pt = ports.find((p) => p.nodeId === a.id && p.port === want)!;
+    const mine = ports.filter((p) => p.nodeId === a.id && p.port === want);
+    const pt = mine.find((p) => p.pid && p.pid === edge.fromPort) ?? mine[0];
     const geo = {
-      x1: pt.x,
-      y1: pt.y,
+      x1: pt ? pt.x : a.x + a.w,
+      y1: a.def ? anchorY(a, "out", edge.fromPort) : (pt?.y ?? a.y + a.h / 2),
       x2: b.x,
-      y2: b.y + b.h / 2,
+      y2: anchorY(b, "in", edge.toPort),
     };
     edges.push({ edge, ...geo, ...pathOf(geo, geo) });
   }
@@ -216,6 +263,7 @@ export function layoutOf(m: Model, over: Offsets = {}): Placed {
     ports,
     edges,
     wires,
+    plugins: m.plugins,
     width,
     height: last.top + last.h,
   };
@@ -223,12 +271,14 @@ export function layoutOf(m: Model, over: Offsets = {}): Placed {
 
 /** The external node an effect talks to (the first of its plugin). */
 export function externalFor(m: Model, effect: FlowNode): FlowNode | undefined {
-  const want = EXTERNAL_OF[effect.plugin];
+  const want = externalIn(m.plugins, effect.plugin);
   if (!want) return undefined;
   return (
     m.nodes.find((n) => n.kind === "external" && n.plugin === effect.plugin) ??
     m.nodes.find(
-      (n) => n.kind === "external" && EXTERNAL_OF[n.plugin]?.id === want.id,
+      (n) =>
+        n.kind === "external" &&
+        externalIn(m.plugins, n.plugin)?.id === want.id,
     )
   );
 }
@@ -282,7 +332,8 @@ export function depthsOf(m: Model): Map<string, number> {
       (e) =>
         e.kind === "effect" &&
         (e.plugin === n.plugin ||
-          EXTERNAL_OF[e.plugin]?.id === EXTERNAL_OF[n.plugin]?.id),
+          externalIn(m.plugins, e.plugin)?.id ===
+            externalIn(m.plugins, n.plugin)?.id),
     );
     const entry =
       m.edges.some((e) => e.from === n.id) &&
@@ -295,7 +346,7 @@ export function depthsOf(m: Model): Map<string, number> {
 
 export function autoLayout(m: Model): Model {
   const depth = depthsOf(m);
-  const slots = new Map<string, number>();
+  const heights = new Map<string, number>();
   const nodes = m.nodes.map((n) => ({ ...n }));
   // order inside a column: by the height of what the node comes from
   const order = [...nodes].sort(
@@ -304,11 +355,11 @@ export function autoLayout(m: Model): Model {
       m.nodes.indexOf(findNode(m, a.id)!) - m.nodes.indexOf(findNode(m, b.id)!),
   );
   for (const n of order) {
-    const key = `${KIND_LANE[n.kind]}:${depth.get(n.id) ?? 0}`;
-    const i = slots.get(key) ?? 0;
-    slots.set(key, i + 1);
+    const key = `${laneOf(n)}:${depth.get(n.id) ?? 0}`;
+    const y = heights.get(key) ?? LANE_PAD;
+    heights.set(key, y + sizeOf(m, n).h + STACK_GAP);
     n.x = (depth.get(n.id) ?? 0) * COL_W + 8;
-    n.y = LANE_PAD + i * (NODE_H + STACK_GAP);
+    n.y = y;
   }
   return { ...m, nodes };
 }

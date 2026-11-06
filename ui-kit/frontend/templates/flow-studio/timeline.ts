@@ -12,9 +12,16 @@ import {
 } from "@service-laboratory/pavlus/plugins/svg/h";
 import { type Step, type Trace, stepsOf } from "./engine.ts";
 import { type Model, findNode } from "./model.ts";
+import { flatten } from "./modules.ts";
 
 export type BarKind =
-  "hop" | "work" | "wait" | "cancelled" | "error" | "timeout" | "retry";
+  | "hop"
+  | "work"
+  | "wait"
+  | "cancelled"
+  | "error"
+  | "timeout"
+  | "retry";
 
 export interface Bar {
   t0: number;
@@ -42,7 +49,12 @@ export interface Timeline {
   t1: number;
 }
 
-export function buildTimeline(m: Model, trace: Trace, rid: string): Timeline {
+export function buildTimeline(
+  source: Model,
+  trace: Trace,
+  rid: string,
+): Timeline {
+  const m = flatten(source);
   const mine = stepsOf(trace, rid);
   const rows = new Map<string, TRow>();
   const row = (id: string, label: string): TRow => {

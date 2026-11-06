@@ -1,7 +1,10 @@
 // The Flow canvas: the swimlanes, nodes, ports and edges drawn from data with the
 // svg plugin, plus the tokens of the simulation (one colour per rid) and the minimap.
 // Pure: `canvasTree` turns a placed layout and the state of the run into an svg tree.
-import type { SvgNode } from "@service-laboratory/pavlus/plugins/svg";
+import type {
+  SvgHandler,
+  SvgNode,
+} from "@service-laboratory/pavlus/plugins/svg";
 import {
   circle,
   g,
@@ -17,14 +20,16 @@ import {
   type Placed,
   type Viewport,
   GUTTER,
+  MOD_ROW,
   VIEW_H,
   VIEW_W,
   pathOf,
+  pinY,
   pointAt,
   viewBoxOf,
 } from "./layout.ts";
 import { markerDefs } from "./sequence.ts";
-import { KIND_LABEL, LANE_LABEL, effectDef } from "./model.ts";
+import { KIND_LABEL, LANE_LABEL, effectDefIn } from "./model.ts";
 
 export interface CanvasUi {
   prefix: string;
@@ -36,6 +41,8 @@ export interface CanvasUi {
   link: {
     from: string;
     port: "out" | "ok" | "err";
+    /** a module: the output port the link starts at */
+    pid?: string;
     x: number;
     y: number;
   } | null;
@@ -46,6 +53,8 @@ export interface CanvasUi {
   progress: number;
   /** fault ids that are on, to mark the nodes they hit */
   faultNodes: string[];
+  /** inside a module: the ports bound to each node, shown as badges above it */
+  badges?: Record<string, { ins: string[]; outs: string[] }>;
 }
 
 const short = (s: string, n: number): string =>
@@ -114,7 +123,87 @@ const KIND_ICON: Record<string, string> = {
   error: "!",
   effect: "⚙",
   external: "▣",
+  module: "▦",
 };
+
+/**
+ * The ports of a module box: an input pin and its message on the left (a message
+ * dropped on the pin goes to that port), the names of the outputs on the right (the
+ * handle to drag from is drawn with the other ports).
+ */
+function pinNodes(
+  p: PNode,
+  msg: (
+    id: string,
+    payload?: Record<string, unknown>,
+    extra?: Record<string, unknown>,
+  ) => SvgHandler,
+): SvgNode[] {
+  const def = p.def!;
+  return [
+    ...def.inputs.flatMap((port, i) => [
+      circle({
+        key: `PI${p.id}${port.id}`,
+        class: `fs-pin${port.node ? "" : " is-unbound"}`,
+        cx: p.x,
+        cy: pinY(p, i),
+        r: 4.5,
+        on: {
+          pointerup: msg("pinUp", { id: p.id, pid: port.id }, { stop: true }),
+        },
+      }),
+      text(
+        {
+          key: `PIT${p.id}${port.id}`,
+          class: "fs-n__pin",
+          x: p.x + 9,
+          y: pinY(p, i) + 3,
+        },
+        short(port.name || "(unnamed)", 14),
+      ),
+    ]),
+    ...def.outputs.map((port, i) =>
+      text(
+        {
+          key: `POT${p.id}${port.id}`,
+          class: "fs-n__pin fs-n__pin--out",
+          x: p.x + p.w - 9,
+          y: pinY(p, i) + 3,
+          "text-anchor": "end",
+        },
+        short(port.name || "(unnamed)", 14),
+      ),
+    ),
+  ];
+}
+
+/** The ports of the open module bound to a node: `in name` / `name out` above it. */
+function badgeNodes(
+  p: PNode,
+  b: { ins: string[]; outs: string[] } | undefined,
+): SvgNode[] {
+  if (!b) return [];
+  return [
+    b.ins.length
+      ? text(
+          { key: `BI${p.id}`, class: "fs-n__badge", x: p.x + 2, y: p.y - 5 },
+          `in ▸ ${short(b.ins.join(", "), 22)}`,
+        )
+      : null,
+    b.outs.length
+      ? text(
+          {
+            key: `BO${p.id}`,
+            class: "fs-n__badge fs-n__badge--out",
+            x: p.x + p.w - 2,
+            y: p.y - 5,
+            "text-anchor": "end",
+          },
+          `${short(b.outs.join(", "), 22)} ▸ out`,
+        )
+      : null,
+  ].filter((x): x is SvgNode => x !== null);
+}
 
 export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
   const msg = (
@@ -319,15 +408,19 @@ export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
       .join(" ");
     const sub =
       n.kind === "effect"
-        ? n.detail || effectDef(n.title)?.hint || ""
+        ? n.detail || effectDefIn(placed.plugins, n.title)?.hint || ""
         : n.kind === "route"
           ? n.detail
           : n.kind === "external"
             ? "no code of ours"
-            : n.detail || KIND_LABEL[n.kind];
+            : n.kind === "module"
+              ? p.def
+                ? `${p.def.name} · ${p.def.side === "frontend" ? "browser" : "server"}`
+                : "module is gone"
+              : n.detail || KIND_LABEL[n.kind];
     const label = n.title || "(unnamed)";
     const status =
-      n.kind === "effect" && effectDef(n.title)?.responds
+      n.kind === "effect" && effectDefIn(placed.plugins, n.title)?.responds
         ? ` ${n.status || 200}`
         : "";
     return [
@@ -379,6 +472,8 @@ export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
           short(label, 17) + status,
         ),
         text({ class: "fs-n__sub", x: p.x + 12, y: p.y + 35 }, short(sub, 25)),
+        ...(p.def ? pinNodes(p, msg) : []),
+        ...badgeNodes(p, ui.badges?.[n.id]),
         ui.breakpoints[n.id]
           ? circle({
               class: "fs-n__bp",
@@ -405,9 +500,12 @@ export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
   // ---- ports ----
   const ports: SvgNode[] = placed.ports.map((pt) => {
     const armed =
-      ui.link && ui.link.from === pt.nodeId && ui.link.port === pt.port;
+      ui.link &&
+      ui.link.from === pt.nodeId &&
+      ui.link.port === pt.port &&
+      (ui.link.pid ?? "") === (pt.pid ?? "");
     return circle({
-      key: `PT${pt.nodeId}${pt.port}`,
+      key: `PT${pt.nodeId}${pt.port}${pt.pid ?? ""}`,
       class: `fs-port fs-port--${pt.port}${armed ? " is-armed" : ""}`,
       cx: pt.x,
       cy: pt.y,
@@ -415,7 +513,7 @@ export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
       on: {
         pointerdown: msg(
           "portDown",
-          { id: pt.nodeId, port: pt.port },
+          { id: pt.nodeId, port: pt.port, pid: pt.pid ?? "" },
           { stop: true },
         ),
         pointerup: msg("nodeUp", { id: pt.nodeId }, { stop: true }),
@@ -427,7 +525,10 @@ export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
   const preview: SvgNode[] = [];
   if (ui.link) {
     const pt = placed.ports.find(
-      (p) => p.nodeId === ui.link!.from && p.port === ui.link!.port,
+      (p) =>
+        p.nodeId === ui.link!.from &&
+        p.port === ui.link!.port &&
+        (p.pid ?? "") === (ui.link!.pid ?? ""),
     );
     if (pt) {
       const p = pathOf(

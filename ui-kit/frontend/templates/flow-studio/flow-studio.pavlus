@@ -32,6 +32,10 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
       button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=exportJson) Export JSON
       button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=copyJson) Copy JSON
       span.fs-summary {summary}
+  if heldCount
+    div.fs-msg(role="status")
+      span The code of {heldCount} imported module(s) is held, not run. Open a code module to read it, then enable it.
+      button.ui-button.ui-button-default.ui-button-sm(type="button" @click=enableCode) Enable the code
   if message
     div.fs-msg(role="status")
       span {message}
@@ -55,6 +59,17 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
         button.ui-button.ui-button-default.ui-button-sm(type="button" @click=importApply) Import
         button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=importFile) Choose a file
         button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=sheet("import")) Close
+  if sheet.open === "plugins"
+    section.fs-sheet(aria-label="Import plugins")
+      h2.fs-sheet__title Add plugins from a manifest
+      p.fs-hint Paste the JSON of a plugin manifest, or an array of them: name, about, external, latency, timeout, errorCode and effects. A plugin with a name you already have replaces it.
+      textarea.ui-textarea-control.fs-sheet__text(rows="8" value=sheet.text placeholder="Plugin manifest JSON" aria-label="Plugin manifest JSON" @input=importText)
+      if sheet.error
+        p.fs-error(role="alert") {sheet.error}
+      div.fs-row
+        button.ui-button.ui-button-default.ui-button-sm(type="button" @click=importApply) Add the plugins
+        button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=importFile) Choose a file
+        button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=sheet("plugins")) Close
   if sheet.open === "vb"
     section.fs-sheet(aria-label="Import a Visual Builder project")
       h2.fs-sheet__title Fill the Browser lane from a Visual Builder project
@@ -111,10 +126,27 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
               div.fs-pal
                 for it in g.items key it.label
                   button.fs-pal__btn(type="button" @click=addNodeOf(it.kind, it.title)) {it.label}
+          div.fs-group
+            h3.fs-h3 Modules
+            div.fs-pal
+              for d in library key d.k
+                button.fs-pal__btn(type="button" disabled={!d.ok} title="{d.name}: {d.side}, {d.uses} in use" @click=addInstanceOf(d.id)) {d.name}
+              button.fs-pal__btn(type="button" title="A module that runs on the server" @click=newModule("backend")) New server module
+              button.fs-pal__btn(type="button" title="A module that runs in the browser" @click=newModule("frontend")) New browser module
+              button.fs-pal__btn(type="button" title="A chain of modules: the middleware of a route" @click=newPipe("backend")) New pipe
+              button.fs-pal__btn(type="button" title="A server module written as code" @click=newCodeModule("backend")) New server code module
+              button.fs-pal__btn(type="button" title="A browser module written as code" @click=newCodeModule("frontend")) New browser code module
   div.fs-body
     main.fs-main
       section.fs-panel(data-show={isFlow ? "true" : "false"} aria-label="Flow")
         div.fs-flowbar
+          nav.fs-crumbs(aria-label="Where you are")
+            button.fs-crumb(type="button" aria-current={inModule ? null : "page"} title="Back to the top level (Esc)" @click=goScope(-1)) Top level
+            for c in crumbs key c.k
+              span.fs-crumb__sep(aria-hidden="true") /
+              button.fs-crumb(type="button" aria-current={c.last ? "page" : null} @click=goScope(c.i))
+                | {c.title}
+                small {c.module}
           button.ui-button.ui-button-outline.ui-button-sm(type="button" aria-label="Zoom out" title="Zoom out (-)" @click=zoomOut) -
           span.fs-zoom {zoomText}
           button.ui-button.ui-button-outline.ui-button-sm(type="button" aria-label="Zoom in" title="Zoom in (+)" @click=zoomIn) +
@@ -124,9 +156,57 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
           label.fs-check
             input(type="checkbox" checked={follow} @change=toggleFollow)
             span Follow the token
-        div.fs-canvas
+        if pipe
+          section.fs-pipebar(aria-label="Stages of the pipe")
+            h2.fs-h2 Pipe {pipe.name}
+            p.fs-hint A message goes through the stages in order. An output that passes the message on feeds the next stage; every other output (a refusal, an error) leaves the pipe by a port of its own.
+            ol.fs-stages
+              for s in pipe.stages key s.k
+                li.fs-stage
+                  span.fs-stage__n {s.i}
+                  strong {s.title}
+                  small {s.module}
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" disabled={s.first} aria-label="Move {s.title} up" @click=pipeMove(s.i, -1)) Up
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" disabled={s.last} aria-label="Move {s.title} down" @click=pipeMove(s.i, 1)) Down
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-label="Remove {s.title}" @click=pipeDel(s.i)) Remove
+            label.fs-f
+              span.fs-f__label Add a stage
+              select.ui-select-control(aria-label="Add a stage" @change=pipeAdd)
+                option(value="" selected) (choose a module)
+                for o in pipe.options key o.id
+                  option(value=o.id) {o.name}
+        if isCodeBody
+          section.fs-codebody(aria-label="Code of the module")
+            h2.fs-h2 Code of {code.name} ({code.side})
+            p.fs-hint A pure function body: (msg, state) => effects. Effects are data, written with pg, redis, http, log, crypto, fetch, time, ws, emit and rq.merge. The input ports are the message ids; the effects leave by the output ports.
+            if code.held
+              p.fs-error(role="alert") This code came in with an import and is held: it is not run.
+            if code.syntax
+              p.fs-error(role="alert") {code.syntax}
+            textarea#fs-code.ui-textarea-control.fs-codearea(rows="16" spellcheck="false" aria-label="Source of the module" value=code.source @input=codeEdit)
+            div.fs-row
+              button.ui-button.ui-button-default.ui-button-sm(type="button" disabled={!code.missing} title="Add an output port for each effect the code emits" @click=modSync(inspector.iface.id)) Sync ports
+              if code.missing
+                span.fs-hint The code emits {code.missing}, with no output port.
+            h3.fs-h3 What the code does with the examples of its input ports
+            for p in code.probes key p.k
+              div.fs-box
+                strong {p.input}
+                if p.error
+                  p.fs-error {p.error}
+                ul.fs-probe
+                  for l in p.lines key l
+                    li {l}
+            h3.fs-h3 Checks
+            ul.fs-issues
+              for i in code.issues key i.k
+                li.fs-issue(data-severity=i.severity)
+                  span.fs-sev {i.severity}
+                  strong {i.title}
+                  small {i.detail}
+        div.fs-canvas(data-hidden={isCodeBody ? "true" : null})
           div#fs-flow.fs-flow
-        div.fs-under
+        div.fs-under(data-hidden={isCodeBody ? "true" : null})
           div.fs-mm
             div#fs-minimap.fs-mm__svg
           div.fs-legend(aria-label="Colours of the edges")
@@ -136,7 +216,7 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
             span.fs-key.fs-key--error error
             span.fs-key.fs-key--cancel cancel
             span.fs-key.fs-key--rid rid on the edge
-          p.fs-hint Drag a node to move it, the dot at its right edge onto another node to link them, the background to pan. Arrows move the selection, Enter edits, Delete removes, Space steps, B sets a breakpoint, right click too.
+          p.fs-hint Drag a node to move it, the dot at its right edge onto another node to link them, the background to pan. Arrows move the selection, Enter edits, Delete removes, Space steps, B sets a breakpoint, right click too. Double-click a module (or press O) to open its body, Esc to leave it.
       section.fs-panel(data-show={isSequence ? "true" : "false"} aria-label="Sequence diagram")
         p.fs-hint Generated from the design: the lifelines, the messages with their rid, activation bars, and alt / opt fragments for the conditions and the failure paths (onError). The arrow of the current step is lit.
         div.fs-scroll
@@ -205,6 +285,7 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
         button.fs-stab(type="button" role="tab" aria-selected={side === "inspect" ? "true" : "false"} @click=setSide("inspect")) Inspector
         button.fs-stab(type="button" role="tab" aria-selected={side === "debug" ? "true" : "false"} @click=setSide("debug")) Debugger
         button.fs-stab(type="button" role="tab" aria-selected={side === "scenario" ? "true" : "false"} @click=setSide("scenario")) Scenario
+        button.fs-stab(type="button" role="tab" aria-selected={side === "plugins" ? "true" : "false"} @click=setSide("plugins")) Plugins
       div.fs-side__body
         if side === "inspect"
           h2.fs-h2 {inspector.title}
@@ -213,6 +294,8 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
             p.fs-hint {inspector.hint}
           if inspector.mode === "node"
             div.fs-row
+              if canOpen
+                button.ui-button.ui-button-default.ui-button-sm(type="button" title="Open the body of the module (O)" @click=openModule) Open module
               button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=dupNode) Duplicate
               button.ui-button.ui-button-outline.ui-button-sm(type="button" aria-pressed={inspector.breakpoint ? "true" : "false"} @click=bpToggle) {inspector.breakpoint ? "Remove breakpoint" : "Breakpoint"}
               button.ui-button.ui-button-destructive.ui-button-sm(type="button" @click=delSel) Delete
@@ -244,6 +327,34 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
               div.fs-row(role="group" aria-label="Faults on this hop")
                 for f in inspector.faults key f.k
                   button.fs-chip(type="button" aria-pressed={f.on ? "true" : "false"} @click=faultNode(f.node, f.kind)) {f.label}
+          if inspector.iface
+            section.fs-iface(aria-label="Module interface")
+              h3.fs-h3 Module {inspector.iface.name}
+              p.fs-hint {inspector.iface.summary} · {inspector.iface.uses} in use
+              for fld in inspector.iface.fields key fld.id
+                +Field#f(...fld)
+              h3.fs-h3 Input ports
+              p.fs-hint Messages the module accepts. Each is bound to a node of the body.
+              for p in inspector.iface.inputs key p.k
+                div.fs-box
+                  strong {p.title}
+                  for fld in p.fields key fld.id
+                    +Field#f(...fld)
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=modDelPort(inspector.iface.id, "inputs", p.id)) Remove port
+              div.fs-row
+                button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=modAddPort(inspector.iface.id, "inputs")) Add an input port
+              h3.fs-h3 Output ports
+              p.fs-hint Messages and effects the module emits, each leaving from a node of the body.
+              for p in inspector.iface.outputs key p.k
+                div.fs-box
+                  strong {p.title}
+                  for fld in p.fields key fld.id
+                    +Field#f(...fld)
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=modDelPort(inspector.iface.id, "outputs", p.id)) Remove port
+              div.fs-row
+                button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=modAddPort(inspector.iface.id, "outputs")) Add an output port
+              div.fs-row
+                button.ui-button.ui-button-destructive.ui-button-sm(type="button" disabled={inspector.iface.uses > 0} title="A module with instances cannot be deleted" @click=modDelete(inspector.iface.id)) Delete module
         else if side === "debug"
           h2.fs-h2 {cur.title}
           if cur.has
@@ -298,6 +409,30 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
                     span(class="fs-ridtag fs-rc-{l.col}") {l.rid}
                     span.fs-log__text {l.text}
                     small {l.sub}
+        else if side === "plugins"
+          h2.fs-h2 Plugins
+          p.fs-hint A plugin does the I/O of the world. The built-in ones are below; add your own (a payment provider, a mailer) and its effects join the palette, the simulation, the checks and the generated server.
+          div.fs-row
+            button.ui-button.ui-button-default.ui-button-sm(type="button" @click=pluginAdd) Add a plugin
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=sheet("plugins")) Import manifests
+          h3.fs-h3 Of this project
+          if pluginsV.custom.length
+            for p in pluginsV.custom key p.k
+              div.fs-box
+                strong {p.name}
+                for fld in p.fields key fld.id
+                  +Field#f(...fld)
+                div.fs-row
+                  button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=pluginCopy(p.name)) Copy manifest
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" disabled={p.uses > 0} title="A plugin that effect nodes use cannot be removed" @click=pluginDel(p.name)) Remove ({p.uses} in use)
+          else
+            p.fs-hint None yet.
+          h3.fs-h3 Built in
+          ul.fs-bps
+            for b in pluginsV.builtin key b.name
+              li
+                strong {b.name}
+                small {b.effects}
         else
           h2.fs-h2 Scenario
           p.fs-hint What the Run plays: the requests that start at once, the conditions of the branches, how long each hop takes, and the faults.

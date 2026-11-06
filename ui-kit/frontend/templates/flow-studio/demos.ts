@@ -1,91 +1,9 @@
 // The built-in demos. Each one is a whole design with a scenario, so it opens ready
 // to Run. They are written in the style of server/examples/todo-api (a request is a
 // chain of small pure handlers, each reply is a message with the same rid).
-import { autoLayout } from "./layout.ts";
-import {
-  type EdgeKind,
-  type FlowEdge,
-  type FlowNode,
-  type Model,
-  type NodeKind,
-  type RequestSpec,
-  addEdge,
-  addNode,
-  emptyModel,
-  fieldsOf,
-  updateEdge,
-} from "./model.ts";
-
-/** A small drawing DSL: nodes by short ids, edges by ids of nodes. */
-class Draw {
-  m: Model;
-  constructor(name: string) {
-    this.m = { ...emptyModel(), name };
-  }
-  n(
-    id: string,
-    kind: NodeKind,
-    title: string,
-    patch: Partial<FlowNode> = {},
-  ): this {
-    this.m = addNode(this.m, kind, title, { ...patch, id, x: 0 }).model;
-    return this;
-  }
-  e(
-    from: string,
-    to: string,
-    msg?: string,
-    o: {
-      kind?: EdgeKind;
-      cond?: string;
-      payload?: string;
-      port?: "out" | "ok" | "err";
-      latency?: number;
-    } = {},
-  ): this {
-    const r = addEdge(this.m, from, to, {
-      kind: o.kind,
-      msg,
-      port: o.port,
-      cond: o.cond ?? "",
-      latency: o.latency ?? 0,
-      payload: o.payload ? fieldsOf(o.payload) : [],
-    });
-    if (r) this.m = r.model;
-    else
-      throw new Error(`demo edge ${from} -> ${to} ${msg ?? ""} was not made`);
-    return this;
-  }
-  /** the onError edge of an effect */
-  err(from: string, to: string): this {
-    return this.e(from, to, undefined, {
-      port: "err",
-      payload: "code:string=ECONNRESET; message:string=dependency failed",
-    });
-  }
-  conds(c: Record<string, boolean>): this {
-    this.m = { ...this.m, conds: c };
-    return this;
-  }
-  requests(r: RequestSpec[]): this {
-    this.m = { ...this.m, scenario: { ...this.m.scenario, requests: r } };
-    return this;
-  }
-  done(): Model {
-    return autoLayout(this.m);
-  }
-  setEdge(id: string, patch: Partial<FlowEdge>): this {
-    this.m = updateEdge(this.m, id, patch);
-    return this;
-  }
-}
-
-const req = (
-  rid: string,
-  entry: string,
-  at: number,
-  payload: Record<string, string> = {},
-): RequestSpec => ({ rid, entry, at, payload });
+import { coffeeDemo } from "./demo-coffee.ts";
+import { Draw, req } from "./draw.ts";
+import { type Model } from "./model.ts";
 
 const R = "ip:string=203.0.113.9";
 
@@ -218,6 +136,220 @@ export function loginDemo(): Model {
     .e("r429", "ffail", "onLoginFailed")
     .e("r401", "ffail", "onLoginFailed")
     .e("r500", "ffail", "onLoginFailed")
+    .e("fok", "fs", "store.set");
+  d.conds({
+    firstHit: true,
+    limited: false,
+    userFound: true,
+    passwordOk: true,
+  });
+  d.requests([
+    req("r1", "ev", 0, { email: "ann@example.com", password: "correct horse" }),
+    req("r2", "ev", 6, { email: "bob@example.com", password: "hunter2" }),
+  ]);
+  return d.done();
+}
+
+// ---- 1b. The same login, in modules ----
+
+/**
+ * The login of demo 1, cut into two modules with an interface each: a rate limiter
+ * (it takes `auth.login`, answers 429 itself and lets `login.allowed` through) and a
+ * credentials check (it takes `login.allowed`, answers 401 itself and lets
+ * `login.verified` through). Each module owns its failure policy. Open a module with
+ * a double click to see its body.
+ */
+export function modulesDemo(): Model {
+  const d = new Draw("Login in modules");
+  d.module(
+    "rate",
+    "Rate limit",
+    "backend",
+    (b) => {
+      b.n("h1", "handler", "auth.login", {
+        detail: "count the attempt",
+        reqSet: {
+          step: "rate",
+          email: "{payload.body.email}",
+          secret: "{payload.body.password}",
+          ip: "{payload.ip}",
+        },
+      })
+        .n("incr", "effect", "redis.cmd", { detail: "INCR rl:{req.ip}" })
+        .n("h2", "handler", "auth.login.counted", {
+          detail: "over the limit? first hit of the window?",
+          reqSet: { step: "lookup", hits: "{payload.count}" },
+        })
+        .n("expire", "effect", "redis.cmd", {
+          detail: "EXPIRE rl:{req.ip} 60",
+        })
+        .n("log429", "effect", "log", { detail: "warn rate limited {req.ip}" })
+        .n("r429", "effect", "http.respond", {
+          status: 429,
+          detail: '{"error":"rate_limited"}',
+        })
+        .n("efail", "error", "rate.failed", {
+          detail: "redis is down: the module answers 500 itself",
+          reqSet: { step: "failed" },
+        })
+        .n("logerr", "effect", "log", { detail: "error rate limit failed" })
+        .n("r500", "effect", "http.respond", {
+          status: 500,
+          detail: '{"error":"unavailable"}',
+        })
+        .e("h1", "incr", "redis.cmd")
+        .e("incr", "h2", "auth.login.counted", { payload: "count:number=1" })
+        .err("incr", "efail")
+        .e("h2", "expire", "redis.cmd", { cond: "firstHit" })
+        .e("h2", "log429", "log", { cond: "limited" })
+        .e("h2", "r429", "http.respond", { cond: "limited" })
+        .e("efail", "logerr", "log")
+        .e("efail", "r500", "http.respond");
+    },
+    [["auth.login", "h1"]],
+    [
+      ["login.allowed", "h2"],
+      ["rate.limited", "r429"],
+    ],
+    ["redis"],
+  );
+  d.module(
+    "creds",
+    "Check credentials",
+    "backend",
+    (b) => {
+      b.n("h0", "handler", "login.allowed", {
+        detail: "look the user up",
+        reqSet: { step: "lookup" },
+      })
+        .n("pgu", "effect", "pg.query", {
+          detail: "select id, email, password_hash from users where email = $1",
+          timeoutMs: 800,
+        })
+        .n("h3", "handler", "auth.login.found", {
+          detail: "no such user burns a verify too",
+          reqSet: { step: "verify", userId: "{payload.rows.0.id}" },
+        })
+        .n("verify", "effect", "crypto.verify", { detail: "scrypt verify" })
+        .n("h4", "handler", "login.verified", {
+          detail: "password ok?",
+          reqSet: { step: "token", secret: "" },
+        })
+        .n("log401", "effect", "log", {
+          detail: "warn login failed {req.email}",
+        })
+        .n("r401", "effect", "http.respond", {
+          status: 401,
+          detail: '{"error":"invalid_credentials"}',
+        })
+        .n("efail", "error", "creds.failed", {
+          detail: "postgres or crypto failed: the module answers 500 itself",
+          reqSet: { step: "failed" },
+        })
+        .n("logerr", "effect", "log", { detail: "error credentials failed" })
+        .n("r500", "effect", "http.respond", {
+          status: 500,
+          detail: '{"error":"unavailable"}',
+        })
+        .e("h0", "pgu", "pg.query")
+        .e("pgu", "h3", "auth.login.found", {
+          payload:
+            'rows:array=[{"id":7,"email":"ann@example.com","password_hash":"scrypt$16384$8$1$c2FsdA$a2V5"}]; rowCount:number=1',
+        })
+        .err("pgu", "efail")
+        .e("h3", "verify", "crypto.verify", { cond: "userFound" })
+        .e("h3", "r401", "http.respond", { cond: "!userFound" })
+        .e("verify", "h4", "login.verified", { payload: "ok:boolean=true" })
+        .err("verify", "efail")
+        .e("h4", "log401", "log", { cond: "!passwordOk" })
+        .e("h4", "r401", "http.respond", { cond: "!passwordOk" })
+        .e("efail", "logerr", "log")
+        .e("efail", "r500", "http.respond");
+    },
+    [["login.allowed", "h0"]],
+    [
+      ["login.verified", "h4"],
+      ["login.rejected", "r401"],
+    ],
+    ["pg", "crypto"],
+  );
+  d.n("ev", "ui-event", "click Sign in")
+    .n("fh", "fe-handler", "login", {
+      clientSet: {
+        email: "{payload.email}",
+        password: "{payload.password}",
+        status: "loading",
+      },
+    })
+    .n("fok", "fe-handler", "onLoggedIn", {
+      clientSet: { status: "signed in" },
+    })
+    .n("ffail", "fe-handler", "onLoginFailed", {
+      clientSet: { status: "failed", error: "{payload.body.error}" },
+    })
+    .n("fs", "fe-state", "session", { detail: "{payload.body.token}" })
+    .n("rt", "route", "POST /login", { detail: "auth.login" })
+    .n("mrate", "module", "Rate limit", { ref: "rate", lane: "app" })
+    .n("mcreds", "module", "Check credentials", { ref: "creds", lane: "app" })
+    .n("tok", "effect", "crypto.randomToken", { detail: "32 bytes" })
+    .n("h5", "handler", "auth.login.token", {
+      detail: "store the session",
+      reqSet: { step: "store", token: "{payload.token}" },
+    })
+    .n("sess", "effect", "redis.cmd", {
+      detail: "SET sess:{req.token} {req.userId} EX 3600",
+      timeoutMs: 400,
+    })
+    .n("h6", "handler", "auth.login.stored", {
+      detail: "answer 200 with the token",
+      reqSet: { step: "done" },
+      sharedSet: { lastLogin: "{req.email}" },
+    })
+    .n("log200", "effect", "log", { detail: "info login {req.userId}" })
+    .n("r200", "effect", "http.respond", {
+      status: 200,
+      detail: '{"token":"{req.token}"}',
+    })
+    .n("efail", "error", "auth.failed", {
+      detail: "the failures of the steps after the modules",
+      reqSet: { step: "failed" },
+    })
+    .n("logerr", "effect", "log", { detail: "error dependency failed" })
+    .n("r500", "effect", "http.respond", {
+      status: 500,
+      detail: '{"error":"unavailable"}',
+    })
+    .n("xc", "external", "Client", { plugin: "http" })
+    .n("xpg", "external", "Postgres", { plugin: "pg" })
+    .n("xr", "external", "Redis", { plugin: "redis" });
+  d.e("ev", "fh", "ui.click")
+    .e("fh", "rt", "http.request", {
+      payload: `method=POST; path=/login; body.email={client.email}; body.password={client.password}; ${R}`,
+    })
+    .e("rt", "mrate")
+    .e("mrate", "mcreds", undefined, { cond: "!limited", out: "login.allowed" })
+    .e("mrate", "ffail", "onLoginFailed", {
+      kind: "reply",
+      out: "rate.limited",
+    })
+    .e("mcreds", "ffail", "onLoginFailed", {
+      kind: "reply",
+      out: "login.rejected",
+    })
+    .e("mcreds", "tok", "crypto.randomToken", {
+      cond: "passwordOk",
+      out: "login.verified",
+    })
+    .e("tok", "h5", "auth.login.token", { payload: "token:string=tok_9d41c7" })
+    .err("tok", "efail")
+    .e("h5", "sess", "redis.cmd")
+    .e("sess", "h6", "auth.login.stored", { payload: "ok:string=OK" })
+    .err("sess", "efail")
+    .e("h6", "log200", "log")
+    .e("h6", "r200", "http.respond")
+    .e("efail", "logerr", "log")
+    .e("efail", "r500", "http.respond")
+    .e("r200", "fok", "onLoggedIn")
     .e("fok", "fs", "store.set");
   d.conds({
     firstHit: true,
@@ -720,6 +852,20 @@ export const DEMOS: Demo[] = [
     about:
       "Redis INCR + EXPIRE, a scrypt verify, the session in Redis; two users log in at once.",
     make: loginDemo,
+  },
+  {
+    id: "coffee",
+    title: "Coffee shop CRM",
+    about:
+      "Customers with loyalty points, the menu, orders and a dashboard: modules, a pipe, a code module, a mailer plugin and real tables. The backend of the Visual Builder demo of the same name.",
+    make: coffeeDemo,
+  },
+  {
+    id: "modules",
+    title: "Login in modules",
+    about:
+      "The login cut into two modules with ports: a rate limiter and a credentials check. Double-click a module to open its body.",
+    make: modulesDemo,
   },
   {
     id: "todo",

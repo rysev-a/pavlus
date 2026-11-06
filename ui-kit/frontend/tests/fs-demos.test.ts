@@ -18,9 +18,11 @@ const results = (id: string, chips: string[] = []) =>
   outcomes(play(id, chips).t).map((o) => `${o.rid}:${o.result}:${o.status}`);
 
 describe("the demos", () => {
-  test("the five demos of the brief", () => {
+  test("the demos of the brief, and the one with modules", () => {
     expect(DEMOS.map((d) => d.title)).toEqual([
       "Login with rate limit",
+      "Coffee shop CRM",
+      "Login in modules",
       "Todo CRUD with cache",
       "Websocket chat with history",
       "Payment webhook with retries and idempotency key",
@@ -139,6 +141,60 @@ describe("login with rate limit", () => {
       "r1:timeout:504",
       "r2:timeout:504",
     ]);
+  });
+});
+
+describe("login in modules", () => {
+  test("is the same login: both users get in, with the same effects", () => {
+    expect(results("modules")).toEqual([
+      "r1:responded:200",
+      "r2:responded:200",
+    ]);
+    const effects = (id: string) =>
+      stepsOf(play(id).t, "r1")
+        .filter((s) => s.type === "effect")
+        .map((s) => s.label);
+    expect(effects("modules")).toEqual(effects("login"));
+  });
+  test("has two modules with ports and a body each", () => {
+    const m = demoOf("modules").make();
+    expect(m.modules.map((d) => d.name)).toEqual([
+      "Rate limit",
+      "Check credentials",
+    ]);
+    for (const d of m.modules) {
+      expect(d.inputs).toHaveLength(1);
+      expect(d.outputs).toHaveLength(2);
+      for (const p of [...d.inputs, ...d.outputs])
+        expect(d.nodes.some((n) => n.id === p.node)).toBe(true);
+      expect(d.nodes.length).toBeGreaterThan(5);
+    }
+    expect(m.nodes.filter((n) => n.kind === "module")).toHaveLength(2);
+  });
+  test("each module owns its failure policy: a Redis timeout answers 500 from inside it", () => {
+    expect(results("modules", ["redis-timeout"])).toEqual([
+      "r1:failed:500",
+      "r2:failed:500",
+    ]);
+    expect(results("modules", ["pg-error"])).toEqual([
+      "r1:failed:500",
+      "r2:failed:500",
+    ]);
+  });
+  test("a rate limited user is turned away through the port of the module", () => {
+    const m = demoOf("modules").make();
+    const t = simulate(m, { ...m.scenario, conds: { limited: true } }, 1);
+    const o = outcomes(t);
+    expect(o.map((x) => `${x.result}:${x.status}`)).toEqual([
+      "responded:429",
+      "responded:429",
+    ]);
+    // the browser handler is reached by the output port, so it is not lint noise
+    expect(lint(m).filter((i) => i.rule === "unreachable")).toEqual([]);
+  });
+  test("the checks have no notes about the modules", () => {
+    const m = demoOf("modules").make();
+    expect(lint(m).filter((i) => i.rule.startsWith("port-"))).toEqual([]);
   });
 });
 

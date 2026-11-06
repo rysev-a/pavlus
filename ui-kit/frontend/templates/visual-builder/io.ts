@@ -1,6 +1,7 @@
 // Reading a project from text (import, the saved copy in localStorage). The
 // text is untrusted: everything is checked and filled in, so a model that
 // comes out of here can be drawn and run.
+import { readModel as readFlow } from "../flow-studio/model.ts";
 import { unsafeExpr } from "./bind.ts";
 import {
   type Action,
@@ -106,10 +107,12 @@ function element(v: unknown): El | null {
     bind: str(v.bind),
     style: strMap(v.style),
     fields: Array.isArray(v.fields)
-      ? v.fields.filter(isObj).map((f): FormField => ({
-          ...blankField(str(f.name, "field"), str(f.label, "Field")),
-          ...(strMap(f) as Partial<FormField>),
-        }))
+      ? v.fields.filter(isObj).map(
+          (f): FormField => ({
+            ...blankField(str(f.name, "field"), str(f.label, "Field")),
+            ...(strMap(f) as Partial<FormField>),
+          }),
+        )
       : [],
     events,
   };
@@ -128,6 +131,13 @@ function section(v: unknown): Section | null {
       ? v.elements.map(element).filter((e): e is El => !!e)
       : [],
   };
+}
+
+/** The diagram a project is linked to, or null when there is none (or it is not one). */
+function flowFrom(v: unknown): Model["flow"] {
+  if (!isObj(v)) return null;
+  const r = readFlow(v);
+  return typeof r === "string" ? null : r;
 }
 
 export function readModel(value: unknown): Model | string {
@@ -175,6 +185,7 @@ export function readModel(value: unknown): Model | string {
     keys,
     mocks,
     mockOn: value.mockOn !== false,
+    flow: flowFrom(value.flow),
     seq: num(value.seq, 0),
   };
   // ids made later must not clash with the ids read here

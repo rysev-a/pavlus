@@ -4,9 +4,10 @@ import {
   type Fault,
   type FaultKind,
   type Model,
-  DEFAULT_ERROR_CODE,
+  errorCodeIn,
   findNode,
 } from "./model.ts";
+import { flatten } from "./modules.ts";
 
 export interface Chip {
   id: string;
@@ -113,7 +114,7 @@ export function toggleNodeFault(
   nodeId: string,
   kind: FaultKind,
 ): Model {
-  const node = findNode(m, nodeId);
+  const node = findNode(flatten(m), nodeId);
   if (!node) return m;
   const id = `n-${nodeId}-${kind}`;
   const faults = m.scenario.faults;
@@ -130,7 +131,7 @@ export function toggleNodeFault(
       kind,
       target: nodeId,
       rid: "",
-      code: kind === "error" ? (DEFAULT_ERROR_CODE[node.plugin] ?? "ERR") : "",
+      code: kind === "error" ? errorCodeIn(m.plugins, node.plugin) : "",
       ms: kind === "slow" ? 1500 : 0,
       on: true,
     },
@@ -169,7 +170,7 @@ export function faultText(m: Model, f: Fault): string {
   const where = f.target
     ? f.target.startsWith("plugin:")
       ? `every ${f.target.slice(7)} call`
-      : (findNode(m, f.target)?.title ?? f.target)
+      : (findNode(flatten(m), f.target)?.title ?? f.target)
     : "the request";
   const who = f.rid ? ` of ${f.rid}` : "";
   switch (f.kind) {

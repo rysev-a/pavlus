@@ -31,7 +31,7 @@ div.k-template.vb(data-tab=tab data-pane=pane data-bp=bp data-drag={drag ? "on" 
       button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=copyCode) Copy as pavlus code
       label.vb-check.vb-mocktoggle
         input(type="checkbox" checked={mockOn} @change=mockToggle)
-        span Mock server
+        span Backend
       span.vb-summary {summary}
   if message
     div.vb-msg(role="status")
@@ -56,6 +56,16 @@ div.k-template.vb(data-tab=tab data-pane=pane data-bp=bp data-drag={drag ? "on" 
         button.ui-button.ui-button-default.ui-button-sm(type="button" @click=importApply) Import
         button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=importFile) Choose a file
         button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=sheet("import")) Close
+  if sheet.open === "flow"
+    section.vb-sheet(aria-label="Link a diagram")
+      h2.vb-sheet__title Link a Flow Studio diagram
+      p.vb-hint Paste the JSON a diagram was exported as (Flow Studio, Export JSON). Its routes answer the requests of the preview, against its own tables.
+      textarea.ui-textarea-control.vb-sheet__text(rows="6" value=sheet.text placeholder="Paste the JSON of a diagram" aria-label="Diagram JSON" @input=importText)
+      if sheet.error
+        p.vb-error(role="alert") {sheet.error}
+      div.vb-row
+        button.ui-button.ui-button-default.ui-button-sm(type="button" @click=flowApply) Link it
+        button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=sheet("flow")) Close
   if sheet.open === "code"
     section.vb-sheet(aria-label="Generated code")
       h2.vb-sheet__title Pavlus code
@@ -116,6 +126,28 @@ div.k-template.vb(data-tab=tab data-pane=pane data-bp=bp data-drag={drag ? "on" 
             button.ui-button.ui-button-default.ui-button-sm(type="button" @click=keyAdd) Add key
         else if leftTab === "mock"
           p.vb-hint {mockHint}
+          div.vb-keybox.vb-flow
+            if flowV.on
+              strong Diagram: {flowV.name}
+              p.vb-hint Tables: {flowV.tables}
+              ul.vb-flowroutes
+                for r in flowV.routes key r.k
+                  li
+                    code {r.label}
+                    small {r.detail}
+              div.vb-row
+                button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=flowDisconnect) Unlink the diagram
+            else
+              strong Backend from a diagram
+              p.vb-hint Link a Flow Studio diagram and its routes answer the requests, so each HTTP action can pick a route.
+              label.vb-f
+                span.vb-f__label Link a demo diagram
+                select.ui-select-control(aria-label="Link a demo diagram" @change=flowConnect)
+                  option(value="" selected) (choose a diagram)
+                  for d in flowV.demos key d.id
+                    option(value=d.id) {d.title}
+              div.vb-row
+                button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=sheet("flow")) Paste a diagram's JSON
           for r in mockList key r.k
             div.vb-keybox
               for fld in r.fields key fld.id

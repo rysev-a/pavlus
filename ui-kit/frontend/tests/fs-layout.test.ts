@@ -86,11 +86,21 @@ describe("auto layout", () => {
       const m = demo.make();
       const byId = new Map(m.nodes.map((n) => [n.id, n]));
       let forward = 0;
+      let counted = 0;
       for (const e of m.edges) {
-        if (byId.get(e.to)!.x >= byId.get(e.from)!.x) forward++;
+        const to = byId.get(e.to)!;
+        // the reply of a plugin to a module with code closes a cycle by design
+        if (
+          byId.get(e.from)!.kind === "effect" &&
+          to.kind === "module" &&
+          m.modules.find((d) => d.id === to.ref)?.body === "code"
+        )
+          continue;
+        counted++;
+        if (to.x >= byId.get(e.from)!.x) forward++;
       }
-      // the only edges that go back are the ones that close a cycle (none in the demos)
-      expect(forward).toBe(m.edges.length);
+      // the only edges that go back are the ones that close a cycle
+      expect(forward).toBe(counted);
     }
   });
   test("two nodes of a lane in one column are stacked, not overlapped", () => {

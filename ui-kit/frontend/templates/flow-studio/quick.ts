@@ -2,9 +2,10 @@
 // `pg select * from users`, `redis INCR rl:{ip}`, `respond 429 {"error":"slow"}`,
 // `handler auth.login`, `event click #save` ... Pure: text in, a node description out.
 import {
-  EFFECTS,
   type FlowNode,
   type NodeKind,
+  type PluginManifest,
+  effectsIn,
   effectDef,
   msgOfRoute,
 } from "./model.ts";
@@ -28,7 +29,10 @@ export const QUICK_EXAMPLES = [
 
 const METHOD = /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|WS)\s+(\/\S*)$/i;
 
-export function parseQuick(input: string): QuickNode | string {
+export function parseQuick(
+  input: string,
+  plugins: PluginManifest[] = [],
+): QuickNode | string {
   const text = input.trim();
   if (!text) return "Type what to add, e.g. POST /login or pg select 1.";
   const route = METHOD.exec(text);
@@ -40,7 +44,7 @@ export function parseQuick(input: string): QuickNode | string {
   const rest = restWords.join(" ");
   const word = head.toLowerCase();
   // an effect type spelled in full: pg.query select 1
-  const full = EFFECTS.find((e) => e.type === word);
+  const full = effectsIn(plugins).find((e) => e.type === word);
   if (full)
     return {
       kind: "effect",

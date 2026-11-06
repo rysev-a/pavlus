@@ -4,16 +4,26 @@
 // happy path and each fault path with pavlus-server/testing, (c) pavlus frontend
 // handlers. Pure: text out. The generated TypeScript is parsed in the unit tests.
 import {
+  type FieldType,
   type FlowEdge,
   type FlowNode,
   type Model,
+  type ModuleDef,
+  type PayloadField,
   condName,
-  effectDef,
+  customOf,
+  isExprCond,
+  effectDefIn,
+  findDef,
   findNode,
   inEdges,
   outEdges,
+  payloadOf,
   slugify,
 } from "./model.ts";
+import { flatten } from "./modules.ts";
+import { builderOf, pluginStub, usedCustom } from "./plugins.ts";
+import { probe } from "./code.ts";
 import {
   type Step,
   type Variant,
@@ -230,17 +240,8 @@ function valueExpr(f: FlowEdge["payload"][number], side: Side): string {
 
 // ---- the server ----
 
-interface Imports {
-  pg?: boolean;
-  redis?: boolean;
-  http?: boolean;
-  crypto?: boolean;
-  log?: boolean;
-  ws?: boolean;
-  fetch?: boolean;
-  time?: boolean;
-  rq?: boolean;
-}
+/** the plugins a file uses: the built-in ones by name, those of the project as `custom:<name>` */
+type Imports = Record<string, boolean | undefined>;
 
 const routeParts = (n: FlowNode): { method: string; path: string } => {
   const m = /^(\w+)\s+(\S+)/.exec(n.title.trim());
@@ -279,7 +280,11 @@ export interface Plan {
 }
 
 /** Which handler goes in which module: by the first route that reaches it. */
-export function planOf(m: Model): Plan {
+export function planOf(source: Model): Plan {
+  return planFrom(flatten(source));
+}
+
+function planFrom(m: Model): Plan {
   const routes = m.nodes.filter((n) => n.kind === "route");
   const taken = new Set<string>();
   const reachedBy = new Map<string, string[]>();
@@ -304,13 +309,36 @@ export function planOf(m: Model): Plan {
   return { modules, common, routes };
 }
 
+/**
+ * An expression condition (`payload.rowCount == 0`) as TypeScript in a handler:
+ * `payload` is the `p` of the case, `req` its slice; a path reads null-safe.
+ */
+export function exprToTs(src: string): string {
+  return src
+    .replace(/\bpayload\b/g, "p")
+    .replace(/\bshared\b/g, "(state.shared as any)")
+    .replace(/\brid\b/g, "String(msg.ctx?.rid)")
+    .replace(
+      /\b(p|req)((?:\.[A-Za-z_]\w*|\[\d+\])+)/g,
+      (_, head: string, tail: string) =>
+        head + tail.replace(/\.(?=[A-Za-z_])/g, "?.").replace(/\[/g, "?.["),
+    );
+}
+
+/** the test of a condition, named or an expression */
+function condTest(cond: string): string {
+  if (isExprCond(cond)) return `(${exprToTs(cond)})`;
+  const neg = cond.startsWith("!");
+  return `${neg ? "!" : ""}${condCall(condName(cond))}`;
+}
+
 function condCall(name: string): string {
   return `${ident(name)}(msg, state)`;
 }
 
 interface EffCall {
   code: string;
-  uses: keyof Imports;
+  uses: string;
 }
 
 /** `GET key` / `SET key value EX 60` as the redis effector call */
@@ -383,13 +411,27 @@ function effectCall(m: Model, n: FlowNode): EffCall {
       : "";
   switch (n.title) {
     case "pg.query": {
-      const count = new Set(n.detail.match(/\$\d+/g) ?? []).size;
-      const params = count
-        ? `, [${Array.from({ length: count }, (_, i) => `/* $${i + 1} */ undefined`).join(", ")}]`
-        : "";
+      // a {ref} in the sql is a parameter: the value is passed, never pasted
+      const own = (n.detail.match(/\$\d+/g) ?? []).reduce(
+        (mx, x) => Math.max(mx, Number(x.slice(1))),
+        0,
+      );
+      const refs: string[] = [];
+      const sql = n.detail.replace(
+        /\{([A-Za-z_][\w.]*)\}/g,
+        (_, path: string) => {
+          refs.push(pathExpr(path, "server"));
+          return "$" + String(own + refs.length);
+        },
+      );
+      const list = [
+        ...Array.from({ length: own }, (_, i) => `/* $${i + 1} */ undefined`),
+        ...refs,
+      ];
+      const params = list.length ? `, [${list.join(", ")}]` : "";
       return {
         uses: "pg",
-        code: `pg.query(${q(n.detail)}, ${opts || '{ replyTo: "" }'}${params})`,
+        code: `pg.query(${q(sql)}, ${opts || '{ replyTo: "" }'}${params})`,
       };
     }
     case "pg.tx.begin":
@@ -481,10 +523,32 @@ function effectCall(m: Model, n: FlowNode): EffCall {
       };
     }
   }
+  // an effect of a plugin of the project: its builder, made from the manifest
+  if (customOf(m.plugins, n.plugin))
+    return {
+      uses: `custom:${n.plugin}`,
+      code: `${n.plugin}.${builderOf(n.title)}(${textExpr(n.detail || "", "server")}${opts ? `, ${opts}` : ""})`,
+    };
   return { uses: "rq", code: `/* TODO ${n.title} */ log.info(${q(n.title)})` };
 }
 
-const IMPORT_AS: Record<keyof Imports, string> = {
+/** The imports of the plugins a file uses, as lines, from `names` of `used`. */
+function importLines(used: Imports, from: string): string[] {
+  const names = Object.keys(IMPORT_AS)
+    .filter((k) => used[k])
+    .map((k) => IMPORT_AS[k]);
+  const custom = Object.keys(used)
+    .filter((k) => k.startsWith("custom:") && used[k])
+    .map((k) => k.slice(7));
+  return [
+    `import {\n${["type ServerState", ...names].map((n) => `  ${n},`).join("\n")}\n} from "pavlus-server";`,
+    ...custom.map(
+      (c) => `import { ${c}Effector as ${c} } from "${from}/plugins/${c}.ts";`,
+    ),
+  ];
+}
+
+const IMPORT_AS: Record<string, string> = {
   pg: "pgEffector as pg",
   redis: "redisEffector as redis",
   http: "httpEffector as http",
@@ -497,11 +561,22 @@ const IMPORT_AS: Record<keyof Imports, string> = {
 };
 
 /** the body of the `case` of a handler node */
+/** what a module adds to the handlers of its body (see `moduleFile`) */
+interface Extra {
+  /** more labels of the `case` of a handler: the input ports bound to it */
+  labels: (h: FlowNode) => string[];
+  /** more effects of a handler: messages to modules, effects of the outer edges */
+  emits: (h: FlowNode, used: Imports) => { cond: string; code: string }[];
+  /** where the file of `emit` is, relative to the generated file */
+  emitFrom: string;
+}
+
 function caseBody(
   m: Model,
   h: FlowNode,
   used: Imports,
   conds: Set<string>,
+  extra?: Extra,
 ): string {
   const lines: string[] = [];
   const pre: string[] = [];
@@ -525,12 +600,18 @@ function caseBody(
     if (!to || to.kind !== "effect") continue;
     const call = effectCall(m, to);
     used[call.uses] = true;
-    if (e.cond.trim()) conds.add(e.cond.trim());
+    if (e.cond.trim() && !isExprCond(e.cond)) conds.add(e.cond.trim());
     items.push({ cond: e.cond.trim(), code: call.code });
   }
+  for (const x of extra?.emits(h, used) ?? []) {
+    if (x.cond && !isExprCond(x.cond)) conds.add(x.cond);
+    items.push(x);
+  }
   const anyCond = items.some((i) => i.cond);
-  const hasPayload = items.some((i) => /\bp\b/.test(i.code));
-  const hasReq = items.some((i) => /\breq\b/.test(i.code));
+  const text = (i: { cond: string; code: string }): string =>
+    `${i.code} ${isExprCond(i.cond) ? exprToTs(i.cond) : ""}`;
+  const hasPayload = items.some((i) => /\bp\b/.test(text(i)));
+  const hasReq = items.some((i) => /\breq\b/.test(text(i)));
   if (hasPayload)
     pre.push("const p = (msg.payload ?? {}) as Record<string, any>;");
   if (hasReq)
@@ -547,10 +628,7 @@ function caseBody(
   for (const i of items) {
     if (!i.cond) out.push(`out.push(${i.code});`);
     else {
-      const neg = i.cond.startsWith("!");
-      out.push(
-        `if (${neg ? "!" : ""}${condCall(condName(i.cond))}) out.push(${i.code});`,
-      );
+      out.push(`if (${condTest(i.cond)}) out.push(${i.code});`);
     }
   }
   out.push("return out;");
@@ -562,6 +640,8 @@ function handlerModule(
   title: string,
   handlers: FlowNode[],
   condImport: string,
+  extra?: Extra,
+  header: string[] = [],
 ): { code: string; conds: Set<string> } {
   const used: Imports = {};
   const conds = new Set<string>();
@@ -572,30 +652,35 @@ function handlerModule(
     if (seen.has(id)) continue;
     seen.add(id);
     // the route's message is the id of the first handler it reaches
+    const labels = [...new Set([id, ...(extra?.labels(h) ?? [])])]
+      .map((l) => `case ${q(l)}:`)
+      .join(" ");
     cases.push(
-      `case ${q(id)}: {${h.detail ? `\n  // ${h.detail}` : ""}\n${indent(caseBody(m, h, used, conds), 2)}\n}`,
+      `${labels} {${h.detail ? `\n  // ${h.detail}` : ""}\n${indent(caseBody(m, h, used, conds, extra), 2)}\n}`,
     );
   }
-  const names = (Object.keys(IMPORT_AS) as (keyof Imports)[])
-    .filter((k) => used[k])
-    .map((k) => IMPORT_AS[k]);
+  const body = cases.join("\n");
   const condNames = [...conds].map((c) => ident(condName(c)));
   const head = [
     `// ${title}: the handlers of this route. Pure: (msg, state) => effects.`,
     `// Every effect names its replyTo and onError; the runtime stamps the rid on them.`,
     `import type { Effect, Message } from "@service-laboratory/pavlus";`,
-    `import {\n${["type ServerState", ...names, ...(used.pg ? [] : [])].map((n) => `  ${n},`).join("\n")}\n} from "pavlus-server";`,
+    ...importLines(used, ".."),
+    ...(extra && /\bemit\(/.test(body)
+      ? [`import { emit } from "${extra.emitFrom}";`]
+      : []),
     ...(condNames.length
       ? [
           `import { ${[...new Set(condNames)].join(", ")} } from "${condImport}";`,
         ]
       : []),
     "",
+    ...header,
   ];
   const code = `${head.join("\n")}
 export function handle(msg: Message, state: ServerState): Effect[] | undefined {
   switch (msg.id) {
-${indent(cases.join("\n"), 4)}
+${indent(body, 4)}
   }
   return undefined;
 }
@@ -603,13 +688,372 @@ ${indent(cases.join("\n"), 4)}
   return { code: code.replace(/\n\n\n+/g, "\n\n"), conds };
 }
 
-export function generateServer(m: Model): GenFile[] {
-  const plan = planOf(m);
+// ---- modules: one file per module, the ports as types ----
+
+const hasModules = (m: Model): boolean =>
+  m.nodes.some((n) => n.kind === "module") || m.modules.length > 0;
+
+const Pascal = (s: string): string =>
+  s
+    .replace(/[^A-Za-z0-9]+(.)?/g, (_, c: string) => (c ? c.toUpperCase() : ""))
+    .replace(/^./, (c) => c.toUpperCase());
+
+const TS_TYPE: Record<FieldType, string> = {
+  string: "string",
+  number: "number",
+  boolean: "boolean",
+  object: "Record<string, unknown>",
+  array: "unknown[]",
+  any: "unknown",
+};
+
+/** `body.email:string, count:number` as an object type; nested by the dotted names */
+export function payloadType(fields: PayloadField[]): string {
+  type Tree = { [k: string]: string | Tree };
+  const tree: Tree = {};
+  for (const f of fields) {
+    if (!f.name) continue;
+    const path = f.name.split(".").filter(Boolean);
+    let cur = tree;
+    for (const k of path.slice(0, -1)) {
+      if (typeof cur[k] !== "object") cur[k] = {};
+      cur = cur[k] as Tree;
+    }
+    cur[path[path.length - 1]] = TS_TYPE[f.type];
+  }
+  const render = (t: Tree, ind: string): string =>
+    Object.entries(t)
+      .map(
+        ([k, v]) =>
+          `${ind}${/^[A-Za-z_]\w*$/.test(k) ? k : q(k)}: ${
+            typeof v === "string" ? v : `{\n${render(v, `${ind}  `)}\n${ind}}`
+          };`,
+      )
+      .join("\n");
+  return Object.keys(tree).length
+    ? `{\n${render(tree, "  ")}\n}`
+    : "Record<string, unknown>";
+}
+
+/** the modules the design uses, at any depth, in the order of the library */
+export function usedModules(m: Model): ModuleDef[] {
+  const used = new Set<string>();
+  const visit = (nodes: FlowNode[]): void => {
+    for (const n of nodes)
+      if (n.kind === "module" && !used.has(n.ref)) {
+        used.add(n.ref);
+        const d = findDef(m, n.ref);
+        if (d) visit(d.nodes);
+      }
+  };
+  visit(m.nodes);
+  return m.modules.filter((d) => used.has(d.id));
+}
+
+const slugOf = (d: ModuleDef): string => slugify(d.name);
+
+/** where an instance of a module is: the graph it is in and the node */
+function instanceOf(
+  m: Model,
+  defId: string,
+): { graph: Model; node: FlowNode } | undefined {
+  const graphs: Model[] = [
+    m,
+    ...m.modules.map((d) => ({ ...m, nodes: d.nodes, edges: d.edges })),
+  ];
+  for (const g of graphs) {
+    const node = g.nodes.find((n) => n.kind === "module" && n.ref === defId);
+    if (node) return { graph: g, node };
+  }
+  return undefined;
+}
+
+/** the input port of a module an edge arrives at */
+const inPortOf = (m: Model, to: FlowNode, e: FlowEdge) => {
+  const d = findDef(m, to.ref);
+  return (
+    d?.inputs.find((p) => p.id === e.toPort) ??
+    d?.inputs.find((p) => p.name === e.msg) ??
+    d?.inputs[0]
+  );
+};
+
+/** the messages a handler sends to module instances: `emit(port, p)` */
+function emitsToModules(
+  m: Model,
+  g: Model,
+  h: FlowNode,
+): { cond: string; code: string }[] {
+  const out: { cond: string; code: string }[] = [];
+  for (const e of outEdges(g, h.id)) {
+    const to = findNode(g, e.to);
+    if (to?.kind === "module")
+      out.push({
+        cond: e.cond.trim(),
+        code: `emit(${q(inPortOf(m, to, e)?.name ?? e.msg)}, p)`,
+      });
+  }
+  return out;
+}
+
+const PORT_TYPES = (d: ModuleDef): string[] =>
+  [...d.inputs, ...d.outputs]
+    .filter(
+      (p, i, all) =>
+        p.fields.length && all.findIndex((o) => o.name === p.name) === i,
+    )
+    .map(
+      (p) =>
+        `/** the payload of ${p.name} */\nexport interface ${Pascal(p.name)}Payload ${payloadType(p.fields)}`,
+    );
+
+const portsHeader = (d: ModuleDef): string[] => [
+  `export const inputs = [${d.inputs.map((p) => q(p.name)).join(", ")}] as const;`,
+  `export const outputs = [${d.outputs.map((p) => q(p.name)).join(", ")}] as const;`,
+  "",
+  ...PORT_TYPES(d).flatMap((t) => [t, ""]),
+];
+
+const PLUGIN_USE: [string, RegExp][] = [
+  ["pg", /\bpg\./],
+  ["redis", /\bredis\./],
+  ["http", /\bhttp\./],
+  ["crypto", /\bcrypto\./],
+  ["log", /\blog\./],
+  ["ws", /\bws\./],
+  ["fetch", /\bfetch\./],
+  ["time", /\btime\./],
+  ["rq", /\brq\./],
+];
+
+/** The file of a module with a body of code: the source, between the ports. */
+function codeFile(d: ModuleDef, m: Model): string {
+  const used: Imports = {};
+  for (const [k, re] of PLUGIN_USE) if (re.test(d.source)) used[k] = true;
+  for (const p of m.plugins)
+    if (new RegExp(`\\b${p.name}\\.`).test(d.source))
+      used[`custom:${p.name}`] = true;
+  const uses = /\bemit\(/.test(d.source);
+  return `// ${d.name} (${d.side === "frontend" ? "browser" : "server"} module, code body)${d.about ? `: ${d.about}` : ""}
+// A pure function: (msg, state) => effects. The body below is the one of the design.
+import type { Effect, Message } from "@service-laboratory/pavlus";
+${importLines(used, "..").join("\n")}
+${uses ? 'import { emit } from "./emit.ts";' : ""}
+
+${portsHeader(d).join("\n")}
+export function handle(message: Message, state: ServerState): Effect[] | undefined {
+  if (!(inputs as readonly string[]).includes(message.id)) return undefined;
+  // msg.payload is any here: the types of the ports are above.
+  const msg = message as Message & { payload: any; ctx: { rid: string } };
+  void msg;
+  void state;
+  const effects: Effect[] = (() => {
+${indent(d.source.trim(), 4)}
+  })();
+  return effects;
+}
+`.replace(/\n\n\n+/g, "\n\n");
+}
+
+/** The file of a pipe: its stages in order, and the names between them. */
+function pipeFile(m: Model, d: ModuleDef): string {
+  const stages = d.stages
+    .map((sid) => d.nodes.find((n) => n.id === sid))
+    .map((n) => (n ? findDef(m, n.ref) : undefined))
+    .filter((x): x is ModuleDef => !!x);
+  const idents = stages.map((s, i) => `stage${i}_${ident(slugOf(s))}`);
+  // a message that passes down the pipe may be named differently by the next stage
+  const next: Record<string, string> = {};
+  for (const e of d.edges) {
+    const from = d.nodes.find((n) => n.id === e.from);
+    const fd = from ? findDef(m, from.ref) : undefined;
+    const name = fd?.outputs.find((p) => p.id === e.fromPort)?.name;
+    if (name && name !== e.msg) next[name] = e.msg;
+  }
+  return `// ${d.name} (pipe): ${stages.map((s) => s.name).join(" > ") || "no stage"}
+// A message goes through the stages in order. A stage passes it on by emitting the
+// message the next stage takes; every other output leaves the pipe.
+import type { Effect, Message } from "@service-laboratory/pavlus";
+import type { ServerState } from "pavlus-server";
+import { retarget } from "./emit.ts";
+${stages.map((s, i) => `import * as ${idents[i]} from "./${slugOf(s)}.ts";`).join("\n")}
+
+export const stages = [${idents.join(", ")}];
+export const inputs = [${d.inputs.map((p) => q(p.name)).join(", ")}] as const;
+export const outputs = [${d.outputs.map((p) => q(p.name)).join(", ")}] as const;
+
+/** the name a stage gives the message it passes on -> the name the next stage takes */
+const renames: Record<string, string> = ${JSON.stringify(next)};
+
+export function handle(msg: Message, state: ServerState): Effect[] | undefined {
+  for (const stage of stages) {
+    const effects = stage.handle(msg, state);
+    if (effects) return retarget(effects, renames);
+  }
+  return undefined;
+}
+`;
+}
+
+/** The file of a module with a graph body: the handlers of its nodes. */
+function graphFile(
+  m: Model,
+  d: ModuleDef,
+): { code: string; conds: Set<string> } {
+  const g: Model = { ...m, nodes: d.nodes, edges: d.edges };
+  const handlers = d.nodes.filter((n) =>
+    ["handler", "reply", "error"].includes(n.kind),
+  );
+  const extra: Extra = {
+    emitFrom: "./emit.ts",
+    labels: (h) =>
+      d.inputs
+        .filter((p) => p.node === h.id && !p.via && p.name !== h.title)
+        .map((p) => p.name),
+    emits: (h, used) => {
+      const out = emitsToModules(m, g, h);
+      // the outer edges of the output ports bound to this handler
+      const at = instanceOf(m, d.id);
+      for (const port of d.outputs.filter((p) => p.node === h.id && !p.via)) {
+        if (!at) continue;
+        const outer = outEdges(at.graph, at.node.id).filter(
+          (e) =>
+            e.fromPort === port.id ||
+            (!e.fromPort && e === outEdges(at.graph, at.node.id)[0]),
+        );
+        for (const e of outer) {
+          const to = findNode(at.graph, e.to);
+          if (!to) continue;
+          if (to.kind === "effect") {
+            const call = effectCall(at.graph, to);
+            used[call.uses] = true;
+            out.push({ cond: e.cond.trim(), code: call.code });
+          } else if (to.kind === "module")
+            out.push({
+              cond: e.cond.trim(),
+              code: `emit(${q(inPortOf(m, to, e)?.name ?? e.msg)}, p)`,
+            });
+          else if (["handler", "reply", "error"].includes(to.kind))
+            out.push({ cond: e.cond.trim(), code: `emit(${q(e.msg)}, p)` });
+        }
+      }
+      return out;
+    },
+  };
+  const r = handlerModule(
+    g,
+    `${d.name} (module)`,
+    handlers,
+    "../conditions.ts",
+    extra,
+    portsHeader(d),
+  );
+  return {
+    code: r.code.replace(
+      "the handlers of this route.",
+      `${d.about || "the handlers of this module."}`,
+    ),
+    conds: r.conds,
+  };
+}
+
+const EMIT_FILE = `// \`emit\`: a message from one module to another. The runtime delivers it with the
+// same context (the rid), so a flow that crosses modules is still one request.
+import type { Effect } from "@service-laboratory/pavlus";
+import { timeEffector as time } from "pavlus-server";
+
+export const emit = (id: string, payload?: unknown): Effect =>
+  time.after(0, id, { payload }) as unknown as Effect;
+
+/** Renames the messages a stage emits (the pass-through of a pipe). */
+export function retarget(
+  effects: Effect[],
+  renames: Record<string, string>,
+): Effect[] {
+  return effects.map((e) => {
+    const x = e as unknown as { plugin?: string; type?: string; replyTo?: string };
+    return x.plugin === "time" && x.type === "timer.after" && x.replyTo && renames[x.replyTo]
+      ? ({ ...x, replyTo: renames[x.replyTo] } as unknown as Effect)
+      : e;
+  });
+}
+`;
+
+/** The files of the modules of a design, and the conditions they use. */
+function moduleFiles(m: Model): {
+  files: GenFile[];
+  conds: Set<string>;
+  registered: { name: string; path: string }[];
+} {
+  const files: GenFile[] = [];
+  const conds = new Set<string>();
+  const registered: { name: string; path: string }[] = [];
+  const mods = usedModules(m);
+  const staged = new Set(
+    mods
+      .filter((d) => d.body === "pipe")
+      .flatMap((d) =>
+        d.nodes.filter((n) => d.stages.includes(n.id)).map((n) => n.ref),
+      ),
+  );
+  if (mods.some((d) => d.side === "backend"))
+    files.push({
+      path: "server/modules/emit.ts",
+      group: "server",
+      title: "modules/emit.ts",
+      code: EMIT_FILE,
+    });
+  for (const d of mods) {
+    if (d.side === "frontend") continue;
+    const slug = slugOf(d);
+    let code: string;
+    if (d.body === "code") code = codeFile(d, m);
+    else if (d.body === "pipe") code = pipeFile(m, d);
+    else {
+      const r = graphFile(m, d);
+      code = r.code;
+      r.conds.forEach((c) => conds.add(condName(c)));
+    }
+    files.push({
+      path: `server/modules/${slug}.ts`,
+      group: "server",
+      title: `modules/${slug}.ts`,
+      code,
+    });
+    // the stages of a pipe are reached through the pipe
+    if (!staged.has(d.id))
+      registered.push({
+        name: `mod_${ident(slug)}`,
+        path: `./modules/${slug}.ts`,
+      });
+  }
+  return { files, conds, registered };
+}
+
+export function generateServer(source: Model): GenFile[] {
+  const modular = hasModules(source);
+  const m = modular ? source : flatten(source);
+  const mf = modular ? moduleFiles(source) : null;
+  const plan = planFrom(m);
   const files: GenFile[] = [];
   const allConds = new Set<string>();
   const imports: { name: string; path: string }[] = [];
   const usedPlugins = new Set<string>();
   for (const n of m.nodes) if (n.kind === "effect") usedPlugins.add(n.plugin);
+  if (modular) {
+    // the effects inside the modules, what the code bodies call, and `emit`
+    for (const d of usedModules(source)) {
+      for (const n of d.nodes)
+        if (n.kind === "effect") usedPlugins.add(n.plugin);
+      for (const p of d.plugins) usedPlugins.add(p);
+      if (d.body === "code") {
+        for (const [k, re] of PLUGIN_USE)
+          if (re.test(d.source)) usedPlugins.add(k === "time" ? "timer" : k);
+        if (/\bemit\(/.test(d.source)) usedPlugins.add("timer");
+      }
+    }
+    usedPlugins.add("timer");
+  }
 
   const httpRoutes = plan.routes.filter((r) => !isWs(r));
   files.push({
@@ -654,6 +1098,13 @@ ${plan.routes
       mod.title,
       mod.handlers,
       "../conditions.ts",
+      modular
+        ? {
+            emitFrom: "../modules/emit.ts",
+            labels: () => [],
+            emits: (h) => emitsToModules(source, source, h),
+          }
+        : undefined,
     );
     conds.forEach((c) => allConds.add(condName(c)));
     const path = `server/handlers/${mod.slug}.ts`;
@@ -666,6 +1117,15 @@ ${plan.routes
     imports.push({ name: ident(mod.slug), path: `./handlers/${mod.slug}.ts` });
   }
 
+  mf?.conds.forEach((c) => allConds.add(c));
+  if (mf) files.push(...mf.files);
+  for (const p of usedCustom(source))
+    files.push({
+      path: `server/plugins/${p.name}.ts`,
+      group: "server",
+      title: `plugins/${p.name}.ts`,
+      code: pluginStub(p),
+    });
   const condList = [...allConds].sort();
   files.push({
     path: "server/conditions.ts",
@@ -698,9 +1158,9 @@ ${condList.length ? "" : "export {};"}
 // route and returns undefined for the others, so the modules compose with a loop.
 import type { Effect, Message } from "@service-laboratory/pavlus";
 import type { ServerState } from "pavlus-server";
-${imports.map((i) => `import { handle as ${i.name} } from ${q(i.path)};`).join("\n")}
+${[...imports, ...(mf?.registered ?? [])].map((i) => `import { handle as ${i.name} } from ${q(i.path)};`).join("\n")}
 
-const modules = [${imports.map((i) => i.name).join(", ")}];
+const modules = [${[...imports, ...(mf?.registered ?? [])].map((i) => i.name).join(", ")}];
 
 export const app = (msg: Message, state: ServerState): Effect[] => {
   for (const handle of modules) {
@@ -713,6 +1173,7 @@ export const app = (msg: Message, state: ServerState): Effect[] => {
   });
 
   const wires: string[] = [];
+  const customImports: string[] = [];
   const plugins: string[] = [];
   const pimports: string[] = ["createServerApp"];
   if (usedPlugins.has("log")) {
@@ -734,6 +1195,12 @@ export const app = (msg: Message, state: ServerState): Effect[] => {
   if (usedPlugins.has("timer")) {
     plugins.push("createTimePlugin()");
     pimports.push("createTimePlugin");
+  }
+  for (const p of usedCustom(source)) {
+    plugins.push(`create${Pascal(p.name)}Plugin()`);
+    customImports.push(
+      `import { create${Pascal(p.name)}Plugin } from "./plugins/${p.name}.ts";`,
+    );
   }
   if (usedPlugins.has("crypto")) {
     plugins.push("createCryptoPlugin()");
@@ -757,6 +1224,7 @@ export const app = (msg: Message, state: ServerState): Effect[] => {
 import {\n${pimports.map((p) => `  ${p},`).join("\n")}\n} from "pavlus-server";
 import { app } from "./app.ts";
 import { routes } from "./routes.ts";
+${customImports.join("\n")}
 
 ${wires.join("\n")}
 const server = createServerApp({
@@ -917,7 +1385,9 @@ export function scenarioSteps(
       }
     }
     const lastEmitted = emitted.map((e) => findNode(m, e.to)!);
-    const responds = lastEmitted.some((n) => effectDef(n.title)?.responds);
+    const responds = lastEmitted.some(
+      (n) => effectDefIn(m.plugins, n.title)?.responds,
+    );
     let code = `{\n  expect: [${pats.join(", ")}],`;
     if (answer) {
       const r = answer.step;
@@ -965,7 +1435,74 @@ export function scenarioSteps(
   return { steps, flags, notes };
 }
 
-export function generateTests(m: Model): GenFile[] {
+/** The tests of a design with modules: each module takes the examples of its input ports. */
+function moduleTests(source: Model): GenFile[] {
+  const mods = usedModules(source).filter((d) => d.side === "backend");
+  const blocks: string[] = [];
+  const imports: string[] = [];
+  for (const d of mods) {
+    const name = `mod_${ident(slugOf(d))}`;
+    imports.push(
+      `import { handle as ${name} } from "./modules/${slugOf(d)}.ts";`,
+    );
+    const its: string[] = [];
+    const probes = d.body === "code" ? probe(d, source.plugins) : [];
+    for (const p of d.inputs) {
+      const payload = JSON.stringify(payloadOf(p.fields));
+      const found = probes.find((x) => x.input.id === p.id);
+      const patterns =
+        found && "effects" in found.result
+          ? found.result.effects
+              .filter((e) => e.port)
+              .map((e) =>
+                e.plugin === "app"
+                  ? `expect.objectContaining({ plugin: "time", type: "timer.after", replyTo: ${q(e.port)} })`
+                  : `expect.objectContaining({ plugin: ${q(e.plugin)}, type: ${q(e.type)} })`,
+              )
+          : [];
+      its.push(`  it(${q(`takes ${p.name}`)}, () => {
+    const out = ${name}(message(${q(p.name)}, ${payload}), state());
+    expect(out).toBeDefined();${
+      patterns.length
+        ? `\n    expect(out).toEqual(expect.arrayContaining([\n${patterns.map((x) => `      ${x},`).join("\n")}\n    ]));`
+        : ""
+    }
+  });`);
+    }
+    its.push(`  it("leaves the other messages to the others", () => {
+    expect(${name}(message("nobody.takes.this", {}), state())).toBeUndefined();
+  });`);
+    blocks.push(`describe(${q(d.name)}, () => {\n${its.join("\n\n")}\n});`);
+  }
+  return [
+    {
+      path: "server/modules.test.ts",
+      group: "tests",
+      title: "modules.test.ts",
+      code: `// Generated from the interfaces of the modules: each takes the example payload of
+// each of its input ports and answers with effects, and ignores every other message.
+import { describe, expect, it } from "vitest";
+import type { Message } from "@service-laboratory/pavlus";
+import type { ServerState } from "pavlus-server";
+${imports.join("\n")}
+
+const message = (id: string, payload: unknown): Message => ({
+  id,
+  payload,
+  ctx: { rid: "r1", conn: "http" },
+});
+const state = (): ServerState =>
+  ({ requests: { r1: {} }, shared: {} }) as unknown as ServerState;
+
+${blocks.join("\n\n")}
+`,
+    },
+  ];
+}
+
+export function generateTests(source: Model): GenFile[] {
+  if (hasModules(source)) return moduleTests(source);
+  const m = flatten(source);
   const variants = variantsOf(m);
   const blocks: string[] = [];
   const flagsOf = (v: Variant): Record<string, boolean> => ({
@@ -1036,7 +1573,11 @@ function replyHandlers(
   let fail = "";
   for (const id of sub) {
     const n = findNode(m, id);
-    if (!n || n.kind !== "effect" || effectDef(n.title)?.responds !== true)
+    if (
+      !n ||
+      n.kind !== "effect" ||
+      effectDefIn(m.plugins, n.title)?.responds !== true
+    )
       continue;
     for (const e of outEdges(m, id)) {
       const to = findNode(m, e.to);
@@ -1048,7 +1589,8 @@ function replyHandlers(
   return { ok, fail };
 }
 
-export function generateFrontend(m: Model): GenFile[] {
+export function generateFrontend(source: Model): GenFile[] {
+  const m = flatten(source);
   const feNodes = m.nodes.filter((n) => n.kind === "fe-handler");
   const keys = new Set<string>();
   for (const n of m.nodes) {
@@ -1134,6 +1676,10 @@ ${methods.join("\n\n")}
   ];
 }
 
-export function generateAll(m: Model): GenFile[] {
-  return [...generateServer(m), ...generateTests(m), ...generateFrontend(m)];
+export function generateAll(source: Model): GenFile[] {
+  return [
+    ...generateServer(source),
+    ...generateTests(source),
+    ...generateFrontend(source),
+  ];
 }

@@ -20,13 +20,15 @@ import {
   type FlowNode,
   type Model,
   EXTERNAL_OF,
+  externalIn,
   condName,
   EDGE_KINDS,
-  effectDef,
+  effectDefIn,
   findNode,
   laneOf,
   outEdges,
 } from "./model.ts";
+import { flatten } from "./modules.ts";
 import { requestsOf } from "./engine.ts";
 
 export interface Lifeline {
@@ -124,6 +126,12 @@ export function lifelinesOf(m: Model): Lifeline[] {
     list.push({ id: "fetch", label: ext("fetch")?.title ?? "Third-party API" });
   for (const p of ["crypto", "timer", "log"])
     if (used.has(p)) list.push({ id: p, label: `${p} plugin` });
+  for (const p of m.plugins)
+    if (used.has(p.name))
+      list.push({
+        id: p.name,
+        label: ext(p.name)?.title ?? p.external ?? `${p.name} plugin`,
+      });
   return list.map((l, i) => ({ ...l, x: LEFT + i * GAP }));
 }
 
@@ -131,7 +139,9 @@ export function lifelinesOf(m: Model): Lifeline[] {
 export const lifelineOfEffect = (n: FlowNode): string => {
   if (n.plugin === "http" || n.plugin === "ws") return "client";
   return n.plugin in EXTERNAL_OF ||
-    ["crypto", "timer", "log"].includes(n.plugin)
+    ["crypto", "timer", "log"].includes(n.plugin) ||
+    // a plugin of the project has a lifeline of its own
+    (n.plugin !== "" && n.plugin !== "app")
     ? n.plugin
     : "app";
 };
@@ -284,7 +294,7 @@ export function itemsOf(m: Model): Item[] {
       seen.add(n.id);
       if (n.kind === "effect") {
         const outs = outEdges(m, n.id);
-        const def = effectDef(n.title);
+        const def = effectDefIn(m.plugins, n.title);
         const replies = outs.filter((e) => e.kind === "reply");
         const errors = outs.filter((e) => e.kind === "error");
         if (def?.responds || n.plugin === "http") {
@@ -318,7 +328,8 @@ export function itemsOf(m: Model): Item[] {
   return items;
 }
 
-export function buildSequence(m: Model): Sequence {
+export function buildSequence(source: Model): Sequence {
+  const m = flatten(source);
   const lifelines = lifelinesOf(m);
   const xOf = (id: string): number =>
     lifelines.find((l) => l.id === id)?.x ?? lifelines[1].x;

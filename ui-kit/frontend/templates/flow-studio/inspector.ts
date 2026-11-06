@@ -14,15 +14,18 @@ import {
   type FlowNode,
   type Model,
   DEFAULT_LATENCY,
-  DEFAULT_TIMEOUT,
+  PLUGIN_NAMES as BUILTIN_NAMES,
   EDGE_KINDS,
   EDGE_LABEL,
-  EFFECTS,
   FIELD_TYPES,
   KIND_LABEL,
   condNames,
-  effectDef,
+  effectDefIn,
+  effectsIn,
+  latencyIn,
+  timeoutIn,
   fieldsOf,
+  findDef,
   findEdge,
   findNode,
   laneOf,
@@ -32,6 +35,14 @@ import {
   updateNode,
 } from "./model.ts";
 import { nodeFault, updateFault } from "./faults.ts";
+import { effectLines, pluginInUse, updatePlugin } from "./plugins.ts";
+import {
+  type Dir,
+  setBody,
+  updateModule,
+  updatePort,
+  usesOf,
+} from "./modules.ts";
 
 export type { FieldView };
 
@@ -125,6 +136,34 @@ export interface InspectorView {
   /** the lane the node is in, for the badge */
   lane: string;
   hint: string;
+  /** the interface of the module a selected instance stands for, or of the open one */
+  iface: ModuleView | null;
+}
+
+export interface PortView {
+  k: string;
+  id: string;
+  dir: Dir;
+  title: string;
+  fields: FieldView[];
+}
+
+export interface ModuleView {
+  id: string;
+  name: string;
+  /** how many instances the module has */
+  uses: number;
+  /** this is the module being edited (the board shows its body) */
+  open: boolean;
+  fields: FieldView[];
+  inputs: PortView[];
+  outputs: PortView[];
+  /** a one-line reading of the interface: `2 in · 1 out · pg, redis` */
+  summary: string;
+  body: string;
+  isCode: boolean;
+  /** code from an import is held until it is enabled */
+  held: boolean;
 }
 
 export const NO_INSPECTOR: InspectorView = {
@@ -138,6 +177,7 @@ export const NO_INSPECTOR: InspectorView = {
   isEffect: false,
   breakpoint: false,
   lane: "",
+  iface: null,
   hint: "Select a node or an edge to edit it. Drag from the dot at the right of a node onto another node to link them. Arrows move the selection, Enter edits, Delete removes.",
 };
 
@@ -162,15 +202,15 @@ const titleLabel = (n: FlowNode): string => {
   }
 };
 
-const detailLabel = (n: FlowNode): string => {
+const detailLabel = (n: FlowNode, m: Model): string => {
   switch (n.kind) {
     case "route":
       return "Message id the route rewrites http.request into";
     case "fe-state":
       return "Value written (a {payload.x} reference or text)";
     case "effect":
-      return effectDef(n.title)?.hint
-        ? `Detail: ${effectDef(n.title)!.hint}`
+      return effectDefIn(m.plugins, n.title)?.hint
+        ? `Detail: ${effectDefIn(m.plugins, n.title)!.hint}`
         : "Detail";
     case "external":
       return "Note";
@@ -180,7 +220,7 @@ const detailLabel = (n: FlowNode): string => {
 };
 
 /** the faults that can be injected on a plugin hop, with their state */
-export function faultRows(m: Model, n: FlowNode): FaultRow[] {
+export function faultRows(m: Model, n: FlowNode, prefix = ""): FaultRow[] {
   if (n.kind !== "effect" || n.plugin === "log") return [];
   return (
     [
@@ -191,7 +231,7 @@ export function faultRows(m: Model, n: FlowNode): FaultRow[] {
   ).map(([kind, label]) => ({
     k: `${n.id}-${kind}`,
     label,
-    on: nodeFault(m, n.id, kind)?.on ?? false,
+    on: nodeFault(m, prefix + n.id, kind)?.on ?? false,
     kind,
     node: n.id,
   }));
@@ -201,18 +241,43 @@ export function nodeInspector(
   m: Model,
   n: FlowNode,
   breakpoint: boolean,
+  prefix = "",
 ): InspectorView {
   const ctx = `n:${n.id}`;
   const fields: FieldView[] = [];
+  if (n.kind === "module") {
+    const def = findDef(m, n.ref);
+    return {
+      mode: "node",
+      title: n.title || "(unnamed)",
+      subtitle: def
+        ? `Instance of the module ${def.name} (${def.side}) in the ${laneOf(n)} lane`
+        : "An instance of a module that is gone",
+      id: n.id,
+      fields: [
+        mk(ctx, "title", "Name of this instance", n.title, "text", {
+          error: n.title.trim() === "" ? "A name is needed" : "",
+        }),
+        mk(ctx, "note", "Note", n.note, "text"),
+      ],
+      stateFields: [],
+      faults: [],
+      isEffect: false,
+      breakpoint,
+      lane: laneOf(n),
+      hint: "",
+      iface: def ? moduleView(m, def.id, false) : null,
+    };
+  }
   if (n.kind === "effect")
     fields.push(
       mk(ctx, "title", titleLabel(n), n.title, "choice", {
         choices: [
-          ...EFFECTS.map((e) => ({
+          ...effectsIn(m.plugins).map((e) => ({
             v: e.type,
             label: `${e.type}  (${e.hint})`,
           })),
-          ...(EFFECTS.some((e) => e.type === n.title)
+          ...(effectsIn(m.plugins).some((e) => e.type === n.title)
             ? []
             : [{ v: n.title, label: n.title }]),
         ],
@@ -224,9 +289,9 @@ export function nodeInspector(
         error: n.title.trim() === "" ? "A name is needed" : "",
       }),
     );
-  fields.push(mk(ctx, "detail", detailLabel(n), n.detail, "area"));
+  fields.push(mk(ctx, "detail", detailLabel(n, m), n.detail, "area"));
   if (n.kind === "effect") {
-    const def = effectDef(n.title);
+    const def = effectDefIn(m.plugins, n.title);
     if (def?.responds)
       fields.push(
         mk(ctx, "status", "HTTP status", String(n.status || 200), "number"),
@@ -249,7 +314,7 @@ export function nodeInspector(
         String(n.timeoutMs),
         "number",
         {
-          hint: `default ${DEFAULT_TIMEOUT[n.plugin] || "none"} ms`,
+          hint: `default ${timeoutIn(m.plugins, n.plugin) || "none"} ms`,
         },
       ),
     );
@@ -332,7 +397,7 @@ export function nodeInspector(
       ),
     );
   fields.push(mk(ctx, "note", "Note", n.note, "text"));
-  const faults = faultRows(m, n);
+  const faults = faultRows(m, n, prefix);
   return {
     mode: "node",
     title: n.title || "(unnamed)",
@@ -345,17 +410,54 @@ export function nodeInspector(
     breakpoint,
     lane: laneOf(n),
     hint: "",
+    iface: null,
   };
 }
 
 const model = (m: Model, plugin: string): string =>
-  String(m.latency[plugin] ?? DEFAULT_LATENCY[plugin] ?? 1);
+  String(m.latency[plugin] ?? latencyIn(m.plugins, plugin));
 
 export function edgeInspector(m: Model, e: FlowEdge): InspectorView {
   const ctx = `e:${e.id}`;
   const from = findNode(m, e.from);
   const to = findNode(m, e.to);
+  const fromDef = from ? findDef(m, from.ref) : undefined;
+  const toDef = to ? findDef(m, to.ref) : undefined;
   const fields: FieldView[] = [
+    ...(fromDef
+      ? [
+          mk(
+            ctx,
+            "fromPort",
+            `Leaves ${fromDef.name} by the output port`,
+            e.fromPort || fromDef.outputs[0]?.id || "",
+            "choice",
+            {
+              choices: fromDef.outputs.map((p) => ({ v: p.id, label: p.name })),
+              hint: fromDef.outputs.length
+                ? ""
+                : "The module has no output port yet: open it and add one",
+            },
+          ),
+        ]
+      : []),
+    ...(toDef
+      ? [
+          mk(
+            ctx,
+            "toPort",
+            `Arrives at ${toDef.name} by the input port`,
+            e.toPort || toDef.inputs[0]?.id || "",
+            "choice",
+            {
+              choices: toDef.inputs.map((p) => ({ v: p.id, label: p.name })),
+              hint: toDef.inputs.length
+                ? ""
+                : "The module has no input port yet: open it and add one",
+            },
+          ),
+        ]
+      : []),
     mk(ctx, "kind", "Kind", e.kind, "choice", {
       choices: EDGE_KINDS.map((k) => ({ v: k, label: EDGE_LABEL[k] })),
     }),
@@ -419,24 +521,259 @@ export function edgeInspector(m: Model, e: FlowEdge): InspectorView {
     breakpoint: false,
     lane: "",
     hint: "",
+    iface: null,
   };
 }
 
+/**
+ * What the side panel shows for a selection. `prefix` is the path of the open
+ * module (`m1/`): faults and breakpoints are kept by the id of the flat model.
+ * `open` is the module being edited, whose interface shows when nothing is selected.
+ */
 export function inspectorOf(
   m: Model,
   sel: { kind: "none" | "node" | "edge"; id: string },
   breakpoints: Record<string, boolean>,
+  prefix = "",
+  open = "",
 ): InspectorView {
   if (sel.kind === "node") {
     const n = findNode(m, sel.id);
-    if (n) return nodeInspector(m, n, !!breakpoints[n.id]);
+    if (n) return nodeInspector(m, n, !!breakpoints[prefix + n.id], prefix);
   }
   if (sel.kind === "edge") {
     const e = findEdge(m, sel.id);
     if (e) return edgeInspector(m, e);
   }
+  if (open && findDef(m, open))
+    return {
+      ...NO_INSPECTOR,
+      title: findDef(m, open)!.name,
+      subtitle: "The module you are inside: its interface",
+      hint: "Select a node of the body to edit it. The ports below are how the outside reaches this body.",
+      iface: moduleView(m, open, true),
+    };
   return NO_INSPECTOR;
 }
+
+// ---- the plugins panel ----
+
+export interface PluginsView {
+  builtin: { name: string; effects: string }[];
+  custom: {
+    k: string;
+    name: string;
+    uses: number;
+    fields: FieldView[];
+  }[];
+}
+
+export function pluginsView(m: Model): PluginsView {
+  return {
+    builtin: BUILTIN_NAMES.map((name) => ({
+      name,
+      effects: effectsIn([])
+        .filter((e) => e.plugin === name)
+        .map((e) => e.type)
+        .join(", "),
+    })),
+    custom: m.plugins.map((p) => {
+      const ctx = `pl:${p.name}`;
+      return {
+        k: p.name,
+        name: p.name,
+        uses: pluginInUse(m, p.name),
+        fields: [
+          mk(ctx, "about", "What it is", p.about, "text"),
+          mk(ctx, "external", "It talks to (an external)", p.external, "text", {
+            hint: "Stripe API, a mail server ... empty = nothing",
+          }),
+          mk(
+            ctx,
+            "latency",
+            "Latency of an effect (ms)",
+            String(p.latency),
+            "number",
+          ),
+          mk(
+            ctx,
+            "timeout",
+            "Timeout (ms, 0 = none)",
+            String(p.timeout),
+            "number",
+          ),
+          mk(
+            ctx,
+            "errorCode",
+            "Code of an injected error",
+            p.errorCode,
+            "text",
+          ),
+          mk(
+            ctx,
+            "effects",
+            "Effects (type | hint | detail | flags, one per line)",
+            effectLines(p),
+            "area",
+            {
+              hint: "flags: reply, optional, fire (no reply), nofail, responds",
+            },
+          ),
+        ],
+      };
+    }),
+  };
+}
+
+// ---- the interface of a module ----
+
+const portLines = (fields: FlowEdge["payload"]): string =>
+  fields
+    .map((f) => `${f.name}:${f.type}${f.example ? `=${f.example}` : ""}`)
+    .join("\n");
+
+export function moduleView(m: Model, id: string, open: boolean): ModuleView {
+  const d = findDef(m, id)!;
+  const ctx = `mod:${d.id}`;
+  const portView = (dir: Dir, p: (typeof d.inputs)[number]): PortView => {
+    const pctx = `${dir === "inputs" ? "pi" : "po"}:${d.id}:${p.id}`;
+    return {
+      k: p.id,
+      id: p.id,
+      dir,
+      title: p.name || "(unnamed)",
+      fields: [
+        mk(
+          pctx,
+          "name",
+          dir === "inputs" ? "Message it accepts" : "Message it emits",
+          p.name,
+          "text",
+          {
+            error: p.name.trim() === "" ? "A port needs a message id" : "",
+          },
+        ),
+        ...(dir === "outputs"
+          ? [
+              mk(
+                pctx,
+                "pass",
+                "Carries the message on down a pipe (middleware next)",
+                p.pass ? "yes" : "no",
+                "choice",
+                {
+                  choices: [
+                    { v: "no", label: "no: it ends or leaves the pipe" },
+                    { v: "yes", label: "yes: the next stage takes it" },
+                  ],
+                },
+              ),
+            ]
+          : []),
+        ...(d.body === "graph"
+          ? [
+              mk(
+                pctx,
+                "node",
+                dir === "inputs"
+                  ? "Goes to this node of the body"
+                  : "Leaves from this node of the body",
+                p.node,
+                "choice",
+                {
+                  choices: [
+                    { v: "", label: "(not bound)" },
+                    ...d.nodes
+                      .filter((n) => n.kind !== "module")
+                      .map((n) => ({
+                        v: n.id,
+                        label: `${n.title} (${KIND_LABEL[n.kind]})`,
+                      })),
+                  ],
+                  error:
+                    p.node && !d.nodes.some((n) => n.id === p.node)
+                      ? "The node is gone"
+                      : "",
+                },
+              ),
+            ]
+          : []),
+        mk(
+          pctx,
+          "fields",
+          "Payload (name:type=example, one per line)",
+          portLines(p.fields),
+          "area",
+        ),
+      ],
+    };
+  };
+  const plugins = d.plugins.length ? ` · ${d.plugins.join(", ")}` : "";
+  return {
+    id: d.id,
+    name: d.name,
+    uses: usesOf(m, d.id),
+    open,
+    fields: [
+      mk(ctx, "name", "Module name", d.name, "text", {
+        error: d.name.trim() === "" ? "A name is needed" : "",
+      }),
+      mk(ctx, "side", "Runs on", d.side, "choice", {
+        choices: [
+          { v: "backend", label: "the server (a pure handler)" },
+          { v: "frontend", label: "the browser (pavlus frontend)" },
+        ],
+      }),
+      mk(ctx, "body", "Body of the module", d.body, "choice", {
+        choices: [
+          { v: "graph", label: "a graph of nodes" },
+          { v: "code", label: "code: a pure function body" },
+          { v: "pipe", label: "a pipe: a chain of modules (middleware)" },
+        ],
+      }),
+      mk(ctx, "about", "What it is for", d.about, "area"),
+      mk(
+        ctx,
+        "reads",
+        "Reads (state keys, comma separated)",
+        d.reads.join(", "),
+        "text",
+        {
+          hint: "requests.user, shared.limits",
+        },
+      ),
+      mk(
+        ctx,
+        "writes",
+        "Writes (state keys, comma separated)",
+        d.writes.join(", "),
+        "text",
+      ),
+      mk(
+        ctx,
+        "plugins",
+        "Needs the plugins (comma separated)",
+        d.plugins.join(", "),
+        "text",
+        {
+          hint: "pg, redis, crypto",
+        },
+      ),
+    ],
+    inputs: d.inputs.map((p) => portView("inputs", p)),
+    outputs: d.outputs.map((p) => portView("outputs", p)),
+    summary: `${d.body} · ${d.inputs.length} in · ${d.outputs.length} out${plugins}`,
+    body: d.body,
+    isCode: d.body === "code",
+    held: d.held !== "",
+  };
+}
+
+const splitList = (v: string): string[] =>
+  v
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
 
 // ---- the scenario panel ----
 
@@ -528,7 +865,7 @@ export function scenarioView(m: Model): ScenarioView {
         ),
       ],
     })),
-    latency: LATENCY_KEYS.map((p) =>
+    latency: [...LATENCY_KEYS, ...m.plugins.map((p) => p.name)].map((p) =>
       mk(
         "m",
         `lat:${p}`,
@@ -537,7 +874,7 @@ export function scenarioView(m: Model): ScenarioView {
           : p === "app"
             ? "handler hop (ms)"
             : `${p} plugin (ms)`,
-        String(m.latency[p] ?? DEFAULT_LATENCY[p] ?? 1),
+        String(m.latency[p] ?? latencyIn(m.plugins, p)),
         "number",
       ),
     ),
@@ -600,11 +937,12 @@ export function applyEdit(
       case "title": {
         let next = updateNode(m, id, { title: value });
         if (n.kind === "effect") {
-          const def = effectDef(value);
+          const def = effectDefIn(m.plugins, value);
           // a new effect type brings its own example detail and status
           next = updateNode(next, id, {
             detail:
-              def && n.detail === (effectDef(n.title)?.detail ?? "")
+              def &&
+              n.detail === (effectDefIn(m.plugins, n.title)?.detail ?? "")
                 ? def.detail
                 : n.detail,
             status: def?.responds ? n.status || 200 : 0,
@@ -651,6 +989,25 @@ export function applyEdit(
       case "msg":
       case "cond":
         return { model: updateEdge(m, id, { [name]: value }), tag };
+      case "fromPort":
+      case "toPort": {
+        // the message id follows the port, unless the designer named it otherwise
+        const def = findDef(
+          m,
+          findNode(m, name === "fromPort" ? e.from : e.to)?.ref ?? "",
+        );
+        const list = name === "fromPort" ? def?.outputs : def?.inputs;
+        const old = list?.find((p) => p.id === (e as FlowEdge)[name]);
+        const port = list?.find((p) => p.id === value);
+        const follow =
+          port && e.kind !== "effect" && (!old || old.name === e.msg)
+            ? { msg: port.name }
+            : {};
+        return {
+          model: updateEdge(m, id, { [name]: value, ...follow }),
+          tag: "",
+        };
+      }
       case "rid":
         return { model: updateEdge(m, id, { rid: value === "yes" }), tag: "" };
       case "latency":
@@ -658,6 +1015,87 @@ export function applyEdit(
       case "payload":
         return {
           model: updateEdge(m, id, { payload: parsePayload(value) }),
+          tag,
+        };
+    }
+    return null;
+  }
+  if (kind === "mod") {
+    if (!findDef(m, id)) return null;
+    const tag = `mod:${id}:${name}`;
+    switch (name) {
+      case "name":
+      case "about":
+      case "source":
+        return { model: updateModule(m, id, { [name]: value }), tag };
+      case "body":
+        return {
+          model: setBody(
+            m,
+            id,
+            value === "code" ? "code" : value === "pipe" ? "pipe" : "graph",
+          ),
+          tag: "",
+        };
+      case "side":
+        return {
+          model: updateModule(m, id, {
+            side: value === "frontend" ? "frontend" : "backend",
+          }),
+          tag: "",
+        };
+      case "reads":
+      case "writes":
+      case "plugins":
+        return {
+          model: updateModule(m, id, { [name]: splitList(value) }),
+          tag,
+        };
+    }
+    return null;
+  }
+  if (kind === "pl") {
+    if (!m.plugins.some((p) => p.name === id)) return null;
+    const tag = `pl:${id}:${name}`;
+    switch (name) {
+      case "about":
+      case "external":
+      case "errorCode":
+        return { model: updatePlugin(m, id, { [name]: value }), tag };
+      case "latency":
+      case "timeout":
+        return { model: updatePlugin(m, id, { [name]: toNum(value) }), tag };
+      case "effects":
+        return { model: updatePlugin(m, id, { effectsText: value }), tag };
+    }
+    return null;
+  }
+  if (kind === "pi" || kind === "po") {
+    const [defId, portId] = id.split(":");
+    const dir: Dir = kind === "pi" ? "inputs" : "outputs";
+    if (!findDef(m, defId)) return null;
+    const tag = `${kind}:${id}:${name}`;
+    switch (name) {
+      case "name":
+        return {
+          model: updatePort(m, defId, dir, portId, { name: value }),
+          tag,
+        };
+      case "node":
+        return {
+          model: updatePort(m, defId, dir, portId, { node: value }),
+          tag: "",
+        };
+      case "pass":
+        return {
+          model: updatePort(m, defId, dir, portId, { pass: value === "yes" }),
+          tag: "",
+        };
+      case "fields":
+        return {
+          model: updatePort(m, defId, dir, portId, {
+            fields: parsePayload(value),
+          }),
           tag,
         };
     }
@@ -676,7 +1114,7 @@ export function applyEdit(
       const key = name.slice(4);
       const latency = { ...m.latency };
       if (value.trim() === "") delete latency[key];
-      else latency[key] = toNum(value, DEFAULT_LATENCY[key] ?? 1);
+      else latency[key] = toNum(value, latencyIn(m.plugins, key));
       return { model: { ...m, latency }, tag: `lat:${key}` };
     }
     return null;

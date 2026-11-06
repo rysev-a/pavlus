@@ -693,6 +693,7 @@
 .fs-n--error { --nc: var(--destructive); }
 .fs-n--effect { --nc: var(--warning); }
 .fs-n--external { --nc: var(--muted-foreground); }
+.fs-n--module { --nc: var(--primary); }
 .fs-n--ui-event .fs-n__box {
   stroke-dasharray: 0;
   rx: 18;
@@ -705,6 +706,32 @@
   fill: color-mix(in srgb, var(--primary) 10%, var(--background));
 }
 .fs-n--error .fs-n__box {
+  stroke: var(--destructive);
+}
+.fs-n--module .fs-n__box {
+  fill: color-mix(in srgb, var(--primary) 8%, var(--background));
+  stroke: color-mix(in srgb, var(--primary) 55%, var(--border));
+  stroke-width: 1.6;
+}
+.fs-n__pin {
+  fill: var(--muted-foreground);
+  font-size: 9px;
+  font-family: var(--font-mono);
+  pointer-events: none;
+}
+.fs-n__pin--out {
+  text-anchor: end;
+}
+.fs-pin {
+  fill: var(--background);
+  stroke: var(--primary);
+  stroke-width: 1.6;
+  cursor: copy;
+}
+.fs-pin:hover {
+  fill: var(--primary);
+}
+.fs-pin.is-unbound {
   stroke: var(--destructive);
 }
 .fs-n__icon {
@@ -1392,4 +1419,122 @@
 .fs[data-reduced="true"] .fs-side,
 .fs[data-reduced="true"] .fs-edge {
   transition: none;
+}
+
+/* ---- modules: the breadcrumb of the open module, the interface ---- */
+.fs-crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-right: auto;
+  min-width: 0;
+}
+.fs-crumb {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.fs-crumb:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+.fs-crumb[aria-current="page"] {
+  color: var(--foreground);
+  font-weight: 600;
+}
+.fs-crumb small {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+}
+.fs-crumb__sep {
+  color: var(--muted-foreground);
+}
+.fs-iface {
+  margin-top: 14px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.fs-n__badge {
+  fill: var(--primary);
+  font-size: 8.5px;
+  font-family: var(--font-mono);
+  pointer-events: none;
+}
+.fs-n__badge--out {
+  text-anchor: end;
+}
+
+/* ---- code bodies ---- */
+.fs-canvas[data-hidden="true"],
+.fs-under[data-hidden="true"] {
+  display: none;
+}
+.fs-codebody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.fs-codearea {
+  width: 100%;
+  min-height: 16rem;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+}
+.fs-probe {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+/* ---- pipes ---- */
+.fs-pipebar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.fs-stages {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fs-stage {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+}
+.fs-stage small {
+  margin-right: auto;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.fs-stage__n {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 11px;
 }

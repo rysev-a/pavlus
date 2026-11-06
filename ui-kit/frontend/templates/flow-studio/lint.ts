@@ -4,14 +4,20 @@ import {
   type FlowEdge,
   type FlowNode,
   type Model,
+  type ModuleDef,
+  type PluginManifest,
   condHolds,
   condName,
-  effectDef,
+  isExprCond,
+  effectDefIn,
+  findDef,
   findNode,
   inEdges,
   laneOf,
   outEdges,
 } from "./model.ts";
+import { checkCode } from "./code.ts";
+import { flatten } from "./modules.ts";
 
 export type Severity = "error" | "warn" | "info";
 
@@ -50,6 +56,26 @@ export const RULES: { rule: string; title: string }[] = [
   { rule: "duplicate", title: "Two nodes with the same name" },
   { rule: "no-timeout", title: "A call with no timeout" },
   { rule: "cond-undefined", title: "A condition with no value" },
+  { rule: "module-missing", title: "An instance of a module that is gone" },
+  { rule: "module-cycle", title: "A module that contains itself" },
+  { rule: "port-unbound", title: "A port bound to nothing inside" },
+  { rule: "port-unwired", title: "A port nothing is connected to" },
+  { rule: "module-unused", title: "A module with no instance" },
+  { rule: "pipe-empty", title: "A pipe with no stage" },
+  { rule: "pipe-broken", title: "A stage that nothing continues after" },
+  {
+    rule: "code-error",
+    title: "Code that does not parse or fails on an example",
+  },
+  {
+    rule: "code-port-missing",
+    title: "Code that emits a port the module lacks",
+  },
+  {
+    rule: "code-port-silent",
+    title: "An output the code does not emit for the examples",
+  },
+  { rule: "code-input-silent", title: "An input the code does nothing with" },
 ];
 
 /** messages the runtime sends: a handler for them needs no producer */
@@ -67,9 +93,9 @@ const SECRET =
 const HANDLER_LIKE = ["handler", "reply", "error"];
 const FAN_OUT = 5;
 
-const isRespond = (n: FlowNode): boolean =>
+const isRespond = (n: FlowNode, custom: PluginManifest[] = []): boolean =>
   n.kind === "effect" &&
-  (effectDef(n.title)?.responds === true ||
+  (effectDefIn(custom, n.title)?.responds === true ||
     n.title === "ws.send" ||
     n.title === "ws.broadcast");
 
@@ -132,7 +158,7 @@ function assignments(m: Model, ids: Set<string>): Record<string, boolean>[] {
   const names = [
     ...new Set(
       m.edges
-        .filter((e) => ids.has(e.from) && e.cond.trim())
+        .filter((e) => ids.has(e.from) && e.cond.trim() && !isExprCond(e.cond))
         .map((e) => condName(e.cond)),
     ),
   ].slice(0, 8);
@@ -150,7 +176,174 @@ const showAssign = (a: Record<string, boolean>): string => {
   return parts.length ? ` when ${parts.join(", ")}` : "";
 };
 
-export function lint(m: Model): Issue[] {
+/** The checks on the modules themselves: the library, the instances, the ports. */
+export function moduleIssues(m: Model): Issue[] {
+  const out: Issue[] = [];
+  const add = (
+    rule: string,
+    severity: Severity,
+    title: string,
+    detail: string,
+    node = "",
+  ): void => {
+    out.push({ rule, severity, title, detail, node, edge: "" });
+  };
+  const topInstance = (id: string): string =>
+    m.nodes.find((n) => n.kind === "module" && n.ref === id)?.id ?? "";
+  // instances: does the module exist, and is each of its ports connected?
+  const graphs = [
+    {
+      owner: "",
+      def: undefined as ModuleDef | undefined,
+      nodes: m.nodes,
+      edges: m.edges,
+    },
+    ...m.modules.map((d) => ({
+      owner: d.name,
+      def: d as ModuleDef | undefined,
+      nodes: d.nodes,
+      edges: d.edges,
+    })),
+  ];
+  // a port of an instance inside a module is wired when the module shows it as one
+  // of its own (a pipe does: its inputs and outputs are those of its stages)
+  const exposed = (
+    g: { def: ModuleDef | undefined },
+    nodeId: string,
+    portId: string,
+    dir: "inputs" | "outputs",
+  ): boolean =>
+    !!g.def?.[dir].some((p) => p.node === nodeId && p.via === portId);
+  for (const g of graphs) {
+    for (const n of g.nodes) {
+      if (n.kind !== "module") continue;
+      const where = g.owner ? ` (inside ${g.owner})` : "";
+      const def = findDef(m, n.ref);
+      if (!def) {
+        add(
+          "module-missing",
+          "error",
+          `${n.title} is an instance of a module that is gone${where}`,
+          "Delete the node, or add the module back to the library.",
+          g.owner ? "" : n.id,
+        );
+        continue;
+      }
+      for (const p of def.inputs)
+        if (
+          !exposed(g, n.id, p.id, "inputs") &&
+          !g.edges.some(
+            (e) =>
+              e.to === n.id &&
+              (e.toPort === p.id || (!e.toPort && e.msg === p.name)),
+          )
+        )
+          add(
+            "port-unwired",
+            "warn",
+            `${n.title}: nothing sends ${p.name}${where}`,
+            `The input port ${p.name} of ${def.name} has no edge coming in, so the module never runs from it.`,
+            g.owner ? "" : n.id,
+          );
+      for (const p of def.outputs)
+        if (
+          !exposed(g, n.id, p.id, "outputs") &&
+          !g.edges.some(
+            (e) => e.from === n.id && (e.fromPort === p.id || !e.fromPort),
+          )
+        )
+          add(
+            "port-unwired",
+            "info",
+            `${n.title}: ${p.name} goes nowhere${where}`,
+            `The output port ${p.name} of ${def.name} has no edge going out. Fine if nothing needs it.`,
+            g.owner ? "" : n.id,
+          );
+    }
+  }
+  // the library: bound ports, cycles, modules nobody uses
+  for (const d of m.modules) {
+    if (d.body === "pipe") {
+      if (d.stages.length === 0)
+        add(
+          "pipe-empty",
+          "info",
+          `${d.name} has no stage`,
+          "Open the pipe and add the modules a message goes through.",
+          topInstance(d.id),
+        );
+      d.stages.slice(0, -1).forEach((sid) => {
+        const sd = findDef(m, d.nodes.find((n) => n.id === sid)?.ref ?? "");
+        if (sd && !sd.outputs.some((p) => p.pass))
+          add(
+            "pipe-broken",
+            "warn",
+            `${d.name}: nothing continues after ${sd.name}`,
+            `${sd.name} has no output that passes the message on, so the stages after it never run. Mark an output as passing the message (the middleware next).`,
+            topInstance(d.id),
+          );
+      });
+    }
+    for (const issue of checkCode(d, m.plugins))
+      add(
+        issue.rule,
+        issue.severity,
+        issue.title,
+        issue.detail,
+        topInstance(d.id),
+      );
+    for (const [dir, list] of [
+      ["input", d.inputs],
+      ["output", d.outputs],
+    ] as const)
+      for (const p of d.body === "code" ? [] : list)
+        if (!p.node || !d.nodes.some((n) => n.id === p.node))
+          add(
+            "port-unbound",
+            "error",
+            `${d.name}: the ${dir} ${p.name || p.id} is bound to nothing`,
+            `Open the module and bind the port to a node of its body; a message cannot get in or out through an unbound port.`,
+            topInstance(d.id),
+          );
+    const reach = (id: string, seen: Set<string>): boolean => {
+      const x = findDef(m, id);
+      if (!x) return false;
+      return x.nodes.some(
+        (n) =>
+          n.kind === "module" &&
+          (n.ref === d.id ||
+            (!seen.has(n.ref) && reach(n.ref, new Set([...seen, n.ref])))),
+      );
+    };
+    if (reach(d.id, new Set([d.id])))
+      add(
+        "module-cycle",
+        "error",
+        `${d.name} contains itself`,
+        "A module cannot hold an instance of itself, directly or through other modules: it would never stop unfolding.",
+        topInstance(d.id),
+      );
+    if (
+      !graphs.some((g) =>
+        g.nodes.some((n) => n.kind === "module" && n.ref === d.id),
+      )
+    )
+      add(
+        "module-unused",
+        "info",
+        `${d.name} has no instance`,
+        "It is in the library but no graph uses it. Add it from the palette.",
+      );
+  }
+  return out;
+}
+
+/** the message ids a handler node takes: its name, or the input ports of its code */
+const takes = (n: FlowNode): string[] =>
+  n.code ? n.code.inputs.map((p) => p.name) : [n.title];
+
+export function lint(source: Model): Issue[] {
+  const m = flatten(source);
   const issues: Issue[] = [];
   const add = (
     rule: string,
@@ -172,7 +365,7 @@ export function lint(m: Model): Issue[] {
   // ---- effects: reply consumers, onError, timeouts ----
   for (const n of m.nodes) {
     if (n.kind !== "effect") continue;
-    const def = effectDef(n.title);
+    const def = effectDefIn(m.plugins, n.title);
     const out = outEdges(m, n.id);
     const replies = out.filter((e) => e.kind === "reply");
     const errors = out.filter((e) => e.kind === "error");
@@ -232,7 +425,7 @@ export function lint(m: Model): Issue[] {
       );
     for (const e of ins) {
       const from = findNode(m, e.from);
-      if (e.msg !== n.title && e.kind !== "effect")
+      if (!takes(n).includes(e.msg) && e.kind !== "effect")
         add(
           "msg-mismatch",
           "warn",
@@ -252,7 +445,7 @@ export function lint(m: Model): Issue[] {
   }
   const byTitle = new Map<string, FlowNode[]>();
   for (const n of m.nodes)
-    if (HANDLER_LIKE.includes(n.kind) || n.kind === "route") {
+    if ((HANDLER_LIKE.includes(n.kind) && !n.code) || n.kind === "route") {
       const k = `${n.kind === "route" ? "route" : "msg"}:${n.title}`;
       byTitle.set(k, [...(byTitle.get(k) ?? []), n]);
     }
@@ -295,7 +488,7 @@ export function lint(m: Model): Issue[] {
     const sub = reach(m, [rt.id]);
     const anyRespond = [...sub].some((id) => {
       const x = findNode(m, id);
-      return x ? isRespond(x) : false;
+      return x ? isRespond(x, m.plugins) : false;
     });
     if (!anyRespond) {
       add(
@@ -308,7 +501,7 @@ export function lint(m: Model): Issue[] {
       continue;
     }
     for (const a of assignments(m, sub)) {
-      if (!leads(m, rt.id, isRespond, a, true)) {
+      if (!leads(m, rt.id, (n) => isRespond(n, m.plugins), a, true)) {
         add(
           "route-path-no-respond",
           "warn",
@@ -370,6 +563,10 @@ export function lint(m: Model): Issue[] {
   };
   for (const n of m.nodes) if ((state.get(n.id) ?? 0) === 0) dfs(n.id);
   for (const c of cycles) {
+    // a module with code answers its own effects: a request and its reply are a
+    // cycle by design, and the code is what ends it
+    if (c.some((e) => findNode(m, e.from)?.code || findNode(m, e.to)?.code))
+      continue;
     const bounded = c.some((e) => e.cond.trim() !== "");
     add(
       "loop",
@@ -382,7 +579,7 @@ export function lint(m: Model): Issue[] {
     );
   }
   for (const n of m.nodes) {
-    if (laneOf(n) !== "app") continue;
+    if (laneOf(n) !== "app" || n.code) continue;
     const plain = outEdges(m, n.id).filter(
       (e) => e.kind === "effect" && e.cond.trim() === "",
     );
@@ -440,7 +637,7 @@ export function lint(m: Model): Issue[] {
   // ---- conditions ----
   for (const e of m.edges) {
     const c = condName(e.cond);
-    if (c && !(c in m.conds) && !(c in m.scenario.conds))
+    if (c && !isExprCond(e.cond) && !(c in m.conds) && !(c in m.scenario.conds))
       add(
         "cond-undefined",
         "info",
@@ -449,6 +646,7 @@ export function lint(m: Model): Issue[] {
         { edge: e.id },
       );
   }
+  issues.push(...moduleIssues(source));
   const order: Record<Severity, number> = { error: 0, warn: 1, info: 2 };
   return issues
     .filter(

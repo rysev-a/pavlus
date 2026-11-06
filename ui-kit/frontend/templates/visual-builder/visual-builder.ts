@@ -90,6 +90,12 @@ import {
 } from "./inspector.ts";
 import { parseProject, projectText } from "./io.ts";
 import { routeMock } from "./mock.ts";
+import { callFlow, routesOf } from "../flow-studio/flowlink.ts";
+import {
+  DEMOS as FLOW_DEMOS,
+  demoOf as flowDemoOf,
+} from "../flow-studio/demos.ts";
+import { parseProject as parseFlow } from "../flow-studio/model.ts";
 import {
   type Bp,
   type El,
@@ -140,7 +146,7 @@ export interface DiagramState {
 }
 
 export interface Sheet {
-  open: "" | "import" | "code" | "demos";
+  open: "" | "import" | "code" | "demos" | "flow";
   text: string;
   error: string;
 }
@@ -202,6 +208,14 @@ interface Derived {
   edgeInfo: { label: string; removable: boolean } | null;
   codeText: string;
   mockHint: string;
+  /** the diagram the project is linked to: its routes, and the demos to link to */
+  flowV: {
+    on: boolean;
+    name: string;
+    tables: string;
+    routes: { k: string; label: string; detail: string }[];
+    demos: { id: string; title: string }[];
+  };
   projectName: string;
   palette: PaletteGroup[];
   sectionLib: { id: SectionKind; label: string }[];
@@ -337,9 +351,38 @@ export function derive(c: Core): Derived {
         }
       : null,
     codeText: c.sheet.open === "code" ? generatedText(model) : "",
-    mockHint: model.mockOn
-      ? "Requests are answered by these routes, no network."
-      : "The mock server is off: requests go to the real network.",
+    mockHint: !model.mockOn
+      ? "The backend is off: requests go to the real network."
+      : model.flow
+        ? `The diagram "${model.flow.name}" answers the requests: its routes, its handlers, its tables. The tables start again with the preview.`
+        : "Requests are answered by these routes, no network.",
+    flowV: {
+      on: model.flow !== null,
+      name: model.flow?.name ?? "",
+      tables: model.flow
+        ? Object.entries(model.flow.db)
+            .map(([t, d]) => `${t} (${d.rows.length})`)
+            .join(", ")
+        : "",
+      routes: model.flow
+        ? routesOf(model.flow).map((r) => ({
+            k: r.id,
+            label: `${r.method} ${r.path}`,
+            detail: [
+              r.statuses.length ? `answers ${r.statuses.join(", ")}` : "",
+              r.body.length
+                ? `body: ${r.body.map((f) => f.name).join(", ")}`
+                : "",
+              r.query.length
+                ? `query: ${r.query.map((f) => f.name).join(", ")}`
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          }))
+        : [],
+      demos: FLOW_DEMOS.map((d) => ({ id: d.id, title: d.title })),
+    },
     projectName: model.name,
     palette: PALETTE,
     sectionLib: SECTION_LIBRARY,
@@ -1199,6 +1242,43 @@ export class VisualBuilder extends Component<VbState> {
     });
   }
 
+  /** link the project to a demo diagram of Flow Studio (by its id) */
+  flowConnect(msg: Message, state: VbState): Effect[] {
+    const id = msg.event?.value ?? "";
+    if (!FLOW_DEMOS.some((d) => d.id === id)) return [];
+    const flow = flowDemoOf(id).make();
+    return this._edit(
+      state,
+      { ...this._model(state), flow, mockOn: true },
+      "",
+      {
+        message: `Linked to the diagram "${flow.name}": its routes answer the requests.`,
+      },
+    );
+  }
+
+  flowDisconnect(_msg: Message, state: VbState): Effect[] {
+    return this._edit(state, { ...this._model(state), flow: null }, "", {
+      message: "The diagram is unlinked: the mock routes answer again.",
+    });
+  }
+
+  /** link the project to a diagram pasted as JSON (the export of Flow Studio) */
+  flowApply(_msg: Message, state: VbState): Effect[] {
+    const r = parseFlow(state.sheet.text);
+    if (typeof r === "string")
+      return this._commit(state, { sheet: { ...state.sheet, error: r } });
+    return this._edit(
+      state,
+      { ...this._model(state), flow: r, mockOn: true },
+      "",
+      {
+        sheet: NO_SHEET,
+        message: `Linked to the diagram "${r.name}": its routes answer the requests.`,
+      },
+    );
+  }
+
   mockToggle(_msg: Message, state: VbState): Effect[] {
     const m = this._model(state);
     return this._edit(state, { ...m, mockOn: !m.mockOn });
@@ -1517,7 +1597,39 @@ export class VisualBuilder extends Component<VbState> {
       };
     }
     for (const r of step.requests) {
-      if (m.mockOn) {
+      if (m.mockOn && m.flow) {
+        // the diagram is the backend: the request runs through it, against the
+        // tables the preview has kept
+        const a = callFlow(m.flow, run.db, {
+          method: r.method,
+          url: r.url,
+          body: r.body,
+          headers: r.headers,
+        });
+        const slots = run.slots.slice();
+        const cur = slots[r.slot];
+        if (cur)
+          slots[r.slot] = {
+            ...cur,
+            answer: { status: a.status, data: a.data },
+          };
+        run = {
+          ...run,
+          slots,
+          db: a.db,
+          log: [
+            ...run.log,
+            `${r.method} ${r.url} -> ${a.status} (the diagram, ${a.delay} ms)`,
+          ].slice(-40),
+        };
+        fx.push(
+          time.setTimeout(
+            `vb-mock-${r.slot}`,
+            Math.min(a.delay, 1500),
+            `mockDone${r.slot}`,
+          ),
+        );
+      } else if (m.mockOn) {
         const res = routeMock(m.mocks, r.method, r.url);
         const slots = run.slots.slice();
         const cur = slots[r.slot];
