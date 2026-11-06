@@ -16,6 +16,7 @@ import type { Server as NodeServer } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  createFlowFetch,
   createHttpServerPlugin,
   createPagesPlugin,
   createPostgresPlugin,
@@ -24,12 +25,12 @@ import {
   type PagesPlugin,
   type ServerApp,
 } from "@pavlus/backend";
+import type { Frontend } from "@pavlus/backend/ssr";
+import { renderDocument, renderPage } from "@pavlus/backend/ssr";
 import { createAdminApp } from "./app.ts";
 import { createPool } from "./db/pool.ts";
-import { resetStatements } from "./db/reset.ts";
-import { createFlowFetch } from "./flow-fetch.ts";
+import { resetStatements } from "./db/init/reset.ts";
 import { routes } from "./routes.ts";
-import { renderDocument, renderPage, type Frontend } from "./ssr.ts";
 
 const PORT = Number(process.env.PORT ?? 3000);
 // Plain paths: under jsdom (the tests) the global `URL` is not Node's.

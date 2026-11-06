@@ -8,6 +8,7 @@
     ".": "./src/mod.ts",
     "./testing": "./src/testing/mod.ts",
     "./plugins/*": "./src/plugins/*/mod.ts",
+    "./ssr": "./src/ssr/mod.ts",
     "./ctx": "./src/ctx.ts",
     "./routing": "./src/routing.ts"
   },

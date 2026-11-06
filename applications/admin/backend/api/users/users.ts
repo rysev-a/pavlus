@@ -1,16 +1,11 @@
-// Users (module): a class whose methods are the handlers of the users flow —
-// the method's name is the message id. Pure: (message, state) => effects.
-// Every db effect names its step (`id`) and its error handler (`errorId`); the
-// step's answer arrives as `${id}.onSuccess`, with the request's id stamped on
-// it, so a continuation is the same request as the message that started it.
-//
-// What one handler needs from the next (the id of the user being saved or
-// deleted) is parked in the request's own slice of the state
-// (`state.requests[rid]`) with pure `requests` effects — the same memory the
-// class-controller driver uses.
+// Users (api): a class whose methods are the handlers of the users flow — the
+// method's name is the message id. The db work is UserService's (db/services);
+// here a handler validates the input, parks what a continuation needs in the
+// request's own slice of the state (`state.requests[rid]`, pure `requests`
+// effects — the same memory the class-controller driver uses), and turns the
+// answers into http responses.
 
 import {
-  db,
   httpEffector,
   type HttpReq,
   idOf,
@@ -18,20 +13,13 @@ import {
   requestsEffector,
   rowsOf,
   type ServerState,
-  sql,
 } from "@pavlus/backend";
 import type { Effect, Message } from "@pavlus/core";
-
-/** One row of the list. `role` is the name; `role_id` feeds the edit form. */
-export interface UserRow {
-  id: number;
-  name: string;
-  email: string;
-  role_id: number;
-  role: string;
-}
-
-const COLS = sql`u.id, u.name, u.email, u.role_id, r.name AS role`;
+import {
+  type UserRow,
+  type UserSave,
+  UserService,
+} from "../../db/services/user-service.ts";
 
 /** This request's slice: what the continuations need. */
 const slice = (msg: Message, state: ServerState): Record<string, unknown> => {
@@ -41,15 +29,7 @@ const slice = (msg: Message, state: ServerState): Record<string, unknown> => {
 
 export class UsersAPI {
   "users.list"(): Effect[] {
-    return [
-      db.select({
-        id: "users.list",
-        errorId: "users.failed",
-        query: sql`SELECT ${COLS} FROM users u
-                    JOIN roles r ON r.id = u.role_id
-                   ORDER BY u.id`,
-      }),
-    ];
+    return [UserService.list()];
   }
 
   "users.list.onSuccess"(message: Message): Effect[] {
@@ -63,16 +43,7 @@ export class UsersAPI {
       return [
         httpEffector.makeResponse(404, { error: `no user ${req.params.id}` }),
       ];
-    return [
-      requestsEffector.set("userId", id),
-      db.select({
-        id: "users.get",
-        errorId: "users.failed",
-        query: sql`SELECT ${COLS} FROM users u
-                    JOIN roles r ON r.id = u.role_id
-                   WHERE u.id = ${id}`,
-      }),
-    ];
+    return [requestsEffector.set("userId", id), UserService.byId(id)];
   }
 
   "users.get.onSuccess"(message: Message, state: ServerState): Effect[] {
@@ -104,41 +75,25 @@ export class UsersAPI {
           error: "a user needs a name, an email and a role_id",
         }),
       ];
-    const id = idOf(req.params) ?? null; // PUT has one, POST creates
+    const save: UserSave = {
+      name,
+      email,
+      roleId,
+      id: idOf(req.params) ?? null,
+    };
     return [
-      requestsEffector.merge({ save: { name, email, roleId, id } }),
-      db.select({
-        id: "users.roleCheck",
-        errorId: "users.failed",
-        query: sql`SELECT id FROM roles WHERE id = ${roleId}`,
-      }),
+      requestsEffector.merge({ save }),
+      UserService.roleExists(save.roleId),
     ];
   }
 
   "users.roleCheck.onSuccess"(message: Message, state: ServerState): Effect[] {
-    const save = slice(message, state).save as {
-      name: string;
-      email: string;
-      roleId: number;
-      id: number | null;
-    };
+    const save = slice(message, state).save as UserSave;
     if (!oneOf(message))
       return [
         httpEffector.makeResponse(400, { error: `no role ${save.roleId}` }),
       ];
-    return [
-      db.execute({
-        id: "users.write",
-        errorId: "users.failed",
-        query: save.id
-          ? sql`UPDATE users SET name = ${save.name}, email = ${save.email},
-                   role_id = ${save.roleId}
-              WHERE id = ${save.id} RETURNING id`
-          : sql`INSERT INTO users (name, email, role_id)
-              VALUES (${save.name}, ${save.email}, ${save.roleId})
-              RETURNING id`,
-      }),
-    ];
+    return [UserService.write(save)];
   }
 
   "users.write.onSuccess"(message: Message, state: ServerState): Effect[] {
@@ -146,18 +101,10 @@ export class UsersAPI {
     if (!saved)
       return [
         httpEffector.makeResponse(404, {
-          error: `no user ${(slice(message, state).save as { id: number | null }).id}`,
+          error: `no user ${(slice(message, state).save as UserSave).id}`,
         }),
       ];
-    return [
-      db.select({
-        id: "users.fetch",
-        errorId: "users.failed",
-        query: sql`SELECT ${COLS} FROM users u
-                    JOIN roles r ON r.id = u.role_id
-                   WHERE u.id = ${saved.id}`,
-      }),
-    ];
+    return [UserService.fetch(saved.id)];
   }
 
   "users.fetch.onSuccess"(message: Message): Effect[] {
@@ -171,14 +118,9 @@ export class UsersAPI {
       return [
         httpEffector.makeResponse(404, { error: `no user ${req.params.id}` }),
       ];
-    // What references the user goes first: sessions, orders, payments.
     return [
       requestsEffector.set("deleteId", id),
-      db.execute({
-        id: "users.deleteSessions",
-        errorId: "users.failed",
-        query: sql`DELETE FROM sessions WHERE user_id = ${id}`,
-      }),
+      UserService.deleteSessions(id),
     ];
   }
 
@@ -187,13 +129,7 @@ export class UsersAPI {
     state: ServerState,
   ): Effect[] {
     const id = slice(message, state).deleteId as number;
-    return [
-      db.execute({
-        id: "users.deleteOrders",
-        errorId: "users.failed",
-        query: sql`DELETE FROM orders WHERE user_id = ${id}`,
-      }),
-    ];
+    return [UserService.deleteOrders(id)];
   }
 
   "users.deleteOrders.onSuccess"(
@@ -201,13 +137,7 @@ export class UsersAPI {
     state: ServerState,
   ): Effect[] {
     const id = slice(message, state).deleteId as number;
-    return [
-      db.execute({
-        id: "users.deletePayments",
-        errorId: "users.failed",
-        query: sql`DELETE FROM payments WHERE user_id = ${id}`,
-      }),
-    ];
+    return [UserService.deletePayments(id)];
   }
 
   "users.deletePayments.onSuccess"(
@@ -215,13 +145,7 @@ export class UsersAPI {
     state: ServerState,
   ): Effect[] {
     const id = slice(message, state).deleteId as number;
-    return [
-      db.execute({
-        id: "users.delete",
-        errorId: "users.failed",
-        query: sql`DELETE FROM users WHERE id = ${id} RETURNING id`,
-      }),
-    ];
+    return [UserService.delete(id)];
   }
 
   "users.delete.onSuccess"(message: Message, state: ServerState): Effect[] {

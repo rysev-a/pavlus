@@ -1,7 +1,7 @@
-// Reset (module): a class whose methods are the handlers of the messages with
+// Reset (api): a class whose methods are the handlers of the messages with
 // those ids. Rebuilds the demo data: the statements are read once at boot
-// (db/reset.ts) and passed to the constructor, so the handlers stay pure —
-// they only chain the db steps and count what came back.
+// (db/init/reset.ts) and passed to the constructor, so the handlers stay pure
+// — they only chain the db steps and count what came back.
 
 import { db, httpEffector, oneOf, sql } from "@pavlus/backend";
 import type { Effect, Message } from "@pavlus/core";

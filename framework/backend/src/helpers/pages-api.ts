@@ -1,16 +1,13 @@
-// Pages (module): a class whose methods are the handlers of the messages with
-// those ids. Every GET that is not an API route is a page of the frontend (or
-// one of its assets). The handler stays pure: it hands the path to the pages
-// plugin and answers whatever comes back with an http respond effect — the
-// server render included.
+// The pages route-helper: a class whose methods are the handlers of the pages
+// messages, ready to drop into an application's module list. Every GET that is
+// not an API route is a page of the frontend (or one of its assets); the
+// handler stays pure — it hands the path to the pages plugin and answers
+// whatever comes back with an http respond effect, the server render included.
 
-import {
-  httpEffector,
-  type HttpReq,
-  pagesEffector,
-  type ServedPage,
-} from "@pavlus/backend";
 import type { Effect, Message } from "@pavlus/core";
+import { httpEffector } from "../plugins/http/mod.ts";
+import { pagesEffector, type ServedPage } from "../plugins/pages/mod.ts";
+import type { HttpReq } from "../utils/controller.ts";
 
 export class PagesAPI {
   "pages.show"(message: Message): Effect[] {

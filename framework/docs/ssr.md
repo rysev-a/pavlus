@@ -22,7 +22,10 @@ import { renderToString, serializeState } from "@pavlus/frontend/ssr";
 
 const store = createStorePlugin(initialState);
 const http = createHttpPlugin({ fetch: inProcess }); // answers the API without a socket
-const app = createApp({ app: shell, plugins: [store, http, inert("dom"), inert("router")] });
+const app = createApp({
+  app: shell,
+  plugins: [store, http, inert("dom"), inert("router")],
+});
 app.dispatch({ id: "routeChanged", payload: { path, search, hash: "" } });
 await http.settled(); // every request is answered, including the ones the answers started
 const state = store.getState();
@@ -74,4 +77,6 @@ rendered, so `setRoute` sends no `enter`: the data is not loaded twice.
 
 A complete example, with Vite in development and a build for production, is
 the [admin-app](../../applications/admin/README.md#server-side-rendering)
-(`backend/ssr.ts`, `backend/server.ts`, `frontend/entry-server.ts`).
+(`@pavlus/backend`'s pages plugin and flow fetch, `@pavlus/backend/ssr`'s
+render, wired in `backend/server.ts`, with `app/entry-server.ts` as the
+module the server loads).

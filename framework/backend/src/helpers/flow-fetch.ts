@@ -1,24 +1,24 @@
 // The API as a fetch, for the server render: the same pure application the
-// http flow runs, executed here in-process — routing, db effects over the
-// shared pool (the real pg plugin), and the http respond effect turned into a
+// http flow runs, executed in-process — routing, db effects over the shared
+// pool (the real pg plugin), and the http respond effect turned into a
 // Response. No socket, no second implementation of the API: what the browser
 // gets over the wire is what the render gets.
 
+import type { Effect, Message } from "@pavlus/core";
+import type pg from "pg";
+import { newRid } from "../ctx.ts";
+import { normalizeRespond, type RespondEffect } from "../plugins/http/mod.ts";
+import { createPostgresPlugin } from "../plugins/postgres/mod.ts";
 import {
   applyRequestsEffect,
-  createPostgresPlugin,
+  type ServerState,
+} from "../plugins/requests/mod.ts";
+import {
   dispatchRoute,
-  newRid,
-  normalizeRespond,
-  type RespondEffect,
   type RouteTable,
   type Router,
-  type ServerState,
   toRouter,
-} from "@pavlus/backend";
-import type pg from "pg";
-import type { Effect, Message } from "@pavlus/core";
-import type { AdminApp } from "./app.ts";
+} from "../routing.ts";
 
 type PgEffect = Parameters<
   ReturnType<typeof createPostgresPlugin>["handle"]
@@ -63,7 +63,7 @@ function toResponse(e: Effect, method: string): Response {
  * is one request: its own rid, its own request slice, the same message ids.
  */
 export function createFlowFetch(
-  app: AdminApp,
+  app: (message: Message, state: ServerState) => Effect[],
   routes: RouteTable | Router,
   pool: pg.Pool,
 ): typeof fetch {

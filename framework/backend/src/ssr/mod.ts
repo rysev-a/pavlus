@@ -1,14 +1,18 @@
 /**
- * Server-side rendering. The application is the same pure code as in the
- * browser (app/); here it runs without a DOM, with the API answered
- * in-process (a fetch that runs the same pure backend application — see
- * flow-fetch.ts), until its data is in. Then its view is rendered to HTML and
- * its state to JSON, and the browser hydrates both (frontend/main.ts).
+ * Server-side rendering, the framework half. The application is the same pure
+ * code as in the browser (the app's entry-server); here it runs without a DOM,
+ * with the API answered in-process (a fetch that runs the same pure backend
+ * application — see helpers/flow-fetch.ts), until its data is in. Then its
+ * view is rendered to HTML and its state to JSON, and the browser hydrates
+ * both.
  *
  * The app's dom effects land on an inert plugin: on the server there is
  * nothing to repaint along the way — the whole page is rendered once, from the
  * final state. The children are embedded in the app's view, so the one
  * render includes them; the browser hydrates the whole page.
+ *
+ * This module is a "./ssr" subpath on purpose: it imports @pavlus/frontend
+ * values, and the package's main entry stays free of it at runtime.
  */
 import {
   type Component,
@@ -19,7 +23,7 @@ import {
 import { createHttpPlugin, createStorePlugin } from "@pavlus/frontend/plugins";
 import { renderToString, serializeState } from "@pavlus/frontend/ssr";
 
-/** What app/entry-server.ts exports. */
+/** What the app's entry-server.ts exports. */
 export interface Frontend {
   app: Component;
   initialState: unknown;

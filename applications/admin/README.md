@@ -14,12 +14,15 @@ app/        the application — pure, isomorphic code:
 frontend/   the browser shell: main.ts wires the plugins (store, dom, http,
             router, the devtools agent) and mounts the app into #app
 backend/    the server, on @pavlus/backend: app.ts (the application — one
-            pure function over modules/), routes.ts (the route table),
-            modules/ (users, roles, reset, pages — pure handlers, db effects
-            in, http effects out), plugins/pages.ts (Vite, dist/ and the
-            server render — the impure parts behind one pages.serve effect),
-            flow-fetch.ts (the same pure app as a fetch, for the render),
-            ssr.ts (renders pages from the same app/ code), db/ (schema, seed)
+            pure function over the api/ modules), routes.ts (the route
+            table), api/ (users/, roles/, reset/ — classes whose methods are
+            the handlers of the messages with those ids, db effects in, http
+            effects out; the pages module is the framework's PagesAPI),
+            db/ (init/ — schema, seed, the reset statements; services/ —
+            UserService, RoleService: static classes that build the db
+            effects; pool.ts). The pages plugin, the flow fetch and the
+            server render are the framework's too: @pavlus/backend's
+            createPagesPlugin, createFlowFetch and @pavlus/backend/ssr
 public/     the stylesheet — the ui-kit look (the shadcn "new-york" tokens and
             .ui-* classes, copied from ui-kit/frontend/styles.css)
 tests/      the app over the real API on the real database, and the server render

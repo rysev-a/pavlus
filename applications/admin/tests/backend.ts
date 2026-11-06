@@ -1,5 +1,5 @@
 import { createPool } from "../backend/db/pool.ts";
-import { resetDatabase } from "../backend/db/reset.ts";
+import { resetDatabase } from "../backend/db/init/reset.ts";
 import { startServer, type StartedServer } from "../backend/server.ts";
 
 export interface Backend {

@@ -10,8 +10,8 @@ import { createPavlusDebug } from "../../../framework/debug-panel/agent/pavlus-d
 import { app as shell } from "../app/app.ts";
 import { type AppState, initialState } from "../app/state.ts";
 
-// A page rendered on the server (backend/ssr.ts) comes with its state in a
-// script: the app starts from it and the mount in `#app` hydrates that
+// A page rendered on the server (@pavlus/backend/ssr) comes with its state
+// in a script: the app starts from it and the mount in `#app` hydrates that
 // markup instead of rendering it again. Without it, this is a plain start.
 const serialized = (globalThis as { __PAVLUS_STATE__?: string })
   .__PAVLUS_STATE__;

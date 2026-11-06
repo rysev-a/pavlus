@@ -439,7 +439,7 @@ pavlus 中的 SSR 有意保持得很小。这份列表就是全部的事实：
 - **标记必须保留。** 如果你从 HTML 中去掉注释 `<!--pavlus-->` 和 `<!--/pavlus-->`（压缩工具、手写的模板），浏览器就看不出这是服务端 render，并会在第一份之后再追加第二份页面副本。请用真实的输出测试你的流程。
 - **不管理 `<head>`。** 标题和 meta 标签由你负责：在 `renderDocument` 中根据 state 计算它们。
 - **没有 base 路径。** 服务器传入的是它收到的路径。如果你的站点是在某个前缀下提供的，请在 dispatch `routeChanged` 之前去掉它，就像 ui-kit 的 `windowAt` 在浏览器中所做的那样（见 [路由](page:concepts-routing)）。
-- **没有 HTTP 服务器。** 框架给你的是函数。路由 HTTP 请求、提供构建后的文件以及在开发中运行 Vite，都是你的服务器的工作。本仓库的 `admin-app` 有一个完整的服务器，在 `backend/ssr.ts` 和 `backend/server.ts` 中，`frontend/entry-server.ts` 是服务器加载的模块。
+- **没有 HTTP 服务器。** 框架给你的是函数。路由 HTTP 请求、提供构建后的文件以及在开发中运行 Vite，都是你的服务器的工作。本仓库的 `admin-app` 有一个完整的服务器，在 `@pavlus/backend/ssr` 和 `backend/server.ts` 中，`app/entry-server.ts` 是服务器加载的模块。
 
 > [!WARNING] 每个请求一个 store
 > 永远不要在服务器模块的顶层创建 store plugin。state 会被所有请求共享，访客可能看到上一个访客的数据。请在处理单个请求的函数内部创建 store、`http` plugin 和应用，并在结束时 dispose 应用。

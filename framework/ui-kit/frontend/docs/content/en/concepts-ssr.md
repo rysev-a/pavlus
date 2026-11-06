@@ -439,7 +439,7 @@ SSR in pavlus is deliberately small. This list is the whole truth:
 - **The markers must survive.** If you strip the comments `<!--pavlus-->` and `<!--/pavlus-->` from the HTML (a minifier, a hand-made template), the browser does not see a server render and appends a second copy of the page after the first one. Test your pipeline with the real output.
 - **No `<head>` management.** The title and meta tags are yours: compute them from the state in `renderDocument`.
 - **No base path.** The server passes the path it received. If your site is served under a prefix, strip it before you dispatch `routeChanged`, as the ui-kit's `windowAt` does in the browser (see [routing](page:concepts-routing)).
-- **No HTTP server.** The framework gives you the functions. Routing HTTP requests, serving the built files and running Vite in development are your server's work. The `admin-app` of this repository has a complete one, in `backend/ssr.ts` and `backend/server.ts`, with `frontend/entry-server.ts` as the module that the server loads.
+- **No HTTP server.** The framework gives you the functions. Routing HTTP requests, serving the built files and running Vite in development are your server's work. The `admin-app` of this repository has a complete one, in `@pavlus/backend/ssr` and `backend/server.ts`, with `app/entry-server.ts` as the module that the server loads.
 
 > [!WARNING] A store per request
 > Never create the store plugin at the top of the server module. The state would be shared by all the requests, and a visitor could see the data of the previous one. Create the store, the `http` plugin and the application inside the function that handles one request, and dispose of the application at the end.

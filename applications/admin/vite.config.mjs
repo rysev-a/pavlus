@@ -6,7 +6,8 @@ import { pavlus } from "@pavlus/frontend/vite";
 // with `configFile: false` — see there for why.
 //
 // On the server the framework is imported by Node, not bundled, so the
-// backend (backend/ssr.ts) and the app (app/) share one `Component` class.
+// server render (@pavlus/backend/ssr) and the app (app/) share one
+// `Component` class.
 const framework = (id) => id.startsWith("@pavlus/frontend");
 
 export default ({ isSsrBuild }) => ({

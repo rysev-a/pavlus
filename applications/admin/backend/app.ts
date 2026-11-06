@@ -2,15 +2,15 @@
 // are the handlers of the messages with those ids (`"users.list"(message,
 // state)`); the function below asks the modules in order, and the first one
 // that has the method answers. The wiring (server.ts) hands it to
-// createServerApp; flow-fetch.ts runs the same function in-process for the
-// server render.
+// createServerApp; the flow fetch (the framework's) runs the same function
+// in-process for the server render.
 
 import type { ServerState } from "@pavlus/backend";
+import { PagesAPI } from "@pavlus/backend";
 import type { Effect, Message } from "@pavlus/core";
-import { PagesAPI } from "./modules/pages.ts";
-import { ResetAPI } from "./modules/reset.ts";
-import { RolesAPI } from "./modules/roles.ts";
-import { UsersAPI } from "./modules/users.ts";
+import { ResetAPI } from "./api/reset/reset.ts";
+import { RolesAPI } from "./api/roles/roles.ts";
+import { UsersAPI } from "./api/users/users.ts";
 
 /** A handler method of a module: one message id, (message, state) => effects. */
 type ModuleMethod = (

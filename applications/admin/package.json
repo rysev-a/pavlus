@@ -8,7 +8,7 @@
     "dev": "node --watch --env-file-if-exists=.env backend/server.ts",
     "build": "vite build && vite build --ssr app/entry-server.ts --outDir dist/server",
     "start": "NODE_ENV=production node --env-file-if-exists=.env backend/server.ts",
-    "db:init": "node --env-file-if-exists=.env backend/db/init.ts",
+    "db:init": "node --env-file-if-exists=.env backend/db/init/main.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

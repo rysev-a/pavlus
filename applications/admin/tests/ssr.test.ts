@@ -2,13 +2,13 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, expect, test } from "vitest";
+import { createFlowFetch } from "@pavlus/backend";
+import { renderDocument, renderPage } from "@pavlus/backend/ssr";
 import * as frontend from "../app/entry-server.ts";
 import { createAdminApp } from "../backend/app.ts";
 import { createPool } from "../backend/db/pool.ts";
-import { resetDatabase, resetStatements } from "../backend/db/reset.ts";
-import { createFlowFetch } from "../backend/flow-fetch.ts";
+import { resetDatabase, resetStatements } from "../backend/db/init/reset.ts";
 import { routes } from "../backend/routes.ts";
-import { renderDocument, renderPage } from "../backend/ssr.ts";
 
 // The server render runs the app in-process: the API is the same pure
 // application, executed over one pool by flow-fetch — no socket.
