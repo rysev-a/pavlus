@@ -177,8 +177,11 @@ export function createLocalPlugin(
   let offWheel: (() => void) | undefined;
   let offFull: (() => void) | undefined;
   let offPointer: (() => void) | undefined;
+  /** a second finger came down: the drag of the first one is over (cancelled where it was) */
+  let cancelPointer: (() => void) | undefined;
   /** where the pointer last went down (px of the window): where a drag started */
   let pressed: { x: number; y: number } | undefined;
+  let primaryDown = true;
   let offDown: (() => void) | undefined;
   /** the page itself is the full screen (where the browser has no API for it) */
   let pseudoFull = false;
@@ -201,6 +204,9 @@ export function createLocalPlugin(
       // drag may have only a move at the far end
       const down = (e: Event): void => {
         const p = e as PointerEvent;
+        // a second finger is a pinch, not a press: no drag follows it
+        primaryDown = p.isPrimary !== false;
+        if (!primaryDown) return;
         if (typeof p.clientX === "number")
           pressed = { x: p.clientX, y: p.clientY };
       };
@@ -358,6 +364,11 @@ export function createLocalPlugin(
           // two fingers on the element are a pinch: the same message, as a wheel that
           // zooms in by the ratio of the distances (`dy` of a wheel is -ln(ratio) / 0.0018)
           let gap = 0;
+          let mid: { x: number; y: number } | undefined;
+          const middle = (t: TouchList): { x: number; y: number } => ({
+            x: (t[0].clientX + t[1].clientX) / 2,
+            y: (t[0].clientY + t[1].clientY) / 2,
+          });
           const spread = (t: TouchList): number =>
             Math.hypot(
               t[0].clientX - t[1].clientX,
@@ -366,11 +377,15 @@ export function createLocalPlugin(
           const onStart = (e: Event): void => {
             const t = (e as TouchEvent).touches;
             gap = t.length === 2 ? spread(t) : 0;
+            mid = t.length === 2 ? middle(t) : undefined;
+            // the first finger was dragging something (the board): it is the pinch now
+            if (t.length === 2) cancelPointer?.();
           };
           const onTouch = (e: Event): void => {
             const t = (e as TouchEvent).touches;
             if (t.length !== 2) {
               gap = 0;
+              mid = undefined;
               return;
             }
             const el = (t[0].target as Element | null)?.closest?.(
@@ -379,24 +394,31 @@ export function createLocalPlugin(
             if (!el) return;
             e.preventDefault();
             const now = spread(t);
-            if (gap > 0 && now > 0 && now !== gap) {
+            const at = middle(t);
+            if (gap > 0 && now > 0) {
               const r = el.getBoundingClientRect();
+              // zoom about where the fingers were; the fingers moving together carry the
+              // board with them (`mx`, `my`: how far the middle of them went)
               ctx.dispatch({
                 id: effect.onSuccess,
                 payload: {
                   dy: -Math.log(now / gap) / 0.0018,
-                  x: (t[0].clientX + t[1].clientX) / 2 - r.left,
-                  y: (t[0].clientY + t[1].clientY) / 2 - r.top,
+                  x: (mid ?? at).x - r.left,
+                  y: (mid ?? at).y - r.top,
+                  mx: at.x - (mid ?? at).x,
+                  my: at.y - (mid ?? at).y,
                   w: r.width,
                   h: r.height,
                 },
               });
             }
             gap = now;
+            mid = at;
           };
           const onEnd = (e: Event): void => {
             const t = (e as TouchEvent).touches;
             gap = t.length === 2 ? spread(t) : 0;
+            mid = t.length === 2 ? middle(t) : undefined;
           };
           doc.addEventListener("touchstart", onStart, { passive: true });
           doc.addEventListener("touchmove", onTouch, { passive: false });
@@ -444,6 +466,8 @@ export function createLocalPlugin(
           return;
         }
         case "drag": {
+          // the press was a second finger's: the first one's drag goes on (or is cancelled)
+          if (!primaryDown) return;
           offPointer?.();
           const win = doc?.defaultView;
           if (!win) return;
@@ -482,8 +506,10 @@ export function createLocalPlugin(
             });
           };
           // a second finger (a pinch) is not the pointer that is followed
+          let last: { clientX: number; clientY: number } | undefined;
           const move = (e: Event): void => {
             if ((e as PointerEvent).isPrimary === false) return;
+            last = e as PointerEvent;
             send(e as PointerEvent, false);
           };
           // the first sample is where the pointer went down
@@ -492,6 +518,7 @@ export function createLocalPlugin(
               id: effect.onSuccess,
               payload: { x: pressed.x, y: pressed.y, done: false, over: null },
             });
+            last = { clientX: pressed.x, clientY: pressed.y };
             pressed = undefined;
           }
           const stop = (e: Event): void => {
@@ -500,6 +527,13 @@ export function createLocalPlugin(
             send(e as PointerEvent, true, e.type === "pointercancel");
             offPointer?.();
             offPointer = undefined;
+            cancelPointer = undefined;
+          };
+          cancelPointer = () => {
+            if (last) send(last as PointerEvent, true, true);
+            offPointer?.();
+            offPointer = undefined;
+            cancelPointer = undefined;
           };
           win.addEventListener("pointermove", move);
           win.addEventListener("pointerup", stop);
@@ -521,6 +555,7 @@ export function createLocalPlugin(
       offWheel?.();
       offFull?.();
       offPointer?.();
+      cancelPointer = undefined;
     },
   };
 }

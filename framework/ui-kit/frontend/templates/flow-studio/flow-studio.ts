@@ -1731,9 +1731,7 @@ export class FlowStudio extends Component<FsState> {
     return p ? { x: p.x, y: p.y } : null;
   }
 
-  cvDown(msg: Message, state: FsState): Effect[] {
-    const p = msg.payload as { x: number; y: number };
-    void p;
+  cvDown(_msg: Message, state: FsState): Effect[] {
     // the pointer is followed wherever it goes, off the board too
     return [
       ...this._commit(state, {
@@ -2052,11 +2050,22 @@ export class FlowStudio extends Component<FsState> {
 
   /** Shift + wheel: zoom toward the pointer */
   boardWheel(msg: Message, state: FsState): Effect[] {
-    const w = msg.payload as { dy: number; x: number; y: number };
+    const w = msg.payload as {
+      dy: number;
+      x: number;
+      y: number;
+      mx?: number;
+      my?: number;
+    };
     const factor = Math.exp(-w.dy * 0.0018);
-    return this._commit(state, {
-      vp: this._clamp(state, zoomAt(state.vp, factor, w.x, w.y)),
-    });
+    const zoomed = zoomAt(state.vp, factor, w.x, w.y);
+    // two fingers moving together (a pinch) carry the board with them
+    const vp = {
+      ...zoomed,
+      x: zoomed.x - (w.mx ?? 0) / zoomed.z,
+      y: zoomed.y - (w.my ?? 0) / zoomed.z,
+    };
+    return this._commit(state, { vp: this._clamp(state, vp) });
   }
 
   toggleFull(): Effect[] {

@@ -995,6 +995,103 @@ describe("the helpers of the page (the local plugin)", () => {
     expect(f.ctx.sent).toHaveLength(n);
   });
 
+  test("a pinch zooms about where the fingers were and carries the board with them", () => {
+    const f = frame();
+    f.run(local.wheel("#fs-flow", "wheel"));
+    const el = document.querySelector("#fs-flow")!;
+    const touch = (type: string, pts: [number, number][]) => {
+      const e = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperty(e, "touches", {
+        value: pts.map(([clientX, clientY]) => ({
+          clientX,
+          clientY,
+          target: el,
+        })),
+      });
+      el.dispatchEvent(e);
+    };
+    touch("touchstart", [
+      [110, 70],
+      [210, 70],
+    ]);
+    // spread by 2 and the middle goes 30 right, 10 down
+    touch("touchmove", [
+      [90, 80],
+      [290, 80],
+    ]);
+    const m = f.ctx.sent.at(-1)!.payload as Record<string, number>;
+    expect([m.x, m.y]).toEqual([150, 50]);
+    expect([m.mx, m.my]).toEqual([30, 10]);
+    // the next step is about where the fingers are now
+    touch("touchmove", [
+      [80, 80],
+      [300, 80],
+    ]);
+    const n = f.ctx.sent.at(-1)!.payload as Record<string, number>;
+    expect([n.x, n.y, n.mx, n.my]).toEqual([180, 60, 0, 0]);
+  });
+
+  test("a second finger ends the drag of the first one, where it was, as cancelled", () => {
+    const f = frame();
+    f.run(local.wheel("#fs-flow", "wheel"));
+    f.run(local.drag("moved"));
+    const el = document.querySelector("#fs-flow")!;
+    const move = new Event("pointermove");
+    Object.assign(move, { clientX: 10, clientY: 20, isPrimary: true });
+    window.dispatchEvent(move);
+    const down = new Event("touchstart", { bubbles: true });
+    Object.defineProperty(down, "touches", {
+      value: [
+        { clientX: 10, clientY: 20, target: el },
+        { clientX: 90, clientY: 20, target: el },
+      ],
+    });
+    el.dispatchEvent(down);
+    expect(f.ctx.sent.at(-1)!.payload).toMatchObject({
+      x: 10,
+      y: 20,
+      done: true,
+      cancel: true,
+    });
+    // and the first finger is not followed any more
+    const n = f.ctx.sent.length;
+    window.dispatchEvent(move);
+    expect(f.ctx.sent).toHaveLength(n);
+  });
+
+  test("a drag asked for after a second finger went down does not start", () => {
+    document.body.innerHTML = "<div></div>";
+    const plugin = createLocalPlugin({ document });
+    const sent: Message[] = [];
+    const ctx = {
+      dispatch: (m: Message) => void sent.push(m),
+      getState: () => ({}),
+      dispatchEffect: () => {},
+    };
+    plugin.init?.(ctx);
+    const run = (e: Effect) =>
+      (plugin.handle as (e: Effect, c: typeof ctx) => void)(e, ctx);
+    const down = (isPrimary: boolean) => {
+      const e = new Event("pointerdown", { bubbles: true });
+      Object.assign(e, { clientX: 5, clientY: 6, isPrimary });
+      document.body.dispatchEvent(e);
+    };
+    const move = () =>
+      window.dispatchEvent(
+        new MouseEvent("pointermove", { clientX: 9, clientY: 9 }),
+      );
+    down(false);
+    run(local.drag("moved"));
+    move();
+    expect(sent).toHaveLength(0);
+    // the next press of a first finger is followed again
+    down(true);
+    run(local.drag("moved"));
+    move();
+    expect(sent.length).toBeGreaterThan(0);
+    plugin.dispose?.();
+  });
+
   test("a second finger is not the pointer a drag follows", () => {
     const f = frame();
     f.run(local.drag("moved"));
