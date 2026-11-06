@@ -157,6 +157,7 @@ The same handler then runs unchanged on real sockets, a real Postgres and a real
 | time                 | `createTimePlugin()`                            | `timeEffector` (timers, cron)          |
 | log                  | `createLogPlugin()`                             | `logEffector` (+ metrics)              |
 | crypto               | `createCryptoPlugin()`                          | `cryptoEffector` (scrypt hash, tokens) |
+| pages (the frontend) | `createPagesPlugin({ mode, root, document })`   | `pagesEffector` (serve)                |
 | request/shared state | `createRequestsPlugin()` (added by the runtime) | `requestsEffector`                     |
 
 One runtime, `createServerApp({ app, plugins, routes, state, limits })`, adds what a server needs around a pure function: per-`rid` tracking, **cancellation** (a client that hangs up cancels its running query), **deadlines**, late replies discarded, errors isolated (a throwing handler is a `500`, never a crash), a message budget per request, and **graceful shutdown**. `traceOf(rid)` gives the ordered messages and effects of any request.

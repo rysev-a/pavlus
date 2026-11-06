@@ -145,6 +145,15 @@ case "user.signup.created":
 
 Two design choices to notice: the transport is injected (so the plugin is tested without SMTP, and the app test never sees it), and the `job.ac.signal.aborted` guard in `.then` is what makes "cancel sends no reply" true even when the transport ignores the signal and finishes anyway.
 
+## A plugin of the box: `pages`
+
+`src/plugins/pages` is a real plugin written exactly this way — worth reading next to the mailer. It serves a frontend (one effect: `pages.serve(path, search)`, one reply: `pages.served` with the whole `{status, headers, body}`) and shows two patterns the mailer does not:
+
+- **The plugin owns a mode, the app owns the rendering.** `dev` boots Vite in middleware mode (writing into a buffer that stands in for the response — the bytes go back as the one reply, so the flow keeps its `rid`), `dist` serves the build, `none` answers 404 json. The _document_ — the server render through `@pavlus/frontend` — is injected as a `document({ template, frontend, path, search })` option, because everything that imports the frontend package stays in the app; the plugin only serves.
+- **A failure of the render is an answer, not an error.** A `document` hook that throws is logged and the plain template is served (200 — the app still renders in the browser); only a failure of serving itself reaches `pages.failed`.
+
+See [its README](../src/plugins/pages/README.md) for the fields and the modes.
+
 ## Testing a plugin
 
 A plugin needs no runtime to be tested: give it an effect and a `collector()` (a dispatcher that records messages and lets you `await next("id")`). Make the I/O controllable from the test (here a transport you resolve by hand), so there are no sleeps and no flakiness:

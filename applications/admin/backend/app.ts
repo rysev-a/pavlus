@@ -1,27 +1,38 @@
-// The application: one pure function. Each module answers the messages of its
-// routes and returns undefined for the others, so the modules compose with a
-// loop. The wiring (server.ts) hands it to createServerApp; flow-fetch.ts runs
-// the same function in-process for the server render.
+// The application: one pure function. Each module is a class whose methods
+// are the handlers of the messages with those ids (`"users.list"(message,
+// state)`); the function below asks the modules in order, and the first one
+// that has the method answers. The wiring (server.ts) hands it to
+// createServerApp; flow-fetch.ts runs the same function in-process for the
+// server render.
 
 import type { ServerState } from "@pavlus/backend";
-import type { Effect, Message } from "@pavlus/frontend";
-import { createResetModule } from "./modules/reset.ts";
-import { handle as mod_pages } from "./modules/pages.ts";
-import { handle as mod_roles } from "./modules/roles.ts";
-import { handle as mod_users } from "./modules/users.ts";
+import type { Effect, Message } from "@pavlus/core";
+import { PagesAPI } from "./modules/pages.ts";
+import { ResetAPI } from "./modules/reset.ts";
+import { RolesAPI } from "./modules/roles.ts";
+import { UsersAPI } from "./modules/users.ts";
+
+/** A handler method of a module: one message id, (message, state) => effects. */
+type ModuleMethod = (
+  message: Message,
+  state: ServerState,
+) => Effect | Effect[] | void;
 
 /** The pure application. `resetSql`: the statements `POST /api/reset` runs. */
 export function createAdminApp(resetSql: string[]) {
   const modules = [
-    mod_users,
-    mod_roles,
-    createResetModule(resetSql),
-    mod_pages,
+    new UsersAPI(),
+    new RolesAPI(),
+    new ResetAPI(resetSql),
+    new PagesAPI(),
   ];
   return (msg: Message, state: ServerState): Effect[] => {
-    for (const handle of modules) {
-      const effects = handle(msg, state);
-      if (effects) return effects;
+    for (const m of modules) {
+      const fn = (m as unknown as Record<string, ModuleMethod>)[msg.id];
+      if (typeof fn !== "function") continue;
+      const out = fn.call(m, msg, state);
+      if (out === undefined) return [];
+      return Array.isArray(out) ? out : [out];
     }
     return [];
   };

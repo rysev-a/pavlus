@@ -17,20 +17,19 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createHttpServerPlugin,
+  createPagesPlugin,
   createPostgresPlugin,
   createServerApp,
+  type FrontendMode,
+  type PagesPlugin,
   type ServerApp,
 } from "@pavlus/backend";
 import { createAdminApp } from "./app.ts";
 import { createPool } from "./db/pool.ts";
 import { resetStatements } from "./db/reset.ts";
 import { createFlowFetch } from "./flow-fetch.ts";
-import {
-  createPagesPlugin,
-  type FrontendMode,
-  type PagesPlugin,
-} from "./plugins/pages.ts";
 import { routes } from "./routes.ts";
+import { renderDocument, renderPage, type Frontend } from "./ssr.ts";
 
 const PORT = Number(process.env.PORT ?? 3000);
 // Plain paths: under jsdom (the tests) the global `URL` is not Node's.
@@ -74,12 +73,22 @@ export function startServer(
   const app = createAdminApp(resetStatements());
 
   // The pages plugin loads a page's data through the same pure application,
-  // over the same pool — no second API for the render.
+  // over the same pool — no second API for the render. The document itself is
+  // the app's server render (ssr.ts): everything that needs @pavlus/frontend
+  // stays in the app; the plugin only serves.
+  const ssrFetch = createFlowFetch(app, routes, pool);
   const pages: PagesPlugin = createPagesPlugin({
     mode,
     root: ROOT,
     quiet: opts.quiet,
-    ssr: createFlowFetch(app, routes, pool),
+    document: async ({ template, frontend, path, search }) =>
+      renderDocument(
+        template,
+        await renderPage((await frontend()) as Frontend, ssrFetch, {
+          path,
+          search,
+        }),
+      ),
   });
   const http = createHttpServerPlugin({ port });
   const serverApp = createServerApp({

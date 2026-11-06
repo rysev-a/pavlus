@@ -15,6 +15,7 @@
   "dependencies": {
     "@pavlus/frontend": "*",
     "@pavlus/backend": "*",
+    "@pavlus/core": "*",
     "pg": "^8.16.3"
   },
   "devDependencies": {

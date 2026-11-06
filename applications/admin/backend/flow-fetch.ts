@@ -17,7 +17,7 @@ import {
   toRouter,
 } from "@pavlus/backend";
 import type pg from "pg";
-import type { Effect, Message } from "@pavlus/frontend";
+import type { Effect, Message } from "@pavlus/core";
 import type { AdminApp } from "./app.ts";
 
 type PgEffect = Parameters<

@@ -49,6 +49,7 @@ export {
 export type { RawHttpServerPlugin, RawHttpStats } from "./plugins/http/raw.ts";
 export { createRawHttpServerPlugin } from "./plugins/http/raw.ts";
 export * from "./plugins/log/mod.ts";
+export * from "./plugins/pages/mod.ts";
 export * from "./plugins/postgres/mod.ts";
 export * from "./plugins/redis/mod.ts";
 export type {

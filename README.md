@@ -9,7 +9,7 @@ framework/     the framework, published as @pavlus/*
   frontend/    @pavlus/frontend  DOM plugins, the template compiler, the vite plugin,
                                  SSR — everything a browser app needs (depends on core)
   backend/     @pavlus/backend   the server runtime: per-request flows, http/ws/pg/redis
-                                 plugins, class controllers (depends on core)
+                                 plugins, the pages plugin, class controllers (depends on core)
   ui-kit/      @pavlus/ui-kit    every shadcn component as a pavlus template
   debug-panel/                   the devtools panel + agents (in-repo, not published)
   editors/                       zed extension + tree-sitter grammar

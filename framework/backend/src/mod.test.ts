@@ -15,6 +15,7 @@ describe("public surface", () => {
       "createLogPlugin",
       "createRequestsPlugin",
       "createCryptoPlugin",
+      "createPagesPlugin",
     ])
       expect(typeof (api as any)[name], name).toBe("function");
     expect(Object.keys(api).filter((k) => /^create\w+App$/.test(k))).toEqual([
@@ -32,6 +33,7 @@ describe("public surface", () => {
       "logEffector",
       "requestsEffector",
       "cryptoEffector",
+      "pagesEffector",
     ])
       expect(typeof (api as any)[name], name).toBe("object");
     for (const name of ["reply", "ok", "fail", "deliver", "traceOf", "route"])

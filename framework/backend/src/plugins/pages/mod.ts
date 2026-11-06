@@ -1,22 +1,23 @@
-// The pages plugin: everything impure about the frontend — Vite in development,
-// the build in `dist/`, and the server render itself — behind one effect:
+// The pages plugin: everything impure about serving a frontend — Vite in
+// development, the build in `dist/`, the assets — behind one effect:
 //
 //   pages.serve({ path, search })  ->  replies `pages.served` with the whole
 //   answer {status, headers, body}, so the pure handler answers the request
-//   with an http respond effect (SSR included: for ssr we return http).
+//   with one http respond effect (the server-rendered document included: for
+//   ssr we return http).
 //
-// The data of a server-rendered page comes from the same pure application the
-// API uses: `ssr` (built by flow-fetch.ts) runs it over the shared pool, with
-// no socket. Assets are read into memory and answered the same way (the files
-// are small — styles, scripts, icons), so every answer is one respond effect.
+// The document itself is injected: `document({ template, frontend, path,
+// search })` renders the whole HTML — typically the server render through
+// @pavlus/frontend, which the app (not the plugin) imports. Without the hook,
+// or when it throws, the plain template is served and the app renders in the
+// browser.
 
 import { readFile, stat } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { pathToFileURL } from "node:url";
-import { deliver, fail, ok, toErrorPayload } from "@pavlus/backend";
-import type { Plugin, PluginContext } from "@pavlus/frontend";
-import { type Frontend, renderDocument, renderPage } from "../ssr.ts";
+import type { Plugin, PluginContext } from "@pavlus/core";
+import { deliver, fail, ok, toErrorPayload } from "../../ctx.ts";
 
 /** Where the pages come from. */
 export type FrontendMode = "dev" | "dist" | "none";
@@ -84,8 +85,11 @@ const TYPES: Record<string, string> = {
 interface Pages {
   /** index.html for `path` (in development, with Vite's client script). */
   template(path: string): Promise<string>;
-  /** app/entry-server.ts, loaded. */
-  frontend(): Promise<Frontend>;
+  /**
+   * The frontend's server entry (app + initialState), loaded. Opaque to the
+   * plugin: the `document` hook knows what to do with it.
+   */
+  frontend(): Promise<unknown>;
   /**
    * Serves an asset of the mode; null when the request is not one (a page).
    * In development Vite's own middleware decides, writing into a buffer.
@@ -98,7 +102,7 @@ interface Pages {
 function distPages(root: string): Pages {
   const dist = join(root, "dist");
   let template: Promise<string> | undefined;
-  let frontend: Promise<Frontend> | undefined;
+  let frontend: Promise<unknown> | undefined;
   return {
     template: () =>
       (template ??= readFile(join(dist, "index.html"), "utf8").catch((e) => {
@@ -108,7 +112,7 @@ function distPages(root: string): Pages {
     frontend: () =>
       (frontend ??= import(
         pathToFileURL(join(dist, "server", "entry-server.js")).href
-      ) as Promise<Frontend>),
+      )),
     async asset(path) {
       if (!extname(path)) return null;
       // `normalize` collapses `..`, and the join keeps the result inside dist.
@@ -238,7 +242,7 @@ async function devPages(root: string, quiet: boolean): Promise<Pages> {
     },
     async frontend() {
       try {
-        return (await vite.ssrLoadModule("/app/entry-server.ts")) as Frontend;
+        return await vite.ssrLoadModule("/app/entry-server.ts");
       } catch (e) {
         if (e instanceof Error) vite.ssrFixStacktrace(e);
         throw e;
@@ -273,14 +277,29 @@ async function devPages(root: string, quiet: boolean): Promise<Pages> {
 
 // ------------------------------------------------------------------ plugin --
 
+/** What the `document` hook renders one page with. */
+export interface DocumentInput {
+  /** index.html for the path, already through the mode's transform. */
+  template: string;
+  /** The frontend's server entry, loaded by the mode (dev: by Vite). */
+  frontend: () => Promise<unknown>;
+  /** The request path, and "?a=b" or "". */
+  path: string;
+  search: string;
+}
+
 export interface PagesPluginOptions {
   mode: FrontendMode;
   /** The app root: where index.html, public/ and dist/ live. */
   root: string;
   /** No Vite log (tests). */
   quiet?: boolean;
-  /** The API as a fetch: pages load their data through the same pure app. */
-  ssr: typeof fetch;
+  /**
+   * Renders the whole document — the server render. The answer is the full
+   * HTML. When the hook throws, or is not given, the plain template is served
+   * and the app renders in the browser.
+   */
+  document?: (input: DocumentInput) => Promise<string>;
 }
 
 export interface PagesPlugin extends Plugin<PagesEffect, unknown> {
@@ -297,7 +316,10 @@ export function createPagesPlugin(opts: PagesPluginOptions): PagesPlugin {
         ? Promise.resolve(distPages(opts.root))
         : undefined;
 
-  /** Renders the page; if that fails, the plain document (the app renders in the browser). */
+  /**
+   * Renders the page; if that fails, the plain document (the app renders in
+   * the browser).
+   */
   async function render(pages: Pages, path: string, search: string) {
     let template: string;
     try {
@@ -308,13 +330,17 @@ export function createPagesPlugin(opts: PagesPluginOptions): PagesPlugin {
       });
     }
     let html = template;
-    try {
-      html = renderDocument(
-        template,
-        await renderPage(await pages.frontend(), opts.ssr, { path, search }),
-      );
-    } catch (e) {
-      console.error(`render ${path}:`, e);
+    if (opts.document) {
+      try {
+        html = await opts.document({
+          template,
+          frontend: () => pages.frontend(),
+          path,
+          search,
+        });
+      } catch (e) {
+        console.error(`render ${path}:`, e);
+      }
     }
     return htmlAnswer(html);
   }
