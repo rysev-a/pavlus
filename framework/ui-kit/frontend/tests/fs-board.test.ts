@@ -1135,6 +1135,61 @@ describe("the dock: drag a component from the top of the board onto the plot", (
     expect(model(s).nodes.length).toBe(n);
   });
 
+  test("from the list, up and down is the list scrolling: nothing is taken, the list stays", () => {
+    const s = board();
+    s.send("toggleDockMore");
+    const n = model(s).nodes.length;
+    s.send("dockDown", ["handler", "orders.list", true]);
+    s.send("dragMove", { x: 60, y: 200, done: false });
+    s.send("dragMove", {
+      x: 62,
+      y: 260,
+      done: false,
+      rx: 62,
+      ry: 260,
+      inside: true,
+    });
+    expect(s.state.drag).toBeNull();
+    expect(s.state.dockMore).toBe(true);
+    s.send("dragMove", {
+      x: 70,
+      y: 300,
+      done: true,
+      rx: 70,
+      ry: 300,
+      inside: true,
+    });
+    expect(model(s).nodes.length).toBe(n);
+  });
+
+  test("from the list, sideways takes the row, and a cancelled gesture drops nothing", () => {
+    const s = board();
+    s.send("toggleDockMore");
+    const n = model(s).nodes.length;
+    s.send("dockDown", ["handler", "orders.list", true]);
+    s.send("dragMove", { x: 60, y: 200, done: false });
+    s.send("dragMove", {
+      x: 200,
+      y: 210,
+      done: false,
+      rx: 200,
+      ry: 210,
+      inside: true,
+    });
+    expect(s.state.drag).toMatchObject({ kind: "add", live: true });
+    s.send("dragMove", {
+      x: 220,
+      y: 210,
+      done: true,
+      cancel: true,
+      rx: 220,
+      ry: 210,
+      inside: true,
+    });
+    expect(s.state.drag).toBeNull();
+    expect(model(s).nodes.length).toBe(n);
+  });
+
   test("dragged over the board it shows where it would be, and the drop puts it there, centered", () => {
     const s = board();
     const n = model(s).nodes.length;

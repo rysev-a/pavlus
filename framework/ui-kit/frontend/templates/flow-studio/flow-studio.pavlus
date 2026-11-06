@@ -218,7 +218,7 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
                 for g in palette key g.lane
                   h3.fs-dockmore__h {g.lane}
                   for it in g.items key it.label
-                    button.fs-dockrow(type="button" data-kind=it.kind @pointerdown.prevent=dockDown(it.kind, it.title))
+                    button.fs-dockrow(type="button" data-kind=it.kind @pointerdown.prevent=dockDown(it.kind, it.title, true))
                       span.fs-ic.fs-dock__ic(data-kind=it.kind)
                       span.fs-dockrow__label {it.label}
                 h3.fs-dockmore__h Modules

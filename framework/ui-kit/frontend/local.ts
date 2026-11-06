@@ -447,7 +447,11 @@ export function createLocalPlugin(
           offPointer?.();
           const win = doc?.defaultView;
           if (!win) return;
-          const send = (e: PointerEvent, done: boolean): void => {
+          const send = (
+            e: PointerEvent,
+            done: boolean,
+            cancel = false,
+          ): void => {
             const under = doc?.elementFromPoint?.(e.clientX, e.clientY);
             const over = under
               ?.closest?.("[data-drop]")
@@ -461,6 +465,7 @@ export function createLocalPlugin(
                 x: e.clientX,
                 y: e.clientY,
                 done,
+                ...(cancel ? { cancel: true } : {}),
                 over: over ?? null,
                 ...(box
                   ? {
@@ -491,7 +496,8 @@ export function createLocalPlugin(
           }
           const stop = (e: Event): void => {
             if ((e as PointerEvent).isPrimary === false) return;
-            send(e as PointerEvent, true);
+            // the browser took the gesture (a scroll): it did not end where the pointer is
+            send(e as PointerEvent, true, e.type === "pointercancel");
             offPointer?.();
             offPointer = undefined;
           };

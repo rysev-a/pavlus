@@ -283,6 +283,8 @@ export type Drag =
       cx: number | null;
       cy: number | null;
       live: boolean;
+      /** taken from the list (a finger there may mean scrolling it, not taking the row) */
+      list: boolean;
       x: number;
       y: number;
       inside: boolean;
@@ -2159,15 +2161,22 @@ export class FlowStudio extends Component<FsState> {
       rx?: number;
       ry?: number;
       inside?: boolean;
+      cancel?: boolean;
     };
     if (d.kind === "add") {
+      // the browser took the gesture (a scroll): nothing is dropped
+      if (p.cancel) return this._light(state, { drag: null });
       // the first sample is where the pointer was pressed
       if (d.cx === null || d.cy === null)
         return p.done
           ? this._light(state, { drag: null })
           : this._light(state, { drag: { ...d, cx: p.x, cy: p.y } });
-      const live =
-        d.live || Math.abs(p.x - d.cx) + Math.abs(p.y - d.cy) >= DRAG_SLOP;
+      const dx = Math.abs(p.x - d.cx);
+      const dy = Math.abs(p.y - d.cy);
+      // from the list, up and down is the list scrolling and sideways takes the row
+      if (d.list && !d.live && dy >= DRAG_SLOP && dy > dx && !p.done)
+        return this._light(state, { drag: null });
+      const live = d.live || (d.list ? dx >= DRAG_SLOP : dx + dy >= DRAG_SLOP);
       const inside = p.inside === true;
       // the pointer on the board is a place of the plot
       const x = inside ? state.vp.x + (p.rx ?? 0) / state.vp.z : d.x;
@@ -2297,6 +2306,7 @@ export class FlowStudio extends Component<FsState> {
   _pressAdd(
     state: FsState,
     what: Extract<Drag, { kind: "add" }>["what"],
+    list = false,
   ): Effect[] {
     return [
       ...this._light(state, {
@@ -2306,6 +2316,7 @@ export class FlowStudio extends Component<FsState> {
           cx: null,
           cy: null,
           live: false,
+          list,
           x: 0,
           y: 0,
           inside: false,
@@ -2318,17 +2329,21 @@ export class FlowStudio extends Component<FsState> {
 
   /** a kind of component of the dock (or an item of its list), pressed */
   dockDown(msg: Message, state: FsState): Effect[] {
-    const [kind, title] = msg.payload as [NodeKind, string];
+    const [kind, title, list] = msg.payload as [NodeKind, string, boolean?];
     // an external of a plugin of the project stands behind that plugin
     const owner =
       kind === "external"
         ? this._model(state).plugins.find((p) => p.external === title)
         : undefined;
-    return this._pressAdd(state, {
-      kind,
-      title,
-      ...(owner ? { plugin: owner.name } : {}),
-    });
+    return this._pressAdd(
+      state,
+      {
+        kind,
+        title,
+        ...(owner ? { plugin: owner.name } : {}),
+      },
+      list === true,
+    );
   }
 
   /** a module of the library, pressed: an instance of it is what is dragged */
@@ -2336,7 +2351,7 @@ export class FlowStudio extends Component<FsState> {
     const ref = String(msg.payload);
     const def = findDef(this._root(state), ref);
     return def
-      ? this._pressAdd(state, { kind: "module", title: def.name, ref })
+      ? this._pressAdd(state, { kind: "module", title: def.name, ref }, true)
       : [];
   }
 
@@ -2355,6 +2370,7 @@ export class FlowStudio extends Component<FsState> {
       cx: 0,
       cy: 0,
       live: true,
+      list: false,
       x,
       y,
       inside: true,
