@@ -65,7 +65,7 @@ export function initialState(root = "", look: Look = startLook()): AppState {
     root,
     look,
     tab: "board",
-    flowStudio: stateOf({ ...emptyModel(), name: "My board" }),
+    flowStudio: stateOf({ ...emptyModel(), name: "My board", frames: [] }),
     visualBuilder: initialUi,
   };
 }

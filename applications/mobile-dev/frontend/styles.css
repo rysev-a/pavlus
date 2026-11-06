@@ -65,37 +65,28 @@ body {
 }
 
 /* ---- the board on a phone: the board is the screen ------------------------
-   Flow Studio keeps its toolbar in one row you swipe, drops what is for a desk
-   (the run bar, the quick-add line, the minimap and hints) and gives the rest of
-   the height to the board. Components are added from the dock on the board. */
+   No panels on top: no toolbar, no messages, no zoom bar, no frames. The board
+   gets all the height; components come from the dock on it, the view is moved with
+   a finger on the background and zoomed with two fingers. */
 .md-main .fs {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  padding: 6px;
-  gap: 6px;
+  padding: 0;
+  gap: 0;
   box-sizing: border-box;
 }
-.md-main .fs-brand__title,
+.md-main .fs-top,
+.md-main .fs-msg,
+.md-main .fs-sheet,
 .md-main .fs-run,
 .md-main .fs-addbar,
+.md-main .fs-flowbar,
 .md-main .fs-under,
 .md-main .fs-resize,
-.md-main .fs-summary {
+.md-main .fs-fullbtn {
   display: none;
-}
-.md-main .fs-top {
-  flex: none;
-}
-.md-main .fs-top__row--tools {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding-bottom: 2px;
-}
-.md-main .fs-top__row--tools > * {
-  flex: none;
 }
 .md-main .fs-body,
 .md-main .fs-main,
@@ -114,21 +105,28 @@ body {
   flex-direction: column;
   min-height: 0;
   max-height: none;
+  border: 0;
+  border-radius: 0;
 }
 .md-main .fs-flow {
   flex: 1;
   min-height: 0;
   min-width: 0;
   height: auto;
+  /* a finger on the board moves it and two fingers zoom it: the page does neither */
+  touch-action: none;
 }
 .md-main .fs-side {
   bottom: calc(52px + env(safe-area-inset-bottom));
 }
-/* the dock fits a narrow screen: its icons are 30px, nine of them and the more button */
+/* the dock fits a narrow screen */
 .md-main .fs-dock {
   max-width: calc(100% - 16px);
   overflow-x: auto;
 }
-.md-main .fs-tabsel {
+/* a board that was saved with frames (lanes) shows them no more: components are free on the plot */
+.md-main .fs-frame,
+.md-main .fs-frame__head,
+.md-main .fs-frame__size {
   display: none;
 }

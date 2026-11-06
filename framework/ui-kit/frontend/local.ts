@@ -84,6 +84,7 @@ export const localEffector = {
    * Replies `{ dy, x, y, w, h }` for the wheel turned over the element with Shift
    * (or Ctrl, which is a pinch on a trackpad) held: `x`, `y` are the pointer in px
    * from the element's corner. The page does not scroll for it; a plain wheel does.
+   * A pinch of two fingers on the element is the same message (a wheel of the right size).
    */
   wheel: (selector: string, onSuccess: string): LocalEffect => ({
     plugin: "local",
@@ -354,8 +355,60 @@ export function createLocalPlugin(
             });
           };
           doc.addEventListener("wheel", fn, { passive: false, capture: true });
-          offWheel = () =>
+          // two fingers on the element are a pinch: the same message, as a wheel that
+          // zooms in by the ratio of the distances (`dy` of a wheel is -ln(ratio) / 0.0018)
+          let gap = 0;
+          const spread = (t: TouchList): number =>
+            Math.hypot(
+              t[0].clientX - t[1].clientX,
+              t[0].clientY - t[1].clientY,
+            );
+          const onStart = (e: Event): void => {
+            const t = (e as TouchEvent).touches;
+            gap = t.length === 2 ? spread(t) : 0;
+          };
+          const onTouch = (e: Event): void => {
+            const t = (e as TouchEvent).touches;
+            if (t.length !== 2) {
+              gap = 0;
+              return;
+            }
+            const el = (t[0].target as Element | null)?.closest?.(
+              effect.selector,
+            );
+            if (!el) return;
+            e.preventDefault();
+            const now = spread(t);
+            if (gap > 0 && now > 0 && now !== gap) {
+              const r = el.getBoundingClientRect();
+              ctx.dispatch({
+                id: effect.onSuccess,
+                payload: {
+                  dy: -Math.log(now / gap) / 0.0018,
+                  x: (t[0].clientX + t[1].clientX) / 2 - r.left,
+                  y: (t[0].clientY + t[1].clientY) / 2 - r.top,
+                  w: r.width,
+                  h: r.height,
+                },
+              });
+            }
+            gap = now;
+          };
+          const onEnd = (e: Event): void => {
+            const t = (e as TouchEvent).touches;
+            gap = t.length === 2 ? spread(t) : 0;
+          };
+          doc.addEventListener("touchstart", onStart, { passive: true });
+          doc.addEventListener("touchmove", onTouch, { passive: false });
+          doc.addEventListener("touchend", onEnd, { passive: true });
+          doc.addEventListener("touchcancel", onEnd, { passive: true });
+          offWheel = () => {
             doc.removeEventListener("wheel", fn, { capture: true });
+            doc.removeEventListener("touchstart", onStart);
+            doc.removeEventListener("touchmove", onTouch);
+            doc.removeEventListener("touchend", onEnd);
+            doc.removeEventListener("touchcancel", onEnd);
+          };
           return;
         }
         case "fullscreen": {
@@ -423,7 +476,11 @@ export function createLocalPlugin(
               },
             });
           };
-          const move = (e: Event): void => send(e as PointerEvent, false);
+          // a second finger (a pinch) is not the pointer that is followed
+          const move = (e: Event): void => {
+            if ((e as PointerEvent).isPrimary === false) return;
+            send(e as PointerEvent, false);
+          };
           // the first sample is where the pointer went down
           if (pressed) {
             ctx.dispatch({
@@ -433,6 +490,7 @@ export function createLocalPlugin(
             pressed = undefined;
           }
           const stop = (e: Event): void => {
+            if ((e as PointerEvent).isPrimary === false) return;
             send(e as PointerEvent, true);
             offPointer?.();
             offPointer = undefined;

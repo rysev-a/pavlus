@@ -954,6 +954,61 @@ describe("the helpers of the page (the local plugin)", () => {
     expect(f.ctx.sent).toHaveLength(1);
   });
 
+  test("two fingers on the element are a pinch: a wheel that zooms by the ratio of the distances", () => {
+    const f = frame();
+    f.run(local.wheel("#fs-flow", "wheel"));
+    const el = document.querySelector("#fs-flow")!;
+    const touch = (type: string, pts: [number, number][]) => {
+      const e = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperty(e, "touches", {
+        value: pts.map(([clientX, clientY]) => ({
+          clientX,
+          clientY,
+          target: el,
+        })),
+      });
+      el.dispatchEvent(e);
+      return e;
+    };
+    touch("touchstart", [
+      [110, 70],
+      [210, 70],
+    ]);
+    // the fingers spread to twice the distance: the zoom doubles
+    const e = touch("touchmove", [
+      [60, 70],
+      [260, 70],
+    ]);
+    expect(e.defaultPrevented).toBe(true);
+    const m = f.ctx.sent.at(-1)!.payload as {
+      dy: number;
+      x: number;
+      y: number;
+    };
+    expect(Math.exp(-m.dy * 0.0018)).toBeCloseTo(2);
+    // the middle of the fingers is the point that stays
+    expect([m.x, m.y]).toEqual([150, 50]);
+    // one finger is a pan, not a pinch
+    const n = f.ctx.sent.length;
+    touch("touchend", [[60, 70]]);
+    touch("touchmove", [[70, 70]]);
+    expect(f.ctx.sent).toHaveLength(n);
+  });
+
+  test("a second finger is not the pointer a drag follows", () => {
+    const f = frame();
+    f.run(local.drag("moved"));
+    const move = (isPrimary: boolean, x: number) => {
+      const e = new Event("pointermove");
+      Object.assign(e, { clientX: x, clientY: 0, isPrimary });
+      window.dispatchEvent(e);
+    };
+    move(true, 10);
+    move(false, 500);
+    const xs = f.ctx.sent.map((m) => (m.payload as { x: number }).x);
+    expect(xs).toEqual([10]);
+  });
+
   test("drag follows the pointer off the element and ends with done", () => {
     const f = frame();
     f.run(local.drag("moved"));
