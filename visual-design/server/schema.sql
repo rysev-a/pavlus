@@ -1,7 +1,7 @@
 -- Visual Design: what the application keeps.
 -- A project is a name and its documents: `flow` (the Flow Studio diagram) and
 -- `interface` (the Visual Builder project, wired to that diagram), each the JSON
--- text the studio exports. It runs when the server starts and changes nothing there.
+-- text the studio exports, and `theme` (the colour theme of the app being designed). It runs when the server starts and changes nothing there.
 
 create table if not exists projects (
   id serial primary key,

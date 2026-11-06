@@ -35,7 +35,8 @@ Open <http://localhost:5190>. Or each part on its own: `npm run db:up`,
 A name and two documents, the JSON the editors export:
 
 - `flow`: the diagram (swimlanes of messages and effects, modules, pipes, code);
-- `interface`: the Visual Builder project.
+- `interface`: the Visual Builder project;
+- `theme`: the colour theme of the app being designed (see below).
 
 The interface is **wired to the diagram**: each time it is opened, its `flow` is the
 project's diagram as it is now, so a route you draw in the diagram answers the
@@ -57,6 +58,23 @@ another, and are tried again after a failure; a load waits for the saves before 
 document that could not be read is never written over. The bar shows the state:
 *Saving...*, *Saved*, *Not saved: trying again*.
 
+## Color themes
+
+Two themes, both from the ui-kit's panel (about 40 VS Code themes such as Dracula, One Dark,
+Nord, Monokai, Solarized and Tokyo Night, plus other design systems, fonts, styles, corners and
+sizes; Export gives the stylesheet):
+
+- **the editor's theme** (the palette button, and the sun / moon for light and dark): the bar, the
+  panels and the diagram. It is remembered in the browser.
+- **the app's theme** (*App theme*, in a project): the interface you are designing, on the design
+  canvas and in the preview, including its dashboard, tiles and chart colors. It is saved with the
+  project in Postgres (the `theme` document) and is independent of the editor's, so a coffee shop
+  front desk can be Dracula inside a light editor. *Reset* gives the app the editor's theme back.
+
+`frontend/app-theme.ts` sets the theme's CSS variables on the frame of the designed interface only
+(a `<style>` rule for `.vb-frame`). The few `.dark ...` selectors of the kit follow the editor's mode,
+not the app's.
+
 ## API
 
 `server/routes.ts` is the whole table:
@@ -67,7 +85,7 @@ POST   /projects                    { name, docs?: { flow, interface } }
 GET    /projects/:id
 PATCH  /projects/:id                { name }
 DELETE /projects/:id
-GET    /projects/:id/docs/:key      { text }   (key: flow | interface; null when not there yet)
+GET    /projects/:id/docs/:key      { text }   (key: flow | interface | theme; null when not there yet)
 PUT    /projects/:id/docs/:key      { text }
 ```
 

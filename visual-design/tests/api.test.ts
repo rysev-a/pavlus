@@ -127,6 +127,23 @@ describe.skipIf(!up)("projects API (real Postgres)", () => {
     expect((await call("DELETE", "/projects/999999")).status).toBe(404);
   });
 
+  it("keeps the theme of the app as a document of its own", async () => {
+    const id = made[0];
+    const look = JSON.stringify({ mode: "dark", palette: "vs-dracula" });
+    expect(
+      (await call("PUT", `/projects/${id}/docs/theme`, { text: look })).status,
+    ).toBe(200);
+    expect((await call("GET", `/projects/${id}/docs/theme`)).json).toEqual({
+      text: look,
+    });
+    const got = (await call("GET", `/projects/${id}`)).json as any;
+    expect(got.project.docs).toContain("theme");
+    // the other documents are left alone
+    expect(
+      ((await call("GET", `/projects/${id}/docs/interface`)).json as any).text,
+    ).toBe('{"name":"ui"}');
+  });
+
   it("deleting a project deletes its documents", async () => {
     const id = (
       (await call("POST", "/projects", { name: "Gone", docs: { flow: "f" } }))

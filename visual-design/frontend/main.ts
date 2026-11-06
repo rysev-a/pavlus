@@ -16,8 +16,20 @@ import {
   createTimePlugin,
 } from "@service-laboratory/pavlus/plugins";
 import { createFilesPlugin } from "../../ui-kit/frontend/files.ts";
-import { createThemePlugin } from "../../ui-kit/frontend/theme.ts";
-import { app as shell, type AppState, initialState } from "../app/app.ts";
+import { createExportPlugin } from "../../ui-kit/frontend/export.ts";
+import { createRandomPlugin } from "../../ui-kit/frontend/random.ts";
+import {
+  createThemePlugin,
+  initialLook,
+  LOOK_KEY,
+} from "../../ui-kit/frontend/theme.ts";
+import {
+  app as shell,
+  type AppState,
+  initialState,
+  startLook,
+} from "../app/app.ts";
+import { createAppThemePlugin } from "./app-theme.ts";
 import { createWorkspace } from "./workspace.ts";
 
 // The application code (the shell and the two editors) is pure. Everything that
@@ -26,7 +38,16 @@ import { createWorkspace } from "./workspace.ts";
 // the workspace (their `local` plugin, answered by the server).
 const { local, workspace } = createWorkspace({ base: "/api" });
 
-export const store = createStorePlugin<AppState>(initialState("dark"));
+/** the colour theme the person chose last time, else the dark one of Flow Studio */
+function savedLook() {
+  try {
+    return localStorage.getItem(LOOK_KEY) ? initialLook() : startLook();
+  } catch {
+    return startLook();
+  }
+}
+
+export const store = createStorePlugin<AppState>(initialState(savedLook()));
 
 export const app = createApp<AppState>({
   app: paintOnWrite(shell),
@@ -39,6 +60,9 @@ export const app = createApp<AppState>({
     createSvgPlugin(),
     createFilesPlugin(),
     createThemePlugin(),
+    createRandomPlugin(),
+    createExportPlugin(),
+    createAppThemePlugin(),
     local,
     workspace,
   ],

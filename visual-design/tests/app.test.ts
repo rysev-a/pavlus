@@ -258,3 +258,209 @@ describe("what a new project starts from", () => {
     expect(isTemplate("nope")).toBe(false);
   });
 });
+
+describe("the colour theme", () => {
+  type Handler = (m: Message, s: AppState) => Effect[];
+  const run = (name: string, s: AppState, m: Message): AppState =>
+    after(s, (app as unknown as Record<string, Handler>)[name](m, s));
+  const base = initialState();
+
+  it("starts dark, with the look of Flow Studio", () => {
+    expect(base.look.mode).toBe("dark");
+  });
+
+  it("a theme is chosen, shown, and remembered", () => {
+    const m = msg("themepanel.palette", ["vs-dracula", "dark"]);
+    const effects = (app as unknown as Record<string, Handler>)[
+      "themepanel.palette"
+    ](m, base);
+    const apply = effects.find(
+      (e) => (e as { plugin: string }).plugin === "theme",
+    ) as unknown as {
+      look: { palette: string };
+      persist: boolean;
+    };
+    expect(apply.look.palette).toBe("vs-dracula");
+    expect(apply.persist).toBe(true);
+    const s = after(base, effects);
+    expect(s.look.palette).toBe("vs-dracula");
+    expect(s.css).toContain("--background");
+  });
+
+  it("the light / dark switch goes to the other mode of the same theme family", () => {
+    const dracula = run(
+      "themepanel.palette",
+      base,
+      msg("themepanel.palette", ["vs-dracula", "dark"]),
+    );
+    const light = run("toggleMode", dracula, msg("toggleMode"));
+    expect(light.look.mode).toBe("light");
+    expect(light.look.palette).not.toBe("vs-dracula");
+    expect(run("toggleMode", light, msg("toggleMode")).look.mode).toBe("dark");
+  });
+
+  it("opens the panel for a theme and closes it with the same button", () => {
+    const open = run("openPanel", base, msg("openPanel", "editor"));
+    expect(open.panelOpen).toBe(true);
+    expect(open.target).toBe("editor");
+    expect(run("openPanel", open, msg("openPanel", "editor")).panelOpen).toBe(
+      false,
+    );
+    expect(
+      run("themepanel.close", open, msg("themepanel.close")).panelOpen,
+    ).toBe(false);
+  });
+
+  it("picks a colour family tab", () => {
+    const s = run(
+      "themepanel.family",
+      base,
+      msg("themepanel.family", undefined, { value: "vscode" }),
+    );
+    expect(s.family).toBe("vscode");
+    expect(s.shown.id).toBe("vscode");
+  });
+
+  it("a random theme asks the random plugin, and applies the answer", () => {
+    const ask = (app as unknown as Record<string, () => Effect[]>)[
+      "themepanel.random"
+    ]();
+    expect(ask[0]).toMatchObject({ plugin: "random" });
+    const s = run("randomPicked", base, msg("randomPicked", 0));
+    expect(s.look.palette).toBeTruthy();
+  });
+
+  it("resets to the default look of the current mode", () => {
+    const s = run(
+      "themepanel.reset",
+      run(
+        "themepanel.palette",
+        base,
+        msg("themepanel.palette", ["vs-nord", "dark"]),
+      ),
+      msg("themepanel.reset"),
+    );
+    expect(s.look.palette).not.toBe("vs-nord");
+    expect(s.look.mode).toBe("dark");
+  });
+});
+
+describe("the theme of the app being designed", () => {
+  type Handler = (m: Message, s: AppState) => Effect[];
+  const call = (name: string, s: AppState, m: Message): Effect[] =>
+    (app as unknown as Record<string, Handler>)[name](m, s);
+  const run = (name: string, s: AppState, m: Message): AppState =>
+    after(s, call(name, s, m));
+  const inProject = after(
+    initialState(),
+    routeTo(initialState(), "/projects/4/interface"),
+  );
+  const http = (e: Effect[]) =>
+    e.filter((x) => (x as { plugin: string }).plugin === "http") as unknown as {
+      id: string;
+      url: string;
+      method?: string;
+      body?: { text: string };
+    }[];
+
+  it("is the editor's until the project says otherwise, and is asked for when a project opens", () => {
+    expect(initialState().appLook).toBeNull();
+    const e = routeTo(initialState(), "/projects/4/interface");
+    expect(http(e).map((r) => r.url)).toContain("/api/projects/4/docs/theme");
+    expect(e).toContainEqual(
+      expect.objectContaining({ plugin: "app-theme", vars: null }),
+    );
+  });
+
+  it("the panel changes the theme of the app when it is open for it, and not the editor's", () => {
+    const s0 = run("openPanel", inProject, msg("openPanel", "app"));
+    expect(s0.target).toBe("app");
+    const effects = call(
+      "themepanel.palette",
+      s0,
+      msg("themepanel.palette", ["vs-dracula", "dark"]),
+    );
+    const s = after(s0, effects);
+    expect(s.appLook?.palette).toBe("vs-dracula");
+    expect(s.look.palette).toBe(inProject.look.palette);
+    // shown in the frame, kept with the project, and nothing is set on <html>
+    expect(effects).toContainEqual(
+      expect.objectContaining({ plugin: "app-theme" }),
+    );
+    expect(
+      effects.some((x) => (x as { plugin: string }).plugin === "theme"),
+    ).toBe(false);
+    const put = http(effects)[0];
+    expect(put.method).toBe("PUT");
+    expect(put.url).toBe("/api/projects/4/docs/theme");
+    expect(JSON.parse(put.body!.text).palette).toBe("vs-dracula");
+  });
+
+  it("the editor's theme is still the editor's when the panel is open for it", () => {
+    const s0 = run("openPanel", inProject, msg("openPanel", "editor"));
+    const effects = call(
+      "themepanel.palette",
+      s0,
+      msg("themepanel.palette", ["vs-nord", "dark"]),
+    );
+    expect(effects).toContainEqual(
+      expect.objectContaining({ plugin: "theme" }),
+    );
+    expect(http(effects)).toHaveLength(0);
+    expect(after(s0, effects).appLook).toBeNull();
+  });
+
+  it("reset gives the app the editor's theme back", () => {
+    let s = run("openPanel", inProject, msg("openPanel", "app"));
+    s = run(
+      "themepanel.palette",
+      s,
+      msg("themepanel.palette", ["vs-nord", "dark"]),
+    );
+    const effects = call("themepanel.reset", s, msg("themepanel.reset"));
+    expect(after(s, effects).appLook).toBeNull();
+    expect(JSON.parse(http(effects)[0].body!.text)).toBeNull();
+  });
+
+  it("the theme the project has is shown when it arrives, and a bad one is ignored", () => {
+    const text = JSON.stringify({ mode: "dark", palette: "vs-dracula" });
+    const s = run(
+      "themeLoaded",
+      inProject,
+      msg("themeLoaded", { data: { text } }),
+    );
+    expect(s.appLook?.palette).toBe("vs-dracula");
+    expect(
+      run(
+        "themeLoaded",
+        inProject,
+        msg("themeLoaded", { data: { text: null } }),
+      ).appLook,
+    ).toBeNull();
+    expect(
+      run(
+        "themeLoaded",
+        inProject,
+        msg("themeLoaded", { data: { text: "{broken" } }),
+      ).appLook,
+    ).toBeNull();
+    expect(
+      run(
+        "themeLoaded",
+        inProject,
+        msg("themeLoaded", { data: { text: "null" } }),
+      ).appLook,
+    ).toBeNull();
+  });
+
+  it("another project starts without the theme of the previous one", () => {
+    const withTheme = { ...inProject, appLook: inProject.look };
+    const e = routeTo(withTheme, "/projects/5/interface");
+    expect(sets(e, "appLook")).toEqual([null]);
+  });
+
+  it("the list of the projects is the editor's panel again", () => {
+    const s = run("openPanel", inProject, msg("openPanel", "app"));
+    expect(after(s, routeTo(s, "/")).target).toBe("editor");
+  });
+});

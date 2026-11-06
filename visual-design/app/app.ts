@@ -22,8 +22,23 @@ import {
   routerEffector as router,
   storeEffector as store,
 } from "@service-laboratory/pavlus/plugins";
+import { exportEffector, type Exported } from "../../ui-kit/frontend/export.ts";
+import { randomEffector } from "../../ui-kit/frontend/random.ts";
 import { presetLook, themeEffector } from "../../ui-kit/frontend/theme.ts";
-import type { Look } from "../../ui-kit/frontend/theming.ts";
+import {
+  allThemes,
+  type Catalog,
+  catalog,
+  cssOf,
+  defaultLook,
+  flipMode,
+  type Look,
+  parseLook,
+  type ThemeFamily,
+  withBundle,
+  withChoice,
+  withTheme,
+} from "../../ui-kit/frontend/theming.ts";
 import { meta as flowMeta } from "../../ui-kit/frontend/templates/flow-studio/meta.ts";
 import {
   type FsState,
@@ -35,6 +50,7 @@ import {
   initial as initialUi,
   page as visualBuilder,
 } from "../../ui-kit/frontend/templates/visual-builder/visual-builder.ts";
+import { appThemeEffector as appTheme } from "../frontend/app-theme.ts";
 import type { SaveEvent } from "../frontend/workspace.ts";
 import { workspaceEffector as workspace } from "../frontend/workspace.ts";
 import view from "./app.pavlus";
@@ -47,7 +63,20 @@ import {
 
 export interface AppState {
   route: Route | null;
+  /** the colour theme (and font, style, sizes): the visitor's choice, remembered */
   look: Look;
+  /** the theme of the app being designed (its frame in the editors); null: the editor's */
+  appLook: Look | null;
+  /** which of the two themes the panel changes */
+  target: "editor" | "app";
+  catalog: Catalog;
+  /** the look in the panel, as CSS */
+  css: string;
+  /** the theme panel, its colour tab and what the last export did */
+  panelOpen: boolean;
+  family: string;
+  shown: ThemeFamily;
+  exportNote: string;
   /** the project the address names (0 on the other pages) and the editor shown */
   projectId: number;
   tab: "" | "flow" | "interface";
@@ -65,10 +94,22 @@ export interface AppState {
   visualBuilder: VbState;
 }
 
-export function initialState(mode: Look["mode"] = "dark"): AppState {
+/** the look a first visit starts with: Flow Studio's own, dark */
+export const startLook = (): Look => presetLook(flowMeta.look, "dark");
+
+export function initialState(look: Look = startLook()): AppState {
+  const cat = catalog();
   return {
     route: null,
-    look: presetLook(flowMeta.look, mode),
+    look,
+    appLook: null,
+    target: "editor",
+    catalog: cat,
+    css: cssOf(look),
+    panelOpen: false,
+    family: cat.families[0].id,
+    shown: cat.families[0],
+    exportNote: "",
     projectId: 0,
     tab: "",
     openId: 0,
@@ -146,11 +187,20 @@ export class App extends Component<AppState> {
         store.set("save", "idle"),
         store.set("saveText", ""),
         store.set("notice", ""),
+        // the app starts in the editor's theme until the project says otherwise
+        store.set("appLook", null),
+        appTheme.apply(null),
         http.request({
           id: "project",
           url: `/api/projects/${id}`,
           onSuccess: "projectLoaded",
           onError: "projectFailed",
+        }),
+        http.request({
+          id: "theme",
+          url: `/api/projects/${id}/docs/theme`,
+          onSuccess: "themeLoaded",
+          onError: "themeFailed",
         }),
       );
       openId = id;
@@ -160,8 +210,14 @@ export class App extends Component<AppState> {
       fresh.push(store.set("visualBuilder", initialUi));
       linkedRev = flowRev;
     }
+    // leaving the projects for the list: the panel is the editor's again
+    const leaving: Effect[] =
+      id === 0 && state.target === "app"
+        ? [store.set("target", "editor"), store.set("css", cssOf(state.look))]
+        : [];
     return [
       ...fresh,
+      ...leaving,
       store.set("openId", openId),
       store.set("flowRev", flowRev),
       store.set("linkedRev", linkedRev),
@@ -209,6 +265,176 @@ export class App extends Component<AppState> {
 
   renameFailed(): Effect[] {
     return [store.set("notice", "The new name could not be saved.")];
+  }
+
+  // ---- the themes: the ui-kit's panel changes the editor's or the app's ----
+
+  /** the look the panel starts from: the editor's, or the app's (that is the editor's until it has its own) */
+  _base(state: AppState): Look {
+    return state.target === "app" ? (state.appLook ?? state.look) : state.look;
+  }
+
+  /** the bar's two buttons: the panel for that theme, or closed when it is already open for it */
+  openPanel(msg: Message, state: AppState): Effect[] {
+    const target = msg.payload === "app" ? "app" : "editor";
+    if (state.panelOpen && state.target === target) {
+      return [store.set("panelOpen", false)];
+    }
+    const base = target === "app" ? (state.appLook ?? state.look) : state.look;
+    return [
+      store.set("target", target),
+      store.set("css", cssOf(base)),
+      store.set("panelOpen", true),
+    ];
+  }
+
+  toggleMode(_msg: Message, state: AppState): Effect[] {
+    return this._chooseEditor(flipMode(state.look));
+  }
+
+  "themepanel.close"(): Effect[] {
+    return [store.set("panelOpen", false)];
+  }
+
+  /** a font, a style, a corner radius or a size, from a `<select>` */
+  "themepanel.pick"(msg: Message, state: AppState): Effect[] {
+    return this._choose(
+      state,
+      withChoice(
+        this._base(state),
+        String(msg.payload),
+        msg.event?.value ?? "",
+      ),
+    );
+  }
+
+  /** the tab of the colour picker */
+  "themepanel.family"(msg: Message, state: AppState): Effect[] {
+    const shown =
+      state.catalog.families.find((f) => f.id === msg.event?.value) ??
+      state.catalog.families[0];
+    return [store.set("family", shown.id), store.set("shown", shown)];
+  }
+
+  /** a theme is a name in a mode */
+  "themepanel.palette"(msg: Message, state: AppState): Effect[] {
+    const [palette, mode] = msg.payload as [string, Look["mode"]];
+    return this._choose(state, withTheme(this._base(state), palette, mode));
+  }
+
+  /** "a theme sets font, sizes and style too" */
+  "themepanel.bundle"(msg: Message, state: AppState): Effect[] {
+    return this._choose(
+      state,
+      withBundle(this._base(state), Boolean(msg.event?.checked)),
+    );
+  }
+
+  "themepanel.random"(): Effect[] {
+    return [randomEffector.int(allThemes().length, "randomPicked")];
+  }
+
+  randomPicked(msg: Message, state: AppState): Effect[] {
+    const pick = allThemes()[msg.payload as number];
+    return pick
+      ? this._choose(
+          state,
+          withTheme(this._base(state), pick.palette, pick.mode),
+        )
+      : [];
+  }
+
+  /** the editor goes back to the default look; the app goes back to wearing the editor's */
+  "themepanel.reset"(_msg: Message, state: AppState): Effect[] {
+    return state.target === "app"
+      ? this._chooseApp(state, null)
+      : this._chooseEditor(defaultLook(state.look.mode));
+  }
+
+  /** the look in the panel as a stylesheet: this style only, or all of them */
+  "themepanel.export"(msg: Message, state: AppState): Effect[] {
+    return [
+      store.set("exportNote", ""),
+      exportEffector.css(
+        state.css,
+        this._base(state).style,
+        msg.payload === "all" ? "all" : "current",
+        "exported",
+      ),
+    ];
+  }
+
+  exported(msg: Message): Effect[] {
+    const r = msg.payload as Exported;
+    const kb = Math.max(1, Math.round(r.bytes / 1024));
+    return [
+      store.set(
+        "exportNote",
+        `Saved ${r.file} (${kb} kB)${r.copied ? " and copied to the clipboard" : ""}.`,
+      ),
+    ];
+  }
+
+  _choose(state: AppState, look: Look): Effect[] {
+    return state.target === "app"
+      ? this._chooseApp(state, look)
+      : this._chooseEditor(look);
+  }
+
+  /** the editor's new look: remembered, shown, and the export updated */
+  _chooseEditor(look: Look): Effect[] {
+    return [
+      store.set("look", look),
+      store.set("css", cssOf(look)),
+      themeEffector.apply(look, true),
+    ];
+  }
+
+  /** the app's new look (null: the editor's): shown in its frame and kept with the project */
+  _chooseApp(state: AppState, look: Look | null): Effect[] {
+    return [
+      store.set("appLook", look),
+      store.set("css", cssOf(look ?? state.look)),
+      appTheme.apply(look),
+      ...(state.projectId
+        ? [
+            http.request({
+              id: "theme-save",
+              url: `/api/projects/${state.projectId}/docs/theme`,
+              method: "PUT",
+              body: { text: JSON.stringify(look) },
+              onSuccess: "themeSaved",
+              onError: "themeSaveFailed",
+            }),
+          ]
+        : []),
+    ];
+  }
+
+  /** the theme of the app, as the project has it */
+  themeLoaded(msg: Message, state: AppState): Effect[] {
+    const text = (msg.payload as { data?: { text?: string | null } }).data
+      ?.text;
+    let look: Look | null = null;
+    try {
+      const raw: unknown = text ? JSON.parse(text) : null;
+      look = raw ? parseLook(raw, state.look) : null;
+    } catch {
+      look = null;
+    }
+    return [store.set("appLook", look), appTheme.apply(look)];
+  }
+
+  themeFailed(): Effect[] {
+    return [];
+  }
+
+  themeSaved(): Effect[] {
+    return [];
+  }
+
+  themeSaveFailed(): Effect[] {
+    return [store.set("notice", "The theme of the app could not be saved.")];
   }
 
   /** what happens to the documents of the project (frontend/workspace.ts) */

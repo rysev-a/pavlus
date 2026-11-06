@@ -28,7 +28,9 @@ export const themeEffector = {
   }),
 };
 
-const KEY = "ui-kit-look";
+/** where the look the visitor chose is remembered */
+export const LOOK_KEY = "ui-kit-look";
+const KEY = LOOK_KEY;
 
 /** The look the visitor chose before, else the system's light or dark. */
 export function initialLook(win: Window = window): Look {

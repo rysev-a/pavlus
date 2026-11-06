@@ -9,8 +9,11 @@ import {
   pgEffector as pg,
 } from "pavlus-server";
 
-/** the documents of a project: the diagram and the interface */
-export const DOC_KEYS = ["flow", "interface"] as const;
+/**
+ * the documents of a project: the diagram, the interface, and the theme of the app
+ * the interface is (a look as JSON, or `null`: the app wears the editor's theme)
+ */
+export const DOC_KEYS = ["flow", "interface", "theme"] as const;
 export type DocKey = (typeof DOC_KEYS)[number];
 
 export const NAME_MAX = 120;

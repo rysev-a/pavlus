@@ -20,6 +20,7 @@ html, body { margin: 0; background: var(--background); color: var(--foreground);
 }
 .vd-tab:hover { color: var(--foreground); background: var(--muted); }
 .vd-tab--on { color: var(--foreground); background: var(--secondary, var(--muted)); font-weight: 600; }
+.vd-actions { display: flex; gap: 2px; margin-left: auto; }
 .vd-save { margin-left: auto; font-size: 12px; color: var(--muted-foreground); white-space: nowrap; }
 .vd-save--busy { opacity: .8; }
 .vd-save--error { color: var(--destructive, #dc2626); font-weight: 600; }
@@ -57,4 +58,14 @@ html, body { margin: 0; background: var(--background); color: var(--foreground);
   .vd-bar { flex-wrap: wrap; }
   .vd-name { max-width: 100%; flex: 1; }
   .vd-save { margin-left: 0; }
+  .vd-actions { margin-left: auto; }
 }
+
+/* the theme panel is fixed to the right edge: the page makes room for it */
+@media (min-width: 900px) {
+  .vd.k-with-panel { padding-right: 344px; }
+}
+
+/* the app being designed wears its own theme (frontend/app-theme.ts sets the variables on its frame) */
+.vb-frame { color: var(--foreground); font-family: var(--font-sans); }
+.vd-apptheme { gap: 6px; }
