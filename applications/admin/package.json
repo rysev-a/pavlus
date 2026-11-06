@@ -2,7 +2,7 @@
   "name": "admin",
   "private": true,
   "version": "0.2.0",
-  "description": "Admin app, the pavlus way: an isomorphic app/ (pure state, components, templates), a thin frontend that mounts it, and a plain node backend that serves the API and server-renders the same code",
+  "description": "Admin app, the pavlus way: an isomorphic app/ (pure state, components, templates), a thin frontend that mounts it, and a @pavlus/backend server — a pure function application over http, pg and pages plugins — that serves the API and server-renders the same code",
   "type": "module",
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env backend/server.ts",
@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@pavlus/frontend": "*",
+    "@pavlus/backend": "*",
     "pg": "^8.16.3"
   },
   "devDependencies": {

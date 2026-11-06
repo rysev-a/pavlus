@@ -3,15 +3,17 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import * as frontend from "../app/entry-server.ts";
+import { createAdminApp } from "../backend/app.ts";
 import { createPool } from "../backend/db/pool.ts";
-import { resetDatabase } from "../backend/db/reset.ts";
+import { resetDatabase, resetStatements } from "../backend/db/reset.ts";
+import { createFlowFetch } from "../backend/flow-fetch.ts";
+import { routes } from "../backend/routes.ts";
 import { renderDocument, renderPage } from "../backend/ssr.ts";
 
-// The server render runs the app in-process: the API answered by the same
-// handlers over one pool, no socket.
+// The server render runs the app in-process: the API is the same pure
+// application, executed over one pool by flow-fetch — no socket.
 const pool = createPool();
-const query = <Row>(sql: string, params: unknown[] = []): Promise<Row[]> =>
-  pool.query(sql, params).then((r) => r.rows);
+const fetch = createFlowFetch(createAdminApp(resetStatements()), routes, pool);
 
 beforeAll(async () => {
   try {
@@ -30,7 +32,7 @@ afterAll(async () => {
 });
 
 test("the page renders on the server from the same pure app", async () => {
-  const page = await renderPage(frontend, query);
+  const page = await renderPage(frontend, fetch);
 
   // The data is in before the render: the seed's users and roles are on the
   // page, no "Loading..." anywhere.

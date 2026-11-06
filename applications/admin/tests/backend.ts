@@ -1,8 +1,6 @@
-import { once } from "node:events";
-import type { AddressInfo } from "node:net";
 import { createPool } from "../backend/db/pool.ts";
 import { resetDatabase } from "../backend/db/reset.ts";
-import { startServer } from "../backend/server.ts";
+import { startServer, type StartedServer } from "../backend/server.ts";
 
 export interface Backend {
   /** `METHOD url` of every request the app made. */
@@ -15,9 +13,9 @@ export interface Backend {
 }
 
 /**
- * The real API (`backend/server.ts`, API only) on a free port, over the real
- * Postgres (`compose.yaml`), reseeded. No fakes: what the tests see is what
- * the browser sees.
+ * The real API (backend/server.ts on @pavlus/backend, API only) on a free
+ * port, over the real Postgres (`compose.yaml`), reseeded. No fakes: what the
+ * tests see is what the browser sees.
  */
 export async function startBackend(): Promise<Backend> {
   const reseed = async (): Promise<void> => {
@@ -33,9 +31,12 @@ export async function startBackend(): Promise<Backend> {
     }
   };
   await reseed();
-  const server = startServer(0, { quiet: true, frontend: "none" });
-  await once(server, "listening");
-  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  const started: StartedServer = startServer(0, {
+    quiet: true,
+    frontend: "none",
+  });
+  await started.listening();
+  const base = `http://127.0.0.1:${started.port()}`;
   const requests: string[] = [];
   const nodeFetch = globalThis.fetch;
   return {
@@ -45,10 +46,6 @@ export async function startBackend(): Promise<Backend> {
       return nodeFetch(base + url, init);
     }) as typeof fetch,
     reseed,
-    close: () =>
-      new Promise<void>((resolve, reject) => {
-        server.closeAllConnections();
-        server.close((e) => (e ? reject(e) : resolve()));
-      }),
+    close: () => started.close(),
   };
 }

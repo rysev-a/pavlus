@@ -1,12 +1,13 @@
 /**
  * Server-side rendering. The application is the same pure code as in the
  * browser (app/); here it runs without a DOM, with the API answered
- * in-process, until its data is in. Then its view is rendered to HTML and
+ * in-process (a fetch that runs the same pure backend application — see
+ * flow-fetch.ts), until its data is in. Then its view is rendered to HTML and
  * its state to JSON, and the browser hydrates both (frontend/main.ts).
  *
  * The app's dom effects land on an inert plugin: on the server there is
- * nothing to repaint along the way — the whole page is rendered once, from
- * the final state. The children are embedded in the app's view, so the one
+ * nothing to repaint along the way — the whole page is rendered once, from the
+ * final state. The children are embedded in the app's view, so the one
  * render includes them; the browser hydrates the whole page.
  */
 import {
@@ -17,7 +18,6 @@ import {
 } from "@pavlus/frontend";
 import { createHttpPlugin, createStorePlugin } from "@pavlus/frontend/plugins";
 import { renderToString, serializeState } from "@pavlus/frontend/ssr";
-import { handleApi, type Query } from "./api.ts";
 
 /** What app/entry-server.ts exports. */
 export interface Frontend {
@@ -39,31 +39,6 @@ export interface Page {
   state: string;
 }
 
-/** The app's `fetch`, answered by the API handlers directly: no socket. */
-function inProcess(query: Query): typeof fetch {
-  return async (input, init) => {
-    const url = new URL(String(input), "http://ssr.local");
-    let body: unknown;
-    if (typeof init?.body === "string") {
-      try {
-        body = JSON.parse(init.body);
-      } catch {
-        body = undefined;
-      }
-    }
-    const reply = await handleApi(
-      init?.method ?? "GET",
-      url.pathname,
-      query,
-      body,
-    );
-    return new Response(JSON.stringify(reply.body), {
-      status: reply.status,
-      headers: { "content-type": "application/json" },
-    });
-  };
-}
-
 /** A plugin that accepts its effects and does nothing: no DOM on the server. */
 const inert = (name: string): Plugin => ({ name, handle() {} });
 
@@ -71,17 +46,17 @@ const inert = (name: string): Plugin => ({ name, handle() {} });
  * Renders the page: the route goes in first (the same `routeChanged` the
  * router plugin dispatches in the browser — it activates the page, whose
  * `enter` loads its data), then `mounted`, and everything loads through
- * `query`. The result is rendered once, from the final state.
+ * `fetch`. The result is rendered once, from the final state.
  */
 export async function renderPage(
   frontend: Frontend,
-  query: Query,
+  ssrFetch: typeof fetch,
   at: PageLocation = { path: "/" },
 ): Promise<Page> {
   const view = viewOf(frontend.app);
   if (!view) throw new Error("ssr: the app has no view");
   const store = createStorePlugin(frontend.initialState);
-  const http = createHttpPlugin({ fetch: inProcess(query) });
+  const http = createHttpPlugin({ fetch: ssrFetch });
   const instance = createApp({
     app: frontend.app,
     plugins: [store, http, inert("dom"), inert("router")],

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,3 +29,14 @@ export function resetDatabase(pool: pg.Pool): Promise<void> {
     pool.query(sql, params).then((r) => r.rows as Row[]),
   );
 }
+
+/**
+ * The statements of those files, read once: the `POST /api/reset` flow runs
+ * them as db effects, so the app stays pure (no file reads in handlers).
+ */
+export function resetStatements(): string[] {
+  return (cached ??= FILES.map((name) =>
+    readFileSync(join(DIR, name), "utf8"),
+  ));
+}
+let cached: string[] | undefined;

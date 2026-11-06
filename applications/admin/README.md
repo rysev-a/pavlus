@@ -13,9 +13,13 @@ app/        the application — pure, isomorphic code:
             entry-server.ts (what the server loads)
 frontend/   the browser shell: main.ts wires the plugins (store, dom, http,
             router, the devtools agent) and mounts the app into #app
-backend/    the server: server.ts (plain node:http), api.ts (the JSON API
-            over Postgres), ssr.ts (renders pages from the same app/ code),
-            db/ (schema, seed)
+backend/    the server, on @pavlus/backend: app.ts (the application — one
+            pure function over modules/), routes.ts (the route table),
+            modules/ (users, roles, reset, pages — pure handlers, db effects
+            in, http effects out), plugins/pages.ts (Vite, dist/ and the
+            server render — the impure parts behind one pages.serve effect),
+            flow-fetch.ts (the same pure app as a fetch, for the render),
+            ssr.ts (renders pages from the same app/ code), db/ (schema, seed)
 public/     the stylesheet — the ui-kit look (the shadcn "new-york" tokens and
             .ui-* classes, copied from ui-kit/frontend/styles.css)
 tests/      the app over the real API on the real database, and the server render
@@ -23,7 +27,8 @@ tests/      the app over the real API on the real database, and the server rende
 
 `frontend` and `backend` are thin adapters: both run the same `app/`. The
 browser mounts it and repaints on demand; the server runs it without a DOM
-and renders the final state to HTML.
+and renders the final state to HTML — answering with an `http.respond`
+effect, like every other answer the server gives.
 
 ## Pages are routed children
 
