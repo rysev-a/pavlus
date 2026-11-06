@@ -3,13 +3,15 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "framework",
-    "admin-app",
-    "coffee-shop-app",
-    "phone-crm-app",
-    "social-network-app",
-    "server",
-    "ui-kit"
+    "framework/frontend",
+    "framework/backend",
+    "framework/core",
+    "framework/ui-kit",
+    "applications/admin",
+    "applications/visual-design",
+    "applications/phone-crm",
+    "applications/coffee-shop",
+    "applications/social-network"
   ],
   "scripts": {
     "test": "npm test --workspaces",
@@ -17,7 +19,7 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "docs:build": "node docs/site/scripts/build.ts",
-    "debug:sync-firefox": "node debug-panel/sync-firefox.mjs"
+    "debug:sync-firefox": "node framework/debug-panel/sync-firefox.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.5"

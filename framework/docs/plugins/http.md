@@ -8,7 +8,7 @@ so "the latest request wins" needs no state in the application.
 import {
   createHttpPlugin,
   httpEffector as http,
-} from "@service-laboratory/pavlus/plugins/http";
+} from "@pavlus/frontend/plugins/http";
 
 createApp({ app, plugins: [store, createHttpPlugin()] });
 ```

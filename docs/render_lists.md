@@ -109,8 +109,8 @@ one runtime function — the app stays pure, isomorphic, and testable (patches
 are data; no DOM needed to test them).
 
 ```ts
-import type { Patch, View, VNode } from "@service-laboratory/pavlus";
-import { diffKeyedList } from "@service-laboratory/pavlus/runtime";
+import type { Patch, View, VNode } from "@pavlus/frontend";
+import { diffKeyedList } from "@pavlus/frontend/runtime";
 ```
 
 ### 4.1 The binding

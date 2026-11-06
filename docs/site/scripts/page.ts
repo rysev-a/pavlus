@@ -11,10 +11,10 @@
  * generated SVG (see diagrams.ts).
  */
 
-import { esc, type Svg } from "./svg.ts";
-import type { Compiled } from "./run.ts";
-import { codeLines, gutterStart, hlPavlus, hlTs } from "./highlight.ts";
 import type { FlowStep } from "./diagrams.ts";
+import { codeLines, gutterStart, hlPavlus, hlTs } from "./highlight.ts";
+import type { Compiled } from "./run.ts";
+import { esc, type Svg } from "./svg.ts";
 
 export interface DemoPatchGroup {
   label: string;
@@ -278,7 +278,7 @@ ${opts.body}
       pavlus compiler and runs the real runtime. Regenerate with <code>npm run docs:build</code>.</p>
     <p>More: <a href="../../framework/README.md">framework/README.md</a> ·
       <a href="../../framework/docs/architecture.md">framework/docs/architecture.md</a> ·
-      <a href="../../admin-app/">admin-app/</a> (a complete application) ·
+      <a href="../../applications/admin/">applications/admin/</a> (a complete application) ·
       <a href="about.html">about</a></p>
   </div>
 </footer>
@@ -600,7 +600,7 @@ function flowvizScripts(flowStepsJson: string): string {
 /* sample code for the "your own plugin" guide                         */
 /* ------------------------------------------------------------------ */
 
-const SAMPLE_RANDOM = `import type { Effect, Message, Plugin, PluginContext } from "@service-laboratory/pavlus";
+const SAMPLE_RANDOM = `import type { Effect, Message, Plugin, PluginContext } from "@pavlus/frontend";
 
 export type RandomEffect = Effect & {
   plugin: "random";
@@ -627,9 +627,9 @@ export function randomPlugin(): Plugin<RandomEffect> {
   };
 }`;
 
-const SAMPLE_USAGE = `import { Component, createApp, type Message } from "@service-laboratory/pavlus";
-import { createStorePlugin, storeEffector as store } from "@service-laboratory/pavlus/plugins/store";
-import { DomPlugin } from "@service-laboratory/pavlus/plugins/dom";
+const SAMPLE_USAGE = `import { Component, createApp, type Message } from "@pavlus/frontend";
+import { createStorePlugin, storeEffector as store } from "@pavlus/frontend/plugins/store";
+import { DomPlugin } from "@pavlus/frontend/plugins/dom";
 import { randomInt, randomPlugin } from "./random-plugin";
 
 class Dice extends Component<{ dice: number }> {
@@ -801,12 +801,12 @@ ${exampleSections}
   and edit forms — load their data in <code>enter</code> and paint themselves.</p>
   <div class="grid2">
     ${pre(
-      "the shell — admin-app/app/app.pavlus",
+      "the shell — applications/admin/app/app.pavlus",
       input.excerpts.outletShell.code,
       { lang: "pavlus", from: input.excerpts.outletShell.from },
     )}
       ${pre(
-        "the routing table — admin-app/app/app.ts",
+        "the routing table — applications/admin/app/app.ts",
         input.excerpts.routingDecl.code,
         { lang: "ts", from: input.excerpts.routingDecl.from },
       )}
@@ -817,7 +817,7 @@ ${exampleSections}
   value diffs only its props. This is also how routed pages work: the shell's <code>+outlet</code>
   renders whatever page the router selected.</p>
   ${pre(
-    "embed by value — framework/src/compiler/__fixtures__/embed-dynamic.pavlus",
+    "embed by value — framework/frontend/src/compiler/__fixtures__/embed-dynamic.pavlus",
     input.excerpts.embedValue.code,
     { lang: "pavlus", from: input.excerpts.embedValue.from },
   )}
@@ -848,11 +848,11 @@ ${exampleSections}
   ${flowvizStage(input.flowSvg)}
 
   <h3 id="core-source">The core, in full</h3>
-  <p>This is the whole engine (from <code>framework/src/core/mod.ts</code>): a queue, one call to the app,
+  <p>This is the whole engine (from <code>framework/frontend/src/core/mod.ts</code>): a queue, one call to the app,
   effects to plugins, then <code>onState</code> if the state identity changed. Messages that arrive while a
   tick is running are processed in the same tick.</p>
   ${pre(
-    "core — createApp().dispatch · framework/src/core/mod.ts",
+    "core — createApp().dispatch · framework/frontend/src/core/mod.ts",
     input.excerpts.core.code,
     {
       lang: "ts",
@@ -930,7 +930,7 @@ ${exampleSections}
     <tr><td><code>store.restoreTo(ts)</code></td><td>Undoes everything recorded after <code>ts</code> (time travel).</td></tr>
   </table>
   ${pre(
-    "the pure state transition — framework/src/plugins/store/mod.ts",
+    "the pure state transition — framework/frontend/src/plugins/store/mod.ts",
     input.excerpts.storeApply.code,
     {
       lang: "ts",
@@ -938,7 +938,7 @@ ${exampleSections}
     },
   )}
   ${pre(
-    "recording + undo — framework/src/plugins/store/mod.ts",
+    "recording + undo — framework/frontend/src/plugins/store/mod.ts",
     input.excerpts.storeChange.code,
     {
       lang: "ts",
@@ -952,7 +952,7 @@ ${exampleSections}
   failure the plugin dispatches the <code>onSuccess</code> / <code>onError</code> message — the app never
   sees a promise. On the server the same plugin answers <code>settled()</code> for rendering after load.</p>
   ${pre(
-    "the whole surface — framework/src/plugins/http/mod.ts",
+    "the whole surface — framework/frontend/src/plugins/http/mod.ts",
     input.excerpts.httpType.code,
     {
       lang: "ts",
@@ -960,7 +960,7 @@ ${exampleSections}
     },
   )}
   ${pre(
-    "fetch + reply — framework/src/plugins/http/mod.ts",
+    "fetch + reply — framework/frontend/src/plugins/http/mod.ts",
     input.excerpts.httpRun.code,
     {
       lang: "ts",
@@ -984,7 +984,7 @@ ${exampleSections}
     <tr><td><code>remove</code> / <code>move</code></td><td>Remove or reorder a sibling range (keyed list reconciliation).</td></tr>
   </table>
   ${pre(
-    "listeners are data — framework/src/plugins/dom/mod.ts",
+    "listeners are data — framework/frontend/src/plugins/dom/mod.ts",
     input.excerpts.domHandler.code,
     {
       lang: "ts",
@@ -992,7 +992,7 @@ ${exampleSections}
     },
   )}
   ${pre(
-    "patches → DOM — framework/src/plugins/dom/mod.ts",
+    "patches → DOM — framework/frontend/src/plugins/dom/mod.ts",
     input.excerpts.domApply.code,
     {
       lang: "ts",
@@ -1006,7 +1006,7 @@ ${exampleSections}
   itself, and every boundary it bubbles through scopes them — the node ids get the embed's segment in
   front, the event messages the instance name — so by the root they address the one mount.</p>
   ${pre(
-    "a write answers its states — framework/src/plugins/store/mod.ts",
+    "a write answers its states — framework/frontend/src/plugins/store/mod.ts",
     input.excerpts.storeAnswer.code,
     {
       lang: "ts",
@@ -1014,7 +1014,7 @@ ${exampleSections}
     },
   )}
   ${pre(
-    "a child paints itself — admin-app/app/user-list/user-list.ts",
+    "a child paints itself — applications/admin/app/user-list/user-list.ts",
     input.excerpts.childPaint.code,
     {
       lang: "ts",
@@ -1028,12 +1028,12 @@ ${exampleSections}
   any <code>sink</code>: the frontend tests collect the log lines of an app in an array instead of
   spying on <code>console</code>.</p>
   ${pre(
-    "the log effect — framework/src/plugins/logger/mod.ts",
+    "the log effect — framework/frontend/src/plugins/logger/mod.ts",
     input.excerpts.loggerType.code,
     { lang: "ts", from: input.excerpts.loggerType.from },
   )}
   ${pre(
-    "the whole plugin — framework/src/plugins/logger/mod.ts",
+    "the whole plugin — framework/frontend/src/plugins/logger/mod.ts",
     input.excerpts.loggerPlugin.code,
     { lang: "ts", from: input.excerpts.loggerPlugin.from },
   )}
@@ -1046,7 +1046,7 @@ ${exampleSections}
   in tests. No <code>Date.now()</code> in application code — that is the purity contract, kept
   honest by giving time an address.</p>
   ${pre(
-    "the time effects — framework/src/plugins/time/mod.ts",
+    "the time effects — framework/frontend/src/plugins/time/mod.ts",
     input.excerpts.timeType.code,
     { lang: "ts", from: input.excerpts.timeType.from },
   )}
@@ -1058,12 +1058,12 @@ ${exampleSections}
   with the same id replaces the old socket. The socket constructor is injectable, so tests drive
   frames through a fake.</p>
   ${pre(
-    "the ws effects — framework/src/plugins/ws/mod.ts",
+    "the ws effects — framework/frontend/src/plugins/ws/mod.ts",
     input.excerpts.wsType.code,
     { lang: "ts", from: input.excerpts.wsType.from },
   )}
   ${pre(
-    "frames become messages — framework/src/plugins/ws/mod.ts",
+    "frames become messages — framework/frontend/src/plugins/ws/mod.ts",
     input.excerpts.wsFrames.code,
     { lang: "ts", from: input.excerpts.wsFrames.from },
   )}
@@ -1072,17 +1072,17 @@ ${exampleSections}
   <p class="intro">A plugin is one object: a <code>name</code> and <code>handle(effect, ctx)</code> — with optional <code>init</code>, <code>onState</code> and <code>dispose</code> if you need them. Everything inside a plugin is allowed to be dirty; that is the plugin's whole job. The two types involved:</p>
   <div class="grid2">
     ${pre(
-      "Plugin — framework/src/core/types.ts",
+      "Plugin — framework/frontend/src/core/types.ts",
       input.excerpts.pluginType.code,
       { lang: "ts", from: input.excerpts.pluginType.from },
     )}
     ${pre(
-      "PluginContext — framework/src/core/types.ts",
+      "PluginContext — framework/frontend/src/core/types.ts",
       input.excerpts.pluginCtx.code,
       { lang: "ts", from: input.excerpts.pluginCtx.from },
     )}
   </div>
-  <p class="intro">The rules the core enforces (from <code>framework/src/core/mod.ts</code>): effects route to plugins <strong>by name</strong> — an effect whose <code>plugin</code> matches nothing throws <code>pavlus: no plugin "…"</code>; duplicate plugin names throw at <code>createApp()</code>; the <strong>first</strong> plugin with <code>getState()</code> is the state source (that is the store's seat); <code>mount</code> requires a plugin named <code>dom</code>; and <code>ctx.dispatch()</code> feeds a message back into the loop while <code>ctx.dispatchEffect()</code> applies an effect directly (for devtools and tests).</p>
+  <p class="intro">The rules the core enforces (from <code>framework/frontend/src/core/mod.ts</code>): effects route to plugins <strong>by name</strong> — an effect whose <code>plugin</code> matches nothing throws <code>pavlus: no plugin "…"</code>; duplicate plugin names throw at <code>createApp()</code>; the <strong>first</strong> plugin with <code>getState()</code> is the state source (that is the store's seat); <code>mount</code> requires a plugin named <code>dom</code>; and <code>ctx.dispatch()</code> feeds a message back into the loop while <code>ctx.dispatchEffect()</code> applies an effect directly (for devtools and tests).</p>
   ${pre(
     "a minimal custom plugin — sample code, not sliced from the repo",
     SAMPLE_RANDOM,
@@ -1146,7 +1146,7 @@ export function renderStartPage(input: StartInput): string {
   <div class="cta-row">
     <a class="cta primary" href="docs.html">Read the docs</a>
     <a class="cta" href="about.html">About the concept</a>
-    <a class="cta" href="https://www.npmjs.com/package/@service-laboratory/pavlus">npm ↗</a>
+    <a class="cta" href="https://www.npmjs.com/package/@pavlus/frontend">npm ↗</a>
   </div>
 </section>
 
@@ -1189,14 +1189,14 @@ export function renderAboutPage(): string {
 <section class="page-head">
   <span class="part-badge">about</span>
   <h1>pavlus — an application that is a function</h1>
-  <p class="lead">pavlus (npm: <code>@service-laboratory/pavlus</code>) is a TypeScript framework where the whole application is a pure function: <code>app(message, state) → Effect[]</code>. The framework's job is to make that practical — a compiler, a tiny core, and plugins that do the dirty work.</p>
+  <p class="lead">pavlus (npm: <code>@pavlus/frontend</code>) is a TypeScript framework where the whole application is a pure function: <code>app(message, state) → Effect[]</code>. The framework's job is to make that practical — a compiler, a tiny core, and plugins that do the dirty work.</p>
 </section>
 
 <section>
   <h2>The pieces</h2>
   <p>The <strong>compiler</strong> turns <code>.pavlus</code> templates (an indented tree, pug-style) into two pure functions, <code>render(state)</code> and <code>diff(prev, next)</code>. Because it records which state roots every subtree reads, <code>diff</code> skips unchanged subtrees with a <code>===</code> check — updates are eight kinds of small patch ops, never a re-render of the world.</p>
   <p>The <strong>core</strong> is a message loop: it calls the app with each message, hands the returned effects to the plugins in order, and notifies every plugin when the state identity changed. That is the entire engine — the six actors around it (browser, dom, store, http, the app island, the core) only talk through data: messages in, effects out.</p>
-  <p>The <strong>plugins</strong> own everything impure: DOM, state, network, logs, timers, sockets — and <code>admin-app/</code> in the repo is a complete real application built this way (dashboard, users CRUD, shop, billing, backed by Postgres). This site is generated: the build compiles every documented example with the real compiler and runs the real runtime.</p>
+  <p>The <strong>plugins</strong> own everything impure: DOM, state, network, logs, timers, sockets — and <code>applications/admin/</code> in the repo is a complete real application built this way (dashboard, users CRUD, shop, billing, backed by Postgres). This site is generated: the build compiles every documented example with the real compiler and runs the real runtime.</p>
 </section>
 
 <section>
@@ -1219,8 +1219,8 @@ export function renderAboutPage(): string {
     <tr><td>the pure concept</td><td><a href="docs.html#core">docs.html#core</a> — the six actors and the whole core source</td></tr>
     <tr><td>framework README</td><td><a href="../../framework/README.md">framework/README.md</a></td></tr>
     <tr><td>architecture</td><td><a href="../../framework/docs/architecture.md">framework/docs/architecture.md</a></td></tr>
-    <tr><td>reference application</td><td><a href="../../admin-app/">admin-app/</a></td></tr>
-    <tr><td>the package</td><td><a href="https://www.npmjs.com/package/@service-laboratory/pavlus">@service-laboratory/pavlus</a></td></tr>
+    <tr><td>reference application</td><td><a href="../../applications/admin/">applications/admin/</a></td></tr>
+    <tr><td>the package</td><td><a href="https://www.npmjs.com/package/@pavlus/frontend">@pavlus/frontend</a></td></tr>
   </table>
   <p class="tiny">Generated by <code>docs/site/scripts/build.ts</code> — <code>npm run docs:build</code> regenerates all three pages.</p>
 </section>

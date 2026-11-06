@@ -9,7 +9,7 @@ store's current value, and when it changes the other plugins are told
 import {
   createStorePlugin,
   storeEffector as store,
-} from "@service-laboratory/pavlus/plugins/store";
+} from "@pavlus/frontend/plugins/store";
 
 const plugin = createStorePlugin({ user: { name: "Ann" }, todos: [] });
 createApp({ app, plugins: [plugin /* , ... */] });

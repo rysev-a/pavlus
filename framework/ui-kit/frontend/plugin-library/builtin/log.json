@@ -1,0 +1,24 @@
+{
+  "name": "log",
+  "about": "built in: the log plugin of @pavlus/backend",
+  "external": "",
+  "latency": 0.2,
+  "timeout": 0,
+  "errorCode": "ERR_LOG",
+  "effects": [
+    {
+      "type": "log",
+      "plugin": "log",
+      "hint": "a structured log line",
+      "detail": "info login {userId}",
+      "replies": false
+    }
+  ],
+  "builtin": true,
+  "server": "server/src/plugins/log",
+  "unmodelled": [
+    "metrics.inc",
+    "metrics.observe",
+    "metrics.get"
+  ]
+}

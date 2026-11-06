@@ -1,0 +1,38 @@
+{
+  "name": "http",
+  "about": "built in: the http plugin of @pavlus/backend",
+  "external": "Client",
+  "latency": 0.8,
+  "timeout": 0,
+  "errorCode": "EPIPE",
+  "effects": [
+    {
+      "type": "http.respond",
+      "plugin": "http",
+      "hint": "answer the request (json body in detail)",
+      "detail": "{}",
+      "replies": false,
+      "responds": true
+    },
+    {
+      "type": "http.sse",
+      "plugin": "http",
+      "hint": "open an event stream",
+      "detail": "",
+      "replies": false,
+      "responds": true
+    }
+  ],
+  "builtin": true,
+  "server": "server/src/plugins/http",
+  "unmodelled": [
+    "header",
+    "close",
+    "stream.start",
+    "stream.chunk",
+    "stream.end",
+    "sse.send",
+    "sse.end",
+    "file"
+  ]
+}

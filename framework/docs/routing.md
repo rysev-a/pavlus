@@ -1,6 +1,6 @@
 # Declarative routing
 
-Status: **implemented**. Working example: the shell of `admin-app/frontend`
+Status: **implemented**. Working example: the shell of `applications/admin/frontend`
 (`app.ts`, one level). Nesting is covered by the framework's own tests
 (`src/component/routing.test.ts`, `src/plugins/dom/outlet.test.ts`). Where the
 built version differs from the first proposal it is marked "as built".

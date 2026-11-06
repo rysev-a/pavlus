@@ -1,0 +1,21 @@
+{
+  "name": "@pavlus/core",
+  "version": "0.1.0",
+  "description": "The isomorphic heart of pavlus: the Message/Effect/Plugin contract, the createApp loop, toHandler, and the pure store-change helpers",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/mod.ts",
+    "./types": "./src/types.ts",
+    "./store": "./src/store.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

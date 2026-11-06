@@ -1,0 +1,34 @@
+{
+  "name": "crypto",
+  "about": "built in: the crypto plugin of @pavlus/backend",
+  "external": "",
+  "latency": 55,
+  "timeout": 5000,
+  "errorCode": "ERR_CRYPTO",
+  "effects": [
+    {
+      "type": "crypto.hash",
+      "plugin": "crypto",
+      "hint": "scrypt hash",
+      "detail": "",
+      "replies": true
+    },
+    {
+      "type": "crypto.verify",
+      "plugin": "crypto",
+      "hint": "scrypt verify",
+      "detail": "",
+      "replies": true
+    },
+    {
+      "type": "crypto.randomToken",
+      "plugin": "crypto",
+      "hint": "a random token",
+      "detail": "",
+      "replies": true
+    }
+  ],
+  "builtin": true,
+  "server": "server/src/plugins/crypto",
+  "unmodelled": []
+}

@@ -7,7 +7,7 @@ application only sees messages.
 import {
   createWsPlugin,
   wsEffector as ws,
-} from "@service-laboratory/pavlus/plugins/ws";
+} from "@pavlus/frontend/plugins/ws";
 
 createApp({ app, plugins: [store, createWsPlugin()] });
 ```

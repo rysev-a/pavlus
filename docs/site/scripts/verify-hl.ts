@@ -61,7 +61,7 @@ const cards = [
     /<div class="codecard-title">([^<]+)<\/div>\s*<pre[^>]*><code class="hl" style="counter-reset: ln (\d+)">([\s\S]*?)<\/code>/g,
   ),
 ];
-const pathRe = /((?:framework|admin-app)\/[A-Za-z0-9_/.-]+\.(?:ts|pavlus))/;
+const pathRe = /((?:framework|applications)\/[A-Za-z0-9_/.-]+\.(?:ts|pavlus))/;
 const seen = new Set<string>();
 let verified = 0;
 for (const [, title, reset, body] of cards) {

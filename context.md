@@ -6,7 +6,7 @@ significant step; keep it terse. Full history is in git + the conversation.
 ## Ground rules
 
 - Repo root `/Users/rysev-a/Projects/pavlus`; workspaces: `framework/`,
-  `admin-app/`, `ui-kit/` (+ `debug-panel/` — **owned by another thread, do
+  `applications/admin/`, `ui-kit/` (+ `debug-panel/` — **owned by another thread, do
   NOT touch**; the Console tab for the debug panel is built there).
 - From a workspace dir binaries are `../node_modules/.bin/{tsc,vitest,prettier}`
   (never `npx`, never `../../`).
@@ -35,7 +35,7 @@ route) + main.ui-shell-content > +outlet` (sidebar is a view-only template
   `props: (s) => ({ roles: s.roles })`; pages self-paint via `paintOnWrite`;
   `main.ts` uses `createRouterPlugin()`. SSR `renderPage(frontend, query, at)`
   dispatches `routeChanged` (with `inert("router")`) before `mounted`.
-- Styles live in `admin-app/public/styles.css`, `<link>` in index.html, NO
+- Styles live in `applications/admin/public/styles.css`, `<link>` in index.html, NO
   import in code (user preference).
 
 ## Done & green: users page == ui.shadcn.com/examples/tasks (completed)
@@ -86,7 +86,7 @@ docs/site/scripts/build.ts`).
 
 ## Done & green: restyled onto the ui-kit (shadcn "new-york")
 
-- `public/styles.css` rewritten from `ui-kit/frontend/styles.css`: sections
+- `public/styles.css` rewritten from `framework/ui-kit/frontend/styles.css`: sections
   1 (tokens incl. dark), 2 (shell), 3 (button), 4 (form), 5 (card/badge/
   page-header), 6 (data table), 9 (sidebar), 14 (icon masks) — trimmed to the
   rules used, section numbers follow the kit file; section 13 = the app's own

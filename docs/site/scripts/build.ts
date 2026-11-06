@@ -11,22 +11,10 @@
  * Run: npm run docs:build   (or: node docs/site/scripts/build.ts)
  */
 
-import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-
-import { compileAll, patchOneLine } from "./run.ts";
-import { compileToView } from "../../../framework/src/compiler/mod.ts";
-import {
-  compilePipelineSvg,
-  counterScenarioSvg,
-  FLOW_STEPS,
-  pureConceptFlowSvg,
-  pureConceptSvg,
-  templatePipelineSvg,
-  usersScenarioSvg,
-} from "./diagrams.ts";
-import { renderAboutPage, renderDocsPage, renderStartPage } from "./page.ts";
+import { fileURLToPath } from "node:url";
+import { compileToView } from "../../../framework/frontend/src/compiler/mod.ts";
 import {
   afterRemoveState,
   bootState,
@@ -37,6 +25,17 @@ import {
   usersApp,
   usersTemplate,
 } from "./demos.ts";
+import {
+  compilePipelineSvg,
+  counterScenarioSvg,
+  FLOW_STEPS,
+  pureConceptFlowSvg,
+  pureConceptSvg,
+  templatePipelineSvg,
+  usersScenarioSvg,
+} from "./diagrams.ts";
+import { renderAboutPage, renderDocsPage, renderStartPage } from "./page.ts";
+import { compileAll, patchOneLine } from "./run.ts";
 
 // this file lives in docs/site/scripts; the generated pages go to docs/site
 const here = dirname(fileURLToPath(import.meta.url));
@@ -90,8 +89,8 @@ const usersSvg = usersScenarioSvg(
 
 /* ---- source excerpts (always in sync with the code) */
 
-const rel = (p: string) => join(root, "framework", "src", p);
-const appRel = (p: string) => join(root, "admin-app", "app", p);
+const rel = (p: string) => join(root, "framework", "frontend", "src", p);
+const appRel = (p: string) => join(root, "applications", "admin", "app", p);
 const sliceIn =
   (base: (p: string) => string) =>
   (p: string, from: number, to: number): string =>

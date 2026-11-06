@@ -8,9 +8,9 @@
 export const counterTemplate = `p.score Count: {count}
 button(@click=inc) Increment`;
 
-export const counterApp = `import { Component, createApp, type Message } from "@service-laboratory/pavlus";
-import { createStorePlugin, storeEffector as store } from "@service-laboratory/pavlus/plugins/store";
-import { DomPlugin } from "@service-laboratory/pavlus/plugins/dom";
+export const counterApp = `import { Component, createApp, type Message } from "@pavlus/frontend";
+import { createStorePlugin, storeEffector as store } from "@pavlus/frontend/plugins/store";
+import { DomPlugin } from "@pavlus/frontend/plugins/dom";
 import view from "./counter.pavlus";
 
 class Counter extends Component<{ count: number }> {
@@ -36,10 +36,10 @@ export const usersTemplate = `ul.users
   else
     li.muted Ready when you are`;
 
-export const usersApp = `import { Component, createApp, type Message } from "@service-laboratory/pavlus";
-import { createStorePlugin, storeEffector as store } from "@service-laboratory/pavlus/plugins/store";
-import { createHttpPlugin, httpEffector as http } from "@service-laboratory/pavlus/plugins/http";
-import { DomPlugin } from "@service-laboratory/pavlus/plugins/dom";
+export const usersApp = `import { Component, createApp, type Message } from "@pavlus/frontend";
+import { createStorePlugin, storeEffector as store } from "@pavlus/frontend/plugins/store";
+import { createHttpPlugin, httpEffector as http } from "@pavlus/frontend/plugins/http";
+import { DomPlugin } from "@pavlus/frontend/plugins/dom";
 import view from "./users.pavlus";
 
 interface UsersState {

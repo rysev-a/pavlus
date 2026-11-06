@@ -5,10 +5,13 @@
  * compiler computes (`analyze.nodeDeps`) — the thing that makes `diff` cheap.
  */
 
-import { parse } from "../../../framework/src/template/parser.ts";
-import { nodeDeps } from "../../../framework/src/compiler/analyze.ts";
-import type { Expr, Node } from "../../../framework/src/template/ast.ts";
-import { type TreeNode, fit } from "./svg.ts";
+import { nodeDeps } from "../../../framework/frontend/src/compiler/analyze.ts";
+import type {
+  Expr,
+  Node,
+} from "../../../framework/frontend/src/template/ast.ts";
+import { parse } from "../../../framework/frontend/src/template/parser.ts";
+import { fit, type TreeNode } from "./svg.ts";
 
 /** Reconstructs expression source from the expression AST. */
 export function exprSrc(e: Expr): string {

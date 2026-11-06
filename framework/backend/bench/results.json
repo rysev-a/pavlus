@@ -1,0 +1,97 @@
+{
+  "env": {
+    "node": "v22.23.4",
+    "cpus": "4 x Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "memMB": 16086,
+    "connections": 100,
+    "seconds": 5,
+    "runs": 3,
+    "date": "2026-11-05T07:27:35.754Z"
+  },
+  "results": [
+    {
+      "name": "hello / node:http",
+      "runs": 3,
+      "rps": 21162,
+      "rpsAll": [
+        21162,
+        21469,
+        21061
+      ],
+      "p50": 4.59,
+      "p99": 7.9,
+      "max": 16.4,
+      "errors": 0
+    },
+    {
+      "name": "hello / @pavlus/backend",
+      "runs": 3,
+      "rps": 18573,
+      "rpsAll": [
+        19031,
+        17011,
+        18573
+      ],
+      "p50": 5.23,
+      "p99": 11.93,
+      "max": 115.1,
+      "errors": 0
+    },
+    {
+      "name": "hello / @pavlus/backend (trace off)",
+      "runs": 3,
+      "rps": 20146,
+      "rpsAll": [
+        19424,
+        20255,
+        20146
+      ],
+      "p50": 4.7,
+      "p99": 11.68,
+      "max": 98.9,
+      "errors": 0
+    },
+    {
+      "name": "pg query / node:http + pg.Pool",
+      "runs": 3,
+      "rps": 11930,
+      "rpsAll": [
+        12469,
+        11930,
+        11856
+      ],
+      "p50": 8.03,
+      "p99": 14.86,
+      "max": 23.1,
+      "errors": 0
+    },
+    {
+      "name": "pg query / @pavlus/backend",
+      "runs": 3,
+      "rps": 7758,
+      "rpsAll": [
+        7040,
+        7770,
+        7758
+      ],
+      "p50": 12.23,
+      "p99": 21.64,
+      "max": 33.3,
+      "errors": 0
+    },
+    {
+      "name": "pg query / @pavlus/backend (trace off)",
+      "runs": 3,
+      "rps": 6862,
+      "rpsAll": [
+        6359,
+        8011,
+        6862
+      ],
+      "p50": 13.72,
+      "p99": 26.24,
+      "max": 42.4,
+      "errors": 0
+    }
+  ]
+}

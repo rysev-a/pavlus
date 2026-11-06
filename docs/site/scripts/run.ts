@@ -8,14 +8,14 @@
 import {
   compileTemplate,
   compileToView,
-} from "../../../framework/src/compiler/mod.ts";
+} from "../../../framework/frontend/src/compiler/mod.ts";
 import {
-  toHtml,
   type Patch,
+  toHtml,
   type VNode,
-} from "../../../framework/src/runtime/vnode.ts";
-import { examples, type Example } from "./examples.ts";
+} from "../../../framework/frontend/src/runtime/vnode.ts";
 import { astView } from "./ast-view.ts";
+import { type Example, examples } from "./examples.ts";
 import { fit } from "./svg.ts";
 
 export interface RunStep {

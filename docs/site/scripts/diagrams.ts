@@ -8,9 +8,15 @@
  *         between plugins (core, dom, http, store) and the browser.
  */
 
+import { nodeDeps } from "../../../framework/frontend/src/compiler/analyze.ts";
+import { compileTemplate } from "../../../framework/frontend/src/compiler/mod.ts";
+import type { Node } from "../../../framework/frontend/src/template/ast.ts";
+import { parse } from "../../../framework/frontend/src/template/parser.ts";
+import { exprSrc } from "./ast-view.ts";
+import { pavlusTokens, type Tok, tok, tsTokens } from "./highlight.ts";
+import { type Compiled } from "./run.ts";
 import {
   C,
-  Svg,
   charW,
   drawTree,
   drawTreeH,
@@ -18,15 +24,9 @@ import {
   layoutTree,
   layoutTreeH,
   type SeqStep,
+  Svg,
   type TreeNode,
 } from "./svg.ts";
-import { type Compiled } from "./run.ts";
-import { parse } from "../../../framework/src/template/parser.ts";
-import { nodeDeps } from "../../../framework/src/compiler/analyze.ts";
-import { compileTemplate } from "../../../framework/src/compiler/mod.ts";
-import type { Node } from "../../../framework/src/template/ast.ts";
-import { exprSrc } from "./ast-view.ts";
-import { pavlusTokens, tsTokens, tok, type Tok } from "./highlight.ts";
 
 const W = 1240;
 

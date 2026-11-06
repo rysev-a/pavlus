@@ -1,0 +1,13 @@
+// A native <details>: the browser opens and closes it, so no logic.
+section.k-page
+  section.k-demo
+    h2.k-demo__title Repositories
+    div.k-preview.k-preview--block
+      div.k-narrow
+        details.ui-collapsible(open)
+          summary.ui-collapsible-trigger @pavlus starred 3 repositories
+          div.ui-collapsible-content
+            div.k-stack(style="gap: 8px")
+              div.k-item @pavlus/frontend
+              div.k-item @shadcn-ui/ui
+              div.k-item @vitejs/vite

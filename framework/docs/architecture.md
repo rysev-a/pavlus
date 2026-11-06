@@ -82,7 +82,7 @@ flowchart TD
 | 8   | `src/template/parser.ts`, `src/template/ast.ts` | Template source → AST.                                                                              |
 | 9   | `src/compiler/analyze.ts`                       | The dependency trick that makes `diff` cheap.                                                       |
 | 10  | `src/compiler/codegen.ts`, `src/compiler/emit/` | AST → readable `render`/`diff` source. Read `emit/` bottom-up: `base` → `expr` → `render` → `diff`. |
-| 11  | `../admin-app/`                                 | Everything assembled in a real app.                                                                 |
+| 11  | `../applications/admin/`                                 | Everything assembled in a real app.                                                                 |
 
 ## 2. One tick of the app (`src/core/mod.ts`)
 

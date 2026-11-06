@@ -1,7 +1,7 @@
 # Child views and component composition (design)
 
 Status: **implemented** (decisions in section 8). Working example:
-[`admin-app/frontend`](../../admin-app/frontend). Differences from the first
+[`applications/admin/frontend`](../../applications/admin/frontend). Differences from the first
 draft are marked "as built".
 
 ## 1. The scenario

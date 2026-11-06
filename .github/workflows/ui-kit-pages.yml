@@ -9,15 +9,15 @@ on:
   push:
     branches: [main]
     paths:
-      - "ui-kit/**"
-      - "admin-app/public/styles.css"
+      - "framework/ui-kit/**"
+      - "applications/admin/public/styles.css"
       - "framework/**"
       - "package-lock.json"
       - ".github/workflows/ui-kit-pages.yml"
   pull_request:
     paths:
-      - "ui-kit/**"
-      - "admin-app/public/styles.css"
+      - "framework/ui-kit/**"
+      - "applications/admin/public/styles.css"
       - "framework/**"
       - "package-lock.json"
       - ".github/workflows/ui-kit-pages.yml"
@@ -42,15 +42,15 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run typecheck --workspace ui-kit
-      - run: npm test --workspace ui-kit
+      - run: npm run typecheck --workspace @pavlus/ui-kit
+      - run: npm test --workspace @pavlus/ui-kit
       - name: Build for the project site (/<repo>/)
-        run: npm run build --workspace ui-kit
+        run: npm run build --workspace @pavlus/ui-kit
         env:
           UI_KIT_BASE: /${{ github.event.repository.name }}/
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: ui-kit/dist
+          path: framework/ui-kit/dist
 
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
