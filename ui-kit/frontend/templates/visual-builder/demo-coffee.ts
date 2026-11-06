@@ -448,6 +448,8 @@ export function coffeeUi(): Model {
     mockOn: true,
     // the diagram is the backend
     flow: coffeeDemo(),
+    // switch the simulation off and the requests go to the generated server (coffee-shop-app)
+    apiBase: "/crm-api",
     seq: b.seq(),
   };
 }

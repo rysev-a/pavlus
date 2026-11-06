@@ -37,12 +37,12 @@ export interface SqlResult {
 }
 
 class SqlFail extends Error {
-  constructor(
-    public code: string,
-    message: string,
-    public constraint?: string,
-  ) {
+  code: string;
+  constraint: string | undefined;
+  constructor(code: string, message: string, constraint?: string) {
     super(message);
+    this.code = code;
+    this.constraint = constraint;
   }
 }
 
@@ -135,7 +135,10 @@ const AGG = new Set(["count", "sum", "avg", "min", "max"]);
 class Parser {
   i = 0;
   hasAgg = false;
-  constructor(public toks: Tok[]) {}
+  toks: Tok[];
+  constructor(toks: Tok[]) {
+    this.toks = toks;
+  }
 
   peek(o = 0): Tok | undefined {
     return this.toks[this.i + o];

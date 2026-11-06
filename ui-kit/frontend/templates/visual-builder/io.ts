@@ -186,6 +186,7 @@ export function readModel(value: unknown): Model | string {
     mocks,
     mockOn: value.mockOn !== false,
     flow: flowFrom(value.flow),
+    apiBase: str(value.apiBase),
     seq: num(value.seq, 0),
   };
   // ids made later must not clash with the ids read here

@@ -33,6 +33,7 @@ import {
   undo,
 } from "../visual-builder/history.ts";
 import { DEMOS as VB_DEMOS } from "../visual-builder/demos.ts";
+import { addable, libraryEntries } from "../../plugin-library/index.ts";
 import { canvasTree, minimapTree, ridColor } from "./canvas.ts";
 import { type CodeView, codeViewOf } from "./code.ts";
 import { catalogOf, schemaText } from "./catalog.ts";
@@ -120,6 +121,7 @@ import {
   type FlowNode,
   type Model,
   type NodeKind,
+  type PluginManifest,
   EFFECTS,
   KIND_LABEL,
   LANE_LABEL,
@@ -236,6 +238,8 @@ export interface Core {
   tlRid: string;
   /** which of the generated files was copied last, for the button label */
   copied: string;
+  /** the plugins kept in this browser, for every project ("My library") */
+  mine: PluginManifest[];
 }
 
 export interface StepView {
@@ -291,6 +295,12 @@ interface Derived {
   inspector: InspectorView;
   scenarioV: ScenarioView;
   pluginsV: PluginsView;
+  /** the plugin library: ready-made plugins, those kept here, the built-in ones */
+  libraryV: {
+    bundled: LibraryRow[];
+    mine: LibraryRow[];
+    builtin: { name: string; server: string; unmodelled: string }[];
+  };
   chips: { id: string; label: string; hint: string; on: boolean }[];
   activeFaults: { k: string; text: string }[];
   runbar: {
@@ -387,6 +397,16 @@ interface Derived {
   heldCount: number;
 }
 
+export interface LibraryRow {
+  k: string;
+  name: string;
+  about: string;
+  external: string;
+  effects: string;
+  /** the project has a plugin of this name */
+  added: boolean;
+}
+
 export type FsState = Core & Derived;
 
 export interface PaletteGroup {
@@ -432,6 +452,33 @@ export const PALETTE: PaletteGroup[] = [
     ],
   },
 ];
+
+const MINE_KEY = "pavlus-flow-plugins";
+
+const rowOf = (m: Model, p: PluginManifest): LibraryRow => ({
+  k: p.name,
+  name: p.name,
+  about: p.about,
+  external: p.external,
+  effects: p.effects.map((e) => e.type).join(", "),
+  added: m.plugins.some((x) => x.name === p.name),
+});
+
+/** the library as the Plugins tab shows it */
+function libraryOf(m: Model, mine: PluginManifest[]): Derived["libraryV"] {
+  const all = libraryEntries();
+  return {
+    bundled: addable(all).map((e) => rowOf(m, e.manifest)),
+    mine: mine.map((p) => rowOf(m, p)),
+    builtin: all
+      .filter((e) => e.builtin)
+      .map((e) => ({
+        name: e.name,
+        server: e.server,
+        unmodelled: e.unmodelled.join(", "),
+      })),
+  };
+}
 
 /** the palette of a project: the built-in plugins and externals, and its own */
 export function paletteOf(m: Model): PaletteGroup[] {
@@ -523,6 +570,7 @@ export function coreOf(model: Model): Core {
     srcPath: "",
     tlRid: "",
     copied: "",
+    mine: [],
   };
 }
 
@@ -642,6 +690,10 @@ export function derive(c: Core): Derived {
     inspector,
     pluginsV:
       c.side === "plugins" ? pluginsView(root) : { builtin: [], custom: [] },
+    libraryV:
+      c.side === "plugins"
+        ? libraryOf(root, c.mine)
+        : { bundled: [], mine: [], builtin: [] },
     scenarioV:
       c.side === "scenario"
         ? scenarioView(flat)
@@ -835,6 +887,7 @@ const CORE_KEYS = [
   "srcPath",
   "tlRid",
   "copied",
+  "mine",
 ] as const;
 
 export function coreFrom(s: FsState): Core {
@@ -1094,6 +1147,7 @@ export class FlowStudio extends Component<FsState> {
       }),
       local.media("(prefers-reduced-motion: reduce)", "gotMotion"),
       local.load(STORAGE_KEY, "loaded"),
+      local.load(MINE_KEY, "mineLoaded"),
       ...(state.ready ? [time.setTimeout(SYNC, 0, "sync")] : []),
     ];
   }
@@ -1319,6 +1373,58 @@ export class FlowStudio extends Component<FsState> {
             "An effect node still uses the plugin. Delete those nodes first.",
         })
       : this._editRoot(state, next);
+  }
+
+  /** the plugins kept in this browser came back */
+  mineLoaded(msg: Message, state: FsState): Effect[] {
+    const text = (msg.payload as { text: string | null } | undefined)?.text;
+    const r = text ? parsePlugins(text) : [];
+    return typeof r === "string" ? [] : this._commit(state, { mine: r });
+  }
+
+  /** a plugin of the library (by name) is added to the project */
+  pluginUse(msg: Message, state: FsState): Effect[] {
+    const e = libraryEntries().find(
+      (x) => !x.builtin && x.name === msg.payload,
+    );
+    if (!e) return [];
+    return this._editRoot(
+      state,
+      mergePlugins(this._root(state), [e.manifest]),
+      "",
+      {
+        side: "plugins",
+        message: `Added the plugin ${e.name} from the library.`,
+      },
+    );
+  }
+
+  /** a plugin of the project is kept in this browser, for the other projects */
+  pluginSave(msg: Message, state: FsState): Effect[] {
+    const p = this._root(state).plugins.find((x) => x.name === msg.payload);
+    if (!p) return [];
+    const mine = [...state.mine.filter((x) => x.name !== p.name), p];
+    return this._commit(
+      state,
+      { mine, message: `Kept ${p.name} in My library.` },
+      [local.save(MINE_KEY, pluginsText(mine))],
+    );
+  }
+
+  mineUse(msg: Message, state: FsState): Effect[] {
+    const p = state.mine.find((x) => x.name === msg.payload);
+    return p
+      ? this._editRoot(state, mergePlugins(this._root(state), [p]), "", {
+          message: `Added the plugin ${p.name} from My library.`,
+        })
+      : [];
+  }
+
+  mineDel(msg: Message, state: FsState): Effect[] {
+    const mine = state.mine.filter((x) => x.name !== msg.payload);
+    return this._commit(state, { mine }, [
+      local.save(MINE_KEY, pluginsText(mine)),
+    ]);
   }
 
   pluginCopy(msg: Message, state: FsState): Effect[] {

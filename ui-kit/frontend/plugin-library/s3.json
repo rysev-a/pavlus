@@ -1,0 +1,31 @@
+{
+  "name": "s3",
+  "about": "object storage for files and images",
+  "external": "Object storage",
+  "latency": 60,
+  "timeout": 10000,
+  "errorCode": "NoSuchKey",
+  "effects": [
+    {
+      "type": "s3.put",
+      "plugin": "s3",
+      "hint": "store an object",
+      "detail": "PUT bucket/key",
+      "replies": true
+    },
+    {
+      "type": "s3.get",
+      "plugin": "s3",
+      "hint": "read an object",
+      "detail": "GET bucket/key",
+      "replies": true
+    },
+    {
+      "type": "s3.remove",
+      "plugin": "s3",
+      "hint": "delete an object, nothing comes back",
+      "detail": "DELETE bucket/key",
+      "replies": false
+    }
+  ]
+}

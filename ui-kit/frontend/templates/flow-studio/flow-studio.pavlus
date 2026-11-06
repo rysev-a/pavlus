@@ -423,16 +423,42 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
                 for fld in p.fields key fld.id
                   +Field#f(...fld)
                 div.fs-row
+                  button.ui-button.ui-button-outline.ui-button-sm(type="button" title="Keep it in this browser, for every project" @click=pluginSave(p.name)) Keep in My library
                   button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=pluginCopy(p.name)) Copy manifest
                   button.ui-button.ui-button-ghost.ui-button-sm(type="button" disabled={p.uses > 0} title="A plugin that effect nodes use cannot be removed" @click=pluginDel(p.name)) Remove ({p.uses} in use)
           else
             p.fs-hint None yet.
+          h3.fs-h3 Library
+          p.fs-hint Ready-made plugins. Adding one puts its effects in the palette, the checks and the generated server.
+          for r in libraryV.bundled key r.k
+            div.fs-box
+              strong {r.name}
+              small.fs-hint {r.about}
+              small.fs-mono {r.effects}
+              small.fs-hint {r.external}
+              div.fs-row
+                button.ui-button.ui-button-default.ui-button-sm(type="button" @click=pluginUse(r.name)) {r.added ? "Replace in the project" : "Add to the project"}
+          h3.fs-h3 My library
+          p.fs-hint Plugins you kept in this browser: the same in every project.
+          if libraryV.mine.length
+            for r in libraryV.mine key r.k
+              div.fs-box
+                strong {r.name}
+                small.fs-mono {r.effects}
+                div.fs-row
+                  button.ui-button.ui-button-default.ui-button-sm(type="button" @click=mineUse(r.name)) {r.added ? "Replace in the project" : "Add to the project"}
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=mineDel(r.name)) Remove from My library
+          else
+            p.fs-hint Nothing kept yet. Use Keep in My library on a plugin of the project.
           h3.fs-h3 Built in
+          p.fs-hint Made from the plugins of pavlus-server. The effects of the server that this design does not model yet are listed.
           ul.fs-bps
-            for b in pluginsV.builtin key b.name
+            for b in libraryV.builtin key b.name
               li
                 strong {b.name}
-                small {b.effects}
+                small {b.server}
+                if b.unmodelled
+                  small not modelled yet: {b.unmodelled}
         else
           h2.fs-h2 Scenario
           p.fs-hint What the Run plays: the requests that start at once, the conditions of the branches, how long each hop takes, and the faults.

@@ -1,0 +1,31 @@
+{
+  "name": "stripe",
+  "about": "card payments",
+  "external": "Stripe API",
+  "latency": 120,
+  "timeout": 5000,
+  "errorCode": "card_declined",
+  "effects": [
+    {
+      "type": "stripe.charge",
+      "plugin": "stripe",
+      "hint": "charge a card",
+      "detail": "POST /v1/charges: amount, currency, source",
+      "replies": true
+    },
+    {
+      "type": "stripe.refund",
+      "plugin": "stripe",
+      "hint": "refund a charge",
+      "detail": "POST /v1/refunds: charge",
+      "replies": true
+    },
+    {
+      "type": "stripe.customer",
+      "plugin": "stripe",
+      "hint": "create a customer at Stripe",
+      "detail": "POST /v1/customers: email",
+      "replies": true
+    }
+  ]
+}

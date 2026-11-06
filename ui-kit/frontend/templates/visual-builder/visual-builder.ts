@@ -211,6 +211,7 @@ interface Derived {
   /** the diagram the project is linked to: its routes, and the demos to link to */
   flowV: {
     on: boolean;
+    apiBase: string;
     name: string;
     tables: string;
     routes: { k: string; label: string; detail: string }[];
@@ -352,12 +353,13 @@ export function derive(c: Core): Derived {
       : null,
     codeText: c.sheet.open === "code" ? generatedText(model) : "",
     mockHint: !model.mockOn
-      ? "The backend is off: requests go to the real network."
+      ? `The backend is not simulated: requests go to ${model.apiBase ? `the server at ${model.apiBase}` : "the real network"}.`
       : model.flow
         ? `The diagram "${model.flow.name}" answers the requests: its routes, its handlers, its tables. The tables start again with the preview.`
         : "Requests are answered by these routes, no network.",
     flowV: {
       on: model.flow !== null,
+      apiBase: model.apiBase,
       name: model.flow?.name ?? "",
       tables: model.flow
         ? Object.entries(model.flow.db)
@@ -1257,6 +1259,15 @@ export class VisualBuilder extends Component<VbState> {
     );
   }
 
+  /** the address real requests go to when the backend is not simulated */
+  apiBaseSet(msg: Message, state: VbState): Effect[] {
+    return this._edit(
+      state,
+      { ...this._model(state), apiBase: (msg.event?.value ?? "").trim() },
+      "api-base",
+    );
+  }
+
   flowDisconnect(_msg: Message, state: VbState): Effect[] {
     return this._edit(state, { ...this._model(state), flow: null }, "", {
       message: "The diagram is unlinked: the mock routes answer again.",
@@ -1642,7 +1653,7 @@ export class VisualBuilder extends Component<VbState> {
         fx.push(
           time.setTimeout(`vb-mock-${r.slot}`, res.delay, `mockDone${r.slot}`),
         );
-      } else fx.push(this._httpFx(r));
+      } else fx.push(this._httpFx(r, m.apiBase));
     }
     for (const url of step.opens) fx.push(local.open(url));
     if (run.notice && run.notice !== state.run.notice)
@@ -1650,10 +1661,13 @@ export class VisualBuilder extends Component<VbState> {
     return this._commit(state, { ...patch, run }, fx);
   }
 
-  _httpFx(r: HttpRequest): Effect {
+  _httpFx(r: HttpRequest, apiBase = ""): Effect {
     return http.request({
       id: `vb-req-${r.slot}`,
-      url: r.url,
+      url:
+        apiBase && r.url.startsWith("/")
+          ? apiBase.replace(/\/+$/, "") + r.url
+          : r.url,
       method: r.method,
       headers: r.headers,
       body: r.body,

@@ -70,7 +70,7 @@ describe("every generated file parses", () => {
     test(d.title, () => {
       const files = generateAll(d.make());
       expect(files.length).toBeGreaterThan(5);
-      for (const f of files) {
+      for (const f of files.filter((x) => x.path.endsWith(".ts"))) {
         const r = parse(f.path, f.code);
         expect(
           r.errors.map((e) => e.message),

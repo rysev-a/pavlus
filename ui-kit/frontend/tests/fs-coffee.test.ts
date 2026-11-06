@@ -392,7 +392,7 @@ describe("the code made from it", () => {
   const files = generateAll(m);
 
   test("every file parses", () => {
-    for (const f of files) {
+    for (const f of files.filter((x) => x.path.endsWith(".ts"))) {
       const r = parseSync(f.path, f.code, { lang: "ts" });
       expect(r.errors.map((e) => `${f.path}: ${e.message}`)).toEqual([]);
     }
@@ -423,7 +423,9 @@ describe("the code made from it", () => {
     expect(code).toContain(
       "insert into customers (name, email, phone, points, created_at) values ($1, $2, $3, 0, now()) returning *",
     );
-    expect(code).toContain("p?.body?.name, p?.body?.email, p?.body?.phone");
+    expect(code).toContain(
+      "json(p?.body?.name), json(p?.body?.email), json(p?.body?.phone)",
+    );
     expect(code).toContain("if ((p?.code == '23505')) out.push(");
   });
 

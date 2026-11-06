@@ -1,0 +1,32 @@
+{
+  "name": "ws",
+  "about": "built in: the ws plugin of pavlus-server",
+  "external": "Client",
+  "latency": 0.8,
+  "timeout": 0,
+  "errorCode": "EPIPE",
+  "effects": [
+    {
+      "type": "ws.send",
+      "plugin": "ws",
+      "hint": "send a frame to the connection",
+      "detail": "",
+      "replies": false
+    },
+    {
+      "type": "ws.broadcast",
+      "plugin": "ws",
+      "hint": "send to a room",
+      "detail": "room",
+      "replies": false
+    }
+  ],
+  "builtin": true,
+  "server": "server/src/plugins/ws",
+  "unmodelled": [
+    "join",
+    "leave",
+    "close",
+    "ping"
+  ]
+}

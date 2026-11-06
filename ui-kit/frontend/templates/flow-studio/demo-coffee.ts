@@ -301,7 +301,7 @@ export function coffeeDemo(): Model {
       })
         .n("ql", "effect", "pg.query", {
           detail:
-            "select * from orders where {payload.query.status} is null or {payload.query.status} = '' or status = {payload.query.status} order by id desc",
+            "select * from orders where {payload.query.status}::text is null or {payload.query.status}::text = '' or status = {payload.query.status} order by id desc",
         })
         .n("hld", "handler", "orders.listed")
         .n("rl", "effect", "http.respond", {
@@ -435,13 +435,14 @@ export function coffeeDemo(): Model {
         detail: "four numbers for the front desk",
       })
         .n("q1", "effect", "pg.query", {
-          detail: "select count(*) as n from orders where status != 'done'",
+          detail:
+            "select count(*)::int as n from orders where status != 'done'",
         })
         .n("h1", "handler", "dashboard.open", {
           reqSet: { open: "{payload.rows.0.n}" },
         })
         .n("q2", "effect", "pg.query", {
-          detail: "select count(*) as n from customers",
+          detail: "select count(*)::int as n from customers",
         })
         .n("h2", "handler", "dashboard.customers", {
           reqSet: { customers: "{payload.rows.0.n}" },

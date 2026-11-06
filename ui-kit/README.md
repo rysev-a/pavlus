@@ -87,6 +87,33 @@ UI_KIT_BASE=/pavlus/ npm run build --workspace ui-kit   # what the workflow buil
   `404.html` (a copy of `index.html`): opening `/pavlus/button` directly gets
   the app, which routes it. See `vite.config.mjs`.
 
+## From a diagram to a running app
+
+Flow Studio and the Visual Builder are two halves of one way to build an app: the
+diagram is the data flow and the backend, the Visual Builder is the UI that is wired to
+it. The demo is a CRM for a coffee shop, in both tools.
+
+- **Run it in the browser.** Open the "Coffee shop CRM" demo of Flow Studio and press
+  Run: the requests go through modules, a pipe, code and a plugin, against the tables of
+  the design (`store.ts`, a small in-memory SQL). In the Visual Builder open the demo of
+  the same name: it is linked to that diagram, which answers its requests.
+- **Make the server.** `node scripts/flow-generate.ts coffee ../coffee-shop-app --name
+  coffee-shop-app` writes a [pavlus-server](../server) project: one file per module,
+  the routes, the schema and the seed of the tables, the stubs of the plugins, tests.
+  `coffee-shop-app/` is that output (a test keeps it in step with the design).
+- **Run the server.** In `coffee-shop-app/`: `cp .env.example .env && npm run db:up &&
+  npm start`. In the Visual Builder demo switch "Simulated backend" off: its requests go
+  to `/crm-api`, which `npm run dev` proxies to the server on port 3020.
+- **Check that they agree.** `frontend/tests/coffee-conformance.test.ts` runs one day
+  of the shop through the simulation and through the real server and Postgres and
+  compares every answer and every table (it is skipped without `COFFEE_API` and
+  `DATABASE_URL`; the command is at its top).
+- **Plugins.** `frontend/plugin-library/` is the library: the built-in plugins, made
+  from `server/src/plugins` (`npm run gen:plugins`; a test fails when the server gets an
+  effect the library does not know), and ready-made ones (mailer, stripe, s3, sms,
+  queue) that a project can add. A plugin of a project can be kept in "My library" in
+  the browser for the other projects.
+
 ## Deploy
 
 `.github/workflows/ui-kit-pages.yml` type-checks, tests and builds the kit on

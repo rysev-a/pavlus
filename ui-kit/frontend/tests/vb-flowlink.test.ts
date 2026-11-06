@@ -246,3 +246,43 @@ describe("saving", () => {
     ).toBeNull();
   });
 });
+
+describe("real requests, when the backend is not simulated", () => {
+  const off = () =>
+    sim({ ...stateOf(coffeeUi()), ready: true }).send("mockToggle");
+  const asked = (s: ReturnType<typeof sim>) =>
+    s.effects
+      .filter((e) => e.plugin === "http")
+      .map((e) => String((e as { url?: string }).url));
+
+  test("a relative url goes to the server of the project, the diagram is not asked", () => {
+    const s = off().send("setTab", "preview");
+    expect(model(s).apiBase).toBe("/crm-api");
+    expect(asked(s)).toEqual(["/crm-api/dashboard"]);
+  });
+
+  test("the address is set in the panel and used at once", () => {
+    const s = off().send("setLeft", "mock");
+    expect(s.state.flowV.apiBase).toBe("/crm-api");
+    s.send("apiBaseSet", undefined, {
+      type: "input",
+      value: " http://127.0.0.1:3020/ ",
+    });
+    expect(model(s).apiBase).toBe("http://127.0.0.1:3020/");
+    s.send("setTab", "preview");
+    expect(asked(s)).toEqual(["http://127.0.0.1:3020/dashboard"]);
+    expect(s.state.mockHint).toContain("http://127.0.0.1:3020/");
+  });
+
+  test("without an address the url is left as it is", () => {
+    const s = off()
+      .send("apiBaseSet", undefined, { type: "input", value: "" })
+      .send("setTab", "preview");
+    expect(asked(s)).toEqual(["/dashboard"]);
+  });
+
+  test("an address is saved with the project", () => {
+    const m = coffeeUi();
+    expect((parseProject(projectText(m)) as typeof m).apiBase).toBe("/crm-api");
+  });
+});

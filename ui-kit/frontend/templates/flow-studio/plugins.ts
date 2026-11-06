@@ -183,6 +183,7 @@ export function pluginStub(p: PluginManifest): string {
     .map(
       (e) => `      case ${JSON.stringify(e.type.slice(p.name.length + 1))}:
         // TODO: ${e.hint || e.type}${p.external ? ` (talks to ${p.external})` : ""}
+        console.log(${JSON.stringify(`[${p.name}] ${e.type.slice(p.name.length + 1)}:`)}, effect.detail);
         ${
           e.replies
             ? `if (effect.replyTo)

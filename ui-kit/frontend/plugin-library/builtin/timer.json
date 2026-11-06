@@ -1,0 +1,26 @@
+{
+  "name": "timer",
+  "about": "built in: the time plugin of pavlus-server",
+  "external": "",
+  "latency": 0,
+  "timeout": 0,
+  "errorCode": "ERR_TIMER",
+  "effects": [
+    {
+      "type": "timer.after",
+      "plugin": "timer",
+      "hint": "reply after N ms (detail = ms)",
+      "detail": "5000",
+      "replies": true,
+      "noFail": true
+    }
+  ],
+  "builtin": true,
+  "server": "server/src/plugins/time",
+  "unmodelled": [
+    "timer.every",
+    "timer.cancel",
+    "cron",
+    "cron.cancel"
+  ]
+}

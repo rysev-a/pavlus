@@ -161,6 +161,7 @@ export function counterDemo(): Model {
     mocks: [],
     mockOn: true,
     flow: null,
+    apiBase: "",
     seq: b.seq(),
   };
 }
@@ -297,6 +298,7 @@ export function todoDemo(): Model {
     ],
     mockOn: true,
     flow: null,
+    apiBase: "",
     seq: b.seq(),
   };
 }
@@ -448,6 +450,7 @@ export function directoryDemo(): Model {
     ],
     mockOn: true,
     flow: null,
+    apiBase: "",
     seq: b.seq(),
   };
 }
@@ -756,6 +759,7 @@ export function landingDemo(): Model {
     ],
     mockOn: true,
     flow: null,
+    apiBase: "",
     seq: b.seq(),
   };
 }
@@ -920,6 +924,7 @@ export function salesDemo(): Model {
     mocks: [mock("m1", "GET", "/api/orders", ORDERS, 200, 600)],
     mockOn: true,
     flow: null,
+    apiBase: "",
     seq: b.seq(),
   };
 }

@@ -31,7 +31,7 @@ div.k-template.vb(data-tab=tab data-pane=pane data-bp=bp data-drag={drag ? "on" 
       button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=copyCode) Copy as pavlus code
       label.vb-check.vb-mocktoggle
         input(type="checkbox" checked={mockOn} @change=mockToggle)
-        span Backend
+        span Simulated backend
       span.vb-summary {summary}
   if message
     div.vb-msg(role="status")
@@ -126,6 +126,9 @@ div.k-template.vb(data-tab=tab data-pane=pane data-bp=bp data-drag={drag ? "on" 
             button.ui-button.ui-button-default.ui-button-sm(type="button" @click=keyAdd) Add key
         else if leftTab === "mock"
           p.vb-hint {mockHint}
+          label.vb-f
+            span.vb-f__label Server for real requests (when the backend is not simulated)
+            input.ui-input(type="text" value=flowV.apiBase placeholder="/crm-api  or  http://127.0.0.1:3020" aria-label="Server for real requests" @input=apiBaseSet)
           div.vb-keybox.vb-flow
             if flowV.on
               strong Diagram: {flowV.name}

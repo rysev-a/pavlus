@@ -1,0 +1,18 @@
+{
+  "name": "sms",
+  "about": "text messages",
+  "external": "SMS gateway",
+  "latency": 90,
+  "timeout": 4000,
+  "errorCode": "ESMS",
+  "effects": [
+    {
+      "type": "sms.send",
+      "plugin": "sms",
+      "hint": "send a text message",
+      "detail": "to: {phone}, text: your order is ready",
+      "replies": true,
+      "optionalReply": true
+    }
+  ]
+}

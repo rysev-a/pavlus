@@ -1,0 +1,43 @@
+{
+  "name": "pg",
+  "about": "built in: the postgres plugin of pavlus-server",
+  "external": "Postgres",
+  "latency": 12,
+  "timeout": 5000,
+  "errorCode": "40001",
+  "effects": [
+    {
+      "type": "pg.query",
+      "plugin": "pg",
+      "hint": "sql with parameters",
+      "detail": "select id, email from users where email = $1",
+      "replies": true
+    },
+    {
+      "type": "pg.tx.begin",
+      "plugin": "pg",
+      "hint": "start a transaction",
+      "detail": "",
+      "replies": true
+    },
+    {
+      "type": "pg.tx.commit",
+      "plugin": "pg",
+      "hint": "commit it",
+      "detail": "",
+      "replies": true
+    },
+    {
+      "type": "pg.tx.rollback",
+      "plugin": "pg",
+      "hint": "roll it back",
+      "detail": "",
+      "replies": false
+    }
+  ],
+  "builtin": true,
+  "server": "server/src/plugins/postgres",
+  "unmodelled": [
+    "migrate"
+  ]
+}

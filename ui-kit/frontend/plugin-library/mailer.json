@@ -1,0 +1,24 @@
+{
+  "name": "mailer",
+  "about": "sends mail: receipts, invitations, resets",
+  "external": "Mail server",
+  "latency": 40,
+  "timeout": 3000,
+  "errorCode": "ECONNREFUSED",
+  "effects": [
+    {
+      "type": "mailer.send",
+      "plugin": "mailer",
+      "hint": "send an email, nothing comes back",
+      "detail": "to: {email}, subject: your receipt",
+      "replies": false
+    },
+    {
+      "type": "mailer.sendTracked",
+      "plugin": "mailer",
+      "hint": "send an email and wait for the id the provider gives it",
+      "detail": "to: {email}, subject: your receipt",
+      "replies": true
+    }
+  ]
+}

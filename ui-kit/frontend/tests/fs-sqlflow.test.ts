@@ -181,7 +181,7 @@ describe("the generated server", () => {
     expect(code).toContain(
       "insert into customers (name, email) values ($1, $2) returning *",
     );
-    expect(code).toContain("p?.body?.name, p?.body?.email");
+    expect(code).toContain("json(p?.body?.name), json(p?.body?.email)");
     expect(code).not.toContain("{payload.body.name}");
   });
 
@@ -191,7 +191,7 @@ describe("the generated server", () => {
     expect(code).toContain(
       "const p = (msg.payload ?? {}) as Record<string, any>;",
     );
-    for (const f of generateServer(m)) {
+    for (const f of generateServer(m).filter((x) => x.path.endsWith(".ts"))) {
       const r = parseSync(f.path, f.code, { lang: "ts" });
       expect(r.errors.map((x) => x.message)).toEqual([]);
     }

@@ -23,6 +23,7 @@ import {
 } from "./model.ts";
 import { flatten } from "./modules.ts";
 import { builderOf, pluginStub, usedCustom } from "./plugins.ts";
+import { dbModule, schemaSql, seedModule } from "./schema.ts";
 import { probe } from "./code.ts";
 import {
   type Step,
@@ -34,7 +35,7 @@ import {
 
 export interface GenFile {
   path: string;
-  group: "server" | "tests" | "frontend";
+  group: "server" | "tests" | "frontend" | "project";
   title: string;
   code: string;
 }
@@ -420,7 +421,7 @@ function effectCall(m: Model, n: FlowNode): EffCall {
       const sql = n.detail.replace(
         /\{([A-Za-z_][\w.]*)\}/g,
         (_, path: string) => {
-          refs.push(pathExpr(path, "server"));
+          refs.push(`json(${pathExpr(path, "server")})`);
           return "$" + String(own + refs.length);
         },
       );
@@ -669,6 +670,7 @@ function handlerModule(
     ...(extra && /\bemit\(/.test(body)
       ? [`import { emit } from "${extra.emitFrom}";`]
       : []),
+    ...(/\bjson\(/.test(body) ? ["", JSON_HELPER] : []),
     ...(condNames.length
       ? [
           `import { ${[...new Set(condNames)].join(", ")} } from "${condImport}";`,
@@ -752,20 +754,51 @@ export function usedModules(m: Model): ModuleDef[] {
 
 const slugOf = (d: ModuleDef): string => slugify(d.name);
 
-/** where an instance of a module is: the graph it is in and the node */
+/** where an instance of a module is: the graph it is in, its node, the module that graph is the body of */
 function instanceOf(
   m: Model,
   defId: string,
-): { graph: Model; node: FlowNode } | undefined {
-  const graphs: Model[] = [
-    m,
-    ...m.modules.map((d) => ({ ...m, nodes: d.nodes, edges: d.edges })),
+): { graph: Model; node: FlowNode; owner?: ModuleDef } | undefined {
+  const graphs: { graph: Model; owner?: ModuleDef }[] = [
+    { graph: m },
+    ...m.modules.map((d) => ({
+      graph: { ...m, nodes: d.nodes, edges: d.edges },
+      owner: d,
+    })),
   ];
-  for (const g of graphs) {
-    const node = g.nodes.find((n) => n.kind === "module" && n.ref === defId);
-    if (node) return { graph: g, node };
+  for (const { graph, owner } of graphs) {
+    const node = graph.nodes.find(
+      (n) => n.kind === "module" && n.ref === defId,
+    );
+    if (node) return { graph, node, owner };
   }
   return undefined;
+}
+
+/**
+ * The edges that leave a module by one of its output ports. A port that the module
+ * it is an instance in shows as its own (a pipe does) is followed up to the edges of
+ * that module's instance, so the stage that ends a pipe still reaches what the pipe does.
+ */
+function outerEdges(
+  m: Model,
+  defId: string,
+  portId: string,
+  depth = 0,
+): { graph: Model; edge: FlowEdge }[] {
+  const at = instanceOf(m, defId);
+  if (!at || depth > 8) return [];
+  const first = findDef(m, defId)?.outputs[0]?.id;
+  const direct = outEdges(at.graph, at.node.id)
+    .filter((e) => e.fromPort === portId || (!e.fromPort && portId === first))
+    .map((edge) => ({ graph: at.graph, edge }));
+  const exposed = (at.owner?.outputs ?? []).filter(
+    (p) => p.node === at.node.id && p.via === portId,
+  );
+  return [
+    ...direct,
+    ...exposed.flatMap((p) => outerEdges(m, at.owner!.id, p.id, depth + 1)),
+  ];
 }
 
 /** the input port of a module an edge arrives at */
@@ -841,10 +874,14 @@ ${importLines(used, "..").join("\n")}
 ${uses ? 'import { emit } from "./emit.ts";' : ""}
 
 ${portsHeader(d).join("\n")}
-export function handle(message: Message, state: ServerState): Effect[] | undefined {
+export function handle(message: Message, serverState: ServerState): Effect[] | undefined {
   if (!(inputs as readonly string[]).includes(message.id)) return undefined;
-  // msg.payload is any here: the types of the ports are above.
+  // the body reads the payload and the slices of the requests as plain data
   const msg = message as Message & { payload: any; ctx: { rid: string } };
+  const state = serverState as unknown as {
+    requests: Record<string, any>;
+    shared: Record<string, any>;
+  };
   void msg;
   void state;
   const effects: Effect[] = (() => {
@@ -913,19 +950,12 @@ function graphFile(
     emits: (h, used) => {
       const out = emitsToModules(m, g, h);
       // the outer edges of the output ports bound to this handler
-      const at = instanceOf(m, d.id);
       for (const port of d.outputs.filter((p) => p.node === h.id && !p.via)) {
-        if (!at) continue;
-        const outer = outEdges(at.graph, at.node.id).filter(
-          (e) =>
-            e.fromPort === port.id ||
-            (!e.fromPort && e === outEdges(at.graph, at.node.id)[0]),
-        );
-        for (const e of outer) {
-          const to = findNode(at.graph, e.to);
+        for (const { graph, edge: e } of outerEdges(m, d.id, port.id)) {
+          const to = findNode(graph, e.to);
           if (!to) continue;
           if (to.kind === "effect") {
-            const call = effectCall(at.graph, to);
+            const call = effectCall(graph, to);
             used[call.uses] = true;
             out.push({ cond: e.cond.trim(), code: call.code });
           } else if (to.kind === "module")
@@ -957,13 +987,13 @@ function graphFile(
   };
 }
 
-const EMIT_FILE = `// \`emit\`: a message from one module to another. The runtime delivers it with the
-// same context (the rid), so a flow that crosses modules is still one request.
+const EMIT_FILE = `// \`emit\`: a message from one module to another. The runtime dispatches it with the
+// context of the effect (the rid), so a flow that crosses modules is still one request.
 import type { Effect } from "@service-laboratory/pavlus";
-import { timeEffector as time } from "pavlus-server";
+import { requestsEffector as rq } from "pavlus-server";
 
 export const emit = (id: string, payload?: unknown): Effect =>
-  time.after(0, id, { payload }) as unknown as Effect;
+  rq.dispatch({ id, payload }) as unknown as Effect;
 
 /** Renames the messages a stage emits (the pass-through of a pipe). */
 export function retarget(
@@ -971,13 +1001,27 @@ export function retarget(
   renames: Record<string, string>,
 ): Effect[] {
   return effects.map((e) => {
-    const x = e as unknown as { plugin?: string; type?: string; replyTo?: string };
-    return x.plugin === "time" && x.type === "timer.after" && x.replyTo && renames[x.replyTo]
-      ? ({ ...x, replyTo: renames[x.replyTo] } as unknown as Effect)
+    const x = e as unknown as {
+      plugin?: string;
+      type?: string;
+      message?: { id: string; payload?: unknown };
+    };
+    return x.plugin === "requests" &&
+      x.type === "dispatch" &&
+      x.message &&
+      renames[x.message.id]
+      ? ({
+          ...x,
+          message: { ...x.message, id: renames[x.message.id] },
+        } as unknown as Effect)
       : e;
   });
 }
 `;
+
+/** an object or an array is a JSON value for the database, not a Postgres array */
+const JSON_HELPER = `const json = (v: unknown): unknown =>
+  v !== null && typeof v === "object" ? JSON.stringify(v) : v;`;
 
 /** The files of the modules of a design, and the conditions they use. */
 function moduleFiles(m: Model): {
@@ -1049,10 +1093,8 @@ export function generateServer(source: Model): GenFile[] {
       if (d.body === "code") {
         for (const [k, re] of PLUGIN_USE)
           if (re.test(d.source)) usedPlugins.add(k === "time" ? "timer" : k);
-        if (/\bemit\(/.test(d.source)) usedPlugins.add("timer");
       }
     }
-    usedPlugins.add("timer");
   }
 
   const httpRoutes = plan.routes.filter((r) => !isWs(r));
@@ -1119,6 +1161,28 @@ ${plan.routes
 
   mf?.conds.forEach((c) => allConds.add(c));
   if (mf) files.push(...mf.files);
+  const hasDb = Object.keys(source.db).length > 0;
+  if (hasDb)
+    files.push(
+      {
+        path: "server/schema.sql",
+        group: "server",
+        title: "schema.sql",
+        code: schemaSql(source.db),
+      },
+      {
+        path: "server/seed.ts",
+        group: "server",
+        title: "seed.ts",
+        code: seedModule(source.db),
+      },
+      {
+        path: "server/db.ts",
+        group: "server",
+        title: "db.ts",
+        code: dbModule(source.db),
+      },
+    );
   for (const p of usedCustom(source))
     files.push({
       path: `server/plugins/${p.name}.ts`,
@@ -1224,9 +1288,9 @@ export const app = (msg: Message, state: ServerState): Effect[] => {
 import {\n${pimports.map((p) => `  ${p},`).join("\n")}\n} from "pavlus-server";
 import { app } from "./app.ts";
 import { routes } from "./routes.ts";
-${customImports.join("\n")}
+${hasDb ? 'import { ensureDatabase } from "./db.ts";\n' : ""}${customImports.join("\n")}
 
-${wires.join("\n")}
+${hasDb ? 'if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");\nawait ensureDatabase(process.env.DATABASE_URL);\n\n' : ""}${wires.join("\n")}
 const server = createServerApp({
   app,
   routes,
@@ -1456,12 +1520,13 @@ function moduleTests(source: Model): GenFile[] {
               .filter((e) => e.port)
               .map((e) =>
                 e.plugin === "app"
-                  ? `expect.objectContaining({ plugin: "time", type: "timer.after", replyTo: ${q(e.port)} })`
+                  ? `expect.objectContaining({ plugin: "requests", type: "dispatch", message: expect.objectContaining({ id: ${q(e.port)} }) })`
                   : `expect.objectContaining({ plugin: ${q(e.plugin)}, type: ${q(e.type)} })`,
               )
           : [];
       its.push(`  it(${q(`takes ${p.name}`)}, () => {
-    const out = ${name}(message(${q(p.name)}, ${payload}), state());
+    const out = ${name}(message(${q(p.name)}, ${payload}), st);
+    remember(st, out);
     expect(out).toBeDefined();${
       patterns.length
         ? `\n    expect(out).toEqual(expect.arrayContaining([\n${patterns.map((x) => `      ${x},`).join("\n")}\n    ]));`
@@ -1470,9 +1535,13 @@ function moduleTests(source: Model): GenFile[] {
   });`);
     }
     its.push(`  it("leaves the other messages to the others", () => {
-    expect(${name}(message("nobody.takes.this", {}), state())).toBeUndefined();
+    expect(${name}(message("nobody.takes.this", {}), st)).toBeUndefined();
   });`);
-    blocks.push(`describe(${q(d.name)}, () => {\n${its.join("\n\n")}\n});`);
+    // the ports are tried in order and the request slice goes from one to the next,
+    // as in a request: what `order.created` kept is there for `loyalty.added`
+    blocks.push(
+      `describe(${q(d.name)}, () => {\n  const st = state();\n\n${its.join("\n\n")}\n});`,
+    );
   }
   return [
     {
@@ -1493,6 +1562,17 @@ const message = (id: string, payload: unknown): Message => ({
 });
 const state = (): ServerState =>
   ({ requests: { r1: {} }, shared: {} }) as unknown as ServerState;
+
+/** what the runtime does with the effects that write the slice of the request */
+function remember(st: ServerState, effects: unknown): void {
+  for (const e of (effects ?? []) as { plugin?: string; type?: string; path?: string; value?: unknown }[]) {
+    if (e.plugin !== "requests") continue;
+    if (e.type === "req.merge")
+      Object.assign(st.requests.r1, e.value as Record<string, unknown>);
+    else if (e.type === "req.set" && typeof e.path === "string")
+      st.requests.r1[e.path] = e.value;
+  }
+}
 
 ${blocks.join("\n\n")}
 `,

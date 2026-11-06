@@ -185,13 +185,15 @@ describe("a module with code", () => {
     expect(t).toContain(
       'expect.objectContaining({ plugin: "pg", type: "query" })',
     );
-    expect(t).toContain('replyTo: "hello.out"');
+    expect(t).toContain('plugin: "requests", type: "dispatch"');
+    expect(t).toContain('id: "hello.out"');
   });
 
-  test("main wires the timer for emit, the database for pg", () => {
+  test("main wires the database for pg; emit needs no timer, the runtime dispatches it", () => {
     const main = file(m, "server/main.ts");
     expect(main).toContain("createPostgresPlugin");
-    expect(main).toContain("createTimePlugin");
+    expect(main).not.toContain("createTimePlugin");
+    expect(file(m, "server/modules/emit.ts")).toContain("rq.dispatch(");
   });
 });
 

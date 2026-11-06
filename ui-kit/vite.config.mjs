@@ -61,6 +61,17 @@ export default {
   base,
   // Compiles *.pavlus templates into pure render/diff functions.
   plugins: [scaleSizes(), pavlus(), spaFallback()],
+  server: {
+    // the Visual Builder demo of the coffee shop asks /crm-api for the generated
+    // server (coffee-shop-app, port 3020) when its simulated backend is switched off
+    proxy: {
+      "/crm-api": {
+        target: "http://127.0.0.1:3020",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/crm-api/, ""),
+      },
+    },
+  },
   test: {
     // pages.ts finds the pages with import.meta.glob; a cached transform of it
     // would keep the list of files from the run that wrote the cache.

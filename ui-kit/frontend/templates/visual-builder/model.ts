@@ -233,6 +233,11 @@ export interface Model {
    * diagram is the backend, and its tables are kept for the length of a preview.
    */
   flow: FlowModel | null;
+  /**
+   * Where real requests go when the backend is not simulated: a relative url of an
+   * action (`/customers`) is asked of this address (`/crm-api`, `http://127.0.0.1:3020`).
+   */
+  apiBase: string;
   /** the counter that makes ids */
   seq: number;
 }
@@ -756,6 +761,7 @@ export function emptyModel(): Model {
     mocks: [],
     mockOn: true,
     flow: null,
+    apiBase: "",
     seq: 0,
   };
   return addPage(m, "Home", "/").model;

@@ -1,0 +1,18 @@
+{
+  "name": "queue",
+  "about": "background jobs",
+  "external": "Job queue",
+  "latency": 5,
+  "timeout": 1000,
+  "errorCode": "EQUEUE",
+  "effects": [
+    {
+      "type": "queue.enqueue",
+      "plugin": "queue",
+      "hint": "put a job on a queue",
+      "detail": "queue: emails, job: {id}",
+      "replies": true,
+      "optionalReply": true
+    }
+  ]
+}
