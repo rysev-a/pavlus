@@ -10,6 +10,7 @@ import {
   namespace,
   setComponentTrace,
   toHandler,
+  viewOf,
 } from "./mod.ts";
 
 const set = (path: string, value: unknown) => ({
@@ -243,6 +244,60 @@ describe("children", () => {
     ]);
   });
 
+  test("an unchanged base and props re-merge to the same object", () => {
+    // The merged state is memoized: the `next` of one message is the very
+    // object the child sees as `prev` on the next, so its diff can stop at
+    // `prev === next`.
+    const seen: unknown[] = [];
+    class Child extends Component<Users> {
+      sees(_m: Message, s: Users) {
+        seen.push(s);
+        return [];
+      }
+    }
+    class Parent extends Component<Dash> {
+      children: Children<Dash> = {
+        users: {
+          component: new Child(),
+          key: "users",
+          props: (s) => ({ filter: s.filter }),
+        },
+      };
+    }
+    const hp = toHandler(new Parent());
+    const st: Dash = { filter: "ann", users: { items: [] } };
+    hp({ id: "users.sees" }, st);
+    hp({ id: "users.sees" }, st);
+    expect(seen[0]).toBe(seen[1]);
+    // a changed field merges anew
+    hp({ id: "users.sees" }, { ...st, filter: "bob" });
+    expect(seen[2]).not.toBe(seen[1]);
+  });
+
+  test("viewOf with props: an unchanged state diffs to no patches", () => {
+    const seen: string[] = [];
+    const view = {
+      render: () => [],
+      diff: (prev: unknown, next: unknown) => {
+        seen.push(`${prev === next}`);
+        return [];
+      },
+    } as unknown as NonNullable<Component["view"]>;
+    class C extends Component<{ v: number; up: string }> {
+      view = view;
+    }
+    const v = viewOf(new C(), {
+      key: "n",
+      props: (s: { n: { v: number }; up: string }) => ({ up: s.up }),
+    })!;
+    const st = { n: { v: 1 }, up: "u" };
+    expect(v.diff(st, st)).toEqual([]); // same state: the top-level prune
+    expect(seen).toEqual(["true"]);
+    const next = { n: { v: 2 }, up: "u" };
+    v.diff(st, next);
+    expect(seen).toEqual(["true", "false"]); // a real change walks the diff
+  });
+
   test("unknown child in send throws; other prefixes are ignored", () => {
     class Bad extends Component {
       go(_m: Message, _s: unknown, { send }: ComponentCtx) {
@@ -354,5 +409,168 @@ describe("children", () => {
     } finally {
       setComponentTrace(null);
     }
+  });
+});
+
+describe("keyed children (each)", () => {
+  interface User {
+    id: number;
+    name: string;
+    starred?: boolean;
+  }
+  interface ListState {
+    filter: string;
+    byId: Record<string, User>;
+  }
+  const list: ListState = {
+    filter: "stars-only",
+    byId: {
+      "7": { id: 7, name: "ann" },
+      "12": { id: 12, name: "bob" },
+    },
+  };
+
+  class Row extends Component<User> {
+    star(_m: Message, s: User) {
+      return [set("starred", !s.starred)];
+    }
+    save() {
+      return [{ plugin: "http", type: "request", onSuccess: "saved" }];
+    }
+    deep() {
+      return [{ plugin: "store", type: "set", path: ["a", "b"], value: 1 }];
+    }
+  }
+  const row = namespace("row", new Row(), { each: "byId" });
+
+  test("the child is ONE element of state[each], the one its key names", () => {
+    const seen: User[] = [];
+    class R extends Component<User> {
+      star(_m: Message, s: User) {
+        seen.push(s);
+        return [];
+      }
+    }
+    const r = namespace("row", new R(), { each: "byId" });
+    expect(r({ id: "row.7.star" }, list)).toEqual([]);
+    expect(r({ id: "row.12.star" }, list)).toEqual([]);
+    // each row saw its own element, never the whole map
+    expect(seen).toEqual([list.byId[7], list.byId[12]]);
+  });
+
+  test("store paths are rooted at <each>.<key>, string or array", () => {
+    expect(row({ id: "row.7.star" }, list)).toEqual([
+      set("byId.7.starred", true),
+    ]);
+    expect(row({ id: "row.7.deep" }, list)).toEqual([
+      { plugin: "store", type: "set", path: ["byId", "7", "a", "b"], value: 1 },
+    ]);
+  });
+
+  test("reply ids get the key back: row.<key>.saved", () => {
+    expect(row({ id: "row.7.save" }, list)).toEqual([
+      { plugin: "http", type: "request", onSuccess: "row.7.saved" },
+    ]);
+  });
+
+  test("no key, a bare key, or a key with no element: dropped", () => {
+    expect(row({ id: "row.star" }, list)).toEqual([]); // no key segment
+    expect(row({ id: "row." }, list)).toEqual([]);
+    expect(row({ id: "row.7" }, list)).toEqual([]); // a bare key
+    expect(row({ id: "row.9.star" }, list)).toEqual([]); // no byId[9]
+  });
+
+  test("props merge into the keyed element, memoized like plain children", () => {
+    const seen: (User & { filter: string })[] = [];
+    class R extends Component<User & { filter: string }> {
+      star(_m: Message, s: User & { filter: string }) {
+        seen.push(s);
+        return [];
+      }
+    }
+    const r = namespace("row", new R(), {
+      each: "byId",
+      props: (s: ListState) => ({ filter: s.filter }),
+    });
+    r({ id: "row.7.star" }, list);
+    r({ id: "row.7.star" }, list);
+    expect(seen).toEqual([
+      { id: 7, name: "ann", filter: "stars-only" },
+      { id: 7, name: "ann", filter: "stars-only" },
+    ]);
+    expect(seen[0]).toBe(seen[1]); // same base, same fields: the same merge
+  });
+
+  test("a paint answer is sliced to the one element", () => {
+    const seen: unknown[] = [];
+    class R extends Component {
+      paint(m: Message) {
+        seen.push(m.payload);
+        return [];
+      }
+    }
+    const r = namespace("row", new R(), { each: "byId", scope: "/n1" });
+    const next: ListState = {
+      ...list,
+      byId: { ...list.byId, "7": { ...list.byId[7], name: "anna" } },
+    };
+    r({ id: "row.7.paint", payload: { prev: list, next } }, list);
+    expect(seen).toEqual([{ prev: list.byId[7], next: next.byId[7] }]);
+  });
+
+  test("a keyed child nests: a static grandchild under it", () => {
+    class Username extends Component {
+      focus() {
+        return [set("focused", true)];
+      }
+    }
+    class RowWithUsername extends Component<User & { username: string }> {
+      children: Children = {
+        username: { component: new Username(), key: "username" },
+      };
+    }
+    const r = namespace("row", new RowWithUsername(), { each: "byId" });
+    const st = { byId: { "7": { id: 7, name: "ann", username: "ann77" } } };
+    expect(r({ id: "row.7.username.focus" }, st)).toEqual([
+      set("byId.7.username.focused", true),
+    ]);
+  });
+
+  test("ctx.send addresses one row through the parent", () => {
+    class List extends Component<ListState> {
+      children: Children<ListState> = {
+        row: { component: new Row(), each: "byId" },
+      };
+      mounted(_m: Message, _s: ListState, { send }: ComponentCtx) {
+        return send("row", "7.star");
+      }
+    }
+    expect(toHandler(new List())({ id: "mounted" }, list)).toEqual([
+      set("byId.7.starred", true),
+    ]);
+  });
+
+  test("the trace path carries the key: row.7", () => {
+    const events: string[] = [];
+    setComponentTrace({
+      receive: (path, m) => events.push(`receive ${path} ${m.id}`),
+      emit: (path, m, e) => events.push(`emit ${path} ${m.id} ${e.length}`),
+    });
+    try {
+      expect(row({ id: "row.7.star" }, list)).toHaveLength(1);
+      expect(events).toEqual(["receive row.7 star", "emit row.7 star 1"]);
+    } finally {
+      setComponentTrace(null);
+    }
+  });
+
+  test("each refuses key and select", () => {
+    class R extends Component {}
+    expect(() => namespace("row", new R(), { each: "byId", key: "x" })).toThrow(
+      /each cannot be combined with key or select/,
+    );
+    expect(() =>
+      namespace("row", new R(), { each: "byId", select: (s: ListState) => s }),
+    ).toThrow(/each cannot be combined with key or select/);
   });
 });

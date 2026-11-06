@@ -94,7 +94,8 @@ export function createFrameParser(o: FrameParserOptions): FrameParser {
   let total = 0;
   let dead = false;
   let hdr:
-    { fin: boolean; opcode: number; key?: Buffer; len: number } | undefined;
+    | { fin: boolean; opcode: number; key?: Buffer; len: number }
+    | undefined;
   let fragOp = 0;
   let frags: Buffer[] = [];
   let fragSize = 0;

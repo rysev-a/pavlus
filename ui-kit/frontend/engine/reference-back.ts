@@ -26,7 +26,10 @@ const step = (
   text: string,
   code?: string,
   lang?: StepDoc["lang"],
-): StepDoc => (code === undefined ? { title, text } : { title, text, code, lang: lang ?? "ts" });
+): StepDoc =>
+  code === undefined
+    ? { title, text }
+    : { title, text, code, lang: lang ?? "ts" };
 
 const CG = "compiler/codegen.ts";
 const BASE = "compiler/emit/base.ts";
@@ -56,7 +59,7 @@ export const BACK: StageDoc[] = [
     intro: [
       "This stage takes the syntax tree of the template (a \`TemplateAst\`: the \`import\` lines and the list of nodes, each node with a number \`nid\`) and gives back **text**: the source of a small JavaScript program. The entry point is \`generate(ast)\` in \`compiler/codegen.ts\`. It returns \`{ code, helpers }\`: the code of three declarations (\`const meta\`, \`function render\`, \`function diff\`) and the sorted names of the runtime helpers that code calls. There are no \`import\` and \`export\` lines yet; stage 8 adds them.",
       "The generator is not one big function. It is a chain of five classes, each in its own file, each extending the one before: \`EmitBase\` (writer, names, helper set) then \`ExprEmitter\` (expressions) then \`RenderEmitter\` (the body of \`render\`) then \`DiffEmitter\` (the body of \`diff\`) and at the end \`Codegen\` (the whole module). They all write into the same \`Writer\` and see the same name scopes, so a name chosen in \`render\` can never clash with a name chosen later in the same block.",
-      "Three ideas explain most of what you see in the output. First, **names are readable**: a \`ul\` gets \`ulChildren\` and \`ulAttrs\`, a loop over \`item\` gets \`itemList\`, \`itemKey\`, \`itemSuffix\`; a name is made unique only against the blocks that are open around it. Second, **every node has a stable id** built from its \`nid\` and an id suffix (\`\"3\" + idSuffix\`, \`\"1[\" + itemSuffix\`), so \`diff\` can point at a node that \`render\` made earlier. Third, **render and diff share their code**: both use the same \`expr\`, \`parts\`, \`attrValue\` and \`classValue\` functions, only the side (\`prev\` or \`next\`) differs.",
+      'Three ideas explain most of what you see in the output. First, **names are readable**: a \`ul\` gets \`ulChildren\` and \`ulAttrs\`, a loop over \`item\` gets \`itemList\`, \`itemKey\`, \`itemSuffix\`; a name is made unique only against the blocks that are open around it. Second, **every node has a stable id** built from its \`nid\` and an id suffix (\`"3" + idSuffix\`, \`"1[" + itemSuffix\`), so \`diff\` can point at a node that \`render\` made earlier. Third, **render and diff share their code**: both use the same \`expr\`, \`parts\`, \`attrValue\` and \`classValue\` functions, only the side (\`prev\` or \`next\`) differs.',
     ],
     steps: [
       step(
@@ -66,22 +69,22 @@ export const BACK: StageDoc[] = [
       step(
         "Collect \`meta\`",
         "\`Codegen.generate\` walks the whole tree once. It collects the instance name (\`n.name\`) of every embed into a Set and sets a flag if any \`+outlet\` exists. The walk goes into elements, loop bodies and every branch of an \`if\`. The result is written first, as one line.",
-        "const meta = { embeds: [\"row\",\"badge\"], outlet: false };",
+        'const meta = { embeds: ["row","badge"], outlet: false };',
         "ts",
       ),
       step(
         "Make two contexts",
-        "A \`Ctx\` tells the emitters how to name things on this side of the code. For \`render\` it is \`{ scope: new Map(), suffix: \"idSuffix\", prefix: \"messagePrefix\", roots: { prev: \"state\", next: \"state\" } }\`. For \`diff\` it is the same but \`roots\` is \`{ prev: \"prev\", next: \"next\" }\`. So a template identifier \`count\` becomes \`state.count\` in \`render\` and \`prev.count\` or \`next.count\` in \`diff\`.",
+        'A \`Ctx\` tells the emitters how to name things on this side of the code. For \`render\` it is \`{ scope: new Map(), suffix: "idSuffix", prefix: "messagePrefix", roots: { prev: "state", next: "state" } }\`. For \`diff\` it is the same but \`roots\` is \`{ prev: "prev", next: "next" }\`. So a template identifier \`count\` becomes \`state.count\` in \`render\` and \`prev.count\` or \`next.count\` in \`diff\`.',
       ),
       step(
         "Write \`render\`",
-        "The header is written with \`Writer.block\` and the body is inside \`this.scoped(...)\`, so its names are forgotten when the function ends. The body is \`const nodes = [];\`, then \`renderNodes(ast.nodes, renderCtx, \"nodes\")\` (stage 6), then \`return nodes;\`. Several root nodes are fine: they are all pushed into \`nodes\`.",
-        "/** The template for a state, as virtual nodes. Pure. */\nfunction render(state, idSuffix = \"\", messagePrefix = \"\", env) {\n  const nodes = [];\n  // ...\n  return nodes;\n}",
+        'The header is written with \`Writer.block\` and the body is inside \`this.scoped(...)\`, so its names are forgotten when the function ends. The body is \`const nodes = [];\`, then \`renderNodes(ast.nodes, renderCtx, "nodes")\` (stage 6), then \`return nodes;\`. Several root nodes are fine: they are all pushed into \`nodes\`.',
+        '/** The template for a state, as virtual nodes. Pure. */\nfunction render(state, idSuffix = "", messagePrefix = "", env) {\n  const nodes = [];\n  // ...\n  return nodes;\n}',
       ),
       step(
         "Write \`diff\`",
         "Same shape, in its own scope: \`const patches = [];\`, then the early exit \`if (prev === next) return patches;\` (the store gives the same object when nothing changed), then \`diffNodes(ast.nodes, diffCtx, null)\` (stage 7), then \`return patches;\`. The \`null\` means: the top level has no parent whose check could already cover a node.",
-        "function diff(prev, next, idSuffix = \"\", messagePrefix = \"\", env) {\n  const patches = [];\n  if (prev === next) return patches;\n  // ...\n  return patches;\n}",
+        'function diff(prev, next, idSuffix = "", messagePrefix = "", env) {\n  const patches = [];\n  if (prev === next) return patches;\n  // ...\n  return patches;\n}',
       ),
       step(
         "Join and report",
@@ -174,7 +177,7 @@ export const BACK: StageDoc[] = [
         "Writer.block",
         WRITER,
         "method",
-        "block(header: string, fn: () => void, close = \"}\"): void",
+        'block(header: string, fn: () => void, close = "}"): void',
         "Writes \`header {\`, the indented body, and the closing line (\`}\` by default). Used for the function headers, \`for (...)\` loops and \`if (view)\` blocks.",
       ),
       fn(
@@ -189,7 +192,7 @@ export const BACK: StageDoc[] = [
         WRITER,
         "method",
         "call(open: string, args: string[], close: string): void",
-        "Writes a call on one line when \`open + args.join(\", \") + close\` plus two columns per depth is at most 100. Otherwise \`open\` goes on its own line, each argument on its own indented line with a trailing comma, and \`close\` on the last line. Because \`open\` is not trimmed, a long \`setAttr(attrs, \"title\", \` leaves a trailing space.",
+        'Writes a call on one line when \`open + args.join(", ") + close\` plus two columns per depth is at most 100. Otherwise \`open\` goes on its own line, each argument on its own indented line with a trailing comma, and \`close\` on the last line. Because \`open\` is not trimmed, a long \`setAttr(attrs, "title", \` leaves a trailing space.',
       ),
       fn(
         "Writer.entries",
@@ -231,7 +234,7 @@ export const BACK: StageDoc[] = [
         BASE,
         "method",
         "constructor(ast: TemplateAst)",
-        "Creates the first scope from \`RESERVED_WORDS\`, \`RUNTIME_NAMES\`, \`FIXED_NAMES\`, \`\"env\"\` and the local names of \`ast.imports\` (\`Row\`, \`Badge\`...). So a loop variable called \`Row\` would become \`Row2\`.",
+        'Creates the first scope from \`RESERVED_WORDS\`, \`RUNTIME_NAMES\`, \`FIXED_NAMES\`, \`"env"\` and the local names of \`ast.imports\` (\`Row\`, \`Badge\`...). So a loop variable called \`Row\` would become \`Row2\`.',
       ),
       fn(
         "EmitBase.name",
@@ -252,7 +255,7 @@ export const BACK: StageDoc[] = [
         BASE,
         "method",
         "protected h(helper: string): string",
-        "Registers a runtime helper and returns its name, so generated text can be written as \`this.h(\"toText\")\` and the import list is built as a side effect.",
+        'Registers a runtime helper and returns its name, so generated text can be written as \`this.h("toText")\` and the import list is built as a side effect.',
       ),
       fn(
         "EmitBase.capture",
@@ -266,14 +269,14 @@ export const BACK: StageDoc[] = [
         BASE,
         "method",
         "protected id(nid: number, kind: string, ctx: Ctx): string",
-        "Returns a JS **expression** for a node id: \`json(nid + kind) + \" + \" + ctx.suffix\`, for example \`\"3s\" + idSuffix\`. \`kind\` is \`\"\"\` for an element or a text, \`\"s\"\` and \`\"e\"\` for the start and end marker of an \`if\`, \`for\`, dynamic embed or outlet.",
+        'Returns a JS **expression** for a node id: \`json(nid + kind) + " + " + ctx.suffix\`, for example \`"3s" + idSuffix\`. \`kind\` is \`""\` for an element or a text, \`"s"\` and \`"e"\` for the start and end marker of an \`if\`, \`for\`, dynamic embed or outlet.',
       ),
       fn(
         "EmitBase.marker",
         BASE,
         "method",
         "protected marker(out: string, id: string): void",
-        "Writes \`out.push({ t: \"marker\", id: <id> });\`. A marker becomes an empty comment node in the DOM; the patches \`clear\`, \`remove\`, \`move\` and \`insert\` find their place by marker ids.",
+        'Writes \`out.push({ t: "marker", id: <id> });\`. A marker becomes an empty comment node in the DOM; the patches \`clear\`, \`remove\`, \`move\` and \`insert\` find their place by marker ids.',
       ),
       fn(
         "EmitBase.bind",
@@ -286,7 +289,7 @@ export const BACK: StageDoc[] = [
         "EmitBase.note",
         BASE,
         "method",
-        "protected note(n: Node, extra = \"\"): void",
+        'protected note(n: Node, extra = ""): void',
         "Writes the comment \`// line N: <description><extra>\` using \`lineOf\` and \`describe\`. \`extra\` carries the \`(reads: ...)\` list in \`diff\`.",
       ),
       fn(
@@ -314,8 +317,8 @@ export const BACK: StageDoc[] = [
         "Side",
         SHARED,
         "type",
-        "export type Side = \"prev\" | \"next\"",
-        "Which state an expression is written for. \`render\` uses only \`\"next\"\` (its single state); \`diff\` writes most things twice.",
+        'export type Side = "prev" | "next"',
+        'Which state an expression is written for. \`render\` uses only \`"next"\` (its single state); \`diff\` writes most things twice.',
       ),
       fn(
         "Local",
@@ -342,7 +345,7 @@ export const BACK: StageDoc[] = [
         "isStr",
         SHARED,
         "const",
-        "export const isStr = (p: Part): p is string => typeof p === \"string\"",
+        'export const isStr = (p: Part): p is string => typeof p === "string"',
         "Tells a literal text part from an expression part of an interpolated string.",
       ),
       fn(
@@ -364,7 +367,7 @@ export const BACK: StageDoc[] = [
         SHARED,
         "const",
         "export const record = (r: Record<string, string>): string => {...}",
-        "Writes a string-to-string object as source: \`{ \"type\": \"text\", \"placeholder\": \"Name\" }\`, or \`{}\` when empty. Used for the static attributes of an element.",
+        'Writes a string-to-string object as source: \`{ "type": "text", "placeholder": "Name" }\`, or \`{}\` when empty. Used for the static attributes of an element.',
       ),
       fn(
         "lineOf",
@@ -404,7 +407,7 @@ export const BACK: StageDoc[] = [
     ],
     patterns: [
       pat(
-        "const meta = { embeds: [\"row\",\"badge\"], outlet: false };",
+        'const meta = { embeds: ["row","badge"], outlet: false };',
         "The list of embed **instance names** (the part after \`#\`, not the component) and whether the template has an \`+outlet\`. The component system reads it to know which children a template has.",
         "Codegen.generate, compiler/codegen.ts",
       ),
@@ -419,12 +422,12 @@ export const BACK: StageDoc[] = [
         "Codegen.generate",
       ),
       pat(
-        "function render(state, idSuffix = \"\", messagePrefix = \"\", env)",
+        'function render(state, idSuffix = "", messagePrefix = "", env)',
         "The four parameters of the render function. \`idSuffix\` makes node ids unique for each embed instance and loop item; \`messagePrefix\` prefixes message ids with the embed instance name; \`env\` is the owning component (needed for \`+outlet\` and child lookups). A top-level call passes only \`state\`.",
         "Codegen.generate",
       ),
       pat(
-        "function diff(prev, next, idSuffix = \"\", messagePrefix = \"\", env)",
+        'function diff(prev, next, idSuffix = "", messagePrefix = "", env)',
         "Same parameters with two states.",
         "Codegen.generate",
       ),
@@ -445,36 +448,36 @@ export const BACK: StageDoc[] = [
       ),
       pat(
         "// line 4: <main> (reads: the route and the routed child)",
-        "When the dependency set has the special member \`\"\"\` (an outlet is somewhere below), the list is replaced by this text and the guard is \`true\`. The \`+outlet\` node itself is written without a guard, because its parent already has the same set.",
+        'When the dependency set has the special member \`""\` (an outlet is somewhere below), the list is replaced by this text and the guard is \`true\`. The \`+outlet\` node itself is written without a guard, because its parent already has the same set.',
         "DiffEmitter.diffNode",
       ),
       pat(
-        "\"2\" + idSuffix",
+        '"2" + idSuffix',
         "The id of an element or text with number \`nid = 2\`. Ids are numbered in document order by the parser, so the same node has the same id in \`render\` and \`diff\`. The suffix part is a JS variable, not a string.",
         "EmitBase.id",
       ),
       pat(
-        "\"4s\" + idSuffix, \"4e\" + idSuffix",
+        '"4s" + idSuffix, "4e" + idSuffix',
         "Start and end marker of the block (\`if\`, \`for\`, dynamic embed, outlet) with number 4. \`clear\` removes everything between them; \`insert\` puts new nodes before the end marker.",
         "EmitBase.id with kind s / e",
       ),
       pat(
-        "\"1[\" + itemSuffix, \"1]\" + itemSuffix",
-        "Start and end marker of **one item** of the loop with number 1. \`[\` opens and \`]\` closes. The suffix is \`idSuffix + \"#\" + key\`, so every item has its own pair, and \`remove\` and \`move\` work on the range between them.",
+        '"1[" + itemSuffix, "1]" + itemSuffix',
+        'Start and end marker of **one item** of the loop with number 1. \`[\` opens and \`]\` closes. The suffix is \`idSuffix + "#" + key\`, so every item has its own pair, and \`remove\` and \`move\` work on the range between them.',
         "RenderEmitter.renderFor",
       ),
       pat(
-        "idSuffix + \"#\" + itemKey",
-        "How a loop item suffix is built: the outer suffix, a \`#\`, and the item key (\`String(key)\`). Nested loops grow it: \`\"\" + \"#a\" + \"#x\"\`.",
+        'idSuffix + "#" + itemKey',
+        'How a loop item suffix is built: the outer suffix, a \`#\`, and the item key (\`String(key)\`). Nested loops grow it: \`"" + "#a" + "#x"\`.',
         "renderFor, diffFor",
       ),
       pat(
-        "idSuffix + \"/3\"",
+        'idSuffix + "/3"',
         "How an embed suffix is built: the parent suffix and \`/\` plus the embed's node number. Every id inside the child ends with it, so two instances never collide.",
         "ExprEmitter.childSuffix",
       ),
       pat(
-        "messagePrefix + \"row.\"",
+        'messagePrefix + "row."',
         "The message prefix passed to a child: the parent's prefix plus the instance name and a dot. An event \`pick\` in the child becomes the message id \`row.pick\`.",
         "ExprEmitter.childPrefix",
       ),
@@ -519,7 +522,7 @@ export const BACK: StageDoc[] = [
         "Writer.call",
       ),
       pat(
-        "const xAttrs = { \"type\": \"text\", \"class\": \"field\" };",
+        'const xAttrs = { "type": "text", "class": "field" };',
         "The static attributes of an element in one object literal, in source order, with the merged static \`class\` last.",
         "renderElement, record, elementInfo",
       ),
@@ -533,7 +536,7 @@ export const BACK: StageDoc[] = [
       "Names are unique only against the **open** blocks. Two sibling \`li\` elements give \`liChildren\` and \`liChildren2\`, but the \`li\` in two different \`if\` branches (or in the render and the diff function) share one name. Do not search the output for a global name.",
       "The list variable of a loop is declared in the **outer** block, the other loop variables inside the loop. So two loops that use the same item name in one block give \`uList\` and \`uList2\` but both use \`uIndex\` and \`u\` (checked by compiling).",
       "A template variable named like a keyword, helper or fixed name is renamed in the output: \`for class in classes\` gives \`const class2 = classList[classIndex]\`, and \`for env in envs\` gives \`env2\`. Read the generated code with that in mind.",
-      "When a call is too wide, \`Writer.call\` keeps the trailing space of \`open\`. A long \`setAttr(pAttrs, \"title\", \` ends with a space before the newline. It is harmless but shows up in byte-exact comparisons.",
+      'When a call is too wide, \`Writer.call\` keeps the trailing space of \`open\`. A long \`setAttr(pAttrs, "title", \` ends with a space before the newline. It is harmless but shows up in byte-exact comparisons.',
       "There is no special code for void elements in the generator. \`<img>\` gets \`imgChildren\` like any other element; the void rule is applied only when serialising to HTML.",
       "Elements without any dynamic attribute, class or event get **no id**. The only way to change them is to replace the block that contains them. That is why a static element inside a loop item is never patched on its own.",
     ],
@@ -544,65 +547,65 @@ export const BACK: StageDoc[] = [
     title: "Generated render",
     intro: [
       "\`render(state, idSuffix, messagePrefix, env)\` is a pure function from one state to a flat list of **virtual nodes** (stage 10 describes their shape). It is written by \`RenderEmitter\` in \`compiler/emit/render.ts\`, which uses the expression functions of \`ExprEmitter\` in \`compiler/emit/expr.ts\`. For each node type of the template there is one method, and each method writes a fixed shape of statements.",
-      "The shape is always the same idea: an element first makes an array for its children and fills it (by recursion), then makes an object for its attributes, then pushes one object \`{ t: \"el\", ... }\` into the array of its parent. Because the children are written first, the code of a parent comes **after** the code of its children. A text pushes one \`{ t: \"text\" }\`. An \`if\` writes two markers and a plain JS \`if / else if / else\` between them. A \`for\` writes two markers and a JS \`for\` loop, and inside it two more markers per item. An embed calls the render function of the child and spreads its nodes into the same array.",
+      'The shape is always the same idea: an element first makes an array for its children and fills it (by recursion), then makes an object for its attributes, then pushes one object \`{ t: "el", ... }\` into the array of its parent. Because the children are written first, the code of a parent comes **after** the code of its children. A text pushes one \`{ t: "text" }\`. An \`if\` writes two markers and a plain JS \`if / else if / else\` between them. A \`for\` writes two markers and a JS \`for\` loop, and inside it two more markers per item. An embed calls the render function of the child and spreads its nodes into the same array.',
       "Expressions are translated by \`expr()\` into JS text that never throws on a missing value: reading a member or an index uses \`?.\`, and calling uses \`?.(\`. Text and attribute values go through the helpers \`toText\`, \`toAttr\` and \`joinClasses\`, which decide how \`null\`, \`false\` and \`true\` are shown. The same \`expr\`, \`parts\`, \`attrValue\` and \`classValue\` functions are called by the diff emitter for the \`prev\` side, which guarantees that the render and the diff compute the same value.",
     ],
     steps: [
       step(
         "A template to follow",
         "All the snippets of this stage come from one run of the real compiler on this template. It has a static element, a text with a part, attributes of three kinds, a class toggle, events with and without modifiers, and an event with two arguments.",
-        "form.login#f(action=url method=\"post\" @submit.prevent=save)\n  label(for=inputId class=\"lbl {extra}\") {label}\n  input.field(type=\"text\" value=name class:invalid=error @input=changed @keydown.stop=key(name, 13))",
+        'form.login#f(action=url method="post" @submit.prevent=save)\n  label(for=inputId class="lbl {extra}") {label}\n  input.field(type="text" value=name class:invalid=error @input=changed @keydown.stop=key(name, 13))',
         "pavlus",
       ),
       step(
         "Element: children first",
         "\`renderElement\` asks \`elementInfo\` which attributes are static and which dynamic. It takes two names (\`formChildren\`, \`formAttrs\`), writes a comment, \`const formChildren = [];\` and renders the children into that array. Only then does it write the attributes, the events and the final push. So a child's lines appear above its parent's.",
-        "// line 2: <form.login>\nconst formChildren = [];\n// ... the children are rendered here ...\nconst formAttrs = { \"id\": \"f\", \"method\": \"post\", \"class\": \"login\" };\nsetAttr(formAttrs, \"action\", toAttr(state.url));",
+        '// line 2: <form.login>\nconst formChildren = [];\n// ... the children are rendered here ...\nconst formAttrs = { "id": "f", "method": "post", "class": "login" };\nsetAttr(formAttrs, "action", toAttr(state.url));',
       ),
       step(
         "Attributes",
-        "Static attributes become one object literal (with the merged static \`class\` last). Each dynamic attribute becomes one \`setAttr(attrs, name, value)\` call. With one expression part the value is \`toAttr(expr)\`, so \`null\`, \`undefined\` and \`false\` leave the attribute out and \`true\` gives an empty attribute. With several parts it is a string join with \`toText\`. A dynamic class is one \`setAttr(attrs, \"class\", joinClasses([...]))\` with the shorthand classes first, then the toggles, then the \`class\` attribute.",
-        "setAttr(labelAttrs, \"for\", toAttr(state.inputId));\nsetAttr(labelAttrs, \"class\", joinClasses([\"lbl \" + toText(state.extra)]));\nsetAttr(inputAttrs, \"class\", joinClasses([\"field\", (state.error ? \"invalid\" : \"\")]));",
+        'Static attributes become one object literal (with the merged static \`class\` last). Each dynamic attribute becomes one \`setAttr(attrs, name, value)\` call. With one expression part the value is \`toAttr(expr)\`, so \`null\`, \`undefined\` and \`false\` leave the attribute out and \`true\` gives an empty attribute. With several parts it is a string join with \`toText\`. A dynamic class is one \`setAttr(attrs, "class", joinClasses([...]))\` with the shorthand classes first, then the toggles, then the \`class\` attribute.',
+        'setAttr(labelAttrs, "for", toAttr(state.inputId));\nsetAttr(labelAttrs, "class", joinClasses(["lbl " + toText(state.extra)]));\nsetAttr(inputAttrs, "class", joinClasses(["field", (state.error ? "invalid" : "")]));',
       ),
       step(
         "Events",
         "If the element has any event, one object is made with one entry per event name. The entry is the message: the id is \`messagePrefix\` plus the template's message name, then the payload, then \`prevent: true\` and \`stop: true\` if the modifiers were written. No argument gives \`payload: undefined\`, one argument gives its value, several give an array. The object is named \`inputEvents\` and passed as \`events:\`; an element without events gets an inline \`{}\`.",
-        "const inputEvents = {\n  \"input\": { id: messagePrefix + \"changed\", payload: undefined },\n  \"keydown\": { id: messagePrefix + \"key\", payload: [state.name, 13], stop: true },\n};",
+        'const inputEvents = {\n  "input": { id: messagePrefix + "changed", payload: undefined },\n  "keydown": { id: messagePrefix + "key", payload: [state.name, 13], stop: true },\n};',
       ),
       step(
         "Push the element",
         "The last statement uses \`Writer.entries\`: one field per line. \`id:\` is present only when \`info.hasId\` is true (a dynamic attribute, class or event). Without an id the element is static and can never be the target of a patch.",
-        "nodes.push({\n  t: \"el\",\n  id: \"0\" + idSuffix,\n  tag: \"form\",\n  attrs: formAttrs,\n  events: formEvents,\n  children: formChildren,\n});",
+        'nodes.push({\n  t: "el",\n  id: "0" + idSuffix,\n  tag: "form",\n  attrs: formAttrs,\n  events: formEvents,\n  children: formChildren,\n});',
       ),
       step(
         "Text",
-        "\`renderNode\` writes one push per text node. When every part is a literal string the text is one JSON string and the node has **no id**. When at least one part is an expression, the node gets an id (so \`diff\` can change it) and the text is a \`+\` chain: literal parts as JSON strings, expressions as \`toText(expr)\`. If the first part is an expression, a leading \`\"\"\` forces string addition.",
-        "labelChildren.push({ t: \"text\", id: \"2\" + idSuffix, text: \"\" + toText(state.label) });\naChildren.push({ t: \"text\", text: \"Home\" });",
+        '\`renderNode\` writes one push per text node. When every part is a literal string the text is one JSON string and the node has **no id**. When at least one part is an expression, the node gets an id (so \`diff\` can change it) and the text is a \`+\` chain: literal parts as JSON strings, expressions as \`toText(expr)\`. If the first part is an expression, a leading \`""\` forces string addition.',
+        'labelChildren.push({ t: "text", id: "2" + idSuffix, text: "" + toText(state.label) });\naChildren.push({ t: "text", text: "Home" });',
       ),
       step(
         "If",
         "\`renderIf\` writes a comment, the start marker, a JS \`if\` chain and the end marker. Each branch is a block with its own name scope. A branch without test is a plain \`else\`. Nothing is written for a branch that is not taken: the nodes of the other branches do not exist.",
-        "sectionChildren.push({ t: \"marker\", id: \"1s\" + idSuffix });\nif ((state.status === \"loading\")) {\n  // ...\n} else if ((state.status === \"failed\")) {\n  // ...\n}\nsectionChildren.push({ t: \"marker\", id: \"1e\" + idSuffix });",
+        'sectionChildren.push({ t: "marker", id: "1s" + idSuffix });\nif ((state.status === "loading")) {\n  // ...\n} else if ((state.status === "failed")) {\n  // ...\n}\nsectionChildren.push({ t: "marker", id: "1e" + idSuffix });',
       ),
       step(
         "For",
         "\`renderFor\` writes the start marker, the list (\`(expr) || []\`, so a missing list is empty), and a JS \`for\` loop. In each round it reads the item, makes the key as a string (the \`key\` expression, or the loop position when the template has no \`key\`), builds the item suffix and pushes the item start marker, then the body, then the item end marker. After the loop comes the end marker of the whole loop.",
-        "tableChildren.push({ t: \"marker\", id: \"1s\" + idSuffix });\nconst rowList = (state.rows) || [];\nfor (let r = 0; r < rowList.length; r++) {\n  const row = rowList[r];\n  const rowKey = String((row)?.id);\n  const rowSuffix = idSuffix + \"#\" + rowKey;\n  tableChildren.push({ t: \"marker\", id: \"1[\" + rowSuffix });\n  // ... body ...\n  tableChildren.push({ t: \"marker\", id: \"1]\" + rowSuffix });\n}\ntableChildren.push({ t: \"marker\", id: \"1e\" + idSuffix });",
+        'tableChildren.push({ t: "marker", id: "1s" + idSuffix });\nconst rowList = (state.rows) || [];\nfor (let r = 0; r < rowList.length; r++) {\n  const row = rowList[r];\n  const rowKey = String((row)?.id);\n  const rowSuffix = idSuffix + "#" + rowKey;\n  tableChildren.push({ t: "marker", id: "1[" + rowSuffix });\n  // ... body ...\n  tableChildren.push({ t: "marker", id: "1]" + rowSuffix });\n}\ntableChildren.push({ t: "marker", id: "1e" + idSuffix });',
       ),
       step(
         "Static embed",
         "\`+Row#row(...)\` is one statement: the child's \`render\` is called with the props object, the child suffix, the child prefix and the child env, and its nodes are spread into the current array. There are **no markers**: a static child always has the same template, so nothing ever needs to be cleared.",
-        "ulChildren.push(...Row.render(\n  { ...(item), \"selected\": (state.selected === (item)?.id), \"label\": \"Item \" + toText((item)?.id) },\n  itemSuffix + \"/2\",\n  messagePrefix + \"row.\",\n  childEnv(env, \"row\", state),\n));",
+        'ulChildren.push(...Row.render(\n  { ...(item), "selected": (state.selected === (item)?.id), "label": "Item " + toText((item)?.id) },\n  itemSuffix + "/2",\n  messagePrefix + "row.",\n  childEnv(env, "row", state),\n));',
       ),
       step(
         "Dynamic embed",
         "\`+{expr}#name\` gets markers, because the view can change later. \`asView\` turns the value into a view or \`null\`; the child is rendered only if there is one. The env passed to the child is the value itself.",
-        "divChildren.push({ t: \"marker\", id: \"1s\" + idSuffix });\nconst panelView = asView(state.panel);\nif (panelView) {\n  divChildren.push(...panelView.render(\n    { ...(state.data), \"title\": state.title },\n    idSuffix + \"/1\",\n    messagePrefix + \"panel.\",\n    state.panel,\n  ));\n}\ndivChildren.push({ t: \"marker\", id: \"1e\" + idSuffix });",
+        'divChildren.push({ t: "marker", id: "1s" + idSuffix });\nconst panelView = asView(state.panel);\nif (panelView) {\n  divChildren.push(...panelView.render(\n    { ...(state.data), "title": state.title },\n    idSuffix + "/1",\n    messagePrefix + "panel.",\n    state.panel,\n  ));\n}\ndivChildren.push({ t: "marker", id: "1e" + idSuffix });',
       ),
       step(
         "Outlet",
         "\`+outlet\` also gets markers. \`resolveOutlet(env, state)\` finds the routed child for the current route (or \`null\`). The child's view is rendered with the child's own state, suffix, prefix (the route name) and component.",
-        "mainChildren.push({ t: \"marker\", id: \"4s\" + idSuffix });\nconst outlet = resolveOutlet(env, state);\nif (outlet) {\n  mainChildren.push(...outlet.view.render(\n    outlet.state,\n    idSuffix + \"/4\",\n    messagePrefix + outlet.name + \".\",\n    outlet.component,\n  ));\n}\nmainChildren.push({ t: \"marker\", id: \"4e\" + idSuffix });",
+        'mainChildren.push({ t: "marker", id: "4s" + idSuffix });\nconst outlet = resolveOutlet(env, state);\nif (outlet) {\n  mainChildren.push(...outlet.view.render(\n    outlet.state,\n    idSuffix + "/4",\n    messagePrefix + outlet.name + ".",\n    outlet.component,\n  ));\n}\nmainChildren.push({ t: "marker", id: "4e" + idSuffix });',
       ),
     ],
     functions: [
@@ -618,35 +621,35 @@ export const BACK: StageDoc[] = [
         RENDER,
         "method",
         "protected renderNodes(nodes: Node[], ctx: Ctx, out: string): void",
-        "Renders a list of sibling nodes, in order, each pushing into the JS array named by \`out\` (\`\"nodes\"\`, \`\"ulChildren\"\`, \`\"branchNodes\"\`...). Called for the root, for element children, for loop bodies and for \`if\` branches, and by \`diffIf\` and \`diffFor\` when they must render a new branch or item.",
+        'Renders a list of sibling nodes, in order, each pushing into the JS array named by \`out\` (\`"nodes"\`, \`"ulChildren"\`, \`"branchNodes"\`...). Called for the root, for element children, for loop bodies and for \`if\` branches, and by \`diffIf\` and \`diffFor\` when they must render a new branch or item.',
       ),
       fn(
         "RenderEmitter.renderNode",
         RENDER,
         "method",
         "protected renderNode(n: Node, ctx: Ctx, out: string): void",
-        "The switch over node types. A text is handled inline: one \`out.push({ t: \"text\", ... })\`, with an \`id\` only if some part is an expression and with the text made by \`parts()\` on the \`next\` side. The other types go to their own method.",
+        'The switch over node types. A text is handled inline: one \`out.push({ t: "text", ... })\`, with an \`id\` only if some part is an expression and with the text made by \`parts()\` on the \`next\` side. The other types go to their own method.',
       ),
       fn(
         "RenderEmitter.renderElement",
         RENDER,
         "method",
         "protected renderElement(el: ElementNode, ctx: Ctx, out: string): void",
-        "Writes an element: names \`<tag>Children\` and \`<tag>Attrs\`, the comment, the children array and its content, the attribute object, one \`setAttr\` per dynamic attribute, one for a dynamic class, the events object (named \`<tag>Events\`) if the element has any event, and the final \`out.push({...})\`. The element id (\`id(el.nid, \"\", ctx)\`) is written only when \`elementInfo(el).hasId\`.",
+        'Writes an element: names \`<tag>Children\` and \`<tag>Attrs\`, the comment, the children array and its content, the attribute object, one \`setAttr\` per dynamic attribute, one for a dynamic class, the events object (named \`<tag>Events\`) if the element has any event, and the final \`out.push({...})\`. The element id (\`id(el.nid, "", ctx)\`) is written only when \`elementInfo(el).hasId\`.',
       ),
       fn(
         "RenderEmitter.renderIf",
         RENDER,
         "method",
         "protected renderIf(n: IfNode, ctx: Ctx, out: string): void",
-        "Comment, start marker (\`\"<nid>s\"\`), a \`Writer.chain\` whose tests come from \`expr(test, ctx, \"next\")\` (the last branch has \`null\` and so is the \`else\`), and the end marker (\`\"<nid>e\"\`). Every branch body is inside \`scoped\` so the names of different branches can repeat.",
+        'Comment, start marker (\`"<nid>s"\`), a \`Writer.chain\` whose tests come from \`expr(test, ctx, "next")\` (the last branch has \`null\` and so is the \`else\`), and the end marker (\`"<nid>e"\`). Every branch body is inside \`scoped\` so the names of different branches can repeat.',
       ),
       fn(
         "RenderEmitter.renderFor",
         RENDER,
         "method",
         "protected renderFor(n: ForNode, ctx: Ctx, out: string): void",
-        "Comment, start marker, \`const <item>List = (<of>) || [];\`, then inside a scope the names index (the template's own or \`<item>Index\`), item, \`<item>Key\` and \`<item>Suffix\`, and a context from \`bind\`. The loop body reads the item, makes the key (\`String(<key expr>)\` or \`String(<index>)\`), builds the suffix from \`ctx.suffix + \"#\" + key\`, pushes the item markers \`\"<nid>[\"\` and \`\"<nid>]\"\` around the rendered children, and the whole list ends with \`\"<nid>e\"\`.",
+        'Comment, start marker, \`const <item>List = (<of>) || [];\`, then inside a scope the names index (the template\'s own or \`<item>Index\`), item, \`<item>Key\` and \`<item>Suffix\`, and a context from \`bind\`. The loop body reads the item, makes the key (\`String(<key expr>)\` or \`String(<index>)\`), builds the suffix from \`ctx.suffix + "#" + key\`, pushes the item markers \`"<nid>["\` and \`"<nid>]"\` around the rendered children, and the whole list ends with \`"<nid>e"\`.',
       ),
       fn(
         "RenderEmitter.renderEmbed",
@@ -688,21 +691,21 @@ export const BACK: StageDoc[] = [
         EXPR,
         "method",
         "protected parts(parts: Part[], ctx: Ctx, side: Side): string",
-        "Turns an interpolated string into JS. All literal: one JSON string of the joined parts. Otherwise: literal parts as JSON, expressions as \`toText(expr)\`, joined with \`+\`, and a leading \`\"\"\` when the first part is an expression. Used for text, for multi-part attributes and for string props.",
+        'Turns an interpolated string into JS. All literal: one JSON string of the joined parts. Otherwise: literal parts as JSON, expressions as \`toText(expr)\`, joined with \`+\`, and a leading \`""\` when the first part is an expression. Used for text, for multi-part attributes and for string props.',
       ),
       fn(
         "ExprEmitter.attrValue",
         EXPR,
         "method",
         "protected attrValue(a: Attr, ctx: Ctx, side: Side): string",
-        "The JS value of one attribute. A bare attribute is \`\"\"\`. All literal: one JSON string. Exactly one part (an expression): \`toAttr(expr)\`, which can be \`null\` (absent). Several parts: the \`parts()\` string (never \`null\`).",
+        'The JS value of one attribute. A bare attribute is \`""\`. All literal: one JSON string. Exactly one part (an expression): \`toAttr(expr)\`, which can be \`null\` (absent). Several parts: the \`parts()\` string (never \`null\`).',
       ),
       fn(
         "ExprEmitter.classValue",
         EXPR,
         "method",
         "protected classValue(el: ElementNode, info: ElementInfo, ctx: Ctx, side: Side): string",
-        "Builds \`joinClasses([...])\` with, in this order: the shorthand classes joined into one string, each toggle as \`(test ? \"name\" : \"\")\`, and the value of the \`class\` attribute (via \`attrValue\`). \`joinClasses\` drops empty items and gives \`null\` when nothing is left.",
+        'Builds \`joinClasses([...])\` with, in this order: the shorthand classes joined into one string, each toggle as \`(test ? "name" : "")\`, and the value of the \`class\` attribute (via \`attrValue\`). \`joinClasses\` drops empty items and gives \`null\` when nothing is left.',
       ),
       fn(
         "ExprEmitter.payload",
@@ -716,7 +719,7 @@ export const BACK: StageDoc[] = [
         EXPR,
         "method",
         "protected eventMsg(ev: EventBinding, payload: string, ctx: Ctx): string",
-        "Writes the message object \`{ id: <prefix> + \"<msg>\", payload: <payload>[, prevent: true][, stop: true] }\`. The payload argument is a piece of JS (an expression in \`render\`, a variable name in \`diff\`). The flags appear only when the modifier was written.",
+        'Writes the message object \`{ id: <prefix> + "<msg>", payload: <payload>[, prevent: true][, stop: true] }\`. The payload argument is a piece of JS (an expression in \`render\`, a variable name in \`diff\`). The flags appear only when the modifier was written.',
       ),
       fn(
         "ExprEmitter.propsJs",
@@ -730,51 +733,51 @@ export const BACK: StageDoc[] = [
         EXPR,
         "method",
         "protected childSuffix(n: EmbedNode, ctx: Ctx): string",
-        "\`<suffix> + \"/<nid>\"\`: the id suffix passed to the child so its node ids are unique.",
+        '\`<suffix> + "/<nid>"\`: the id suffix passed to the child so its node ids are unique.',
       ),
       fn(
         "ExprEmitter.childPrefix",
         EXPR,
         "method",
         "protected childPrefix(n: EmbedNode, ctx: Ctx): string",
-        "\`<prefix> + \"<name>.\"\`: the message prefix passed to the child, named after the instance.",
+        '\`<prefix> + "<name>."\`: the message prefix passed to the child, named after the instance.',
       ),
       fn(
         "ExprEmitter.childEnvJs",
         EXPR,
         "method",
         "protected childEnvJs(n: EmbedNode, ctx: Ctx): string",
-        "The env passed to the child, so the child's own \`+outlet\` can find its routing. For a static embed: \`childEnv(env, \"<name>\", <next root>)\` (the helper is registered). For a dynamic embed: the dynamic expression itself on the next side (\`state.panel\`).",
+        'The env passed to the child, so the child\'s own \`+outlet\` can find its routing. For a static embed: \`childEnv(env, "<name>", <next root>)\` (the helper is registered). For a dynamic embed: the dynamic expression itself on the next side (\`state.panel\`).',
       ),
       fn(
         "ExprEmitter.outletArgs",
         EXPR,
         "method",
         "protected outletArgs(match: string, n: OutletNode, ctx: Ctx): string[]",
-        "The four arguments for the routed child: \`<match>.state\`, \`<suffix> + \"/<nid>\"\`, \`<prefix> + <match>.name + \".\"\` and \`<match>.component\`. Shared by \`renderOutlet\` and \`diffOutlet\`.",
+        'The four arguments for the routed child: \`<match>.state\`, \`<suffix> + "/<nid>"\`, \`<prefix> + <match>.name + "."\` and \`<match>.component\`. Shared by \`renderOutlet\` and \`diffOutlet\`.',
       ),
       fn(
         "Expr",
         "template/ast.ts",
         "type",
-        "export type Expr = { k: \"lit\" ... } | { k: \"id\" ... } | ...",
+        'export type Expr = { k: "lit" ... } | { k: "id" ... } | ...',
         "The expression tree that \`expr()\` walks: \`lit\`, \`id\`, \`member\`, \`index\`, \`call\`, \`unary\`, \`binary\`, \`cond\`, \`array\`. Nothing else exists, so nothing else can reach the generated code.",
       ),
     ],
     patterns: [
       pat(
-        "nodes.push({ t: \"text\", text: \"Home\" });",
+        'nodes.push({ t: "text", text: "Home" });',
         "A text with only literal parts: no id, because nothing can change it.",
         "RenderEmitter.renderNode",
       ),
       pat(
-        "nodes.push({ t: \"text\", id: \"2\" + idSuffix, text: \"\" + toText(state.label) });",
-        "A text with an expression: it has an id and the string starts with \`\"\"\` so the addition is a string addition.",
+        'nodes.push({ t: "text", id: "2" + idSuffix, text: "" + toText(state.label) });',
+        'A text with an expression: it has an id and the string starts with \`""\` so the addition is a string addition.',
         "renderNode, ExprEmitter.parts",
       ),
       pat(
-        "\"lbl \" + toText(state.extra)",
-        "Several parts: literal parts as strings and expressions through \`toText\`. \`toText(null)\`, \`undefined\` and \`false\` give an empty string; \`0\` gives \`\"0\"\`.",
+        '"lbl " + toText(state.extra)',
+        'Several parts: literal parts as strings and expressions through \`toText\`. \`toText(null)\`, \`undefined\` and \`false\` give an empty string; \`0\` gives \`"0"\`.',
         "ExprEmitter.parts",
       ),
       pat(
@@ -783,38 +786,38 @@ export const BACK: StageDoc[] = [
         "renderElement",
       ),
       pat(
-        "const aAttrs = { \"href\": \"/\" };",
+        'const aAttrs = { "href": "/" };',
         "The static attributes of an element. \`{}\` when there are none.",
         "renderElement, record",
       ),
       pat(
-        "setAttr(attrs, \"for\", toAttr(state.inputId));",
+        'setAttr(attrs, "for", toAttr(state.inputId));',
         "A dynamic attribute with one expression. \`setAttr\` skips the attribute when the value is \`null\`.",
         "renderElement, attrValue",
       ),
       pat(
-        "setAttr(attrs, \"class\", joinClasses([\"field\", (state.error ? \"invalid\" : \"\")]));",
+        'setAttr(attrs, "class", joinClasses(["field", (state.error ? "invalid" : "")]));',
         "A dynamic class: the shorthand classes, then toggles, then the class attribute, all in one \`joinClasses\` call.",
         "renderElement, classValue",
       ),
       pat(
-        "const inputEvents = { \"input\": { id: messagePrefix + \"changed\", payload: undefined } };",
+        'const inputEvents = { "input": { id: messagePrefix + "changed", payload: undefined } };',
         "The events of an element: DOM event name to message descriptor. Every event is listed, also those with no arguments (their descriptor never changes).",
         "renderElement, eventMsg",
       ),
       pat(
-        "{ id: messagePrefix + \"open\", payload: [(state.user)?.id, \"profile\"], prevent: true }",
+        '{ id: messagePrefix + "open", payload: [(state.user)?.id, "profile"], prevent: true }',
         "A message with two arguments (array payload) and the \`.prevent\` modifier. \`.stop\` adds \`stop: true\`.",
         "ExprEmitter.eventMsg, payload",
       ),
       pat(
-        "nodes.push({ t: \"el\", id, tag, attrs, events, children });",
+        'nodes.push({ t: "el", id, tag, attrs, events, children });',
         "The element object, one field per line. \`id\` only when the element has a dynamic attribute, class or event.",
         "renderElement",
       ),
       pat(
-        "nodes.push({ t: \"marker\", id: \"4s\" + idSuffix });",
-        "The start marker of an \`if\`, \`for\`, dynamic embed or outlet with node number 4. The end marker is the same with \`\"4e\"\`.",
+        'nodes.push({ t: "marker", id: "4s" + idSuffix });',
+        'The start marker of an \`if\`, \`for\`, dynamic embed or outlet with node number 4. The end marker is the same with \`"4e"\`.',
         "EmitBase.marker",
       ),
       pat(
@@ -838,23 +841,23 @@ export const BACK: StageDoc[] = [
         "renderFor",
       ),
       pat(
-        "const rowSuffix = idSuffix + \"#\" + rowKey;",
+        'const rowSuffix = idSuffix + "#" + rowKey;',
         "The id suffix of one item. Nodes inside the item use it, so ids are unique per item.",
         "renderFor",
       ),
       pat(
-        "nodes.push({ t: \"marker\", id: \"1[\" + rowSuffix }); ... \"1]\" + rowSuffix",
+        'nodes.push({ t: "marker", id: "1[" + rowSuffix }); ... "1]" + rowSuffix',
         "The item markers: the range between them is one item and can be removed or moved as a unit.",
         "renderFor",
       ),
       pat(
-        "out.push(...Row.render(props, itemSuffix + \"/2\", messagePrefix + \"row.\", childEnv(env, \"row\", state)));",
+        'out.push(...Row.render(props, itemSuffix + "/2", messagePrefix + "row.", childEnv(env, "row", state)));',
         "A static embed call. The result is an array of nodes, spread into the parent's array.",
         "renderEmbed, propsJs, childSuffix, childPrefix, childEnvJs",
       ),
       pat(
-        "{ ...(item), \"selected\": (state.selected === (item)?.id), \"label\": \"Item \" + toText((item)?.id) }",
-        "The props object: spread first, then named props. A bare prop would be \`\"open\": true\`.",
+        '{ ...(item), "selected": (state.selected === (item)?.id), "label": "Item " + toText((item)?.id) }',
+        'The props object: spread first, then named props. A bare prop would be \`"open": true\`.',
         "propsJs",
       ),
       pat(
@@ -872,13 +875,9 @@ export const BACK: StageDoc[] = [
         "A member read: the object in parentheses, then \`?.\`. A missing \`user\` gives \`undefined\` instead of an error. A root name has no \`?.\`: \`state.user\`.",
         "ExprEmitter.expr",
       ),
+      pat("(state.list)?.[state.i]", "An index read.", "ExprEmitter.expr"),
       pat(
-        "(state.list)?.[state.i]",
-        "An index read.",
-        "ExprEmitter.expr",
-      ),
-      pat(
-        "(state.fmt)?.(state.a, \"q\")",
+        '(state.fmt)?.(state.a, "q")',
         "A call: if the function is missing the result is \`undefined\`.",
         "ExprEmitter.expr",
       ),
@@ -899,12 +898,12 @@ export const BACK: StageDoc[] = [
       ),
     ],
     pitfalls: [
-      "An interpolated attribute with **several parts** never disappears. \`class=\"lbl {extra}\"\` with an undefined \`extra\` gives \`\"lbl \"\` (the helper \`toText\` makes it empty), not an absent attribute. Only a value that is exactly one expression, like \`disabled={busy}\`, can be absent.",
+      'An interpolated attribute with **several parts** never disappears. \`class="lbl {extra}"\` with an undefined \`extra\` gives \`"lbl "\` (the helper \`toText\` makes it empty), not an absent attribute. Only a value that is exactly one expression, like \`disabled={busy}\`, can be absent.',
       "Reading a member is null-safe, but a **root** name is not: \`state.user\` is read directly and the state object must exist. Only the parts after the first dot get \`?.\`.",
-      "\`&&\` and \`||\` keep their JavaScript meaning: they return one of the operands, not a boolean. Inside text, \`{a || \"none\"}\` works as expected; \`toText\` then prints the value.",
-      "A prop with one expression keeps its type (number, object, array), but \`price=\"{p}\"\` with other text around it becomes a string. Use a single \`{expr}\` to pass a non-string value to a child.",
+      '\`&&\` and \`||\` keep their JavaScript meaning: they return one of the operands, not a boolean. Inside text, \`{a || "none"}\` works as expected; \`toText\` then prints the value.',
+      'A prop with one expression keeps its type (number, object, array), but \`price="{p}"\` with other text around it becomes a string. Use a single \`{expr}\` to pass a non-string value to a child.',
       "Duplicate keys are **not** checked in \`render\`. The check exists only in \`diffKeyedList\` (stage 10), so a duplicate key shows up at the first update, not at the first draw.",
-      "A text whose first part is an expression starts with \`\"\" +\`. If you see it in the output, it is only there to force string addition.",
+      'A text whose first part is an expression starts with \`"" +\`. If you see it in the output, it is only there to force string addition.',
       "A static embed has no markers. A dynamic embed (\`+{view}\`) has markers, because its view can change. That is why only the second kind can be replaced by a diff.",
     ],
   },
@@ -920,31 +919,31 @@ export const BACK: StageDoc[] = [
     steps: [
       step(
         "Dependency set of a node",
-        "\`diffNode\` asks \`nodeDeps(n)\`. An empty set means the node is static (nothing in it reads the state), so **nothing** is written. A set that contains the special member \`\"\"\` means an \`+outlet\` is somewhere below: what an outlet shows depends on the route and on a child state the template cannot name, so such a node must be checked on every change.",
+        '\`diffNode\` asks \`nodeDeps(n)\`. An empty set means the node is static (nothing in it reads the state), so **nothing** is written. A set that contains the special member \`""\` means an \`+outlet\` is somewhere below: what an outlet shows depends on the route and on a child state the template cannot name, so such a node must be checked on every change.',
       ),
       step(
         "Is the guard redundant?",
-        "If the parent's set has the same size and every name of the child is in it, the parent's \`if\` already says the same thing. Then the child's code is written without its own \`if\` and its comment has no \`(reads: ...)\`. For a node that depends on \`\"\"\` the test is simply: does the parent also depend on \`\"\"\`?",
+        'If the parent\'s set has the same size and every name of the child is in it, the parent\'s \`if\` already says the same thing. Then the child\'s code is written without its own \`if\` and its comment has no \`(reads: ...)\`. For a node that depends on \`""\` the test is simply: does the parent also depend on \`""\`?',
       ),
       step(
         "Write the guard",
-        "A guard is the dependency names compared with \`!==\` and joined by \`||\`. A root name is \`prev.d !== next.d\`. A loop variable is compared by its two JS locals (\`prevRow !== nextRow\`). The set with \`\"\"\` gives \`true\`. The body is first generated into a captured writer one level deeper; if it is empty nothing is written.",
+        'A guard is the dependency names compared with \`!==\` and joined by \`||\`. A root name is \`prev.d !== next.d\`. A loop variable is compared by its two JS locals (\`prevRow !== nextRow\`). The set with \`""\` gives \`true\`. The body is first generated into a captured writer one level deeper; if it is empty nothing is written.',
         "// line 4: <input.field> (reads: name, busy, error)\nif (prev.name !== next.name || prev.busy !== next.busy || prev.error !== next.error) {\n  // ... patches for this element ...\n}",
       ),
       step(
         "Text",
-        "Both strings are computed with the same code as in \`render\` and compared as strings. A patch is pushed only if they differ. A null or false value shows as an empty string, so a text can be set to \`\"\"\`.",
-        "const prevText = \"\" + toText(prev.label);\nconst nextText = \"\" + toText(next.label);\nif (prevText !== nextText) patches.push({ op: \"text\", id: \"2\" + idSuffix, text: nextText });",
+        'Both strings are computed with the same code as in \`render\` and compared as strings. A patch is pushed only if they differ. A null or false value shows as an empty string, so a text can be set to \`""\`.',
+        'const prevText = "" + toText(prev.label);\nconst nextText = "" + toText(next.label);\nif (prevText !== nextText) patches.push({ op: "text", id: "2" + idSuffix, text: nextText });',
       ),
       step(
         "Element: attributes",
         "For each dynamic attribute, and for a dynamic class, the old and new values are computed. If they differ, the patch is \`rmAttr\` when the new value is \`null\` and \`attr\` otherwise.",
-        "const prevAction = toAttr(prev.url);\nconst nextAction = toAttr(next.url);\nif (prevAction !== nextAction) {\n  patches.push(nextAction === null\n    ? { op: \"rmAttr\", id: \"0\" + idSuffix, name: \"action\" }\n    : { op: \"attr\", id: \"0\" + idSuffix, name: \"action\", value: nextAction });\n}",
+        'const prevAction = toAttr(prev.url);\nconst nextAction = toAttr(next.url);\nif (prevAction !== nextAction) {\n  patches.push(nextAction === null\n    ? { op: "rmAttr", id: "0" + idSuffix, name: "action" }\n    : { op: "attr", id: "0" + idSuffix, name: "action", value: nextAction });\n}',
       ),
       step(
         "Element: event payloads",
         "Only events that have arguments are compared. One argument is compared with \`===\`; several are compared element by element with \`sameValues\`. If the payload changed, a \`handler\` patch carries the whole new message. The DOM plugin keeps the one real listener and swaps the message it reads.",
-        "const prevKeydownPayload = [prev.name, 13];\nconst nextKeydownPayload = [next.name, 13];\nif (!(sameValues(prevKeydownPayload, nextKeydownPayload))) {\n  patches.push({ op: \"handler\", id: \"3\" + idSuffix, event: \"keydown\", msg: { id: messagePrefix + \"key\", payload: nextKeydownPayload, stop: true } });\n}",
+        'const prevKeydownPayload = [prev.name, 13];\nconst nextKeydownPayload = [next.name, 13];\nif (!(sameValues(prevKeydownPayload, nextKeydownPayload))) {\n  patches.push({ op: "handler", id: "3" + idSuffix, event: "keydown", msg: { id: messagePrefix + "key", payload: nextKeydownPayload, stop: true } });\n}',
       ),
       step(
         "Element: children",
@@ -953,22 +952,22 @@ export const BACK: StageDoc[] = [
       step(
         "If",
         "The branch index is computed on both sides as a nested conditional: \`test0 ? 0 : test1 ? 1 : -1\` (the last number is the else branch index when there is an else). If the indexes differ: clear the old branch (unless -1), render the new branch into \`branchNodes\` and insert them before the end marker. If they are equal: for each branch whose content can change, diff inside it when it is the shown one.",
-        "const prevBranch = (prev.x > 1) ? 0 : prev.y ? 1 : -1;\nconst nextBranch = (next.x > 1) ? 0 : next.y ? 1 : -1;\nif (prevBranch !== nextBranch) {\n  // another branch: replace what is between the markers\n  if (prevBranch !== -1) patches.push({ op: \"clear\", from: \"3s\" + idSuffix, to: \"3e\" + idSuffix });\n  if (nextBranch !== -1) {\n    const branchNodes = [];\n    // ... render the branch ...\n    patches.push({ op: \"insert\", before: \"3e\" + idSuffix, nodes: branchNodes });\n  }\n} else {\n  // the same branch: diff inside it\n}",
+        'const prevBranch = (prev.x > 1) ? 0 : prev.y ? 1 : -1;\nconst nextBranch = (next.x > 1) ? 0 : next.y ? 1 : -1;\nif (prevBranch !== nextBranch) {\n  // another branch: replace what is between the markers\n  if (prevBranch !== -1) patches.push({ op: "clear", from: "3s" + idSuffix, to: "3e" + idSuffix });\n  if (nextBranch !== -1) {\n    const branchNodes = [];\n    // ... render the branch ...\n    patches.push({ op: "insert", before: "3e" + idSuffix, nodes: branchNodes });\n  }\n} else {\n  // the same branch: diff inside it\n}',
       ),
       step(
         "For",
         "Both lists and both key arrays are computed. Two small functions build the item start and end ids from a key. Then \`diffKeyedList(prevKeys, nextKeys, startId, endMarkerId, ops)\` is called with four callbacks: \`remove(key)\` pushes a \`remove\` patch, \`insert(index, beforeId)\` renders a new item and pushes an \`insert\` patch, \`move(key, beforeId)\` pushes a \`move\` patch, \`common(prevIndex, nextIndex)\` diffs an item that exists on both sides (or is empty).",
-        "const prevRowKeys = prevRowList.map((row, r) => String((row)?.id));\nconst rowStartId = (key) => \"1[\" + idSuffix + \"#\" + key;\nconst rowEndId = (key) => \"1]\" + idSuffix + \"#\" + key;\ndiffKeyedList(prevRowKeys, nextRowKeys, rowStartId, \"1e\" + idSuffix, {\n  remove(key) { patches.push({ op: \"remove\", from: rowStartId(key), to: rowEndId(key) }); },\n  insert(index, beforeId) { /* render a new item */ },\n  move(key, beforeId) { patches.push({ op: \"move\", from: rowStartId(key), to: rowEndId(key), before: beforeId }); },\n  common(prevIndex, nextIndex) { /* diff the item */ },\n});",
+        'const prevRowKeys = prevRowList.map((row, r) => String((row)?.id));\nconst rowStartId = (key) => "1[" + idSuffix + "#" + key;\nconst rowEndId = (key) => "1]" + idSuffix + "#" + key;\ndiffKeyedList(prevRowKeys, nextRowKeys, rowStartId, "1e" + idSuffix, {\n  remove(key) { patches.push({ op: "remove", from: rowStartId(key), to: rowEndId(key) }); },\n  insert(index, beforeId) { /* render a new item */ },\n  move(key, beforeId) { patches.push({ op: "move", from: rowStartId(key), to: rowEndId(key), before: beforeId }); },\n  common(prevIndex, nextIndex) { /* diff the item */ },\n});',
       ),
       step(
         "Embed and outlet",
         "A static embed calls the child's \`diff\` with the props of both sides. A dynamic embed first compares the two views: another view means another template, so the old range is cleared and the new view is rendered and inserted; the same view is diffed. An outlet does the same with the two route matches (compared by view and by name).",
-        "patches.push(...Row.diff(\n  { ...(prevItem), \"selected\": (prev.selected === (prevItem)?.id) },\n  { ...(nextItem), \"selected\": (next.selected === (nextItem)?.id) },\n  itemSuffix + \"/2\",\n  messagePrefix + \"row.\",\n  childEnv(env, \"row\", next),\n));",
+        'patches.push(...Row.diff(\n  { ...(prevItem), "selected": (prev.selected === (prevItem)?.id) },\n  { ...(nextItem), "selected": (next.selected === (nextItem)?.id) },\n  itemSuffix + "/2",\n  messagePrefix + "row.",\n  childEnv(env, "row", next),\n));',
       ),
       step(
         "A whole run: the patches",
         "These patches come from running the compiled diff for a keyed list going from the keys a, b, c to c, a, d. The item b is removed, d is inserted before the end marker, a is moved before d, and c stays where it is.",
-        "[\n  { \"op\": \"remove\", \"from\": \"1[#b\", \"to\": \"1]#b\" },\n  { \"op\": \"insert\", \"before\": \"1e\", \"nodes\": [ /* markers 1[#d, 1]#d and the li */ ] },\n  { \"op\": \"move\", \"from\": \"1[#a\", \"to\": \"1]#a\", \"before\": \"1[#d\" }\n]",
+        '[\n  { "op": "remove", "from": "1[#b", "to": "1]#b" },\n  { "op": "insert", "before": "1e", "nodes": [ /* markers 1[#d, 1]#d and the li */ ] },\n  { "op": "move", "from": "1[#a", "to": "1]#a", "before": "1[#d" }\n]',
         "json",
       ),
     ],
@@ -992,7 +991,7 @@ export const BACK: StageDoc[] = [
         DIFF,
         "method",
         "protected changed(deps: Set<string>, ctx: Ctx): string",
-        "Writes the condition of a guard: \`true\` if the set contains \`\"\"\`; otherwise each name as \`<local.prev> !== <local.next>\` when it is a loop variable in \`ctx.scope\` and as \`prev.<name> !== next.<name>\` when it is a root name, joined by \`||\`.",
+        'Writes the condition of a guard: \`true\` if the set contains \`""\`; otherwise each name as \`<local.prev> !== <local.next>\` when it is a loop variable in \`ctx.scope\` and as \`prev.<name> !== next.<name>\` when it is a root name, joined by \`||\`.',
       ),
       fn(
         "DiffEmitter.diffNode",
@@ -1012,15 +1011,15 @@ export const BACK: StageDoc[] = [
         "DiffEmitter.diffText",
         DIFF,
         "method",
-        "protected diffText(n: Extract<Node, { type: \"text\" }>, ctx: Ctx): void",
-        "Writes \`prevText\` and \`nextText\` (the text made by \`parts()\` on each side) and \`if (prevText !== nextText) patches.push({ op: \"text\", id, text: nextText })\`. The id is the one that \`render\` gave the text node.",
+        'protected diffText(n: Extract<Node, { type: "text" }>, ctx: Ctx): void',
+        'Writes \`prevText\` and \`nextText\` (the text made by \`parts()\` on each side) and \`if (prevText !== nextText) patches.push({ op: "text", id, text: nextText })\`. The id is the one that \`render\` gave the text node.',
       ),
       fn(
         "DiffEmitter.diffElement",
         DIFF,
         "method",
         "protected diffElement(el: ElementNode, ctx: Ctx, deps: Set<string>): void",
-        "Writes the attribute comparisons (one per dynamic attribute, then one for a dynamic class), then the payload comparison of each dynamic event, and finally \`diffNodes(el.children, ctx, deps)\`. The element id is \`id(el.nid, \"\", ctx)\`. Static attributes and events without arguments produce no code.",
+        'Writes the attribute comparisons (one per dynamic attribute, then one for a dynamic class), then the payload comparison of each dynamic event, and finally \`diffNodes(el.children, ctx, deps)\`. The element id is \`id(el.nid, "", ctx)\`. Static attributes and events without arguments produce no code.',
       ),
       fn(
         "DiffEmitter.diffElement attribute",
@@ -1034,7 +1033,7 @@ export const BACK: StageDoc[] = [
         DIFF,
         "method",
         "protected diffIf(n: IfNode, ctx: Ctx, deps: Set<string>): void",
-        "Writes the branch indexes, the \"another branch\" block (clear, render into \`branchNodes\` with a \`chain\` on \`nextBranch === i\`, insert before the end marker) and, when some branch has something to diff, the \"same branch\" block with one \`if (nextBranch === i)\` per such branch. The diffs inside the branches are generated **first** (captured two levels deep, each in its own scope) so the generator knows whether the \`else\` block is needed at all.",
+        'Writes the branch indexes, the "another branch" block (clear, render into \`branchNodes\` with a \`chain\` on \`nextBranch === i\`, insert before the end marker) and, when some branch has something to diff, the "same branch" block with one \`if (nextBranch === i)\` per such branch. The diffs inside the branches are generated **first** (captured two levels deep, each in its own scope) so the generator knows whether the \`else\` block is needed at all.',
       ),
       fn(
         "DiffEmitter.diffIf select",
@@ -1090,7 +1089,7 @@ export const BACK: StageDoc[] = [
         ANALYZE,
         "function",
         "export function nodeDeps(n: Node): Set<string>",
-        "The free identifiers a subtree reads from the enclosing scope (root state names or outer loop variables). It stops at the **root identifier**: \`user.name\` depends on \`user\`. A loop removes its own item and index; an outlet adds \`\"\"\`. The result is memoised in a WeakMap by node. This set decides every guard in \`diff\`.",
+        'The free identifiers a subtree reads from the enclosing scope (root state names or outer loop variables). It stops at the **root identifier**: \`user.name\` depends on \`user\`. A loop removes its own item and index; an outlet adds \`""\`. The result is memoised in a WeakMap by node. This set decides every guard in \`diff\`.',
       ),
       fn(
         "listDeps",
@@ -1127,7 +1126,7 @@ export const BACK: StageDoc[] = [
         "changed",
       ),
       pat(
-        "patches.push({ op: \"text\", id: \"2\" + idSuffix, text: nextText });",
+        'patches.push({ op: "text", id: "2" + idSuffix, text: nextText });',
         "Text patch. Sets the text node's content.",
         "diffText",
       ),
@@ -1137,17 +1136,17 @@ export const BACK: StageDoc[] = [
         "diffElement attribute",
       ),
       pat(
-        "patches.push(nextX === null ? { op: \"rmAttr\", id, name } : { op: \"attr\", id, name, value: nextX });",
+        'patches.push(nextX === null ? { op: "rmAttr", id, name } : { op: "attr", id, name, value: nextX });',
         "Attribute patch: remove when the new value is absent, else set. Written over three lines.",
         "diffElement attribute",
       ),
       pat(
-        "const prevClickPayload = [(prev.user)?.id, \"profile\"]; if (!(sameValues(prevClickPayload, nextClickPayload))) {...}",
+        'const prevClickPayload = [(prev.user)?.id, "profile"]; if (!(sameValues(prevClickPayload, nextClickPayload))) {...}',
         "Compare event payloads. Two or more arguments use \`sameValues\`; one argument uses \`prevClickPayload === nextClickPayload\`.",
         "diffElement",
       ),
       pat(
-        "patches.push({ op: \"handler\", id, event: \"click\", msg: { id: messagePrefix + \"open\", payload: nextClickPayload, prevent: true } });",
+        'patches.push({ op: "handler", id, event: "click", msg: { id: messagePrefix + "open", payload: nextClickPayload, prevent: true } });',
         "Handler patch. The message has the same shape as in the vnode's \`events\`.",
         "diffElement, eventMsg",
       ),
@@ -1162,7 +1161,7 @@ export const BACK: StageDoc[] = [
         "diffIf",
       ),
       pat(
-        "if (prevBranch !== -1) patches.push({ op: \"clear\", from: \"3s\" + idSuffix, to: \"3e\" + idSuffix });",
+        'if (prevBranch !== -1) patches.push({ op: "clear", from: "3s" + idSuffix, to: "3e" + idSuffix });',
         "Remove everything between the two markers, keeping the markers.",
         "diffIf",
       ),
@@ -1172,7 +1171,7 @@ export const BACK: StageDoc[] = [
         "diffIf",
       ),
       pat(
-        "patches.push({ op: \"insert\", before: \"3e\" + idSuffix, nodes: branchNodes });",
+        'patches.push({ op: "insert", before: "3e" + idSuffix, nodes: branchNodes });',
         "Insert the rendered nodes before the end marker.",
         "diffIf",
       ),
@@ -1187,27 +1186,27 @@ export const BACK: StageDoc[] = [
         "diffFor, keyFn",
       ),
       pat(
-        "const rowStartId = (key) => \"1[\" + idSuffix + \"#\" + key;",
-        "The start marker id of the item with that key. Equal to what \`render\` makes: outer suffix plus \`#\` plus key. The end version uses \`\"1]\"\`.",
+        'const rowStartId = (key) => "1[" + idSuffix + "#" + key;',
+        'The start marker id of the item with that key. Equal to what \`render\` makes: outer suffix plus \`#\` plus key. The end version uses \`"1]"\`.',
         "diffFor",
       ),
       pat(
-        "diffKeyedList(prevKeys, nextKeys, rowStartId, \"1e\" + idSuffix, { remove, insert, move, common })",
+        'diffKeyedList(prevKeys, nextKeys, rowStartId, "1e" + idSuffix, { remove, insert, move, common })',
         "The call. The fourth argument is the end marker of the whole loop: the place for an insert at the end.",
         "diffFor",
       ),
       pat(
-        "remove(key) { patches.push({ op: \"remove\", from: rowStartId(key), to: rowEndId(key) }); }",
+        'remove(key) { patches.push({ op: "remove", from: rowStartId(key), to: rowEndId(key) }); }',
         "Remove one item: both markers and all between them.",
         "diffFor",
       ),
       pat(
-        "insert(index, beforeId) { const row = nextRowList[index]; ... patches.push({ op: \"insert\", before: beforeId, nodes: rowNodes }); }",
+        'insert(index, beforeId) { const row = nextRowList[index]; ... patches.push({ op: "insert", before: beforeId, nodes: rowNodes }); }',
         "Render a new item (markers around the rendered children) and insert it before \`beforeId\`. The index is the position in the **next** list.",
         "diffFor insertBody",
       ),
       pat(
-        "move(key, beforeId) { patches.push({ op: \"move\", from: ..., to: ..., before: beforeId }); }",
+        'move(key, beforeId) { patches.push({ op: "move", from: ..., to: ..., before: beforeId }); }',
         "Move the range of an existing item.",
         "diffFor",
       ),
@@ -1217,12 +1216,12 @@ export const BACK: StageDoc[] = [
         "diffFor commonBody",
       ),
       pat(
-        "const rowSuffix = idSuffix + \"#\" + nextRowKeys[nextIndex];",
+        'const rowSuffix = idSuffix + "#" + nextRowKeys[nextIndex];',
         "The suffix of an item in \`common\`, from the next key (equal to the previous key, since the item matched by key).",
         "diffFor commonBody",
       ),
       pat(
-        "patches.push(...Row.diff(propsPrev, propsNext, itemSuffix + \"/2\", messagePrefix + \"row.\", childEnv(env, \"row\", next)));",
+        'patches.push(...Row.diff(propsPrev, propsNext, itemSuffix + "/2", messagePrefix + "row.", childEnv(env, "row", next)));',
         "Static embed diff. The patches of the child come out with the child's suffix, so they point at its own ids.",
         "diffEmbed",
       ),
@@ -1232,7 +1231,7 @@ export const BACK: StageDoc[] = [
         "diffEmbed",
       ),
       pat(
-        "patches.push({ op: \"insert\", before: \"1e\" + idSuffix, nodes: nextPanelView.render(props, suffix, prefix, env) });",
+        'patches.push({ op: "insert", before: "1e" + idSuffix, nodes: nextPanelView.render(props, suffix, prefix, env) });',
         "A new view: its nodes are made right in the patch.",
         "diffEmbed",
       ),
@@ -1247,7 +1246,7 @@ export const BACK: StageDoc[] = [
         "diffOutlet",
       ),
       pat(
-        "patches.push(...nextOutlet.view.diff(prevOutlet.state, nextOutlet.state, idSuffix + \"/4\", messagePrefix + nextOutlet.name + \".\", nextOutlet.component));",
+        'patches.push(...nextOutlet.view.diff(prevOutlet.state, nextOutlet.state, idSuffix + "/4", messagePrefix + nextOutlet.name + ".", nextOutlet.component));',
         "Same page: the page's own diff with the two child states.",
         "diffOutlet",
       ),
@@ -1259,7 +1258,7 @@ export const BACK: StageDoc[] = [
     ],
     pitfalls: [
       "Guards compare **references**. \`prev.user !== next.user\` is false when the same object was changed in place, so a template that reads \`user.name\` would not update. State must be replaced with new objects (the store plugin does this).",
-      "A patch for one attribute is checked with `!==` on strings. The \`rmAttr\` branch of a multi-part attribute (\`href=\"/u/{id}\"\`) can never run, but the ternary is written anyway. It is dead code, not a bug.",
+      'A patch for one attribute is checked with `!==` on strings. The \`rmAttr\` branch of a multi-part attribute (\`href="/u/{id}"\`) can never run, but the ternary is written anyway. It is dead code, not a bug.',
       "An event with **one array literal** argument (\`@click=pick([1, 2])\`) makes a new array on each call, so its payloads are never equal and a \`handler\` patch is emitted whenever the element's guard is true. Several arguments use \`sameValues\`, which compares the elements and does not have this problem.",
       "Events with no arguments are never compared. Their message cannot change, so the first descriptor from \`render\` stays on the element.",
       "The diff of a keyed list is correct but **not minimal**. Going from a, b, c to c, a, b gives two \`move\` patches (b before the end, a before b); moving c to the front would be one. See \`diffKeyedList\`.",
@@ -1275,13 +1274,13 @@ export const BACK: StageDoc[] = [
     title: "The module: compileTemplate",
     intro: [
       "The generator gives only the three declarations. \`compileTemplate(source, opts)\` in \`compiler/mod.ts\` turns them into a complete **ES module** that a bundler can load. It calls \`build\` (parse, then generate), and then puts around the code a header comment, the import of the runtime helpers, the imports of the child views, and two export lines. The result is a string; nothing is run yet.",
-      "The module exports the three names (\`render\`, \`diff\`, \`meta\`) and a default object with the same three. So application code can write \`import view from \"./page.pavlus\"\` or \`import { render } from \"./page.pavlus\"\`. The imports at the top of the template (\`import Row from \"./row.pavlus\"\`) are written as real imports of the same shape, which means the bundler resolves, compiles and bundles the children the same way.",
+      'The module exports the three names (\`render\`, \`diff\`, \`meta\`) and a default object with the same three. So application code can write \`import view from "./page.pavlus"\` or \`import { render } from "./page.pavlus"\`. The imports at the top of the template (\`import Row from "./row.pavlus"\`) are written as real imports of the same shape, which means the bundler resolves, compiles and bundles the children the same way.',
       "In a Vite project the compiler is not called by hand. The plugin from \`vite/mod.ts\` is a small wrapper: it recognises template files by their extension, skips the requests that want the raw file, calls \`compileTemplate\` with the file name, and turns a compile error into a Vite error with the file name in front of the message. It returns an empty source map on purpose.",
     ],
     steps: [
       step(
         "Build",
-        "\`build(source, opts)\` calls \`parse(source)\` and \`generate(ast)\` and returns \`{ ast, code, helpers }\`. If a \`TemplateError\` is thrown and a file name was given, a new \`TemplateError\` is made whose message is \`\"<filename>: <message>\"\`. Other errors pass unchanged. The message of a \`TemplateError\` already ends with \`(line L, col C)\`.",
+        '\`build(source, opts)\` calls \`parse(source)\` and \`generate(ast)\` and returns \`{ ast, code, helpers }\`. If a \`TemplateError\` is thrown and a file name was given, a new \`TemplateError\` is made whose message is \`"<filename>: <message>"\`. Other errors pass unchanged. The message of a \`TemplateError\` already ends with \`(line L, col C)\`.',
       ),
       step(
         "Header",
@@ -1291,12 +1290,12 @@ export const BACK: StageDoc[] = [
       step(
         "Runtime import",
         "If the code uses any helper, one import line follows, from \`opts.runtime\` or the default \`@service-laboratory/pavlus/runtime\`. The names are the sorted ones from \`generate\`. If the line is longer than 100 characters, it is written with one name per line. If there are no helpers (a fully static template) there is no such line.",
-        "import { diffKeyedList, joinClasses, setAttr, toText } from \"@service-laboratory/pavlus/runtime\";\n\nimport {\n  joinClasses,\n  sameValues,\n  setAttr,\n  toAttr,\n  toText,\n} from \"@service-laboratory/pavlus/runtime\";",
+        'import { diffKeyedList, joinClasses, setAttr, toText } from "@service-laboratory/pavlus/runtime";\n\nimport {\n  joinClasses,\n  sameValues,\n  setAttr,\n  toAttr,\n  toText,\n} from "@service-laboratory/pavlus/runtime";',
       ),
       step(
         "Child views",
-        "Each \`import\` of the template becomes \`import Local from \"path\";\` with the path quoted by \`JSON.stringify\`. The local name is also how the generated code refers to the child: \`Row.render(...)\`. These lines come after the runtime import.",
-        "import Row from \"./row.pavlus\";",
+        'Each \`import\` of the template becomes \`import Local from "path";\` with the path quoted by \`JSON.stringify\`. The local name is also how the generated code refers to the child: \`Row.render(...)\`. These lines come after the runtime import.',
+        'import Row from "./row.pavlus";',
       ),
       step(
         "Body and exports",
@@ -1305,7 +1304,7 @@ export const BACK: StageDoc[] = [
       ),
       step(
         "The Vite plugin",
-        "\`pavlus(opts)\` returns a plugin with the name \`pavlus\` and \`enforce: \"pre\"\` (it runs before other transforms). Its \`transform(code, id)\` splits the id at \`?\`, ignores any file that does not end with the extension (\`.pavlus\` by default), ignores requests whose query has a bare \`raw\`, \`url\` or \`inline\` flag, and otherwise returns \`{ code: compileTemplate(code, { filename: file, runtime }), map: { mappings: \"\" } }\`. On an error it calls \`this.error(message)\`, which Vite shows with the right file.",
+        '\`pavlus(opts)\` returns a plugin with the name \`pavlus\` and \`enforce: "pre"\` (it runs before other transforms). Its \`transform(code, id)\` splits the id at \`?\`, ignores any file that does not end with the extension (\`.pavlus\` by default), ignores requests whose query has a bare \`raw\`, \`url\` or \`inline\` flag, and otherwise returns \`{ code: compileTemplate(code, { filename: file, runtime }), map: { mappings: "" } }\`. On an error it calls \`this.error(message)\`, which Vite shows with the right file.',
       ),
     ],
     functions: [
@@ -1313,7 +1312,7 @@ export const BACK: StageDoc[] = [
         "DEFAULT_RUNTIME",
         MOD,
         "const",
-        "export const DEFAULT_RUNTIME = \"@service-laboratory/pavlus/runtime\"",
+        'export const DEFAULT_RUNTIME = "@service-laboratory/pavlus/runtime"',
         "The module compiled templates import their helpers from when \`opts.runtime\` is not given. In the framework repository it is aliased to \`src/runtime/helpers.ts\`.",
       ),
       fn(
@@ -1342,7 +1341,7 @@ export const BACK: StageDoc[] = [
         MOD,
         "function",
         "function importLine(names: string[], from: string): string",
-        "Writes the runtime import. On one line if it is at most 100 characters long, else \`import {\`, one indented name per line with a trailing comma, and \`} from \"...\";\`.",
+        'Writes the runtime import. On one line if it is at most 100 characters long, else \`import {\`, one indented name per line with a trailing comma, and \`} from "...";\`.',
       ),
       fn(
         "compileTemplate",
@@ -1355,7 +1354,7 @@ export const BACK: StageDoc[] = [
         "PavlusVitePlugin",
         VITE,
         "type",
-        "export interface PavlusVitePlugin { name; enforce: \"pre\"; transform(...) }",
+        'export interface PavlusVitePlugin { name; enforce: "pre"; transform(...) }',
         "The part of a Vite plugin that is used, written by hand to avoid a dependency on Vite's types. \`transform\` has a \`this\` with only \`error(message): never\`.",
       ),
       fn(
@@ -1370,21 +1369,21 @@ export const BACK: StageDoc[] = [
         VITE,
         "function",
         "export function pavlus(opts: PavlusPluginOptions = {}): PavlusVitePlugin",
-        "Creates the plugin object: name \`\"pavlus\"\`, \`enforce: \"pre\"\`, and the \`transform\` below. Used in \`vite.config\` as \`plugins: [pavlus()]\`.",
+        'Creates the plugin object: name \`"pavlus"\`, \`enforce: "pre"\`, and the \`transform\` below. Used in \`vite.config\` as \`plugins: [pavlus()]\`.',
       ),
       fn(
         "pavlus.transform",
         VITE,
         "method",
         "transform(code, id)",
-        "\`const [file, query = \"\"] = id.split(\"?\")\`. Returns \`null\` (not handled) when \`file\` does not end with the extension, or when \`query\` matches \`/(^|&)(raw|url|inline)(&|$)/\`. Otherwise returns the compiled module with \`map: { mappings: \"\" }\`. Any thrown error becomes \`this.error(message)\`.",
+        '\`const [file, query = ""] = id.split("?")\`. Returns \`null\` (not handled) when \`file\` does not end with the extension, or when \`query\` matches \`/(^|&)(raw|url|inline)(&|$)/\`. Otherwise returns the compiled module with \`map: { mappings: "" }\`. Any thrown error becomes \`this.error(message)\`.',
       ),
       fn(
         "TemplateError",
         "template/errors.ts",
         "class",
         "export class TemplateError extends Error",
-        "The error of a bad template. Its message is \`\"<text> (line L, col C)\"\` and it also has \`line\` and \`col\` fields. \`build\` re-creates it with the file name in front.",
+        'The error of a bad template. Its message is \`"<text> (line L, col C)"\` and it also has \`line\` and \`col\` fields. \`build\` re-creates it with the file name in front.',
       ),
     ],
     patterns: [
@@ -1394,17 +1393,17 @@ export const BACK: StageDoc[] = [
         "compileTemplate",
       ),
       pat(
-        "import { a, b } from \"@service-laboratory/pavlus/runtime\";",
+        'import { a, b } from "@service-laboratory/pavlus/runtime";',
         "Imports exactly the helpers the code uses, sorted. One line while it fits in 100 characters.",
         "importLine",
       ),
       pat(
-        "import {\\n  a,\\n  b,\\n} from \"...\";",
+        'import {\\n  a,\\n  b,\\n} from "...";',
         "The wrapped form: one name per line, two spaces, trailing comma.",
         "importLine",
       ),
       pat(
-        "import Row from \"./row.pavlus\";",
+        'import Row from "./row.pavlus";',
         "A child view import. It comes from the template's \`import\` line; it is a default import, and the default export of a compiled module is the view object.",
         "compileTemplate",
       ),
@@ -1429,8 +1428,8 @@ export const BACK: StageDoc[] = [
         "pavlus.transform, vite/mod.ts",
       ),
       pat(
-        "{ code, map: { mappings: \"\" } }",
-        "The return value. An empty mappings string means \"no source map\". Without it Vite would invent a map from the generated code onto itself.",
+        '{ code, map: { mappings: "" } }',
+        'The return value. An empty mappings string means "no source map". Without it Vite would invent a map from the generated code onto itself.',
         "pavlus.transform",
       ),
       pat(
@@ -1441,7 +1440,7 @@ export const BACK: StageDoc[] = [
     ],
     pitfalls: [
       "The Vite plugin passes the **full path without the query** as \`filename\`. So the error message starts with the whole path, but the header comment of the module has only the base name (\`demo.pavlus\`).",
-      "\`id.split(\"?\")\` takes only the first two parts. A query like \`?v=1&import\` is compiled (checked). A key with a value (\`?raw=1\`) is **not** skipped, because the test looks for the bare word.",
+      '\`id.split("?")\` takes only the first two parts. A query like \`?v=1&import\` is compiled (checked). A key with a value (\`?raw=1\`) is **not** skipped, because the test looks for the bare word.',
       "Without a \`filename\` (a call without options, or \`compileToView\`), the error message has no file prefix: just \`Unclosed ( (line 1, col 4)\`.",
       "Errors other than \`TemplateError\` (for example a bug in the generator) are not changed by \`build\`. The plugin still passes their message to \`this.error\`.",
       "A child import line is written for every \`import\` in the template, in the template's order, whether or not an embed uses it. The helper import always comes first.",
@@ -1454,7 +1453,7 @@ export const BACK: StageDoc[] = [
     id: "instantiate",
     title: "From text to a function",
     intro: [
-      "The generated text is not yet a function. There are two ways to make it one. In an application, the **bundler** does it: the Vite plugin gives the module text to Vite, the browser (or Node) loads it as a normal ES module, and \`import view from \"./page.pavlus\"\` gives the view. For tests, tools and this page, \`compileToView(source, { components })\` in \`compiler/mod.ts\` does it at run time, in the same process, without any file.",
+      'The generated text is not yet a function. There are two ways to make it one. In an application, the **bundler** does it: the Vite plugin gives the module text to Vite, the browser (or Node) loads it as a normal ES module, and \`import view from "./page.pavlus"\` gives the view. For tests, tools and this page, \`compileToView(source, { components })\` in \`compiler/mod.ts\` does it at run time, in the same process, without any file.',
       "\`compileToView\` calls the same \`build\` as \`compileTemplate\`, but it does not use the import lines, because it has no module system to resolve them. Instead it builds a function with the \`Function\` constructor: the parameters are the names of all runtime helpers followed by the local names of the template's imports, and the body is the generated code plus \`return { render, diff, meta };\`. It calls that function with the real helper functions and the child views. What comes out is the same object a module's default export would be.",
       "A view is only data and two pure functions (the type \`View\` in \`runtime/vnode.ts\`). To use it in an application, a component class sets \`view = view\`. When the app is mounted, \`viewOf(component)\` returns a copy of the view whose \`render\` and \`diff\` pass the component as the fourth argument (\`env\`). That is how an \`+outlet\` finds the component's \`routing\` and how an embed finds its \`children\`.",
     ],
@@ -1465,7 +1464,7 @@ export const BACK: StageDoc[] = [
       ),
       step(
         "Resolve the child views",
-        "For each \`import\` of the template, \`names\` has the local name. The view for that name is looked up in \`opts.components\`: if the entry has a \`render\` property it is the view itself, otherwise its \`.view\` is used (a component). If nothing is found: \`Error: pavlus: template imports \"Foo\" but no view was given in { components }\`.",
+        'For each \`import\` of the template, \`names\` has the local name. The view for that name is looked up in \`opts.components\`: if the entry has a \`render\` property it is the view itself, otherwise its \`.view\` is used (a component). If nothing is found: \`Error: pavlus: template imports "Foo" but no view was given in { components }\`.',
       ),
       step(
         "Collect the helpers",
@@ -1474,17 +1473,17 @@ export const BACK: StageDoc[] = [
       step(
         "Make the function",
         "The parameters are \`...helperNames\` then \`...names\`. The body is the generated code, a newline, and \`return { render, diff, meta };\`. It is called at once with \`(...helperValues, ...views)\`. Inside the body the generated code finds \`toText\` or \`Row\` as ordinary parameters, so the same text works as a module body and as a function body.",
-        "new Function(\n  \"asView\", \"childEnv\", \"diffKeyedList\", \"joinClasses\", \"resolveOutlet\",\n  \"sameValues\", \"setAttr\", \"toAttr\", \"toText\",   // helperNames\n  \"Row\",                                          // template imports\n  code + \"\\nreturn { render, diff, meta };\",\n)(asView, childEnv, ..., toText, RowView);",
+        'new Function(\n  "asView", "childEnv", "diffKeyedList", "joinClasses", "resolveOutlet",\n  "sameValues", "setAttr", "toAttr", "toText",   // helperNames\n  "Row",                                          // template imports\n  code + "\\nreturn { render, diff, meta };",\n)(asView, childEnv, ..., toText, RowView);',
       ),
       step(
         "Use the view",
         "The returned object has exactly three keys: \`render\`, \`diff\`, \`meta\`. \`view.render(state)\` gives nodes; \`view.diff(prev, next)\` gives patches.",
-        "const view = compileToView(\"ul\\n  for it in items key it.id\\n    li {it.t}\");\nview.meta   // { embeds: [], outlet: false }\nview.render({ items: [{ id: \"a\", t: \"A\" }] })",
+        'const view = compileToView("ul\\n  for it in items key it.id\\n    li {it.t}");\nview.meta   // { embeds: [], outlet: false }\nview.render({ items: [{ id: "a", t: "A" }] })',
       ),
       step(
         "Bundler path and components",
         "In an app, a component class has \`view = view\` (the default import of the compiled module). \`viewOf(c)\` returns \`c\` itself if it has a \`render\` (it already is a view). Otherwise it takes \`c.view\`, returns \`undefined\` if there is none, and returns a copy of the view with \`render\` and \`diff\` wrapped so the component is the fourth argument. \`createApp({ mount })\` and the router's \`resolveOutlet\` call \`viewOf\`.",
-        "export function viewOf(c: View | { view?: View }): View | undefined {\n  if (\"render\" in c) return c;\n  const view = c.view;\n  if (!view) return undefined;\n  return {\n    ...view,\n    render: (state, sfx = \"\", ns = \"\") => view.render(state, sfx, ns, c),\n    diff: (prev, next, sfx = \"\", ns = \"\") => view.diff(prev, next, sfx, ns, c),\n  };\n}",
+        'export function viewOf(c: View | { view?: View }): View | undefined {\n  if ("render" in c) return c;\n  const view = c.view;\n  if (!view) return undefined;\n  return {\n    ...view,\n    render: (state, sfx = "", ns = "") => view.render(state, sfx, ns, c),\n    diff: (prev, next, sfx = "", ns = "") => view.diff(prev, next, sfx, ns, c),\n  };\n}',
       ),
     ],
     functions: [
@@ -1500,7 +1499,7 @@ export const BACK: StageDoc[] = [
         MOD,
         "function",
         "export function compileToView<S = any>(source: string, opts: { components?: Record<string, ViewSource> } = {}): View<S>",
-        "Compiles a template at run time and returns its view. Throws the template's own error if it is malformed, or \`pavlus: template imports \"X\" but no view was given in { components }\` if a child is missing. The code is generated again at every call; nothing is cached. It uses \`new Function\`, so a strict Content Security Policy without \`unsafe-eval\` forbids it.",
+        'Compiles a template at run time and returns its view. Throws the template\'s own error if it is malformed, or \`pavlus: template imports "X" but no view was given in { components }\` if a child is missing. The code is generated again at every call; nothing is cached. It uses \`new Function\`, so a strict Content Security Policy without \`unsafe-eval\` forbids it.',
       ),
       fn(
         "View",
@@ -1527,7 +1526,7 @@ export const BACK: StageDoc[] = [
         "runtime namespace",
         HELPERS,
         "const",
-        "import * as runtime from \"../runtime/helpers.ts\"",
+        'import * as runtime from "../runtime/helpers.ts"',
         "The module namespace whose keys are the helper names. It includes the re-exports \`childEnv\` and \`resolveOutlet\` from \`routing/mod.ts\`. Type-only exports (like \`KeyedListOps\`) are not there.",
       ),
     ],
@@ -1538,7 +1537,7 @@ export const BACK: StageDoc[] = [
         "compileToView",
       ),
       pat(
-        "code + \"\\nreturn { render, diff, meta };\"",
+        'code + "\\nreturn { render, diff, meta };"',
         "The function body: the three declarations then a return of an object with the same three names.",
         "compileToView",
       ),
@@ -1548,17 +1547,17 @@ export const BACK: StageDoc[] = [
         "compileToView; RUNTIME_NAMES in names.ts",
       ),
       pat(
-        "\"render\" in c ? c : c.view",
+        '"render" in c ? c : c.view',
         "How an entry of \`components\` becomes a view.",
         "compileToView",
       ),
       pat(
-        "pavlus: template imports \"Foo\" but no view was given in { components }",
+        'pavlus: template imports "Foo" but no view was given in { components }',
         "The error for a missing child.",
         "compileToView",
       ),
       pat(
-        "render: (state, sfx = \"\", ns = \"\") => view.render(state, sfx, ns, c)",
+        'render: (state, sfx = "", ns = "") => view.render(state, sfx, ns, c)',
         "The wrapper that adds the component as \`env\`. \`sfx\` is the id suffix and \`ns\` the message prefix.",
         "viewOf",
       ),
@@ -1584,13 +1583,13 @@ export const BACK: StageDoc[] = [
       step(
         "Render gives virtual nodes",
         "Ask for the nodes of a state. An element has a tag, attributes (strings only), events (message descriptors) and children. The \`id\` is there only if the element can be patched. The markers have only an id.",
-        "view.render({ id: 7, selected: false, label: \"Seven\" }, \"/2\", \"row.\")\n// for the template:  li.row(class:sel=selected @click=pick(id, 1)) {label}",
+        'view.render({ id: 7, selected: false, label: "Seven" }, "/2", "row.")\n// for the template:  li.row(class:sel=selected @click=pick(id, 1)) {label}',
         "ts",
       ),
       step(
         "The vnode",
         "That call returns this list. Note the ids end with the suffix \`/2\` and the message id starts with the prefix \`row.\`. The payload of the click is an array because the handler has two arguments.",
-        "[{\"t\":\"el\",\"id\":\"0/2\",\"tag\":\"li\",\"attrs\":{\"class\":\"row\"},\n  \"events\":{\"click\":{\"id\":\"row.pick\",\"payload\":[7,1]}},\n  \"children\":[{\"t\":\"text\",\"id\":\"1/2\",\"text\":\"Seven\"}]}]",
+        '[{"t":"el","id":"0/2","tag":"li","attrs":{"class":"row"},\n  "events":{"click":{"id":"row.pick","payload":[7,1]}},\n  "children":[{"t":"text","id":"1/2","text":"Seven"}]}]',
         "json",
       ),
       step(
@@ -1600,17 +1599,17 @@ export const BACK: StageDoc[] = [
       step(
         "Serialise (for a server or a test)",
         "\`toHtml(nodes)\` writes markup. Markers are dropped unless \`{ markers: true }\` is passed, then each is written as a comment with its id. Text is escaped for \`&\`, \`<\` and \`>\`; attribute values also escape the double quote. Void tags have no children and no closing tag.",
-        "toHtml(view.render(s), { markers: true })\n// <div><p title=\"x\" hidden=\"\">x</p><!--3s--><!--3e--><li class=\"row sel\">x</li></div>",
+        'toHtml(view.render(s), { markers: true })\n// <div><p title="x" hidden="">x</p><!--3s--><!--3e--><li class="row sel">x</li></div>',
       ),
       step(
         "Diff gives patches",
         "With two states the patches are plain objects. Here the id changes from 7 to 8 and the row becomes selected: a class patch and a handler patch with a new payload.",
-        "view.diff({ id: 7, selected: false, label: \"Seven\" }, { id: 8, selected: true, label: \"Seven\" }, \"/2\", \"row.\")",
+        'view.diff({ id: 7, selected: false, label: "Seven" }, { id: 8, selected: true, label: "Seven" }, "/2", "row.")',
       ),
       step(
         "The patches",
         "The result. Every patch names a node by id (or two ids for a range), so the order of the list matters only when patches refer to markers.",
-        "[{\"op\":\"attr\",\"id\":\"0/2\",\"name\":\"class\",\"value\":\"row sel\"},\n {\"op\":\"handler\",\"id\":\"0/2\",\"event\":\"click\",\"msg\":{\"id\":\"row.pick\",\"payload\":[8,1]}}]",
+        '[{"op":"attr","id":"0/2","name":"class","value":"row sel"},\n {"op":"handler","id":"0/2","event":"click","msg":{"id":"row.pick","payload":[8,1]}}]',
         "json",
       ),
       step(
@@ -1630,21 +1629,21 @@ export const BACK: StageDoc[] = [
         "ElementVNode",
         VNODE,
         "type",
-        "export interface ElementVNode { t: \"el\"; id?: string; tag; attrs; events; children }",
+        'export interface ElementVNode { t: "el"; id?: string; tag; attrs; events; children }',
         "A virtual element. \`id\` exists only if the element is patched later. \`attrs\` maps names to strings (absent attributes are not there). \`events\` maps DOM event names to \`EventMsg\`.",
       ),
       fn(
         "TextVNode",
         VNODE,
         "type",
-        "export interface TextVNode { t: \"text\"; id?: string; text: string }",
+        'export interface TextVNode { t: "text"; id?: string; text: string }',
         "A virtual text node. \`id\` exists only if the text has an expression.",
       ),
       fn(
         "MarkerVNode",
         VNODE,
         "type",
-        "export interface MarkerVNode { t: \"marker\"; id: string }",
+        'export interface MarkerVNode { t: "marker"; id: string }',
         "An empty comment node that delimits an \`if\`, \`for\`, dynamic embed or outlet block, or one item of a loop. It always has an id.",
       ),
       fn(
@@ -1658,7 +1657,7 @@ export const BACK: StageDoc[] = [
         "Patch",
         VNODE,
         "type",
-        "export type Patch = { op: \"text\" ... } | { op: \"attr\" ... } | ...",
+        'export type Patch = { op: "text" ... } | { op: "attr" ... } | ...',
         "The eight DOM changes \`diff\` can produce: \`text\` {id, text}; \`attr\` {id, name, value}; \`rmAttr\` {id, name}; \`handler\` {id, event, msg}; \`insert\` {before, nodes}; \`clear\` {from, to}, which removes everything strictly between two markers; \`remove\` {from, to}, which removes the range including both ends; \`move\` {from, to, before}, which moves the range before a node. Patches are data; only the DOM plugin applies them.",
       ),
       fn(
@@ -1672,28 +1671,28 @@ export const BACK: StageDoc[] = [
         "RENDER_START",
         VNODE,
         "const",
-        "export const RENDER_START = \"pavlus\"",
+        'export const RENDER_START = "pavlus"',
         "The data of the comment node that opens a render in the DOM (\`<!--pavlus-->\`). The DOM plugin writes it; the server renderer writes it too; the plugin uses it to find a server render to hydrate.",
       ),
       fn(
         "RENDER_END",
         VNODE,
         "const",
-        "export const RENDER_END = \"/pavlus\"",
+        'export const RENDER_END = "/pavlus"',
         "The comment that closes a render (\`<!--/pavlus-->\`).",
       ),
       fn(
         "VOID",
         VNODE,
         "const",
-        "const VOID = new Set([\"area\", \"base\", \"br\", \"col\", \"embed\", \"hr\", \"img\", \"input\", \"link\", \"meta\", \"source\", \"track\", \"wbr\"])",
+        'const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"])',
         "The void HTML tags. \`toHtml\` writes no children and no end tag for them.",
       ),
       fn(
         "esc",
         VNODE,
         "const",
-        "const esc = (s: string): string => s.replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\")",
+        'const esc = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")',
         "Escapes text for HTML. For attribute values \`toHtml\` also replaces the double quote with \`&quot;\`.",
       ),
       fn(
@@ -1701,14 +1700,14 @@ export const BACK: StageDoc[] = [
         VNODE,
         "function",
         "export function toHtml(nodes: VNode[], opts: { markers?: boolean } = {}): string",
-        "Serialises vnodes to HTML. Text is escaped; an element writes its tag, its attributes as \`name=\"value\"\` and its children; markers are skipped unless \`opts.markers\` is true, when they become \`<!--id-->\`. Events are not written. Used by the server renderer and by tests.",
+        'Serialises vnodes to HTML. Text is escaped; an element writes its tag, its attributes as \`name="value"\` and its children; markers are skipped unless \`opts.markers\` is true, when they become \`<!--id-->\`. Events are not written. Used by the server renderer and by tests.',
       ),
       fn(
         "toText",
         HELPERS,
         "function",
         "export function toText(value: unknown): string",
-        "The text of an interpolation. \`null\`, \`undefined\` and \`false\` give an empty string; everything else is \`String(value)\` (so \`0\` is \`\"0\"\` and \`true\` is \`\"true\"\`). Called by every generated text and multi-part attribute.",
+        'The text of an interpolation. \`null\`, \`undefined\` and \`false\` give an empty string; everything else is \`String(value)\` (so \`0\` is \`"0"\` and \`true\` is \`"true"\`). Called by every generated text and multi-part attribute.',
       ),
       fn(
         "toAttr",
@@ -1790,67 +1789,59 @@ export const BACK: StageDoc[] = [
     ],
     patterns: [
       pat(
-        "{ t: \"el\", id, tag, attrs, events, children }",
-        "The element vnode. In JSON: \`{\"t\":\"el\",\"id\":\"0/2\",\"tag\":\"li\",...}\`.",
+        '{ t: "el", id, tag, attrs, events, children }',
+        'The element vnode. In JSON: \`{"t":"el","id":"0/2","tag":"li",...}\`.',
         "ElementVNode",
       ),
+      pat('{ t: "text", id?, text }', "The text vnode.", "TextVNode"),
       pat(
-        "{ t: \"text\", id?, text }",
-        "The text vnode.",
-        "TextVNode",
-      ),
-      pat(
-        "{ t: \"marker\", id: \"1[#a\" }",
+        '{ t: "marker", id: "1[#a" }',
         "A marker. Id forms: \`<nid>s\` / \`<nid>e\` for a block, \`<nid>[<suffix>\` / \`<nid>]<suffix>\` for an item. Rendered as an empty comment in the DOM.",
         "MarkerVNode",
       ),
       pat(
-        "\"1[#a\", \"2#a\", \"3#a\"",
+        '"1[#a", "2#a", "3#a"',
         "Real ids of a loop item with key \`a\` and an empty outer suffix: the item markers (\`1[\`, \`1]\` plus \`#a\`) and the nodes inside the item (\`2#a\`, \`3#a\`).",
         "renderFor",
       ),
       pat(
-        "\"0/2\", \"1/2\"",
-        "Ids inside a child instance whose parent gave the suffix \`\"/2\"\` (the child is the embed with number 2).",
+        '"0/2", "1/2"',
+        'Ids inside a child instance whose parent gave the suffix \`"/2"\` (the child is the embed with number 2).',
         "childSuffix",
       ),
       pat(
-        "{ op: \"text\", id, text }",
+        '{ op: "text", id, text }',
         "Set the content of the text node with that id.",
         "Patch",
       ),
       pat(
-        "{ op: \"attr\", id, name, value }",
+        '{ op: "attr", id, name, value }',
         "Set an attribute on the element.",
         "Patch",
       ),
+      pat('{ op: "rmAttr", id, name }', "Remove an attribute.", "Patch"),
       pat(
-        "{ op: \"rmAttr\", id, name }",
-        "Remove an attribute.",
-        "Patch",
-      ),
-      pat(
-        "{ op: \"handler\", id, event, msg }",
+        '{ op: "handler", id, event, msg }',
         "Replace the message of the listener for that event.",
         "Patch",
       ),
       pat(
-        "{ op: \"insert\", before, nodes }",
+        '{ op: "insert", before, nodes }',
         "Create the nodes and insert them before the node with id \`before\`.",
         "Patch",
       ),
       pat(
-        "{ op: \"clear\", from, to }",
+        '{ op: "clear", from, to }',
         "Remove what is strictly between the two markers.",
         "Patch",
       ),
       pat(
-        "{ op: \"remove\", from, to }",
+        '{ op: "remove", from, to }',
         "Remove the siblings from \`from\` to \`to\`, both included.",
         "Patch",
       ),
       pat(
-        "{ op: \"move\", from, to, before }",
+        '{ op: "move", from, to, before }',
         "Move the sibling range from \`from\` to \`to\` before the node \`before\`.",
         "Patch",
       ),
@@ -1870,7 +1861,7 @@ export const BACK: StageDoc[] = [
         "resolveOutlet, routing/mod.ts",
       ),
       pat(
-        "pavlus: routing entry \"<pattern>\" has neither a view nor a component with one",
+        'pavlus: routing entry "<pattern>" has neither a view nor a component with one',
         "Thrown by \`resolveOutlet\` for a routing entry that cannot render.",
         "resolveOutlet",
       ),
@@ -1883,7 +1874,7 @@ export const BACK: StageDoc[] = [
     pitfalls: [
       "A diff that moves a loop item to the front is not minimal: going from a, b, c to c, a, b gives two \`move\` patches (b before the end marker, then a before b), not one (checked by running).",
       "A removed attribute is \`rmAttr\`, but a text set to a null value is a \`text\` patch with an empty string, not a removal of the text node. The node stays.",
-      "\`toText(0)\` is \`\"0\"\`, but \`toText(false)\` is \`\"\"\`. A text like \`{count && \"items\"}\` with count 0 prints \`0\`.",
+      '\`toText(0)\` is \`"0"\`, but \`toText(false)\` is \`""\`. A text like \`{count && "items"}\` with count 0 prints \`0\`.',
       "\`toHtml\` with markers on writes the id as comment data (\`<!--1[#a-->\`). In the real DOM the plugin writes **empty** comments (\`<!---->\`) and keeps the ids in a Map.",
       "The ids of a loop item are built from the key. If the key changes (for example it is the index and the list is shortened at the front), the item gets a new id and is treated as removed and inserted, not edited.",
       "\`view.diff(prev, next)\` called without \`env\` and an \`+outlet\` in the template throws on the first call. Mount a component (via \`viewOf\`) instead of calling a bare view.",
@@ -1902,12 +1893,12 @@ export const BACK: StageDoc[] = [
     steps: [
       step(
         "Wire it into createApp",
-        "\`createApp({ app, plugins: [store, dom], mount: \"#root\" })\` first runs \`init(ctx)\` on every plugin (the DOM plugin keeps the context for dispatching). If \`mount\` is given, the core takes \`viewOf(app)\`, checks that a plugin named \`dom\` exists, and performs the effect \`domEffector.mount(mount, view, { onMounted: \"mounted\" })\`.",
-        "perform(domEffector.mount(opts.mount, view, { onMounted: \"mounted\" }));",
+        '\`createApp({ app, plugins: [store, dom], mount: "#root" })\` first runs \`init(ctx)\` on every plugin (the DOM plugin keeps the context for dispatching). If \`mount\` is given, the core takes \`viewOf(app)\`, checks that a plugin named \`dom\` exists, and performs the effect \`domEffector.mount(mount, view, { onMounted: "mounted" })\`.',
+        'perform(domEffector.mount(opts.mount, view, { onMounted: "mounted" }));',
       ),
       step(
         "Mount",
-        "\`handle\` gets the mount effect and calls \`mount\`. It finds the container (a selector or an element; an unknown selector throws \`pavlus/dom: target \"...\" not found\`), unmounts anything the plugin already mounted there, reads the current state with \`getState()\` and calls \`view.render(state)\`. If the container has a server render it is hydrated, otherwise the plugin appends a start comment, the built nodes and an end comment. It stores an instance (container, start, end, view, state, id map) and dispatches the \`onMounted\` message if there is one.",
+        '\`handle\` gets the mount effect and calls \`mount\`. It finds the container (a selector or an element; an unknown selector throws \`pavlus/dom: target "..." not found\`), unmounts anything the plugin already mounted there, reads the current state with \`getState()\` and calls \`view.render(state)\`. If the container has a server render it is hydrated, otherwise the plugin appends a start comment, the built nodes and an end comment. It stores an instance (container, start, end, view, state, id map) and dispatches the \`onMounted\` message if there is one.',
       ),
       step(
         "Build a node",
@@ -1920,7 +1911,7 @@ export const BACK: StageDoc[] = [
       ),
       step(
         "Apply the patches",
-        "\`apply(patches, inst)\` walks the list in order and switches on \`op\`. \`text\` sets \`textContent\`. \`attr\` and \`rmAttr\` go through \`writeAttr\`. \`handler\` calls \`setHandler\`. \`insert\` builds each vnode and inserts it before the reference node. \`clear\` and \`remove\` call \`removeRange\` (exclusive and inclusive). \`move\` takes the nodes from \`from\` to \`to\` and inserts them before the reference. An unknown id throws \`pavlus/dom: unknown node id \"...\"\`.",
+        '\`apply(patches, inst)\` walks the list in order and switches on \`op\`. \`text\` sets \`textContent\`. \`attr\` and \`rmAttr\` go through \`writeAttr\`. \`handler\` calls \`setHandler\`. \`insert\` builds each vnode and inserts it before the reference node. \`clear\` and \`remove\` call \`removeRange\` (exclusive and inclusive). \`move\` takes the nodes from \`from\` to \`to\` and inserts them before the reference. An unknown id throws \`pavlus/dom: unknown node id "..."\`.',
       ),
       step(
         "Listeners",
@@ -1936,7 +1927,7 @@ export const BACK: StageDoc[] = [
         "DomEffect",
         DOM,
         "type",
-        "export type DomEffect = { plugin: \"dom\"; type: \"mount\" ... } | { ... \"unmount\" } | { ... \"focus\" } | { ... \"blur\" }",
+        'export type DomEffect = { plugin: "dom"; type: "mount" ... } | { ... "unmount" } | { ... "focus" } | { ... "blur" }',
         "The four effects the plugin handles. \`mount\` has \`target\` (selector or element), \`view\` and optional \`onMounted\` (a message id). \`unmount\` has a \`target\`. \`focus\` and \`blur\` have a \`selector\`.",
       ),
       fn(
@@ -1979,20 +1970,20 @@ export const BACK: StageDoc[] = [
         DOM,
         "function",
         "export function createDomPlugin(opts: DomPluginOptions = {}): DomPlugin",
-        "Creates the plugin with its private state: the map of mounted instances (by container), a WeakMap of listeners (by node), a WeakMap of ids (by node), a listener counter and the plugin context. Returns the object with \`name: \"dom\"\`, \`init\`, \`handle\`, \`onState\`, \`dispose\` and \`stats\`. All helper functions below are closures inside it.",
+        'Creates the plugin with its private state: the map of mounted instances (by container), a WeakMap of listeners (by node), a WeakMap of ids (by node), a listener counter and the plugin context. Returns the object with \`name: "dom"\`, \`init\`, \`handle\`, \`onState\`, \`dispose\` and \`stats\`. All helper functions below are closures inside it.',
       ),
       fn(
         "resolve",
         DOM,
         "function",
         "const resolve = (t: string | Element): Element",
-        "Turns a selector into an element with \`document.querySelector\` (an element is used as it is). Throws \`pavlus/dom: target \"...\" not found\` if nothing matches.",
+        'Turns a selector into an element with \`document.querySelector\` (an element is used as it is). Throws \`pavlus/dom: target "..." not found\` if nothing matches.',
       ),
       fn(
         "snapshot",
         DOM,
         "function",
-        "function snapshot(ev: Event): Message[\"event\"]",
+        'function snapshot(ev: Event): Message["event"]',
         "The serialisable summary of a DOM event that is sent with the message: \`type\` always; \`value\` if the target has a string \`value\`; \`checked\` if the target has a boolean \`checked\`; \`key\` if the event has a \`key\` (keyboard events). The target is \`ev.target\`, which can be a child of the element that has the listener.",
       ),
       fn(
@@ -2006,7 +1997,7 @@ export const BACK: StageDoc[] = [
         "PROPS",
         DOM,
         "const",
-        "const PROPS = new Set([\"value\", \"checked\", \"selected\"])",
+        'const PROPS = new Set(["value", "checked", "selected"])',
         "Attribute names whose live state is a DOM property. For these \`writeAttr\` also sets the property.",
       ),
       fn(
@@ -2042,14 +2033,14 @@ export const BACK: StageDoc[] = [
         DOM,
         "class",
         "class Mismatch extends Error {}",
-        "The error type used inside hydration to say \"the server markup is not what the view renders\". It is caught by \`mount\` and never reaches the application.",
+        'The error type used inside hydration to say "the server markup is not what the view renders". It is caught by \`mount\` and never reaches the application.',
       ),
       fn(
         "mismatch",
         DOM,
         "function",
         "const mismatch = (what: string): never",
-        "Throws a \`Mismatch\` with a message such as \`expected <div>\` or \`expected text \"Hello\"\`.",
+        'Throws a \`Mismatch\` with a message such as \`expected <div>\` or \`expected text "Hello"\`.',
       ),
       fn(
         "adopt",
@@ -2077,7 +2068,7 @@ export const BACK: StageDoc[] = [
         DOM,
         "function",
         "function get(inst: Instance, id: string): Node",
-        "Looks up a node by id in the instance Map. Throws \`pavlus/dom: unknown node id \"<id>\"\` if it is not there, which means a patch refers to a node that was never rendered or was already removed.",
+        'Looks up a node by id in the instance Map. Throws \`pavlus/dom: unknown node id "<id>"\` if it is not there, which means a patch refers to a node that was never rendered or was already removed.',
       ),
       fn(
         "apply",
@@ -2104,8 +2095,8 @@ export const BACK: StageDoc[] = [
         "plugin.name",
         DOM,
         "const",
-        "name: \"dom\"",
-        "The name effects are routed by (\`plugin: \"dom\"\`). \`createApp\` also looks for this name when \`mount\` is used.",
+        'name: "dom"',
+        'The name effects are routed by (\`plugin: "dom"\`). \`createApp\` also looks for this name when \`mount\` is used.',
       ),
       fn(
         "plugin.init",
@@ -2146,7 +2137,7 @@ export const BACK: StageDoc[] = [
         "Of",
         DOMH,
         "type",
-        "type Of<T extends DomEffect[\"type\"]> = Extract<DomEffect, { type: T }>",
+        'type Of<T extends DomEffect["type"]> = Extract<DomEffect, { type: T }>',
         "Picks one effect type out of \`DomEffect\`, so the builders are typed exactly.",
       ),
       fn(
@@ -2161,7 +2152,7 @@ export const BACK: StageDoc[] = [
         DOMH,
         "const",
         "export const domEffector: DomEffector",
-        "Builders for DOM effects. \`mount\` returns \`{ plugin: \"dom\", type: \"mount\", target, view }\` and adds \`onMounted\` only if given. \`unmount\`, \`focus\` and \`blur\` return the matching small objects. An update function returns these in its list of effects: \`return [dom.mount(\"#panel\", panelView, { onMounted: \"panelMounted\" })]\`.",
+        'Builders for DOM effects. \`mount\` returns \`{ plugin: "dom", type: "mount", target, view }\` and adds \`onMounted\` only if given. \`unmount\`, \`focus\` and \`blur\` return the matching small objects. An update function returns these in its list of effects: \`return [dom.mount("#panel", panelView, { onMounted: "panelMounted" })]\`.',
       ),
       fn(
         "createApp",
@@ -2187,47 +2178,47 @@ export const BACK: StageDoc[] = [
     ],
     patterns: [
       pat(
-        "case \"text\": get(inst, p.id).textContent = p.text;",
+        'case "text": get(inst, p.id).textContent = p.text;',
         "A text patch sets the whole text content of the node.",
         "apply",
       ),
       pat(
-        "case \"attr\": writeAttr(get(inst, p.id) as Element, p.name, p.value);",
+        'case "attr": writeAttr(get(inst, p.id) as Element, p.name, p.value);',
         "Set an attribute; also the property for \`value\`, \`checked\`, \`selected\`.",
         "apply, writeAttr",
       ),
       pat(
-        "case \"rmAttr\": writeAttr(get(inst, p.id) as Element, p.name, null);",
+        'case "rmAttr": writeAttr(get(inst, p.id) as Element, p.name, null);',
         "Remove an attribute (and reset the property).",
         "apply",
       ),
       pat(
-        "case \"handler\": setHandler(get(inst, p.id) as Element, p.event, p.msg);",
+        'case "handler": setHandler(get(inst, p.id) as Element, p.event, p.msg);',
         "Swap the message of the existing listener.",
         "apply",
       ),
       pat(
-        "case \"insert\": parent.insertBefore(build(v, inst), ref)",
+        'case "insert": parent.insertBefore(build(v, inst), ref)',
         "For each vnode in order, build the node and insert it before the node with id \`p.before\` (in that node's parent).",
         "apply",
       ),
       pat(
-        "case \"clear\": removeRange(get(from), get(to), false, inst)",
+        'case "clear": removeRange(get(from), get(to), false, inst)',
         "Remove everything strictly between two markers.",
         "apply",
       ),
       pat(
-        "case \"remove\": removeRange(get(from), get(to), true, inst)",
+        'case "remove": removeRange(get(from), get(to), true, inst)',
         "Remove the range including both end nodes.",
         "apply",
       ),
       pat(
-        "case \"move\": collect from..to by nextSibling, then insertBefore(n, ref) for each",
+        'case "move": collect from..to by nextSibling, then insertBefore(n, ref) for each',
         "Move a range: first collect the nodes, then insert them one by one before the reference, which keeps their order.",
         "apply",
       ),
       pat(
-        "document.createComment(\"\")",
+        'document.createComment("")',
         "A marker in the DOM: an empty comment. Its id is only in the Map.",
         "build",
       ),
@@ -2238,7 +2229,7 @@ export const BACK: StageDoc[] = [
       ),
       pat(
         "{ id: m.id, payload: m.payload, event: snapshot(ev) }",
-        "The message dispatched to the application when a DOM event fires. \`event\` is the snapshot, for example \`{ type: \"input\", value: \"typed!\", checked: false }\`.",
+        'The message dispatched to the application when a DOM event fires. \`event\` is the snapshot, for example \`{ type: "input", value: "typed!", checked: false }\`.',
         "setHandler",
       ),
       pat(
@@ -2252,18 +2243,18 @@ export const BACK: StageDoc[] = [
         "setHandler",
       ),
       pat(
-        "pavlus/dom: target \"<t>\" not found",
+        'pavlus/dom: target "<t>" not found',
         "A mount or unmount target that does not exist.",
         "resolve",
       ),
       pat(
-        "pavlus/dom: unknown node id \"<id>\"",
+        'pavlus/dom: unknown node id "<id>"',
         "A patch refers to a node that is not in the instance Map.",
         "get",
       ),
       pat(
         "pavlus/dom: the server render does not match the view (<reason>); rendering afresh",
-        "The warning when hydration fails. Reasons: \`expected text \"...\"\`, \`text \"a\" is not \"b\"\`, \`expected a marker (id)\`, \`expected <tag>\`, \`extra content in <tag>\`, \`extra content after the render\`.",
+        'The warning when hydration fails. Reasons: \`expected text "..."\`, \`text "a" is not "b"\`, \`expected a marker (id)\`, \`expected <tag>\`, \`extra content in <tag>\`, \`extra content after the render\`.',
         "mount, adopt",
       ),
       pat(
@@ -2277,12 +2268,12 @@ export const BACK: StageDoc[] = [
         "createApp",
       ),
       pat(
-        "{ id: \"mounted\" }",
+        '{ id: "mounted" }',
         "The message sent once the view is in the DOM. A component with \`routing\` starts listening to the router on it.",
         "createApp (onMounted), mount",
       ),
       pat(
-        "{ plugin: \"dom\", type: \"mount\", target, view, onMounted? }",
+        '{ plugin: "dom", type: "mount", target, view, onMounted? }',
         "The mount effect object as built by \`domEffector.mount\`.",
         "domEffector",
       ),
@@ -2290,7 +2281,7 @@ export const BACK: StageDoc[] = [
     pitfalls: [
       "\`mount\` **appends** to the container. It does not clear what is already there (except a previous mount of the same plugin or a server render it can adopt). Put it in an empty element.",
       "There is one DOM listener per element and event type, however many times the payload changes (checked: after a list changed, the listener count stayed 5 for 3 items, 1 input and 1 button). A \`handler\` patch changes only the message in a Map.",
-      "The event snapshot depends on the target: a click on a \`button\` has \`value: \"\"\` (a button has a string value), a click on a plain element has only \`type\`, and an \`input\` event on a text input also has \`checked: false\`. Use the payload for data you need, and the snapshot for the live value of a field.",
+      'The event snapshot depends on the target: a click on a \`button\` has \`value: ""\` (a button has a string value), a click on a plain element has only \`type\`, and an \`input\` event on a text input also has \`checked: false\`. Use the payload for data you need, and the snapshot for the live value of a field.',
       "\`onState\` stores the new state in the instance **before** applying the patches. If a patch throws (for example an unknown id), the DOM is half updated and the stored state is already the new one, so the next diff starts from a wrong base.",
       "Elements are created with \`createElement\`, so every element is in the HTML namespace. Elements that need another namespace (such as SVG tags) are not created in it by the plugin.",
       "An element with a static event only (\`@click=go\` without arguments) has no id in the vnode, so it is not in the Map, but its listener is still registered (it counts in \`stats().listeners\`) and removed when its parent range is removed.",

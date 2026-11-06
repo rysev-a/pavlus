@@ -22,28 +22,61 @@ export class DiffEmitter extends RenderEmitter {
     const propsPrev = this.propsJs(n, ctx, "prev");
     const propsNext = this.propsJs(n, ctx, "next");
     const env = this.childEnvJs(n, ctx);
+    // Another key is another instance: remount the embed wholesale (its
+    // kept nodes' events would otherwise still address the previous key)
+    let keyChanged: string | null = null;
+    if (n.key) {
+      const kPrev = this.name(`prev${cap(n.name)}Key`);
+      const kNext = this.name(`next${cap(n.name)}Key`);
+      this.w.line(`const ${kPrev} = String(${this.expr(n.key, ctx, "prev")});`);
+      this.w.line(`const ${kNext} = String(${this.expr(n.key, ctx, "next")});`);
+      keyChanged = `${kPrev} !== ${kNext}`;
+    }
+    const S = this.id(n.nid, "s", ctx);
+    const E = this.id(n.nid, "e", ctx);
     if (n.component) {
-      this.w.call(
-        `patches.push(...${n.component}.diff(`,
-        [propsPrev, propsNext, suffix, prefix, env],
-        "));",
-      );
+      if (keyChanged) {
+        this.w.block(`if (${keyChanged})`, () => {
+          this.w.line(`patches.push({ op: "clear", from: ${S}, to: ${E} });`);
+          this.w.call(
+            `patches.push({ op: "insert", before: ${E}, nodes: ${n.component}.render(`,
+            [propsNext, suffix, prefix, env],
+            ") });",
+          );
+        });
+        this.w.line("else {");
+        this.w.indent(() => {
+          this.w.call(
+            `patches.push(...${n.component}.diff(`,
+            [propsPrev, propsNext, suffix, prefix, env],
+            "))" + ";",
+          );
+        });
+        this.w.line("}");
+      } else {
+        this.w.call(
+          `patches.push(...${n.component}.diff(`,
+          [propsPrev, propsNext, suffix, prefix, env],
+          "))" + ";",
+        );
+      }
       return;
     }
     const prevView = this.name(`prev${cap(n.name)}View`);
     const nextView = this.name(`next${cap(n.name)}View`);
-    const S = this.id(n.nid, "s", ctx);
-    const E = this.id(n.nid, "e", ctx);
     this.w.line(
       `const ${prevView} = ${this.h("asView")}(${this.expr(n.dynamic!, ctx, "prev")});`,
     );
     this.w.line(
       `const ${nextView} = ${this.h("asView")}(${this.expr(n.dynamic!, ctx, "next")});`,
     );
-    this.w.line(`if (${prevView} !== ${nextView}) {`);
+    const replace = keyChanged
+      ? `${prevView} !== ${nextView} || ${keyChanged}`
+      : `${prevView} !== ${nextView}`;
+    this.w.line(`if (${replace}) {`);
     this.w.indent(() => {
       this.w.line(
-        "// another view means another template: replace, never diff across",
+        "// another view (or key) means another instance: replace, never diff across",
       );
       this.w.line(
         `if (${prevView}) patches.push({ op: "clear", from: ${S}, to: ${E} });`,
@@ -61,7 +94,7 @@ export class DiffEmitter extends RenderEmitter {
       this.w.call(
         `patches.push(...${nextView}.diff(`,
         [propsPrev, propsNext, suffix, prefix, env],
-        "));",
+        "))" + ";",
       );
     });
     this.w.line("}");

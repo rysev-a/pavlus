@@ -112,9 +112,16 @@ export class ExprEmitter extends EmitBase {
     return `${ctx.suffix} + ${json(`/${n.nid}`)}`;
   }
 
-  /** Events of the child are prefixed with the instance name. */
+  /**
+   * Events of the child are prefixed with the instance name — and, for a
+   * keyed embed (`key=<expr>`), with the key: `row.<key>.`, so every instance
+   * has its own message address and its boundary can slice its state.
+   */
   protected childPrefix(n: EmbedNode, ctx: Ctx): string {
-    return `${ctx.prefix} + ${json(`${n.name}.`)}`;
+    const base = `${ctx.prefix} + ${json(`${n.name}.`)}`;
+    return n.key
+      ? `${base} + String(${this.expr(n.key, ctx, "next")}) + "."`
+      : base;
   }
 
   /** The component behind an embed, so its own `+outlet` can resolve. */

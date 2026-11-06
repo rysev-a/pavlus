@@ -74,6 +74,9 @@ export function nodeDeps(n: Node): Set<string> {
       break;
     case "embed":
       if (n.dynamic) exprIdents(n.dynamic, s);
+      // the key feeds the events' id prefix, so a change must re-diff the
+      // embed for new nodes to carry the new key
+      if (n.key) exprIdents(n.key, s);
       for (const p of n.props) {
         if ("spread" in p) exprIdents(p.spread, s);
         else partsIdents(p.value, s);

@@ -30,7 +30,8 @@ export const DEMO_ADMIN = "admin@orbit.example";
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type LoginResult =
-  { ok: true; userId: number } | { ok: false; error: string };
+  | { ok: true; userId: number }
+  | { ok: false; error: string };
 
 export function login(db: Db, email: string, password: string): LoginResult {
   const user = db.users.find(

@@ -273,6 +273,13 @@ div.dashboard
   runs. The child's state lives under `users` and survives the swap.
 - `createApp({ app: dashboard, mount: "#app" })` renders it; `mounted` is the first message.
 
+**Keyed children.** An embed inside a loop can carry a key — `+Row#row(key=user.id)` —
+and the boundary turns per element (`each`): the child sees only
+`state.byId[7]`, its store paths root at `byId.7.…`, its replies come back as
+`row.7.saved`, and messages of keys with no element are dropped. One name,
+one address per row — details in [docs/child-views.md](./docs/child-views.md),
+section 11.
+
 Wrappers (`compose`, `mapMessage`, `mapEffects`, `namespace`, `withLogging`)
 work on functions and components alike (they return functions). Purity of app code is the author's responsibility: the
 framework does not police it. Design notes: [docs/child-views.md](./docs/child-views.md).

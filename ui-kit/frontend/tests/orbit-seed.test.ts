@@ -130,8 +130,8 @@ test("posts: walls, kinds, links, reposts", () => {
   const friend = new Set<string>();
   for (const f of db.friends)
     if (f.status === "accepted")
-      (friend.add(`${f.userId}-${f.friendId}`),
-        friend.add(`${f.friendId}-${f.userId}`));
+      friend.add(`${f.userId}-${f.friendId}`),
+        friend.add(`${f.friendId}-${f.userId}`);
   let own = 0;
   let onFriend = 0;
   let inCommunity = 0;

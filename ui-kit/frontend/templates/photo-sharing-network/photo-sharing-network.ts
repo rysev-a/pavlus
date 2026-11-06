@@ -32,7 +32,13 @@ import {
 import view from "./photo-sharing-network.pavlus";
 
 export type View =
-  "explore" | "detail" | "albums" | "upload" | "saved" | "tag" | "profile";
+  | "explore"
+  | "detail"
+  | "albums"
+  | "upload"
+  | "saved"
+  | "tag"
+  | "profile";
 export type Tab2 = "explore" | "following";
 
 export interface UploadForm {

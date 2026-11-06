@@ -15,11 +15,17 @@ const AGENT = "__pavlus_agent__";
 const PANEL = "__pavlus_panel__";
 const MAX_ROWS = 3000;
 
+// In devtools this is the inspected tab; the standalone popup window
+// (Cmd/Ctrl+Shift+V) gets the same page with ?tab=<id> in the URL.
+const TAB_ID = chrome.devtools
+  ? chrome.devtools.inspectedWindow.tabId
+  : Number(new URLSearchParams(location.search).get("tab"));
+
 let port = connect();
 
 function connect() {
   const p = chrome.runtime.connect({
-    name: "pavlus@" + chrome.devtools.inspectedWindow.tabId,
+    name: "pavlus@" + TAB_ID,
   });
   p.onMessage.addListener(onAgentMessage);
   // The background service worker suspends after ~30s of idle time, which
@@ -45,30 +51,27 @@ const S = {
   redo: new Map(), // id -> redoable entries, chronological (null = count only)
   waits: new Map(), // effect uid -> http round trip ms
   filterApp: "all", // "all" | app id
-  filterComp: null, // component path within the selected app (Apps tab)
-  chip: "all", // "all" | plugin name
-  msgFilter: "", // text filter on the Messages tab
-  msgChip: "all", // "all" | sender plugin name | "page"
-  fxFilter: "", // text filter on the Effects tab
+  filterComp: null, // component path within the selected app (Application tab)
   consoleView: "all", // console tab: all | messages | effects
   consoleChip: "all", // console tab plugin filter: "all" | plugin | "page"
   consoleFilter: "", // text filter on the console tab
   consoleSel: null, // row inspected on the console's right pane: {k:"msg",key} | {k:"fx",uid}
-  selectedMsg: null, // message inspected on the right: `${appId}:${seq}`
-  selectedFx: null, // effect inspected on the effects tab: uid
+  consoleSide: true, // console tab: the component sidebar is open
+  storeSide: true, // store tab: the component sidebar is open
   split: {
     console: 0.6,
-    messages: 0.55,
-    effects: 0.55,
+    consoleSide: 0.18,
+    storeSide: 0.18,
     store: 0.5,
     travel: 0.45,
     apps: 0.6,
   }, // left pane width
   tlFrac: 0.38, // store preview height, fraction of the timeline column
-  details: new Set(), // effect rows with the detail JSON open: uid
   tlShow: null, // change previewed under the timeline: {appId, idx, entry, redo}
   travelSel: null, // change selected in the Time travel tab: {appId, idx, entry, redo}
   appsView: "info", // apps detail pane view: info | io | messages | effects | timeline
+  appsOpen: new Set(), // apps-tree branches forced open: `${appId}:${path}`
+  appsShut: new Set(), // apps-tree branches forced shut (same keys)
   tags: new Map(), // app id -> { component path -> display tag }
   io: new Map(), // app id -> Map<path, {input: Map, output: Map}>
   viewerOpen: new Set(), // viewer branches forced open: `${key}@${path}`
@@ -125,17 +128,14 @@ const matchesFilter = (q, ...fields) =>
       .includes(q);
   });
 
-// the 🚫 button on Messages / Effects: drop the recorded steps (and the io
+// the 🚫 button on the Console: drop the recorded steps (and the io
 // counts and http waits derived from them). Store history survives — the
 // timeline is time travel, not a log; the next page hello replays anyway.
 function clearRecording() {
   S.steps.clear();
   S.io.clear();
   S.waits.clear();
-  S.selectedMsg = null;
-  S.selectedFx = null;
   S.consoleSel = null;
-  S.details.clear();
   refresh();
 }
 
@@ -173,29 +173,6 @@ function iconButton(title, svg, click) {
   b.innerHTML = svg;
   b.addEventListener("click", click);
   return b;
-}
-
-// chips over the message senders seen in the recording: "all" + every
-// plugin that dispatched a message, with `page` for steps whose from is
-// unknown (page events / console / SSR / a recording from an older agent)
-function senderChips(rerender) {
-  const senders = new Set();
-  for (const id of appIds())
-    for (const s of stepsOf(id)) senders.add(s.from ?? "page");
-  const bar = el("div", "chips-list");
-  for (const chip of ["all", ...[...senders].sort()]) {
-    const b = el(
-      "button",
-      "chip" + (S.msgChip === chip ? " active" : ""),
-      chip,
-    );
-    b.addEventListener("click", () => {
-      S.msgChip = chip;
-      rerender();
-    });
-    bar.append(b);
-  }
-  return bar;
 }
 
 const stepsOf = (id) => S.steps.get(id) ?? [];
@@ -269,11 +246,8 @@ function applyHello(h) {
   S.hist.clear();
   S.redo.clear();
   S.waits.clear();
-  S.selectedMsg = null;
-  S.selectedFx = null;
   S.consoleSel = null;
   S.tlShow = null;
-  S.details.clear();
   S.filterComp = null;
   S.tags.clear();
   S.io.clear();
@@ -292,6 +266,9 @@ function applyHello(h) {
         b.output.set(v.id, { n: v.n, at: v.at, summary: v.summary });
     }
   }
+  // a single app on the page: inspect it right away instead of "all"
+  if (S.filterApp === "all" && (h.apps ?? []).length === 1)
+    S.filterApp = h.apps[0].id;
   for (const e of h.replay ?? []) applyEvent(e);
   refresh();
 }
@@ -332,12 +309,27 @@ function applyEvent(e) {
       mergeIo(e.appId, e.comps, e);
       break;
     }
-    case "state":
+    case "state": {
+      // the agent attaches the live component list when it changed (each
+      // children gain and lose instances as their map changes) — replace
+      // wholesale: the agent's maps are computed fresh, not diffed
+      const app = S.apps.get(e.appId);
+      if (app && e.components) {
+        app.components = e.components;
+        if (e.tags) {
+          app.tags = e.tags;
+          S.tags.set(e.appId, e.tags);
+        }
+        if (e.compKeys) app.compKeys = e.compKeys;
+        if (e.eachGroups) app.eachGroups = e.eachGroups;
+        if (e.cycles) app.cycles = e.cycles;
+      }
       S.states.set(
         e.appId,
         e.truncated ? { "(state)": "too big to display" } : e.state,
       );
       break;
+    }
     case "history+": {
       const list = S.hist.get(e.appId) ?? [];
       list.push(...e.entries);
@@ -361,6 +353,7 @@ function applyEvent(e) {
 }
 
 function onAgentMessage(payload) {
+  if (payload && payload.__pavlusNav) return onNavigated();
   if (!payload || payload.source !== AGENT) return;
   if (payload.type === "hello") applyHello(payload);
   else if (Array.isArray(payload.batch)) {
@@ -398,14 +391,21 @@ document.addEventListener("keydown", (ev) => {
   ev.preventDefault();
 });
 
-chrome.devtools.network.onNavigated.addListener(() => {
+function onNavigated() {
   // The document reloaded, which dropped the page-side agent. Don't blank
   // the panel: keep the previous recording on screen (amber status) until
   // the new page's hello replaces it wholesale in applyHello.
   sawHello = false;
   sendHello();
   refresh();
-});
+}
+
+if (chrome.devtools) {
+  // Devtools context: the inspected tab's own navigation events. The
+  // standalone window gets the equivalent from the background worker
+  // instead ({ __pavlusNav: true } over the port).
+  chrome.devtools.network.onNavigated.addListener(onNavigated);
+}
 
 $("#rescan").addEventListener("click", () => {
   sawHello = false;
@@ -459,65 +459,64 @@ function dragDivider(bar, set) {
   });
 }
 
-const messagesRows = el("div", "rows");
-const msgDetail = el("div", "detail-pane");
-msgDetail.id = "msg-detail";
-const msgBar = el("div", "divider-v");
-const messagesCols = el("div", "");
-messagesCols.id = "messages-cols";
-// the messages toolbar is one row: clear, sender chips, then the filter
-const msgToolbar = el("div", "toolbar");
-msgToolbar.id = "msg-chips";
-const msgChips = el("div", "chips-list");
-msgToolbar.append(
-  clearButton(),
-  msgChips,
-  filterInput("msgFilter", renderMessages),
-);
-messagesCols.append(messagesRows, msgBar, msgDetail);
-$("#tab-messages").append(msgToolbar, messagesCols);
-applyFlex(messagesRows, S.split.messages);
-dragDivider(msgBar, (ev) => {
-  const r = messagesCols.getBoundingClientRect();
-  S.split.messages = clampFrac((ev.clientX - r.left) / r.width, 0.15, 0.85);
-  applyFlex(messagesRows, S.split.messages);
-});
-
-const effectRows = el("div", "rows");
-const effectDetail = el("div", "detail-pane");
-effectDetail.id = "effect-detail";
-const fxBar = el("div", "divider-v");
-const effectsCols = el("div", "");
-effectsCols.id = "effects-cols";
-// the effects toolbar is one row: clear, the plugin chips, then the filter
-const fxChips = el("div", "chips-list");
-$("#chips").append(
-  clearButton(),
-  fxChips,
-  filterInput("fxFilter", renderEffects),
-);
-effectsCols.append(effectRows, fxBar, effectDetail);
-$("#tab-effects").append(effectsCols);
-applyFlex(effectRows, S.split.effects);
-dragDivider(fxBar, (ev) => {
-  const r = effectsCols.getBoundingClientRect();
-  S.split.effects = clampFrac((ev.clientX - r.left) / r.width, 0.15, 0.85);
-  applyFlex(effectRows, S.split.effects);
-});
-
 /* --------------------------------------------------------------- console */
 
 const consoleRows = el("div", "rows");
 consoleRows.id = "console-rows";
-const consoleViewChips = el("div", "chips-list");
-const consolePluginChips = el("div", "chips-list");
+// the console toolbar is one row: the sidebar toggle, the active component
+// chip (if any), clear, reset filters, then the chip groups and the filter
+const consoleViewChips = el("div", "chip-group");
+const consolePluginChips = el("div", "chip-group");
 const consoleBar = el("div", "");
 consoleBar.id = "console-bar";
+const consoleFilterInput = filterInput("consoleFilter", renderConsole);
+// chrome-devtools-style sidebar toggle: shows the component tree on the left,
+// one click on a node narrows the stream to its subtree
+const consoleSideBtn = iconButton(
+  "toggle the component sidebar — click a component to filter the stream to it and its children",
+  '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">' +
+    '<rect x="1.5" y="2.5" width="13" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/>' +
+    '<rect x="3" y="4" width="3.4" height="8" rx="0.8" fill="currentColor"/></svg>',
+  () => {
+    S.consoleSide = !S.consoleSide;
+    renderConsole();
+  },
+);
+// the active component filter, shown as a removable chip
+const consoleCompChip = el("button", "chip comp");
+consoleCompChip.style.display = "none";
+consoleCompChip.title = "clear the component filter";
+consoleCompChip.addEventListener("click", () => {
+  S.filterApp = "all";
+  S.filterComp = null;
+  refresh();
+});
+// resets every console filter at once: the view, the plugin chips and the
+// search box (dim while everything is already at its default)
+const consoleReset = el("button", "filter-clear");
+consoleReset.title =
+  "reset all filters — show, plugins, the search box and the component sidebar selection";
+consoleReset.innerHTML =
+  '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">' +
+  '<path d="M2.5 3h11l-4 4.5V12l-3 1.5V7.5L2.5 3z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>' +
+  '<line x1="3" y1="14" x2="13.5" y2="2.5" stroke="currentColor" stroke-width="1.3"/></svg>';
+consoleReset.addEventListener("click", () => {
+  S.consoleView = "all";
+  S.consoleChip = "all";
+  S.consoleFilter = "";
+  S.filterApp = "all";
+  S.filterComp = null;
+  consoleFilterInput.value = "";
+  renderConsole();
+});
 consoleBar.append(
+  consoleSideBtn,
+  consoleCompChip,
   clearButton(),
+  consoleReset,
   consoleViewChips,
   consolePluginChips,
-  filterInput("consoleFilter", renderConsole),
+  consoleFilterInput,
 );
 const consoleDetail = el("div", "detail-pane");
 consoleDetail.id = "console-detail";
@@ -525,8 +524,22 @@ const consoleDiv = el("div", "divider-v");
 const consoleCols = el("div", "");
 consoleCols.id = "console-cols";
 consoleCols.append(consoleRows, consoleDiv, consoleDetail);
-$("#tab-console").append(consoleBar, consoleCols);
+// the component sidebar (like the chrome console's filter sidebar, but with
+// the app's component tree)
+const consoleSide = el("div", "");
+consoleSide.id = "console-side";
+const consoleSideBar = el("div", "divider-v");
+const consoleWrap = el("div", "");
+consoleWrap.id = "console-wrap";
+consoleWrap.append(consoleSide, consoleSideBar, consoleCols);
+$("#tab-console").append(consoleBar, consoleWrap);
 applyFlex(consoleRows, S.split.console);
+applyFlex(consoleSide, S.split.consoleSide);
+dragDivider(consoleSideBar, (ev) => {
+  const r = consoleWrap.getBoundingClientRect();
+  S.split.consoleSide = clampFrac((ev.clientX - r.left) / r.width, 0.08, 0.4);
+  applyFlex(consoleSide, S.split.consoleSide);
+});
 dragDivider(consoleDiv, (ev) => {
   const r = consoleCols.getBoundingClientRect();
   S.split.console = clampFrac((ev.clientX - r.left) / r.width, 0.15, 0.85);
@@ -541,7 +554,8 @@ function chipBtn(label, on, click) {
 }
 
 function renderConsole() {
-  // toolbar: clear | all / messages / effects | plugin chips (right)
+  // toolbar: clear | reset filters | show group | plugin group (right) | search
+  consoleViewChips.title = "what to show";
   consoleViewChips.replaceChildren(
     ...["all", "messages", "effects"].map((v) =>
       chipBtn(v, S.consoleView === v, () => {
@@ -558,6 +572,8 @@ function renderConsole() {
       for (const e of s.effects) names.add(e.plugin);
     }
   }
+  consolePluginChips.title =
+    "filter by plugin (effects) or sender (messages); page = dispatched from the page";
   consolePluginChips.replaceChildren(
     ...["all", ...[...names].sort()].map((c) =>
       chipBtn(c, S.consoleChip === c, () => {
@@ -566,6 +582,28 @@ function renderConsole() {
       }),
     ),
   );
+  consoleReset.classList.toggle(
+    "idle",
+    S.consoleView === "all" &&
+      S.consoleChip === "all" &&
+      !S.consoleFilter &&
+      !S.filterComp,
+  );
+
+  // the sidebar: the shared component tree, clicking a node narrows the
+  // stream to its subtree (the selection is shared with the Application tab)
+  consoleSideBtn.classList.toggle("active", S.consoleSide);
+  consoleSide.style.display = S.consoleSide ? "" : "none";
+  consoleSideBar.style.display = S.consoleSide ? "" : "none";
+  if (S.consoleSide) fillCompSide(consoleSide);
+  // the active component as a removable chip in the toolbar
+  if (S.filterComp && S.apps.has(S.filterApp)) {
+    consoleCompChip.style.display = "";
+    consoleCompChip.replaceChildren(
+      el("span", "lbl", displayLabel(S.filterApp, S.filterComp)),
+      el("span", "x", "⨯"),
+    );
+  } else consoleCompChip.style.display = "none";
 
   // stick to the bottom while live rows stream in, unless scrolled up
   const pinned =
@@ -577,8 +615,16 @@ function renderConsole() {
 
   const items = [];
   const q = S.consoleFilter;
+  // the component filter (the sidebar's selection): a step matches when its
+  // receive chain crossed the selected component — which covers everything
+  // under it; effects follow their message's step
+  const comp = S.filterComp;
+  const inComp = (s) =>
+    !comp ||
+    (s.comps ?? []).some((c) => c === comp || c.startsWith(`${comp}.`));
   for (const appId of appIds())
     for (const s of stepsOf(appId)) {
+      if (!inComp(s)) continue;
       const wantMsg =
         S.consoleView !== "effects" &&
         (S.consoleChip === "all" ||
@@ -632,7 +678,8 @@ function renderConsole() {
         el("span", "sum", shortJson(s.message.payload ?? s.message.event)),
       );
       if (s.from) row.append(el("span", "app", `← ${s.from}`));
-      if (S.filterApp === "all") row.append(el("span", "num", appId));
+      if (S.filterApp === "all" && S.apps.size > 1)
+        row.append(el("span", "num", appId));
       row.title = "click to inspect the message and its effects on the right";
       row.addEventListener("click", () => {
         S.consoleSel =
@@ -674,7 +721,7 @@ function renderConsole() {
   renderConsoleDetail();
 }
 
-// the console's right pane reuses the Messages / Effects detail renderers
+// the console's right pane: the message / effect detail renderers
 function renderConsoleDetail() {
   if (!S.consoleSel)
     consoleDetail.replaceChildren(
@@ -713,8 +760,6 @@ function refresh() {
     const view = $("#tab-" + active);
     const kept = keepScroll(view);
     if (active === "console") renderConsole();
-    else if (active === "messages") renderMessages();
-    else if (active === "effects") renderEffects();
     else if (active === "store") renderStore();
     else if (active === "travel") renderTravel();
     else renderApps();
@@ -1128,61 +1173,9 @@ function vRow(key, v, path, vkey, depth, seen, ctx) {
   return wrap;
 }
 
-/* -------------------------------------------------------------- messages */
-
-function renderMessages() {
-  msgChips.replaceChildren(...senderChips(renderMessages).childNodes);
-  messagesRows.replaceChildren();
-  const all = appIds().flatMap((id) => stepsOf(id).map((s) => [s, id]));
-  all.sort((a, b) => a[0].time - b[0].time || a[0].seq - b[0].seq);
-  const q = S.msgFilter;
-  const list = all.filter(
-    ([s]) =>
-      (S.msgChip === "all" || (s.from ?? "page") === S.msgChip) &&
-      matchesFilter(
-        q,
-        s.message.id,
-        s.message.payload ?? s.message.event,
-        ...s.effects.flatMap((e) => [`${e.plugin}:${e.type}`, e.summary]),
-      ),
-  );
-  if (!list.length) {
-    messagesRows.append(
-      el(
-        "div",
-        "empty-tab",
-        all.length
-          ? "no messages match the filter"
-          : "no messages yet — dispatch one in the app",
-      ),
-    );
-    renderMsgDetail();
-    return;
-  }
-  for (const [s, appId] of [...list].reverse().slice(0, MAX_ROWS)) {
-    const key = `${appId}:${s.seq}`;
-    const row = el("div", "row" + (S.selectedMsg === key ? " sel" : ""));
-    row.append(
-      el("span", "t", fmtTime(s.time)),
-      el("span", "id", s.message.id),
-      el("span", "sum", shortJson(s.message.payload ?? s.message.event)),
-      el("span", "num", `${s.effects.length} eff`),
-    );
-    if (s.from) row.append(el("span", "app", `← ${s.from}`));
-    if (S.filterApp === "all") row.append(el("span", "app", appId));
-    row.title = "click to inspect the message and its effects on the right";
-    row.addEventListener("click", () => {
-      S.selectedMsg = S.selectedMsg === key ? null : key;
-      renderMessages();
-    });
-    messagesRows.append(row);
-  }
-  renderMsgDetail();
-}
-
 /* ---------------------------------------------------- message detail pane */
 
-function renderMsgDetail(target = msgDetail, key = S.selectedMsg) {
+function renderMsgDetail(target, key) {
   target.replaceChildren();
   if (!key) {
     target.append(
@@ -1228,77 +1221,9 @@ function renderMsgDetail(target = msgDetail, key = S.selectedMsg) {
   target.append(effects);
 }
 
-/* ---------------------------------------------------------------- effects */
-
-function renderEffects() {
-  const chips = fxChips;
-  chips.replaceChildren();
-  const plugins = new Set();
-  for (const id of appIds())
-    for (const p of S.apps.get(id)?.plugins ?? []) plugins.add(p);
-  for (const chip of ["all", ...plugins]) {
-    const b = el("button", "chip" + (S.chip === chip ? " active" : ""), chip);
-    b.addEventListener("click", () => {
-      S.chip = chip;
-      renderEffects();
-    });
-    chips.append(b);
-  }
-
-  effectRows.replaceChildren();
-  const all = appIds().flatMap((id) =>
-    stepsOf(id).flatMap((s) => s.effects.map((e) => [e, s, id])),
-  );
-  const q = S.fxFilter;
-  const list = all.filter(
-    ([e, s]) =>
-      (S.chip === "all" || e.plugin === S.chip) &&
-      matchesFilter(
-        q,
-        `${e.plugin}:${e.type}`,
-        e.summary,
-        e.detail,
-        s.message.id,
-      ),
-  );
-  list.sort((a, b) => b[0].time - a[0].time || b[1].seq - a[1].seq);
-  if (!list.length) {
-    effectRows.append(
-      el(
-        "div",
-        "empty-tab",
-        all.length
-          ? "no effects match the filter"
-          : "no effects yet — dispatch a message in the app",
-      ),
-    );
-    renderEffectDetail();
-    return;
-  }
-  for (const [e, s, appId] of list.slice(0, MAX_ROWS)) {
-    const row = el("div", "row" + (S.selectedFx === e.uid ? " sel" : ""));
-    row.append(
-      el("span", "t", fmtTime(e.time)),
-      el("span", "plug", `${e.plugin}:${e.type}`),
-      el("span", "sum", e.summary),
-    );
-    if (e.dur !== undefined) row.append(el("span", "num dur", `${e.dur}ms`));
-    const wait = S.waits.get(e.uid);
-    if (wait !== undefined) row.append(el("span", "num wait", `⧗${wait}ms`));
-    if (S.filterApp === "all") row.append(el("span", "app", appId));
-    row.title = `message "${s.message.id}" — click to inspect on the right`;
-    row.addEventListener("click", () => {
-      S.selectedFx = S.selectedFx === e.uid ? null : e.uid;
-      renderEffects();
-    });
-    effectRows.append(row);
-  }
-  renderEffectDetail();
-}
-
 /* ----------------------------------------------------- effect detail pane */
 
-function renderEffectDetail(target = effectDetail, uid = S.selectedFx) {
+function renderEffectDetail(target, uid) {
   target.replaceChildren();
   if (!uid) {
     target.append(
@@ -1354,18 +1279,91 @@ function renderStore() {
   const tab = $("#tab-store");
   tab.replaceChildren();
   const id = storeAppId();
-  if (!id) {
+  // a selected app without a store must not silently fall back to another
+  // app's store (storeAppId does) — say so instead
+  const sel = S.filterApp !== "all" ? S.filterApp : null;
+  if (!id || (sel && !S.apps.get(sel)?.hasStore)) {
     tab.append(
       el(
         "div",
         "empty-tab",
-        S.apps.size
-          ? "none of the selected apps has a store plugin"
-          : "no pavlus agent on this page yet…",
+        !S.apps.size
+          ? "no pavlus agent on this page yet…"
+          : sel && S.apps.has(sel)
+            ? "the selected app has no store plugin — pick another in the sidebar"
+            : "none of the apps has a store plugin",
       ),
     );
     return;
   }
+
+  // the toolbar: the sidebar toggle + the active component as a chip
+  const storeBar = el("div", "");
+  storeBar.id = "store-bar";
+  const storeSideBtn = iconButton(
+    "toggle the component sidebar — click a component to narrow the state and the timeline to it and its children",
+    '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">' +
+      '<rect x="1.5" y="2.5" width="13" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/>' +
+      '<rect x="3" y="4" width="3.4" height="8" rx="0.8" fill="currentColor"/></svg>',
+    () => {
+      S.storeSide = !S.storeSide;
+      renderStore();
+    },
+  );
+  storeSideBtn.classList.toggle("active", S.storeSide);
+  storeBar.append(storeSideBtn);
+  if (S.filterComp && S.apps.has(S.filterApp)) {
+    const chip = el("button", "chip comp");
+    chip.title = "clear the component filter";
+    chip.append(
+      el("span", "lbl", displayLabel(S.filterApp, S.filterComp)),
+      el("span", "x", "⨯"),
+    );
+    chip.addEventListener("click", () => {
+      S.filterApp = "all";
+      S.filterComp = null;
+      refresh();
+    });
+    storeBar.append(chip);
+  }
+
+  // the component sidebar (the console's one), then the two columns
+  const storeWrap = el("div", "");
+  storeWrap.id = "store-wrap";
+  const side = el("div", "");
+  side.id = "store-side";
+  const sideBar = el("div", "divider-v");
+  side.style.display = S.storeSide ? "" : "none";
+  sideBar.style.display = S.storeSide ? "" : "none";
+  if (S.storeSide) fillCompSide(side);
+  applyFlex(side, S.split.storeSide);
+  dragDivider(sideBar, (ev) => {
+    const r = storeWrap.getBoundingClientRect();
+    S.split.storeSide = clampFrac((ev.clientX - r.left) / r.width, 0.08, 0.4);
+    applyFlex(side, S.split.storeSide);
+  });
+  storeWrap.append(side, sideBar);
+  tab.append(storeBar, storeWrap);
+
+  // the sidebar's selection (only when it belongs to this app): a keyed
+  // component owns `state[key chain]`, a keyless one sees the slice of its
+  // nearest keyed ancestor — the same rule as the Application tab
+  const app = S.apps.get(id);
+  const comp = S.filterApp === id ? S.filterComp : null;
+  const kpOf = (p) => {
+    const keys = app.compKeys ?? {};
+    let at = p;
+    while (at) {
+      if (keys[at]) return keys[at];
+      const dot = at.lastIndexOf(".");
+      at = dot > 0 ? at.slice(0, dot) : "";
+    }
+    return undefined;
+  };
+  const kp = comp ? kpOf(comp) : undefined;
+  // a change under the slice's key path is the component's own change
+  const under = (p) => !kp || p === kp || p.startsWith(`${kp}.`);
+
   const cols = el("div", "cols");
   const vbar = el("div", "divider-v");
   dragDivider(vbar, (ev) => {
@@ -1376,8 +1374,37 @@ function renderStore() {
 
   const stateBox = el("div", "", "");
   stateBox.id = "store-state";
-  stateBox.append(el("h3", "", `state — ${S.apps.get(id).name}`));
-  stateBox.append(viewer("state", S.states.get(id) ?? null));
+  stateBox.append(
+    el("h3", "", `state — ${comp ? displayLabel(id, comp) : app.name}`),
+  );
+  if (comp)
+    stateBox.append(
+      el(
+        "div",
+        "tl-note",
+        kp
+          ? `state at ${kp}`
+          : "no state key on its chain — this component sees the whole app state",
+      ),
+    );
+  const whole = S.states.get(id) ?? null;
+  let slice = whole;
+  let vk = `state:${id}`;
+  if (kp) {
+    slice = kp
+      .split(".")
+      .reduce((o, k) => (o == null ? undefined : o[k]), whole);
+    vk = `state:${id}:${kp}`;
+  }
+  if (slice === undefined)
+    stateBox.append(
+      el(
+        "div",
+        "tl-note",
+        "no state at this key yet — it appears once the app writes it",
+      ),
+    );
+  else stateBox.append(viewer(vk, slice));
   applyFlex(stateBox, S.split.store);
 
   const tlBox = el("div", "", "");
@@ -1390,12 +1417,24 @@ function renderStore() {
   // or redo until we land there. Shared with the Time travel tab.
   const jump = (i) => jumpTo(id, i);
 
+  // how many of the changes touch the selected slice (all of them without a
+  // component picked)
+  const shown = hist.filter((h) => under(h.path)).length;
   const head = el("h3", "", "");
-  head.append(el("span", "", `timeline — ${hist.length} changes`));
+  head.append(
+    el(
+      "span",
+      "",
+      kp && shown < hist.length
+        ? `timeline — ${shown} of ${hist.length} changes`
+        : `timeline — ${hist.length} changes`,
+    ),
+  );
   const wrap = el("div", "");
   wrap.id = "stepper";
   const track = el("div", "track");
   hist.forEach((h, i) => {
+    if (!under(h.path)) return;
     const d = el(
       "button",
       "step-dot" + (i === act ? " active" : i < act ? " applied" : ""),
@@ -1407,6 +1446,7 @@ function renderStore() {
     track.append(d);
   });
   ghosts.forEach((g, k) => {
+    if (g && !under(g.path)) return;
     const d = el("button", "step-dot ghost");
     d.title = `redo step ${hist.length + k + 1}${g ? ` — ${g.type} ${g.path}` : ""}`;
     d.addEventListener("click", () => jump(act + 1 + k));
@@ -1425,12 +1465,15 @@ function renderStore() {
 
   const tlRows = el("div", "rows");
   const rowEls = [];
-  if (!hist.length && !ghosts.length)
+  const ghostShown = ghosts.filter((g) => !g || under(g.path)).length;
+  if (!shown && !ghostShown)
     tlRows.append(
       el(
         "div",
         "tl-note",
-        "every set/merge/remove lands here — click one to travel to that state; nothing is removed, you can always redo",
+        kp
+          ? "no changes under this component's state yet"
+          : "every set/merge/remove lands here — click one to travel to that state; nothing is removed, you can always redo",
       ),
     );
 
@@ -1451,10 +1494,12 @@ function renderStore() {
         c = { appId: id, idx: hist.length + gi, entry: c.entry, redo: true };
       else c = null;
     } else c = null;
-    // nothing hovered: pin the current change so the pane is never empty
+    // nothing hovered: pin the latest change under the filter so the pane
+    // is never empty
     if (!c && hist.length) {
-      const cur = hist[act];
-      if (cur) c = { appId: id, idx: act, entry: cur, redo: false };
+      let i = act;
+      while (i >= 0 && !under(hist[i].path)) i--;
+      if (i >= 0) c = { appId: id, idx: i, entry: hist[i], redo: false };
     }
     if (!c) {
       detail.append(
@@ -1511,6 +1556,7 @@ function renderStore() {
   };
 
   hist.forEach((h, i) => {
+    if (!under(h.path)) return;
     const row = el(
       "div",
       "tl-row" +
@@ -1531,6 +1577,7 @@ function renderStore() {
     rowEls[i] = row;
   });
   ghosts.forEach((g, k) => {
+    if (g && !under(g.path)) return;
     const i = act + 1 + k;
     const row = el("div", "tl-row ghost");
     row.append(
@@ -1555,7 +1602,7 @@ function renderStore() {
   tlBox.append(tlRows, hbar, detail);
 
   cols.append(stateBox, vbar, tlBox);
-  tab.append(cols);
+  storeWrap.append(cols);
   // keep the active step in view (the stepper can overflow on long histories)
   const actBtn = wrap.querySelector(".active");
   if (actBtn)
@@ -1730,6 +1777,177 @@ function renderTravel() {
 
 /* ------------------------------------------------------------------- apps */
 
+// the tree's label for a component path: an each instance shows as
+// `componentName.<key>` (its group's tag), anything else as its tag or last
+// segment — one readable name, the raw path lives in the tooltip
+function displayLabel(appId, p) {
+  const dot = p.lastIndexOf(".");
+  const parent = dot < 0 ? "" : p.slice(0, dot);
+  const seg = dot < 0 ? p : p.slice(dot + 1);
+  const tags = S.tags.get(appId) ?? {};
+  if (parent && (S.apps.get(appId)?.eachGroups ?? []).includes(parent))
+    return `${tags[parent] ?? parent.slice(parent.lastIndexOf(".") + 1)}.${seg}`;
+  return tags[p] ?? seg;
+}
+
+/* ------------------------------------------------- component tree (shared) */
+
+// Fills a sidebar column (Console, Store) with the shared component tree —
+// one click on a node sets S.filterApp / S.filterComp and every view narrows
+// to that component's subtree (an app node = the whole app).
+function fillCompSide(box) {
+  box.replaceChildren();
+  if (!S.apps.size) {
+    box.append(el("div", "empty-tab", "no pavlus agent on this page yet…"));
+    return;
+  }
+  box.append(buildCompTree());
+}
+
+// The app / component tree, shared by the Application tab and the sidebars:
+// one click sets the panel-wide selection (S.filterApp /
+// S.filterComp) — every data view then narrows to that component's subtree.
+function buildCompTree() {
+  const tree = el("div", "a-tree");
+  // a node may be open by default (the app, an `each` group holding the
+  // rendered instances) unless it was explicitly shut
+  const isOpen = (key, dflt) =>
+    S.appsOpen.has(key) || (dflt && !S.appsShut.has(key));
+  const toggle = (key, dflt) => {
+    if (isOpen(key, dflt)) {
+      S.appsOpen.delete(key);
+      S.appsShut.add(key);
+    } else {
+      S.appsShut.delete(key);
+      S.appsOpen.add(key);
+    }
+    refresh();
+  };
+
+  // react-devtools-style tree: app nodes with nested, collapsible component
+  // branches. Components arrive as dotted paths ("users", "users.editor"),
+  // so children group under their parent path; a display tag (the agent's
+  // `tags`) replaces the last path segment as the label.
+  for (const a of [...S.apps.values()]) {
+    const appId = a.id;
+    const paths = a.components ?? [];
+    // path -> its child paths, in the agent's pre-order
+    const kidsOf = new Map();
+    for (const p of paths) {
+      const dot = p.lastIndexOf(".");
+      const parent = dot < 0 ? "" : p.slice(0, dot);
+      if (!kidsOf.has(parent)) kidsOf.set(parent, []);
+      kidsOf.get(parent).push(p);
+    }
+    // the `each` groups — keyed embeds' instance names, rendered as a node
+    // of their own (named by the tag) holding the live instances; a cycle's
+    // repeats (a component embedding itself) carry a badge pointing at the
+    // root of the cycle — the walk shows one repeat deep, the rest folds
+    const groups = new Set(a.eachGroups ?? []);
+    const cycles = a.cycles ?? {};
+    const cycleRoots = new Set(Object.values(cycles));
+
+    const compRows = (parent, depth) => {
+      const out = [];
+      for (const p of kidsOf.get(parent) ?? []) out.push(branch(p, depth));
+      return out;
+    };
+
+    // one tree row with its nested children; the label is the same readable
+    // name the detail pane shows (an each instance: `user-row.4`)
+    const branch = (p, depth) => {
+      const label = displayLabel(appId, p);
+      const hasKids = kidsOf.has(p);
+      const key = `${appId}:${p}`;
+      // a group is open unless shut: its instances are the page's rows,
+      // what one opens the tree for
+      const dflt = groups.has(p);
+      const open = isOpen(key, dflt);
+      const row = el(
+        "div",
+        "a-row" + (S.filterApp === appId && S.filterComp === p ? " sel" : ""),
+      );
+      const arrow = el("span", "a-arrow", hasKids ? (open ? "▾" : "▸") : "");
+      if (hasKids)
+        arrow.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          toggle(key, dflt);
+        });
+      row.append(arrow, el("span", "a-label", label));
+      // a cycle: this node repeats a component up the chain (the badge jumps
+      // to the cycle's root), or it is the root such repeats point back to
+      const cyc = cycles[p];
+      if (cyc !== undefined) {
+        const jump = el("span", "a-badge cycle", "↻");
+        jump.title = `cycle: repeats ${cyc || "the root"} — click to select the cycle's root`;
+        jump.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          S.filterApp = appId;
+          S.filterComp = cyc || null;
+          refresh();
+        });
+        row.append(jump);
+      } else if (cycleRoots.has(p)) {
+        const root = el("span", "a-badge cycle", "↻");
+        root.title = "the root of a cycle — this component repeats below";
+        row.append(root);
+      }
+      row.title = `${p} — click to inspect its state, io and messages`;
+      row.addEventListener("click", () => {
+        S.filterApp = appId;
+        S.filterComp = p;
+        refresh();
+      });
+      const wrap = el("div", "a-branch");
+      wrap.append(row);
+      if (hasKids) {
+        const kids = el("div", "a-kids");
+        if (!open) kids.style.display = "none";
+        kids.append(...compRows(p, depth + 1));
+        wrap.append(kids);
+      }
+      return wrap;
+    };
+
+    // the app node: click inspects the app, the arrow folds its tree
+    const appKey = `${appId}:`;
+    const appOpen = isOpen(appKey, true);
+    const appRow = el(
+      "div",
+      "a-row app" + (S.filterApp === appId && !S.filterComp ? " sel" : ""),
+    );
+    const appArrow = el(
+      "span",
+      "a-arrow",
+      paths.length ? (appOpen ? "▾" : "▸") : "",
+    );
+    if (paths.length)
+      appArrow.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        toggle(appKey, true);
+      });
+    appRow.append(appArrow, el("span", "a-label", a.name));
+    if (a.hasStore) appRow.append(el("span", "a-badge store", "store"));
+    appRow.append(el("span", "a-badge", `${stepsOf(appId).length} msg`));
+    appRow.title = `${appId} — click to inspect the app`;
+    appRow.addEventListener("click", () => {
+      S.filterApp = appId;
+      S.filterComp = null;
+      refresh();
+    });
+    const appWrap = el("div", "a-branch");
+    appWrap.append(appRow);
+    if (paths.length) {
+      const kids = el("div", "a-kids");
+      if (!appOpen) kids.style.display = "none";
+      kids.append(...compRows("", 1));
+      appWrap.append(kids);
+    }
+    tree.append(appWrap);
+  }
+  return tree;
+}
+
 function renderApps() {
   appsTree.replaceChildren();
   const apps = [...S.apps.values()];
@@ -1741,151 +1959,17 @@ function renderApps() {
     return;
   }
 
-  const NODE_W = 150;
-  const NODE_H = 30;
-  const COMP_W = 130;
-  const COMP_H = 26;
-  const INDENT = 26;
-  const V_GAP = 8;
-  const GAP = 24;
-  const rowApp = 64;
-
-  // Components arrive as dotted paths ("users", "users.editor"): pre-order
-  // rows, one step of indent per level under the app. A display tag (the
-  // agent's `tags`) replaces the last path segment as the label.
-  const rowsOf = (a) =>
-    (a.components ?? []).map((p) => ({
-      path: p,
-      label: S.tags.get(a.id)?.[p] ?? p.slice(p.lastIndexOf(".") + 1),
-      depth: p.split(".").length - 1,
-    }));
-
-  const cols = apps.map((a) => {
-    const rows = rowsOf(a);
-    const maxDepth = rows.reduce((m, r) => Math.max(m, r.depth), 0);
-    const w = Math.max(NODE_W, 18 + maxDepth * INDENT + COMP_W);
-    return {
-      app: a,
-      rows,
-      w,
-      h: rowApp + NODE_H + rows.length * (COMP_H + V_GAP) + 10,
-    };
-  });
-  const width = GAP + cols.reduce((n, c) => n + c.w + GAP, 0);
-  const height = Math.max(rowApp + NODE_H + 24, ...cols.map((c) => c.h));
-
-  const svgNS = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("width", width);
-  svg.setAttribute("height", height);
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-
-  const node = (
-    x,
-    y,
-    w,
-    h,
-    label,
-    { sel = false, store = false, on, title },
-  ) => {
-    const g = document.createElementNS(svgNS, "g");
-    g.setAttribute("class", `node${sel ? " sel" : ""}${store ? " store" : ""}`);
-    const rect = document.createElementNS(svgNS, "rect");
-    rect.setAttribute("x", x);
-    rect.setAttribute("y", y);
-    rect.setAttribute("width", w);
-    rect.setAttribute("height", h);
-    const text = document.createElementNS(svgNS, "text");
-    text.setAttribute("x", x + w / 2);
-    text.setAttribute("y", y + h / 2 + 4);
-    text.setAttribute("text-anchor", "middle");
-    text.textContent = label.length > 24 ? `${label.slice(0, 23)}…` : label;
-    g.append(rect, text);
-    if (title) {
-      const t = document.createElementNS(svgNS, "title");
-      t.textContent = title;
-      g.append(t);
-    }
-    g.addEventListener("click", on);
-    svg.append(g);
-    return { cx: x + w / 2, bottom: y + h, top: y };
-  };
-
-  // left-aligned: the root sits at the left edge, app columns follow below it
-  const rootX = GAP;
-  const root = node(rootX, 8, NODE_W, NODE_H, "all apps", {
-    sel: S.filterApp === "all",
-    on: () => {
-      S.filterApp = "all";
-      S.filterComp = null;
-      refresh();
-    },
-  });
-
-  let x = GAP;
-  for (const c of cols) {
-    const appId = c.app.id;
-    const sel = S.filterApp === appId;
-    const a = node(x, rowApp, c.w, NODE_H, c.app.name, {
-      sel,
-      store: c.app.hasStore,
-      title: c.app.name,
-      on: () => {
-        S.filterApp = appId;
-        S.filterComp = null;
-        refresh();
-      },
-    });
-    // root → app
-    const mid = (root.bottom + rowApp) / 2;
-    const p = document.createElementNS(svgNS, "path");
-    p.setAttribute(
-      "d",
-      `M ${root.cx} ${root.bottom} V ${mid} H ${a.cx} V ${a.top}`,
-    );
-    p.setAttribute("class", "edge");
-    svg.append(p);
-
-    // the app's components: one row per dotted path, an edge per parent → child
-    const drawn = new Map(); // path -> {x, bottom}
-    let y = a.bottom + V_GAP;
-    for (const r of c.rows) {
-      const nx = x + 18 + r.depth * INDENT;
-      const dot = r.path.lastIndexOf(".");
-      const parent =
-        dot < 0 ? { x, bottom: a.bottom } : drawn.get(r.path.slice(0, dot));
-      const e = document.createElementNS(svgNS, "path");
-      e.setAttribute(
-        "d",
-        `M ${parent.x + 12} ${parent.bottom} V ${y + COMP_H / 2} H ${nx}`,
-      );
-      e.setAttribute("class", "edge");
-      svg.append(e);
-      node(nx, y, COMP_W, COMP_H, r.label, {
-        sel: sel && S.filterComp === r.path,
-        title: `${r.path} — click to inspect its input / output`,
-        on: () => {
-          S.filterApp = appId;
-          S.filterComp = r.path;
-          refresh();
-        },
-      });
-      drawn.set(r.path, { x: nx, bottom: y + COMP_H });
-      y += COMP_H + V_GAP;
-    }
-    x += c.w + GAP;
-  }
-
-  appsTree.append(svg);
+  appsTree.append(buildCompTree());
   const wired = apps.every((a) => (a.components ?? []).length);
-  const note = el(
-    "div",
-    "tl-note",
-    wired
-      ? "click a component to see its input / output — messages in, effects out"
-      : "click a node to inspect the app on the right — an app without components was wired without `app` in createPavlusDebug",
+  appsTree.append(
+    el(
+      "div",
+      "tl-note",
+      wired
+        ? "click a component to see its store slice, input / output and messages on the right"
+        : "click an app to inspect it on the right — an app without components was wired without `app` in createPavlusDebug",
+    ),
   );
-  appsTree.append(note);
   renderAppsDetail();
 }
 
@@ -1929,20 +2013,61 @@ function renderAppsDetail() {
   }
   appsDetail.append(bar);
 
-  // steps that reached the selected component (its receive chain includes
-  // every ancestor boundary, so an exact match is the whole subtree)
-  const inComp = (s) => !S.filterComp || (s.comps ?? []).includes(S.filterComp);
+  // steps that reached the selected component's subtree: the receive chain
+  // includes every ancestor boundary (so an exact match covers the
+  // descendants), and an `each` group is not a boundary — its instances are
+  // `group.<key>` paths, matched by the prefix
+  const inComp = (s) => {
+    const p = S.filterComp;
+    if (!p) return true;
+    return (s.comps ?? []).some((c) => c === p || c.startsWith(`${p}.`));
+  };
 
   if (S.appsView === "io") {
     const comp = S.filterComp ?? "";
-    const b = S.io.get(id)?.get(comp);
+    // the subtree's observed io: the component's bucket plus every path
+    // under it (a group's io lives in its instances' buckets; the root
+    // aggregates everything)
+    const ioOf = S.io.get(id);
+    const buckets = [];
+    if (ioOf) {
+      if (comp) {
+        for (const [p, b] of ioOf)
+          if (p === comp || p.startsWith(`${comp}.`)) buckets.push(b);
+      } else buckets.push(...ioOf.values());
+    }
+    // merge: a message passes every ancestor boundary, so the shallowest
+    // bucket already counted the whole subtree — keep the max per id, not a
+    // sum; effects land on the deepest boundary only — sum
+    const input = new Map();
+    const output = new Map();
+    for (const b of buckets) {
+      for (const [mid, v] of b.input) {
+        const cur = input.get(mid);
+        if (cur) {
+          cur.n = Math.max(cur.n, v.n);
+          cur.at = Math.max(cur.at, v.at);
+        } else input.set(mid, { ...v });
+      }
+      for (const [k, v] of b.output) {
+        const cur = output.get(k);
+        if (cur) {
+          cur.n += v.n;
+          cur.at = Math.max(cur.at, v.at);
+        } else output.set(k, { ...v });
+      }
+    }
     const head = el("div", "detail-head");
     head.append(
-      el("span", "id", comp || "(root)"),
-      el("span", "num", comp ? "observed input / output" : "whole app"),
+      el("span", "id", comp ? displayLabel(id, comp) : "(root)"),
+      el(
+        "span",
+        "num",
+        comp ? "observed input / output — incl. children" : "whole app",
+      ),
     );
     appsDetail.append(head);
-    if (!b || (!b.input.size && !b.output.size))
+    if (!input.size && !output.size)
       appsDetail.append(
         el(
           "div",
@@ -1950,9 +2075,9 @@ function renderAppsDetail() {
           "nothing observed yet — input messages and output effects appear here as the app runs",
         ),
       );
-    if (b?.input.size) {
+    if (input.size) {
       appsDetail.append(el("h4", "", "input — messages received"));
-      const rows = [...b.input.entries()].sort(
+      const rows = [...input.entries()].sort(
         (x, y) => y[1].n - x[1].n || x[0].localeCompare(y[0]),
       );
       for (const [mid, v] of rows.slice(0, MAX_ROWS)) {
@@ -1965,9 +2090,9 @@ function renderAppsDetail() {
         appsDetail.append(row);
       }
     }
-    if (b?.output.size) {
+    if (output.size) {
       appsDetail.append(el("h4", "", "output — effects produced"));
-      const rows = [...b.output.entries()].sort(
+      const rows = [...output.entries()].sort(
         (x, y) => y[1].n - x[1].n || x[0].localeCompare(y[0]),
       );
       for (const [key, v] of rows.slice(0, MAX_ROWS)) {
@@ -1992,7 +2117,7 @@ function renderAppsDetail() {
           "div",
           "tl-note",
           S.filterComp
-            ? "no messages reached this component yet"
+            ? "no messages reached this component or its children yet"
             : "no messages yet — dispatch one in the app",
         ),
       );
@@ -2005,10 +2130,10 @@ function renderAppsDetail() {
         el("span", "sum", shortJson(s.message.payload ?? s.message.event)),
         el("span", "num", `${s.effects.length} eff`),
       );
-      row.title = "click to inspect the message in the Messages tab";
+      row.title = "click to inspect the message in the Console";
       row.addEventListener("click", () => {
-        S.selectedMsg = key;
-        showTab("messages");
+        S.consoleSel = { k: "msg", key };
+        showTab("console");
       });
       appsDetail.append(row);
     }
@@ -2034,11 +2159,11 @@ function renderAppsDetail() {
       if (e.dur !== undefined) row.append(el("span", "num dur", `${e.dur}ms`));
       const wait = S.waits.get(e.uid);
       if (wait !== undefined) row.append(el("span", "num wait", `⧗${wait}ms`));
-      row.title = `message "${s.message.id}" — click to inspect in the Effects tab`;
+      row.title = `message "${s.message.id}" — click to inspect in the Console`;
       row.addEventListener("click", () => {
-        S.selectedFx = e.uid;
-        S.chip = "all"; // make sure the effect is not hidden by a plugin chip
-        showTab("effects");
+        S.consoleSel = { k: "fx", uid: e.uid };
+        S.consoleChip = "all"; // make sure the row is not hidden by a plugin chip
+        showTab("console");
       });
       appsDetail.append(row);
     }
@@ -2098,10 +2223,9 @@ function renderAppsDetail() {
     ["timeline", `${(S.hist.get(id) ?? []).length} changes`],
   ];
   if (S.filterComp) {
-    facts.unshift(
-      ["component", S.filterComp],
-      ["tag", S.tags.get(id)?.[S.filterComp] ?? "—"],
-    );
+    // the same readable name the tree shows (an each instance:
+    // `user-row.4`); the raw path stays in the tree's tooltips
+    facts.unshift(["component", displayLabel(id, S.filterComp)]);
   }
   for (const [k, v] of facts) {
     const line = el("div", "detail-line", `${k} `);
@@ -2109,8 +2233,50 @@ function renderAppsDetail() {
     appsDetail.append(line);
   }
 
+  // a keyed component owns `state[key chain]`; a keyless one sees the slice
+  // of its nearest keyed ancestor (a `key` child up the path), and a fully
+  // keyless chain sees the whole app state — nothing narrower to show
+  const kpOf = (p) => {
+    const keys = app.compKeys ?? {};
+    let at = p;
+    while (at) {
+      if (keys[at]) return keys[at];
+      const dot = at.lastIndexOf(".");
+      at = dot > 0 ? at.slice(0, dot) : "";
+    }
+    return undefined;
+  };
+  const kp = S.filterComp ? kpOf(S.filterComp) : undefined;
+  const whole = S.states.get(id) ?? null;
+  let slice = whole;
+  let vk = `state:${id}`;
+  if (kp) {
+    slice = kp
+      .split(".")
+      .reduce((o, k) => (o == null ? undefined : o[k]), whole);
+    vk = `state:${id}:${kp}`;
+  }
+  if (S.filterComp) {
+    appsDetail.append(
+      el(
+        "div",
+        "tl-note",
+        kp
+          ? `state at ${kp}`
+          : "no state key on its chain — this component sees the whole app state",
+      ),
+    );
+  }
   appsDetail.append(el("h4", "", "state"));
-  appsDetail.append(viewer("state", S.states.get(id) ?? null));
+  if (slice === undefined)
+    appsDetail.append(
+      el(
+        "div",
+        "tl-note",
+        "no state at this key yet — it appears once the app writes it",
+      ),
+    );
+  else appsDetail.append(viewer(vk, slice));
 }
 
 /* ------------------------------------------------------------------- boot */

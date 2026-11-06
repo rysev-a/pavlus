@@ -93,7 +93,8 @@ export function scopeOf(
 // ---- expressions ----
 
 export type Result =
-  { ok: true; value: unknown } | { ok: false; error: string };
+  | { ok: true; value: unknown }
+  | { ok: false; error: string };
 
 type Compiled = ((scope: Scope) => unknown) | Error;
 const cache = new Map<string, Compiled>();

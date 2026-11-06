@@ -1,5 +1,7 @@
 export type CacheStrategy =
-  "cache-first" | "network-first" | "stale-while-revalidate";
+  | "cache-first"
+  | "network-first"
+  | "stale-while-revalidate";
 
 export interface WorkerSourceOptions {
   /** URLs fetched into the cache on install. */

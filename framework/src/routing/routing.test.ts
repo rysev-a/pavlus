@@ -6,7 +6,9 @@ import {
   matchRoute,
   resolveOutlet,
   routeName,
+  routedState,
   type Route,
+  type RouteSpec,
   type Routing,
 } from "./mod.ts";
 
@@ -96,6 +98,47 @@ describe("matchRoute", () => {
   test("declaration order breaks ties", () => {
     const tie: Routing = { "/a/:x": spec("first"), "/a/b": spec("second") };
     expect(matchRoute(tie, at("/a/b"))?.name).toBe("first");
+  });
+});
+
+describe("routedState", () => {
+  const spec: RouteSpec<{
+    filter: string;
+    dash: { n: number };
+  }> = {
+    key: "dash",
+    props: (s) => ({ filter: s.filter }),
+  };
+  const st = { filter: "f", dash: { n: 1 } };
+  const route = () => matchPattern("/dash", at("/dash"))!.route;
+
+  test("the same state and route re-merge to the same object", () => {
+    // `route()` builds a fresh route each call: equal by value is enough.
+    expect(routedState(spec, st, route())).toBe(routedState(spec, st, route()));
+  });
+
+  test("another state, or another route, merges anew", () => {
+    const a = routedState(spec, st, route());
+    expect(routedState(spec, { ...st }, route())).not.toBe(a);
+    const elsewhere = matchPattern("/dash", at("/dash", "/x"))!.route;
+    expect(routedState(spec, st, elsewhere)).not.toBe(a);
+  });
+
+  test("props run only on a miss", () => {
+    let calls = 0;
+    const s2: RouteSpec<{ filter: string; dash: { n: number } }> = {
+      key: "dash",
+      props: (s) => {
+        calls++;
+        return { filter: s.filter };
+      },
+    };
+    const r = route();
+    routedState(s2, st, r);
+    routedState(s2, st, r);
+    expect(calls).toBe(1);
+    routedState(s2, { ...st, filter: "g" }, r);
+    expect(calls).toBe(2);
   });
 });
 

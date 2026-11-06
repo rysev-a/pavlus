@@ -448,13 +448,9 @@ test("list rows say who, when and how many", () => {
   expect(senderLabel(sent.latest, ME, nameOf)).toMatch(/^To: /);
   const draft = MAILS.find((m) => m.id === "m22")!;
   expect(senderLabel(draft, ME, nameOf)).toBe("Draft");
-  expect(
-    senderLabel(
-      MAILS.find((m) => m.id === "m21")!,
-      ME,
-      nameOf,
-    ),
-  ).toBe("Draft to Daniel Okafor");
+  expect(senderLabel(MAILS.find((m) => m.id === "m21")!, ME, nameOf)).toBe(
+    "Draft to Daniel Okafor",
+  );
 });
 
 test("contacts popover marks the contacts already in the field", () => {

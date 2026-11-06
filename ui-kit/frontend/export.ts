@@ -25,7 +25,14 @@ export const exportEffector = {
     style: string,
     scope: "current" | "all",
     onDone: string,
-  ): ExportEffect => ({ plugin: "export", type: "css", vars, style, scope, onDone }),
+  ): ExportEffect => ({
+    plugin: "export",
+    type: "css",
+    vars,
+    style,
+    scope,
+    onDone,
+  }),
 };
 
 /** Every style rule of the page whose selector names a style (`[data-style="ant"]`). */
@@ -34,14 +41,18 @@ export function styleRulesOf(
   style: string | "all",
 ): string[] {
   const wanted =
-    style === "all" ? /\[data-style="[\w-]+"\]/ : new RegExp(`\\[data-style="${style}"\\]`);
+    style === "all"
+      ? /\[data-style="[\w-]+"\]/
+      : new RegExp(`\\[data-style="${style}"\\]`);
   const out: string[] = [];
   const walk = (rules: CSSRuleList, wrap: (css: string) => string) => {
     for (const rule of Array.from(rules)) {
       // duck typing: a rule of another document is not an instance of this window's classes
       if ("conditionText" in rule && "cssRules" in rule) {
         const media = rule as CSSMediaRule;
-        walk(media.cssRules, (css) => wrap(`@media ${media.conditionText} {\n${css}\n}`));
+        walk(media.cssRules, (css) =>
+          wrap(`@media ${media.conditionText} {\n${css}\n}`),
+        );
       } else if ("selectorText" in rule) {
         const r = rule as CSSStyleRule;
         if (wanted.test(r.selectorText)) out.push(wrap(r.cssText));
@@ -124,7 +135,9 @@ export function createExportPlugin(
           // no clipboard (insecure page, denied): the file is still saved
         }
         try {
-          const url = win!.URL.createObjectURL(new Blob([text], { type: "text/css" }));
+          const url = win!.URL.createObjectURL(
+            new Blob([text], { type: "text/css" }),
+          );
           const a = doc.createElement("a");
           a.href = url;
           a.download = file;

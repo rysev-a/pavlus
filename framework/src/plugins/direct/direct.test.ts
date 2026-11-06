@@ -1052,3 +1052,73 @@ describe("swapping the plugin in an app", () => {
     expect(vdom.code).toContain("export default { render, diff, meta };");
   });
 });
+
+describe("per-binding pre-checks and meta.deps", () => {
+  test("a calling binding is skipped while its inputs are unchanged", () => {
+    let calls = 0;
+    const fmt = (n: number): string => {
+      calls++;
+      return `#${n}`;
+    };
+    const v = compileDirectToView<any>(`div
+  p.a {fmt(n)}
+  p.b {other}`);
+    const h = mountDirect<any>(v, { n: 1, other: "x", fmt });
+    expect(h.root.querySelector(".a")!.textContent).toBe("#1");
+    expect(calls).toBe(1);
+    // a sibling input changed: the block runs, the calling binding does not
+    h.set({ n: 1, other: "y", fmt });
+    expect(calls).toBe(1);
+    expect(h.root.querySelector(".a")!.textContent).toBe("#1");
+    expect(h.root.querySelector(".b")!.textContent).toBe("y");
+    // its own input changed: it recomputes
+    h.set({ n: 2, other: "y", fmt });
+    expect(calls).toBe(2);
+    expect(h.root.querySelector(".a")!.textContent).toBe("#2");
+  });
+
+  test("a pre-checked binding agrees with the vdom pipeline", () => {
+    const T = twin(`div
+  p.a {name.toUpperCase()}
+  p.b {note}`);
+    const states = [
+      { name: "ada", note: "x" },
+      { name: "ada", note: "y" },
+      { name: "bob", note: "y" },
+    ];
+    agree(T, states as any, states as any, "pre-checked");
+  });
+
+  test("meta.deps lists what every binding reads", () => {
+    const v = compileDirectToView<any>(`ul
+  for u in users key u.id
+    li(class:on=u.done) {u.name.toLowerCase()}
+  p.n {users.length}`);
+    const meta = v.meta!;
+    const rows = meta.deps as Record<string, unknown>[];
+    expect(rows).toContainEqual({
+      line: 2,
+      of: "for u",
+      reads: ["users"],
+      checked: false,
+    });
+    expect(rows).toContainEqual({
+      line: 3,
+      of: "<li> class",
+      reads: ["u"],
+      checked: false,
+    });
+    expect(rows).toContainEqual({
+      line: 3,
+      of: "text",
+      reads: ["u"],
+      checked: true,
+    });
+    expect(rows).toContainEqual({
+      line: 4,
+      of: "text",
+      reads: ["users"],
+      checked: false,
+    });
+  });
+});

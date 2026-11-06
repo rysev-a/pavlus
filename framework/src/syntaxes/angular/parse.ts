@@ -766,7 +766,8 @@ class AngularParser {
     const at = tok.start;
     const entries = this.entries(tok);
     const structural = entries.find((e) => e.k === "if" || e.k === "for") as
-      Structural | undefined;
+      | Structural
+      | undefined;
     const rest = entries.filter((e) => e !== structural);
     const refOf = (): string | null =>
       (rest.find((e) => e.k === "ref") as { name: string } | undefined)?.name ??
@@ -827,6 +828,22 @@ class AngularParser {
           );
         }
       } else instance ??= local![0].toLowerCase() + local!.slice(1);
+      // [key]="expr" on a component is the instance key (a keyed embed)
+      let key: Expr | null = null;
+      const keyed = props.findIndex(
+        (p) => !("spread" in p) && p.name === "key",
+      );
+      if (keyed >= 0) {
+        const p = props[keyed] as { name: string; value: Part[] | null };
+        const v = p.value ?? [];
+        if (v.length !== 1 || typeof v[0] === "string")
+          this.fail(
+            'The component\'s key must be one expression: [key]="user.id"',
+            at + 1,
+          );
+        key = v[0] as Expr;
+        props.splice(keyed, 1);
+      }
       const list = this.wrap(structural, at);
       push(list, {
         type: "embed",
@@ -834,6 +851,7 @@ class AngularParser {
         component: dynamic ? null : local!,
         dynamic,
         name: instance!,
+        key,
         props,
         pos,
       });

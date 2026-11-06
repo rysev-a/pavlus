@@ -276,7 +276,8 @@ function tableView(
     );
   const cols = csv(p.columns ?? "");
   const first = all.find((r) => r && typeof r === "object") as
-    Record<string, unknown> | undefined;
+    | Record<string, unknown>
+    | undefined;
   const names = cols.length ? cols : first ? Object.keys(first) : [];
   const q = (ui?.q ?? "").toLowerCase();
   v.searchBox = p.search === "yes";

@@ -595,6 +595,7 @@ class JsxParser {
     }
     let name = dynamic ? "" : tag[0].toLowerCase() + tag.slice(1);
     let view: Expr | null = null;
+    let key: Expr | null = null;
     const props: Prop[] = [];
     for (const r of raws) {
       if (r.kind === "spread") {
@@ -608,6 +609,14 @@ class JsxParser {
         if (r.kind !== "expr")
           this.fail("`view` needs an {expression}", r.voff);
         view = r.expr;
+      } else if (r.name === "key") {
+        // reserved: the instance key of a keyed embed, not a prop
+        if (r.kind !== "expr")
+          this.fail(
+            "The embed's key must be an {expression}: key={user.id}",
+            r.voff,
+          );
+        key = r.expr;
       } else if (!/^[A-Za-z_$][\w$]*$/.test(r.name)) {
         this.fail(`"${r.name}" is not a valid prop name`, r.off);
       } else {
@@ -637,6 +646,7 @@ class JsxParser {
       component: dynamic ? null : tag,
       dynamic: view,
       name,
+      key,
       props,
       pos,
     };

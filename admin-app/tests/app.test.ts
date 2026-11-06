@@ -64,6 +64,9 @@ test("the app over the real API: pages, filter, CRUD, reset", async () => {
   globalThis.fetch = backend.fetch;
   try {
     const { app, store } = await import("../frontend/main.ts");
+    const list = () => store.getState().list;
+    const rowOf = (email: string) =>
+      Object.values(list().byId).find((u) => u.email === email);
 
     // `mounted` starts the router; its first report ("/") activates the users
     // page, whose `enter` asks for the users: the write answers "paint",
@@ -72,7 +75,7 @@ test("the app over the real API: pages, filter, CRUD, reset", async () => {
     // The seed holds 500 users, ten rows to a page.
     await until(
       "the seed loads (10 rows of 500)",
-      () => rows().length === 10 && store.getState().list.users.length === 500,
+      () => rows().length === 10 && Object.keys(list().byId).length === 500,
     );
     expect(document.querySelector("p.status")).toBe(null);
     expect(text("span.count")).toBe("Page 1 of 50");
@@ -82,22 +85,20 @@ test("the app over the real API: pages, filter, CRUD, reset", async () => {
     expect(menuLink().textContent).toContain("Users");
     expect(menuLink().dataset.active).toBe("true");
 
-    // The row's star: the row's own component (the `row` child of the page)
-    // owns it — the click arrives as `list.row.star`, its write answers
-    // `list.row.paint`, and the page repaints the row it embedded (the first
-    // row's button flips its class and aria-pressed, nothing else changes).
+    // The row's star: the row's own component (the keyed `row` child of the
+    // page) owns it — the click arrives as `list.row.1.star`, its write lands
+    // in its own element of `byId`, and the answer (`list.row.1.paint`) comes
+    // back to the row, which repaints its own cells in place (the first row's
+    // button flips its class and aria-pressed, nothing else changes).
     const star = () =>
       document.querySelector("button.star") as HTMLButtonElement;
     click("button.star");
-    await until("user 1 is starred", () =>
-      store.getState().list.starred.includes(1),
-    );
+    await until("user 1 is starred", () => list().byId["1"]?.starred === true);
     expect(star().getAttribute("aria-pressed")).toBe("true");
     expect(star().classList.contains("starred")).toBe(true);
     click("button.star");
-    await until(
-      "the star is gone",
-      () => store.getState().list.starred.length === 0,
+    await until("the star is gone", () =>
+      Object.values(list().byId).every((u) => !u.starred),
     );
     expect(star().getAttribute("aria-pressed")).toBe("false");
     expect(star().classList.contains("starred")).toBe(false);
@@ -146,9 +147,7 @@ test("the app over the real API: pages, filter, CRUD, reset", async () => {
       .dispatchEvent(new Event("submit", { cancelable: true }));
     await until(
       "the edit lands",
-      () =>
-        store.getState().list.users.find((u) => u.email === "ann@example.com")
-          ?.name === "Ann A.",
+      () => rowOf("ann@example.com")?.name === "Ann A.",
     );
     expect(document.querySelector("form.card")).toBe(null);
 
@@ -156,13 +155,11 @@ test("the app over the real API: pages, filter, CRUD, reset", async () => {
     type("input.flt", "bob@");
     await until("one match for bob@", () => rows().length === 1);
     click("button.del");
-    await until("the user is removed", () => store.getState().list.total === 0);
-    expect(
-      store.getState().list.users.find((u) => u.email === "bob@example.com"),
-    ).toBe(undefined);
+    await until("the user is removed", () => list().total === 0);
+    expect(rowOf("bob@example.com")).toBe(undefined);
     type("input.flt", "");
     await until("the table is full again", () => rows().length === 10);
-    expect(store.getState().list.total).toBe(499);
+    expect(list().total).toBe(499);
 
     // Sorting: a header click re-orders the whole list, pages and all.
     const nameHeader = [...document.querySelectorAll("th.sortable")].find(
@@ -193,12 +190,11 @@ test("the app over the real API: pages, filter, CRUD, reset", async () => {
       "back on / with the new user",
       () =>
         window.location.pathname === "/" &&
-        store.getState().list.users.length === 500,
+        Object.keys(list().byId).length === 500,
     );
-    const created = store
-      .getState()
-      .list.users.find((u) => u.email === "edsger@example.com");
-    expect(created).toMatchObject({ name: "Edsger Dijkstra" });
+    expect(rowOf("edsger@example.com")).toMatchObject({
+      name: "Edsger Dijkstra",
+    });
 
     // Cancel: back to the users page without a request.
     click("button.new");
@@ -226,26 +222,22 @@ test("the app over the real API: pages, filter, CRUD, reset", async () => {
     // Reset: the bottom button rebuilds the seed — everything is as it was.
     // A starred user goes first, to see the star go with the reset.
     click("button.star");
-    await until(
-      "a user is starred",
-      () => store.getState().list.starred.length === 1,
+    await until("a user is starred", () =>
+      Object.values(list().byId).some((u) => u.starred),
     );
     click("button.reset");
     await until(
       "the database is reseeded",
       () =>
-        store.getState().list.users.length === 500 &&
-        store.getState().list.users.some((u) => u.email === "bob@example.com"),
+        Object.keys(list().byId).length === 500 &&
+        rowOf("bob@example.com") !== undefined,
     );
     await until("the table is on page 1", () => rows().length === 10);
     expect(text("span.count")).toBe("Page 1 of 50");
-    expect(
-      store.getState().list.users.find((u) => u.email === "bob@example.com")
-        ?.name,
-    ).toBe("Bob");
-    expect(store.getState().list.filter).toBe("");
-    expect(store.getState().list.sortKey).toBe("id");
-    expect(store.getState().list.starred).toEqual([]);
+    expect(rowOf("bob@example.com")?.name).toBe("Bob");
+    expect(list().filter).toBe("");
+    expect(list().sortKey).toBe("id");
+    expect(Object.values(list().byId).every((u) => !u.starred)).toBe(true);
 
     app.dispose();
   } finally {

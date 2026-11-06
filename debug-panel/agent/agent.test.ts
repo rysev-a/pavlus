@@ -324,6 +324,192 @@ test("components of the app are reported as dotted paths", () => {
   });
 });
 
+test("keyed children report their state key path", () => {
+  const f = fakeHost();
+  class Row extends Component<any> {}
+  class List extends Component<any> {
+    children: Children<any> = {
+      row: { component: new Row(), key: "row" },
+    };
+  }
+  class Users extends Component<any> {
+    children: Children<any> = {
+      list: { component: new List(), key: "list" },
+      bare: { component: new Row() }, // keyless: shares the parent's state
+    };
+  }
+  const shell = new (class Shell extends Component<any> {
+    children: Children<any> = {
+      users: { component: new Users(), key: "users" },
+    };
+    routing: Routing<any> = {
+      "/list": { component: new List(), key: "routed" },
+    };
+  })();
+  const debug = createPavlusDebug({ name: "keys", app: shell }, f.host);
+  f.say({ source: "__pavlus_panel__", cmd: "hello" });
+  const hello = f.hello();
+  assert.ok(hello, "hello was posted");
+  assert.deepEqual(hello.apps[0].compKeys, {
+    users: "users",
+    "users.list": "users.list",
+    // a keyless child has no entry of its own: it sees its parent's slice,
+    // which the panel finds by walking up the path
+    "users.list.row": "users.list.row",
+    list: "routed",
+    "list.row": "routed.row",
+  });
+});
+
+test("an each child gets one component per live element", () => {
+  const f = fakeHost();
+  class Cell extends Component<any> {}
+  class Row extends Component<any> {
+    children: Children<any> = {
+      cell: { component: new Cell(), key: "cell" },
+    };
+  }
+  class List extends Component<any> {
+    children: Children<any> = {
+      row: { component: new Row(), each: "byId", tag: "user-row" },
+    };
+    add() {
+      // rooted at the boundary: lands in state.list.byId.5
+      return [
+        { plugin: "store", type: "set", path: "byId.5", value: { id: 5 } },
+      ];
+    }
+  }
+  const shell = new (class Shell extends Component<any> {
+    children: Children<any> = {
+      list: { component: new List(), key: "list" },
+    };
+  })();
+  const store = createStorePlugin({
+    list: { byId: { "7": { id: 7 }, "9": { id: 9 } } },
+  });
+  const debug = createPavlusDebug({ name: "each", app: shell }, f.host);
+  const plugins = [store, debug.plugin];
+  debug.watch(plugins);
+  const app = createApp({ app: shell, plugins, onStep: debug.onStep });
+
+  // the tree: the group node keeps the embed's name and tag, one instance
+  // per element of the map — the paths the component trace reports — and
+  // each instance's own children nest under its path
+  f.say({ source: "__pavlus_panel__", cmd: "hello" });
+  const hello = f.hello();
+  assert.ok(hello, "hello was posted");
+  assert.deepEqual(hello.apps[0].components, [
+    "list",
+    "list.row",
+    "list.row.7",
+    "list.row.7.cell",
+    "list.row.9",
+    "list.row.9.cell",
+  ]);
+  assert.deepEqual(hello.apps[0].compKeys, {
+    list: "list",
+    "list.row.7": "list.byId.7",
+    "list.row.7.cell": "list.byId.7.cell",
+    "list.row.9": "list.byId.9",
+    "list.row.9.cell": "list.byId.9.cell",
+  });
+  assert.deepEqual(hello.apps[0].tags, { "list.row": "user-row" });
+  // the group node is marked, so the panel renders it as a node of its own
+  assert.deepEqual(hello.apps[0].eachGroups, ["list.row"]);
+
+  // a store write that changes the map ships the new list with the state
+  app.dispatch({ id: "list.add" });
+  const states = f.events().filter((e) => e.type === "state");
+  const withComps = states.filter((e) => e.components);
+  assert.ok(withComps.length, "a state event carried the component list");
+  assert.ok(
+    withComps[withComps.length - 1].components.includes("list.row.5"),
+    "the new instance is there",
+  );
+});
+
+test("a live list narrows an each child to the rendered keys", () => {
+  const f = fakeHost();
+  class Row extends Component<any> {}
+  class List extends Component<any> {
+    children: Children<any> = {
+      row: {
+        component: new Row(),
+        each: "byId",
+        // the page window: the map holds every loaded user
+        live: (s: any) => s.window,
+      },
+    };
+    turn() {
+      return [{ plugin: "store", type: "set", path: "window", value: ["9"] }];
+    }
+  }
+  const shell = new (class Shell extends Component<any> {
+    children: Children<any> = {
+      list: { component: new List(), key: "list" },
+    };
+  })();
+  const store = createStorePlugin({
+    list: {
+      byId: { "5": { id: 5 }, "7": { id: 7 }, "9": { id: 9 } },
+      window: ["9", "7"],
+    },
+  });
+  const debug = createPavlusDebug({ name: "window", app: shell }, f.host);
+  const plugins = [store, debug.plugin];
+  debug.watch(plugins);
+  const app = createApp({ app: shell, plugins, onStep: debug.onStep });
+
+  // only the window, in its order — user 5 is loaded but not rendered
+  f.say({ source: "__pavlus_panel__", cmd: "hello" });
+  assert.deepEqual(f.hello().apps[0].components, [
+    "list",
+    "list.row",
+    "list.row.9",
+    "list.row.7",
+  ]);
+
+  // the window turned: the shipped list follows
+  app.dispatch({ id: "list.turn" });
+  const withComps = f
+    .events()
+    .filter((e) => e.type === "state" && e.components);
+  const comps = withComps[withComps.length - 1].components;
+  assert.ok(comps.includes("list.row.9"), "the surviving row is there");
+  assert.ok(!comps.includes("list.row.7"), "the turned-away row is gone");
+});
+
+test("a recursive component is marked as a cycle", () => {
+  const f = fakeHost();
+  // `node` embeds itself: a tree view, the classic cycle
+  class Tree extends Component<any> {}
+  const tree = new Tree();
+  (tree as unknown as { children: Children<any> }).children = {
+    node: { component: tree, tag: "node" },
+  };
+  const shell = new (class Shell extends Component<any> {
+    children: Children<any> = {
+      tree: { component: tree, key: "tree" },
+    };
+  })();
+  const debug = createPavlusDebug({ name: "cycle", app: shell }, f.host);
+  f.say({ source: "__pavlus_panel__", cmd: "hello" });
+  const hello = f.hello();
+  assert.ok(hello, "hello was posted");
+  // one repeat deep: the original, the repeat (marked), and a marker leaf
+  assert.deepEqual(hello.apps[0].components, [
+    "tree",
+    "tree.node",
+    "tree.node.node",
+  ]);
+  // every repeat points at its cycle's root — the first occurrence
+  assert.deepEqual(hello.apps[0].cycles, {
+    "tree.node": "tree",
+    "tree.node.node": "tree",
+  });
+});
+
 test("the component trace feeds comps and per-component io", () => {
   const f = fakeHost();
   class Users extends Component<any> {

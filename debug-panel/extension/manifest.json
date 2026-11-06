@@ -11,5 +11,11 @@
       "js": ["content.js"],
       "run_at": "document_start"
     }
-  ]
+  ],
+  "commands": {
+    "open-panel": {
+      "suggested_key": { "default": "Ctrl+Shift+V" },
+      "description": "Open the Pavlus debug panel for the active tab"
+    }
+  }
 }

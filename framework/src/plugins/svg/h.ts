@@ -10,7 +10,13 @@ export type SvgProps = Record<
 };
 
 export type SvgChild =
-  SvgNode | string | number | null | undefined | false | SvgChild[];
+  | SvgNode
+  | string
+  | number
+  | null
+  | undefined
+  | false
+  | SvgChild[];
 
 /**
  * Builds a node. `key` and `on` in `attrs` become node fields; strings and

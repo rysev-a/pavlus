@@ -10,7 +10,7 @@ import type {
   TemplateAst,
 } from "../template/ast.ts";
 import { TemplateError } from "../template/errors.ts";
-import { listDeps } from "../compiler/analyze.ts";
+import { exprIdents, listDeps } from "../compiler/analyze.ts";
 import { elementInfo } from "../compiler/emit/element-info.ts";
 import { RESERVED_WORDS } from "../compiler/emit/names.ts";
 import {
@@ -119,10 +119,65 @@ export function generateDirect(ast: TemplateAst): DirectGenerated {
   return new Generator(ast).run();
 }
 
+/**
+ * Whether an expression calls anything (`name.toUpperCase()`, `fmt(n)`): its
+ * evaluation may be expensive enough to skip when its inputs did not change.
+ */
+function hasCall(e: Expr): boolean {
+  switch (e.k) {
+    case "lit":
+    case "id":
+      return false;
+    case "member":
+      return hasCall(e.obj);
+    case "index":
+      return hasCall(e.obj) || hasCall(e.index);
+    case "call":
+      return true;
+    case "unary":
+      return hasCall(e.arg);
+    case "binary":
+      return hasCall(e.left) || hasCall(e.right);
+    case "cond":
+      return hasCall(e.test) || hasCall(e.then) || hasCall(e.else);
+    case "array":
+      return e.items.some(hasCall);
+  }
+}
+
+/** One row of `meta.deps`: what a binding reads, for tools and audits. */
+export interface BindingDeps {
+  /** Line of the binding in the template source. */
+  line: number;
+  /** `text`, `<tag>.<attr>`, `<tag>.class`, `if`, `for`, `+Name#inst`. */
+  of: string;
+  /** Root identifiers the binding reads (state fields, loop variables). */
+  reads: string[];
+  /** `true` when the generated code skips the binding unless `reads` changed. */
+  checked: boolean;
+}
+
+/**
+ * Root identifiers of a binding, when it is worth a per-binding pre-check:
+ * only bindings that call anything can be expensive to re-evaluate, and only
+ * under the same purity assumption the block guard already makes (a template
+ * expression is a function of the state it reads).
+ */
+function callDeps(parts: Part[]): { reads: string[]; checked: boolean } | null {
+  const exprs = parts.filter((p): p is Expr => !isStr(p));
+  if (!exprs.some(hasCall)) return null;
+  const reads = new Set<string>();
+  for (const e of exprs) exprIdents(e, reads);
+  if (reads.size === 0) return null; // nothing to compare: leave it as it is
+  return { reads: [...reads], checked: true };
+}
+
 class Generator {
   private counter = 0;
   private taken: Set<string>;
   private top: string[] = [];
+  /** Rows of `meta.deps`, collected while the bindings are generated. */
+  private depTable: BindingDeps[] = [];
   readonly helpers = new Set<string>();
 
   private ast: TemplateAst;
@@ -160,6 +215,27 @@ class Generator {
     return name;
   }
 
+  /** Records a `meta.deps` row. */
+  private noteDep(
+    line: number,
+    of: string,
+    reads: Iterable<string>,
+    checked = false,
+  ): void {
+    const row: BindingDeps = {
+      line,
+      of,
+      reads: [...new Set(reads)].sort(),
+      checked,
+    };
+    if (row.reads.length) this.depTable.push(row);
+  }
+
+  /** `a.b` / `$t` — how a template identifier is spelled in the block. */
+  private static read(sc: Scope, d: string): string {
+    return sc.vars.get(d) ?? `s.${d}`;
+  }
+
   run(): DirectGenerated {
     const embeds = new Set<string>();
     let outlet = false;
@@ -175,7 +251,7 @@ class Generator {
 
     const root = this.block(this.ast.nodes, { vars: new Map(), params: [] });
     const lines = [
-      `const meta = { embeds: ${json([...embeds])}, outlet: ${outlet} };`,
+      `const meta = { embeds: ${json([...embeds])}, outlet: ${outlet}, deps: ${json(this.depTable)} };`,
       "",
       ...this.top,
       "/** The template: builds the DOM for `s` and returns the block that keeps it current. */",
@@ -308,14 +384,39 @@ class Generator {
           kids.push(x);
           const t = this.fresh("t");
           decls.push(`let ${t} = "";`);
+          const reads = new Set<string>();
+          for (const p of n.parts) if (!isStr(p)) exprIdents(p, reads);
+          const pre = callDeps(n.parts);
+          this.noteDep(n.line, "text", reads, pre !== null);
+          // Lazy: `ref(x)` names the node only at assembly time.
+          let core = () => [
+            `const v = ${this.parts(n.parts, sc)};`,
+            `if (v !== ${t}) {`,
+            `  ${t} = v;`,
+            `  ${ref(x)}.data = v;`,
+            `}`,
+          ];
+          if (pre) {
+            const gs = pre.reads.map(() => this.fresh("g"));
+            for (const g of gs) decls.push(`let ${g} = ${this.h("UNSET")};`);
+            const cond = pre.reads
+              .map((d, i) => `${Generator.read(sc, d)} === ${gs[i]}`)
+              .join(" && ");
+            const inner = core;
+            core = () => [
+              `if (!(${cond})) {`,
+              ...pre.reads.map(
+                (d, i) => `  ${gs[i]} = ${Generator.read(sc, d)};`,
+              ),
+              ...inner().map((l) => `  ${l}`),
+              `}`,
+            ];
+          }
+          const genCore = core;
           updates.push(() => [
             `// line ${n.line}: text`,
             `try {`,
-            `  const v = ${this.parts(n.parts, sc)};`,
-            `  if (v !== ${t}) {`,
-            `    ${t} = v;`,
-            `    ${ref(x)}.data = v;`,
-            `  }`,
+            ...genCore().map((l) => `  ${l}`),
             `} catch (e) {`,
             `  ${this.h("fail")}(env, e);`,
             `}`,
@@ -358,16 +459,45 @@ class Generator {
         if (URL_ATTRS.has(a.name.toLowerCase())) {
           value = `${this.h("safeUrl")}(${value})`;
         }
+        const attrReads = new Set<string>();
+        for (const p of v) if (!isStr(p)) exprIdents(p, attrReads);
+        const pre = callDeps(v);
+        this.noteDep(
+          el.pos.line,
+          `<${el.tag}> ${a.name}`,
+          attrReads,
+          pre !== null,
+        );
+        let core = () => [
+          `const v = ${value};`,
+          `if (v !== ${last}) {`,
+          `  ${last} = v;`,
+          setter
+            ? `  ${this.h(setter)}(${ref(x)}, v);`
+            : `  ${this.h("setAttr")}(${ref(x)}, ${json(a.name)}, v);`,
+          `}`,
+        ];
+        if (pre) {
+          const gs = pre.reads.map(() => this.fresh("g"));
+          for (const g of gs) decls.push(`let ${g} = ${this.h("UNSET")};`);
+          const cond = pre.reads
+            .map((d, i) => `${Generator.read(sc, d)} === ${gs[i]}`)
+            .join(" && ");
+          const inner = core;
+          core = () => [
+            `if (!(${cond})) {`,
+            ...pre.reads.map(
+              (d, i) => `  ${gs[i]} = ${Generator.read(sc, d)};`,
+            ),
+            ...inner().map((l) => `  ${l}`),
+            `}`,
+          ];
+        }
+        const genCore = core;
         const gen: Gen = () => [
           `// line ${el.pos.line}: <${el.tag}> ${a.name}`,
           `try {`,
-          `  const v = ${value};`,
-          `  if (v !== ${last}) {`,
-          `    ${last} = v;`,
-          setter
-            ? `    ${this.h(setter)}(${ref(x)}, v);`
-            : `    ${this.h("setAttr")}(${ref(x)}, ${json(a.name)}, v);`,
-          `  }`,
+          ...genCore().map((l) => `  ${l}`),
           `} catch (e) {`,
           `  ${this.h("fail")}(env, e);`,
           `}`,
@@ -396,6 +526,14 @@ class Generator {
         const dyn = dynAttr ? this.fresh("c") : "";
         for (const c of names) decls.push(`let ${c} = ${init};`);
         if (dynAttr) decls.push(`let ${dyn} = ${init};`);
+        {
+          const reads = new Set<string>();
+          for (const t of el.toggles) exprIdents(t.test, reads);
+          if (dynAttr)
+            for (const p of dynAttr.value ?? [])
+              if (!isStr(p)) exprIdents(p, reads);
+          this.noteDep(el.pos.line, `<${el.tag}> class`, reads);
+        }
         const inputs = dynAttr ? [...names, dyn] : names;
         const items = [
           ...(base ? [json(base)] : []),
@@ -459,6 +597,11 @@ class Generator {
       );
       destroys.push(`if (${b}) ${b}.d();`);
       const fns = n.branches.map((br) => this.block(br.children, sc));
+      {
+        const reads = new Set<string>();
+        for (const br of n.branches) if (br.test) exprIdents(br.test, reads);
+        this.noteDep(n.line, "if", reads);
+      }
       const args = ["env", "s", ...sc.params].join(", ");
       const hasElse = n.branches[n.branches.length - 1].test === null;
       let select = hasElse ? String(n.branches.length - 1) : "-1";
@@ -501,6 +644,11 @@ class Generator {
       if (n.index) vars.set(n.index, idx);
       const inner: Scope = { vars, params: [...sc.params, item, idx] };
       const fn = this.block(n.children, inner);
+      {
+        const reads = new Set<string>();
+        exprIdents(n.of, reads);
+        this.noteDep(n.line, `for ${n.item}`, reads);
+      }
       const b = this.fresh("b");
       updates.push(() => [
         `// line ${n.line}: for ${n.item}${n.index ? `, ${n.index}` : ""}`,
@@ -526,6 +674,20 @@ class Generator {
       );
       destroys.push(`if (${cb}) ${cb}.d();`);
       const { consts, obj } = this.props(n, sc);
+      {
+        const reads = new Set<string>();
+        if (n.dynamic) exprIdents(n.dynamic, reads);
+        for (const p of n.props) {
+          if ("spread" in p) exprIdents(p.spread, reads);
+          else
+            for (const v of p.value ?? []) if (!isStr(v)) exprIdents(v, reads);
+        }
+        this.noteDep(
+          n.pos.line,
+          `+${n.component ?? "{expr}"}#${n.name}`,
+          reads,
+        );
+      }
       const last = consts.map(() => this.fresh("q"));
       const same = last.length
         ? consts.map(([v], i) => `${v} === ${last[i]}`).join(" && ")

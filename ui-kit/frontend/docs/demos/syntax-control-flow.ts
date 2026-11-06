@@ -17,8 +17,16 @@ export const demos: Record<string, Demo> = {
   p Welcome back!`,
     state: { loggedIn: true },
     steps: [
-      { label: "loggedIn true → false", prev: { loggedIn: true }, next: { loggedIn: false } },
-      { label: "loggedIn false → true", prev: { loggedIn: false }, next: { loggedIn: true } },
+      {
+        label: "loggedIn true → false",
+        prev: { loggedIn: true },
+        next: { loggedIn: false },
+      },
+      {
+        label: "loggedIn false → true",
+        prev: { loggedIn: false },
+        next: { loggedIn: true },
+      },
     ],
   },
   "if-else": {
@@ -28,8 +36,16 @@ else
   p Please sign in`,
     state: { user: { name: "Ann" } },
     steps: [
-      { label: "user Ann → null", prev: { user: { name: "Ann" } }, next: { user: null } },
-      { label: "user Ann → Bob", prev: { user: { name: "Ann" } }, next: { user: { name: "Bob" } } },
+      {
+        label: "user Ann → null",
+        prev: { user: { name: "Ann" } },
+        next: { user: null },
+      },
+      {
+        label: "user Ann → Bob",
+        prev: { user: { name: "Ann" } },
+        next: { user: { name: "Bob" } },
+      },
     ],
   },
   "else-if": {
@@ -113,8 +129,16 @@ else
   p Nothing here yet`,
     state: { items: ["a", "b"] },
     steps: [
-      { label: "two items → none", prev: { items: ["a", "b"] }, next: { items: [] } },
-      { label: "none → two items", prev: { items: [] }, next: { items: ["a", "b"] } },
+      {
+        label: "two items → none",
+        prev: { items: ["a", "b"] },
+        next: { items: [] },
+      },
+      {
+        label: "none → two items",
+        prev: { items: [] },
+        next: { items: ["a", "b"] },
+      },
     ],
   },
   "keyed-reorder": {
@@ -141,7 +165,9 @@ else
       {
         label: "title of item 2 changes",
         prev: { tasks },
-        next: { tasks: [tasks[0], { ...tasks[1], title: "Test well" }, tasks[2]] },
+        next: {
+          tasks: [tasks[0], { ...tasks[1], title: "Test well" }, tasks[2]],
+        },
       },
     ],
   },
@@ -307,7 +333,10 @@ if visible.length === 0
         next: {
           status: "ready",
           message: "",
-          mails: [{ id: 3, from: "Cid", subject: "Lunch?", read: false }, ...inbox],
+          mails: [
+            { id: 3, from: "Cid", subject: "Lunch?", read: false },
+            ...inbox,
+          ],
         },
       },
       {

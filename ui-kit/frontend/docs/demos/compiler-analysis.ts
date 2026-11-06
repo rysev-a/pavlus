@@ -78,7 +78,9 @@ p {fmt(count, unit)}`,
   "same-deps": {
     template: `button(title=label @click=pick(label)) Pick {label}`,
     state: { label: "A" },
-    steps: [{ label: "label A → B", prev: { label: "A" }, next: { label: "B" } }],
+    steps: [
+      { label: "label A → B", prev: { label: "A" }, next: { label: "B" } },
+    ],
   },
   loop: {
     template: `ul

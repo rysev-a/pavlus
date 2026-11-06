@@ -244,6 +244,44 @@ describe("router", () => {
     ]);
     router.dispose!();
   });
+
+  test("a navigation to the same location reports nothing", () => {
+    const { got, ctx } = harness();
+    const router = createRouterPlugin();
+    router.handle({ plugin: "router", type: "listen", onChange: "route" }, ctx);
+    // the tests share one location: start from wherever the file left it
+    const at = got[0]!.payload as {
+      path: string;
+      search: string;
+      hash: string;
+    };
+    got.length = 0;
+    router.handle(
+      {
+        plugin: "router",
+        type: "navigate",
+        url: at.path + at.search + at.hash,
+      },
+      ctx,
+    );
+    expect(got).toEqual([]); // already there: no report, no store write
+    router.handle(
+      { plugin: "router", type: "navigate", url: "/somewhere-new" },
+      ctx,
+    );
+    expect(got.map((m) => m.payload)).toEqual([
+      { path: "/somewhere-new", search: "", hash: "" },
+    ]);
+    router.handle(
+      { plugin: "router", type: "navigate", url: "/somewhere-new" },
+      ctx,
+    );
+    expect(got.map((m) => m.payload)).toEqual([
+      // repeating it again reports nothing either
+      { path: "/somewhere-new", search: "", hash: "" },
+    ]);
+    router.dispose!();
+  });
 });
 
 describe("logger", () => {

@@ -170,4 +170,4 @@ One runtime, `createServerApp({ app, plugins, routes, state, limits })`, adds wh
 - [docs/runtime.md](docs/runtime.md) and [docs/routing.md](docs/routing.md): reference. Each plugin has a README in `src/plugins/<name>/`.
 - [DESIGN.md](DESIGN.md): the original design note.
 
-Run the example: `DATABASE_URL=... REDIS_URL=... PORT=3000 node examples/todo-api/main.ts` (Node 22.18+ runs the TypeScript directly). Tests: `npx vitest run` (the end-to-end tests are skipped when the local Postgres or `redis-server` are missing).
+Run the example: `DATABASE_URL=... REDIS_URL=... PORT=3000 node examples/todo-api/main.ts` (Node 22.18+ runs the TypeScript directly). There is a second example, [`examples/shop-api`](examples/shop-api) — a shop with categories, products, users and orders on Postgres only (`docker compose up -d && node examples/shop-api/main.ts`, API on :3001), where the checkout is a transaction written as the same kind of step machine. Tests: `npx vitest run` (the end-to-end tests are skipped when the local Postgres or `redis-server` are missing).

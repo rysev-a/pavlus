@@ -382,6 +382,7 @@ class Builder {
       );
     }
     const props: Prop[] = [];
+    let key: Expr | null = null;
     if (text[i] === "(") {
       const r = parseAttrs(text, i + 1, line);
       for (const a of r.attrs) {
@@ -392,6 +393,17 @@ class Builder {
             a.pos.line,
             a.pos.col,
           );
+        } else if (a.name === "key") {
+          // `key=<expr>` is reserved: the instance key of a keyed embed, not
+          // a prop for the child (the React rule)
+          const v = a.value ?? [];
+          if (v.length !== 1 || typeof v[0] === "string")
+            throw new TemplateError(
+              "The embed's key must be one expression: key=user.id",
+              a.pos.line,
+              a.pos.col,
+            );
+          key = v[0] as Expr;
         } else props.push({ name: a.name, value: a.value });
       }
       i = r.end;
@@ -404,6 +416,7 @@ class Builder {
       component,
       dynamic,
       name,
+      key,
       props,
       pos: at(line, 0),
     };

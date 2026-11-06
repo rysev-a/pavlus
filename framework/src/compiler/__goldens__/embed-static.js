@@ -3,7 +3,7 @@ import { childEnv, diffKeyedList, toText } from "@service-laboratory/pavlus/runt
 import Row from "./row.pavlus";
 import Badge from "./badge.pavlus";
 
-const meta = { embeds: {"row":"/2","badge":"/3"}, outlet: false };
+const meta = { embeds: {"row":"#/2","badge":"/3"}, outlet: false };
 
 /** The template for a state, as virtual nodes. Pure. */
 function render(state, idSuffix = "", messagePrefix = "", env) {

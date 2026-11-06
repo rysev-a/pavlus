@@ -15,7 +15,8 @@ import {
   withTheme,
 } from "../theming.ts";
 
-const css = (name: string) => readFileSync(join(process.cwd(), "frontend", name), "utf8");
+const css = (name: string) =>
+  readFileSync(join(process.cwd(), "frontend", name), "utf8");
 
 test("corners: auto leaves the style's radius, a choice wins over it", () => {
   const base = defaultLook("light");
@@ -35,7 +36,9 @@ test("corners: a style, or a theme with its bundle, brings its own again", () =>
   const look = withChoice(defaultLook("light"), "radius", "xl");
   expect(withChoice(look, "style", "ant").radius).toBe("auto");
   expect(withTheme(look, "zinc", "light").radius).toBe("auto");
-  expect(withTheme({ ...look, bundle: false }, "zinc", "light").radius).toBe("xl");
+  expect(withTheme({ ...look, bundle: false }, "zinc", "light").radius).toBe(
+    "xl",
+  );
 });
 
 test("corners: saved looks are read back, and the catalog lists them", () => {
@@ -86,13 +89,21 @@ test("design.css: the consumers come first, then the designs, and the marker spl
 test("design.css: every variable a design sets is one a component reads", () => {
   const raw = css("design.css");
   const [tokens, designs] = raw.split("/*@designs*/");
-  const read = new Set([...tokens.matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]));
+  const read = new Set(
+    [...tokens.matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]),
+  );
   // tokens the consumers define themselves (and the palette's own) are fine too
-  const defined = new Set([...tokens.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
+  const defined = new Set(
+    [...tokens.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]),
+  );
   for (const m of designs.matchAll(/^\s*(--[\w-]+)\s*:/gm)) {
     const name = m[1];
-    if (/^--(ant|md|mdn|bl|fb|rx)-/.test(name) || /^--(shadow|ring)/.test(name)) continue;
-    expect(read.has(name) || defined.has(name), `${name} is set by a design but read by no component`).toBe(true);
+    if (/^--(ant|md|mdn|bl|fb|rx)-/.test(name) || /^--(shadow|ring)/.test(name))
+      continue;
+    expect(
+      read.has(name) || defined.has(name),
+      `${name} is set by a design but read by no component`,
+    ).toBe(true);
   }
 });
 
@@ -100,7 +111,10 @@ test("danger buttons carry white text that reads, in every editor and design-sys
   for (const t of HEX_THEMES) {
     const v = vsVars(t);
     expect(v["--destructive-foreground"], t.id).toBe("#ffffff");
-    expect(contrastOf(v["--destructive-solid"], "#ffffff"), t.id).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastOf(v["--destructive-solid"], "#ffffff"),
+      t.id,
+    ).toBeGreaterThanOrEqual(4.5);
   }
 });
 
@@ -109,6 +123,7 @@ test("Radix writes white on its accents (but amber and sky, which keep dark text
     const t = HEX_THEMES.find((x) => x.id === `bs-radix-${id}-light`)!;
     return vsVars(t)["--primary-foreground"];
   };
-  for (const id of ["blue", "red", "violet", "gray", "teal", "orange"]) expect(primaryFg(id), id).toBe("#ffffff");
+  for (const id of ["blue", "red", "violet", "gray", "teal", "orange"])
+    expect(primaryFg(id), id).toBe("#ffffff");
   expect(primaryFg("amber")).not.toBe("#ffffff");
 });

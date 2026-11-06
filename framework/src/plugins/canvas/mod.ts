@@ -97,7 +97,12 @@ export type CanvasOp =
   | {
       op: "textBaseline";
       value:
-        "top" | "hanging" | "middle" | "alphabetic" | "ideographic" | "bottom";
+        | "top"
+        | "hanging"
+        | "middle"
+        | "alphabetic"
+        | "ideographic"
+        | "bottom";
     }
   | { op: "shadowColor"; value: string }
   | { op: "shadowBlur"; value: number }

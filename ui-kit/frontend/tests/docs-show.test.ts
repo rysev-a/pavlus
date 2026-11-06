@@ -22,7 +22,8 @@ test.skipIf(!want)("show", async () => {
     const out = [`===== ${name} =====`, v.error && `ERROR: ${v.error}`];
     out.push("--- html ---", join(v.html));
     out.push("--- ast ---", join(v.ast));
-    for (const s of v.steps) out.push(`--- patches: ${s.label} ---`, join(s.patches));
+    for (const s of v.steps)
+      out.push(`--- patches: ${s.label} ---`, join(s.patches));
     out.push("--- vnodes ---", join(v.vnodes));
     out.push("--- module ---", join(v.module));
     process.stderr.write(out.filter(Boolean).join("\n") + "\n");

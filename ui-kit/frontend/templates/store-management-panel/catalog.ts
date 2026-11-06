@@ -192,7 +192,11 @@ export function productFooter(list: Product[], filter: string): string {
 // ---- orders -----------------------------------------------------------------
 
 export type OrderStatus =
-  "new" | "packed" | "shipped" | "delivered" | "cancelled";
+  | "new"
+  | "packed"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
 
 export interface OrderLine {
   product: string;

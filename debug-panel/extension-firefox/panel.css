@@ -280,8 +280,6 @@ button:disabled {
 
 /* chips ----------------------------------------------------------------- */
 
-#chips,
-#msg-chips,
 #console-bar {
   flex: none;
   display: flex;
@@ -292,17 +290,39 @@ button:disabled {
   border-bottom: 1px solid var(--line);
 }
 
-#chips .filter-input,
-#msg-chips .filter-input {
-  flex: 1;
-  min-width: 120px;
-  margin-left: auto;
-}
-
 .chips-list {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+/* a segmented chip group (the console bar): one control, one border — the
+  chips inside lose their own, so two groups of identical chips read as two
+  controls */
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--bg2);
+}
+
+.chip-group .chip {
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dim);
+}
+
+.chip-group .chip:hover {
+  color: var(--fg);
+}
+
+.chip-group .chip.active {
+  background: var(--accent);
+  color: #111;
 }
 
 .chip {
@@ -565,13 +585,34 @@ button:disabled {
   display: flex;
 }
 
-#console-bar .chips-list + .chips-list {
+/* the component sidebar: the shared tree in a narrow left column */
+#console-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+#console-side {
+  overflow: auto;
+  min-width: 130px;
+}
+
+#console-side .empty-tab {
+  padding: 12px 8px;
+  font-size: 11px;
+}
+
+#console-bar .chip-group + .chip-group {
   margin-left: auto;
 }
 
 #console-bar .filter-input {
   flex: 1;
   min-width: 120px;
+}
+
+.filter-clear.idle {
+  opacity: 0.35;
 }
 
 /* the time column stays flush left on every row; only the effect content
@@ -632,26 +673,35 @@ button:disabled {
   color: var(--ok);
 }
 
+.icon-btn.active {
+  color: var(--accent);
+}
+
+/* the active component filter chip (console toolbar) */
+.chip.comp {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.chip.comp:hover {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+.chip.comp .x {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
 /* detail panes + draggable dividers -------------------------------------*/
 
 .detail-pane {
   flex: 1;
   min-width: 0;
   overflow: auto;
-}
-
-#effects-cols {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-}
-
-/* filter bar (Messages / Effects) --------------------------------------- */
-
-#messages-cols {
-  flex: 1;
-  min-height: 0;
-  display: flex;
 }
 
 .filter-input {
@@ -725,8 +775,7 @@ button:disabled {
   background: var(--accent);
 }
 
-#msg-detail h4,
-#effect-detail h4,
+#console-detail h4,
 #apps-detail h4,
 #tl-detail h4 {
   margin: 12px 10px 0;
@@ -790,20 +839,6 @@ button:disabled {
 .detail-line .id {
   color: var(--accent);
   font-weight: 600;
-}
-
-#msg-detail .erow {
-  display: flex;
-  gap: 8px;
-  padding: 2px 10px;
-  font-family: var(--mono);
-  font-size: 11px;
-  cursor: pointer;
-}
-
-#msg-detail .erow:hover,
-#msg-detail .erow.sel {
-  color: var(--accent);
 }
 
 /* change preview under the timeline ------------------------------------*/
@@ -1016,46 +1051,87 @@ button:disabled {
   display: flex;
 }
 
-#tab-apps svg {
-  display: block;
-}
-
-.node rect {
-  fill: var(--bg3);
-  stroke: var(--line);
-  rx: 4;
-}
-
-.node text {
-  fill: var(--fg);
-  font-size: 11.5px;
+/* react-devtools-style component tree */
+.a-tree {
+  padding: 6px 4px;
   font-family: var(--mono);
+  font-size: 11.5px;
+  user-select: none;
 }
 
-.node.store text {
-  fill: var(--ok);
+.a-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.node.sel rect {
-  stroke: var(--accent);
-  fill: #264f78;
+.a-row:hover {
+  background: var(--bg3);
 }
 
-.node.sel text {
-  fill: #fff;
+.a-row.sel {
+  background: #264f78;
+  color: #fff;
 }
 
-.node {
+.a-row.sel .a-badge {
+  color: inherit;
+  border-color: transparent;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.a-row.app > .a-label {
+  font-weight: 600;
+}
+
+.a-arrow {
+  width: 11px;
+  flex: none;
+  color: var(--dim);
+  text-align: center;
+}
+
+.a-row:hover .a-arrow {
+  color: var(--fg);
+}
+
+.a-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* an each instance's path (`list.row.4`): what the right pane and the
+   trace call it — shown muted next to its display label (`user-row-4`) */
+.a-badge {
+  flex: none;
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 8px;
+  color: var(--dim);
+  border: 1px solid var(--line);
+}
+
+.a-badge.store {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.a-badge.cycle {
+  color: var(--warn);
+  border-color: var(--warn);
   cursor: pointer;
 }
 
-.node:hover rect {
-  stroke: var(--accent);
-}
-
-.edge {
-  stroke: var(--dim);
-  fill: none;
+.a-kids {
+  margin-left: 4px;
+  padding-left: 13px;
+  /* indent guide tying children to their parent's arrow column */
+  border-left: 1px solid var(--line);
 }
 
 .empty-tab {

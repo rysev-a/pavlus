@@ -38,8 +38,7 @@ export function badgeOf(
   moderator = false,
   showPoints = true,
 ): BadgeProps {
-  if (moderator)
-    return { emoji: "🛡️", label: "Moderator", tier: 6, points: "" };
+  if (moderator) return { emoji: "🛡️", label: "Moderator", tier: 6, points: "" };
   const t = tierOf(points);
   return {
     emoji: t.emoji,

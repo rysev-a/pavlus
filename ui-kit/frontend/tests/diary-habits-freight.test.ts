@@ -685,12 +685,9 @@ test("freight: stops, ETA, charges, invoices and the KPIs", () => {
   const old = invoices.find((i) => i.id === "INV-20359")!;
   expect(invoiceStatus(old, [])).toBe("overdue");
   expect(invoiceStatus(old, ["INV-20359"])).toBe("paid");
-  expect(
-    invoiceStatus(
-      invoices.find((i) => i.id === "INV-20411")!,
-      [],
-    ),
-  ).toBe("open");
+  expect(invoiceStatus(invoices.find((i) => i.id === "INV-20411")!, [])).toBe(
+    "open",
+  );
   const k = kpis(SHIPMENTS);
   expect(k).toMatchObject({
     delivered: 4,

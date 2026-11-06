@@ -217,7 +217,7 @@ class Lexer {
   /** Index after the string literal starting at `at`. */
   private skipString(at: number): number {
     const q = this.src[at];
-    for (let k = at + 1; k < this.src.length;) {
+    for (let k = at + 1; k < this.src.length; ) {
       if (this.src[k] === "\\") k += 2;
       else if (this.src[k] === q) return k + 1;
       else k++;
@@ -851,7 +851,7 @@ class Lexer {
     const src = this.src;
     const parts: Part[] = [];
     let lit = "";
-    for (let j = from; j < to;) {
+    for (let j = from; j < to; ) {
       const c = src[j];
       if (c === "\\" && (src[j + 1] === quote || src[j + 1] === "\\")) {
         lit += src[j + 1];

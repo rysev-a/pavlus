@@ -19,7 +19,8 @@ test("the production bundle has the styles and the Pages fallback", async () => 
   );
   const asset = (name: string) =>
     outputs.find((o) => o.type === "asset" && o.fileName === name) as
-      { source: string | Uint8Array } | undefined;
+      | { source: string | Uint8Array }
+      | undefined;
 
   const css = outputs
     .filter((o) => o.type === "asset" && o.fileName.endsWith(".css"))

@@ -153,24 +153,13 @@ test("desk: the SLA clock counts down, turns red, then shows how late", () => {
   });
   const calm = TICKETS.find((x) => x.id === "T-1044")!;
   expect(slaOf(calm, 0).tone).toBe("success");
-  expect(
-    slaOf(
-      TICKETS.find((x) => x.id === "T-1050")!,
-      0,
-    ).tone,
-  ).toBe("warning");
-  expect(
-    slaOf(
-      TICKETS.find((x) => x.id === "T-1047")!,
-      0,
-    ).text,
-  ).toBe("Replied");
-  expect(
-    slaOf(
-      TICKETS.find((x) => x.id === "T-1043")!,
-      0,
-    ).text,
-  ).toBe("Solved");
+  expect(slaOf(TICKETS.find((x) => x.id === "T-1050")!, 0).tone).toBe(
+    "warning",
+  );
+  expect(slaOf(TICKETS.find((x) => x.id === "T-1047")!, 0).text).toBe(
+    "Replied",
+  );
+  expect(slaOf(TICKETS.find((x) => x.id === "T-1043")!, 0).text).toBe("Solved");
 });
 
 test("desk: a reply stops the clock, a note does not, filters combine", () => {

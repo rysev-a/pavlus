@@ -1,7 +1,7 @@
 import pg from "pg";
 
 export const DEFAULT_DATABASE_URL =
-  "postgres://admin:admin@localhost:5432/admin_app";
+  "postgres://admin:admin@localhost:5433/admin_app";
 
 /**
  * A connection pool for `DATABASE_URL` (the compose.yaml database when the

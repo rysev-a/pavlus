@@ -2,7 +2,8 @@
 // field errors out. No effects, no state; test them with plain `expect`.
 
 export type Result<T> =
-  { ok: true; value: T } | { ok: false; errors: Record<string, string> };
+  | { ok: true; value: T }
+  | { ok: false; errors: Record<string, string> };
 
 const good = <T>(value: T): Result<T> => ({ ok: true, value });
 const bad = (errors: Record<string, string>): Result<never> => ({

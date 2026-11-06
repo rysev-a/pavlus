@@ -87,16 +87,18 @@ export function agendaOf(
     items: items
       .filter((i) => i.day === day)
       .sort((a, b) => a.start - b.start || a.id.localeCompare(b.id))
-      .map((i): AgendaItem => ({
-        id: i.id,
-        title: i.title,
-        sub: i.sub,
-        tone: i.tone,
-        start: clockOf(i.start),
-        end: clockOf(i.start + i.dur),
-        dur: durationText(i.dur),
-        state: stateOf(i, today, nowMin, next),
-        done: Boolean(i.done),
-      })),
+      .map(
+        (i): AgendaItem => ({
+          id: i.id,
+          title: i.title,
+          sub: i.sub,
+          tone: i.tone,
+          start: clockOf(i.start),
+          end: clockOf(i.start + i.dur),
+          dur: durationText(i.dur),
+          state: stateOf(i, today, nowMin, next),
+          done: Boolean(i.done),
+        }),
+      ),
   }));
 }

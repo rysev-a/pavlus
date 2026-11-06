@@ -23,6 +23,10 @@ export interface Location {
   hash: string;
 }
 
+/** Locations equal by value (a report carries fresh objects every time). */
+const sameLocation = (a: Location, b: Location): boolean =>
+  a.path === b.path && a.search === b.search && a.hash === b.hash;
+
 export interface RouterOptions {
   /** Defaults to the global `window`. */
   window?: Window;
@@ -47,8 +51,16 @@ export function createRouterPlugin(
       switch (effect.type) {
         case "listen": {
           stop?.();
-          const report = () =>
-            ctx.dispatch({ id: effect.onChange, payload: where() });
+          let last: Location | undefined;
+          // A navigation to the very location we are on (the logo while at
+          // "/") reports nothing: the route the state holds is already the
+          // truth, so there is no write, no paint and no enter/leave to do.
+          const report = () => {
+            const at = where();
+            if (last !== undefined && sameLocation(last, at)) return;
+            last = at;
+            ctx.dispatch({ id: effect.onChange, payload: at });
+          };
           win.addEventListener("popstate", report);
           stop = () => win.removeEventListener("popstate", report);
           return report();

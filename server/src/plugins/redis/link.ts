@@ -58,7 +58,11 @@ export function parseRedisUrl(url: string): LinkOptions {
 }
 
 export type LinkStatus =
-  "connecting" | "ready" | "reconnecting" | "closed" | "failed";
+  | "connecting"
+  | "ready"
+  | "reconnecting"
+  | "closed"
+  | "failed";
 
 /**
  * One TCP/TLS connection with handshake (AUTH/HELLO/SELECT), RESP parsing and

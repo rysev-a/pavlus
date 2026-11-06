@@ -51,6 +51,7 @@ import type {
   HistoryEntry,
   StoreChange,
   StorePlugin,
+  UpdateEffect,
 } from "@service-laboratory/pavlus/plugins/store";
 
 /** Everything the agent needs from its environment (fake-able in tests). */
@@ -76,6 +77,27 @@ export interface DebugAppInfo {
   components: string[];
   /** Display tag per component path (`ChildSpec.tag` / the component's `tag`). */
   tags?: Record<string, string>;
+  /**
+   * State key path per component path (`"users.list"` for a component whose
+   * chain has `key: "users"` then `key: "list"`): where the component's
+   * slice lives in the app state. Absent entry (or absent map) = the whole
+   * state — a `select` child or a keyless chain sees the parent's slice.
+   */
+  compKeys?: Record<string, string>;
+  /**
+   * Paths that are `each` groups — a keyed embed's instance name, not a
+   * component of its own (no messages, no state slice). The panel renders
+   * them as a node of their own (named by the tag, `user-row`) holding the
+   * instances, labeled `componentName.<key>` (`user-row.7`).
+   */
+  eachGroups?: string[];
+  /**
+   * Cycles — a component that embeds itself, directly or through its
+   * children: repeat path → the path of its first occurrence on the chain
+   * (the cycle's root). The walk shows one repeat deep; a third occurrence
+   * is a leaf marker, not walked further.
+   */
+  cycles?: Record<string, string>;
 }
 
 /** One observed input or output line of a component. */
@@ -150,6 +172,21 @@ type AgentEvent =
       state: unknown;
       /** True if the state was too big to send. */
       truncated?: boolean;
+      /**
+       * The live component list, present only when it changed with this
+       * state: `each` children gain and lose instances as their map changes.
+       * Riding the state event keeps the hello replay ordered — a fresh
+       * hello list is never overwritten by an older replayed one.
+       */
+      components?: string[];
+      /** Display tags, full map, present with `components`. */
+      tags?: Record<string, string>;
+      /** State key paths, full map, present with `components`. */
+      compKeys?: Record<string, string>;
+      /** `each` group paths, full list, present with `components`. */
+      eachGroups?: string[];
+      /** Repeat path → cycle root path, present with `components`. */
+      cycles?: Record<string, string>;
     }
   | { type: "history+"; appId: string; entries: DebugTimelineEntry[] }
   | { type: "history-"; appId: string; length: number }
@@ -269,6 +306,18 @@ const MAX_TRACE = 500;
 const MAX_IO_PATHS = 300;
 /** io lists shipped in a hello are capped per direction. */
 const MAX_IO_LIST = 50;
+/**
+ * Live instances reported per `each` child: a keyed embed is one component
+ * per element of a state map, but a tree of more than this is unreadable
+ * anyway (the state itself is never truncated by this).
+ */
+const MAX_INSTANCES = 100;
+/**
+ * How many times the same component may appear on one chain: the original
+ * plus one repeat, so a cycle (`node` embedding `node`) shows its structure
+ * one level deep and then stops — the marker leaf says "and so on".
+ */
+const MAX_CYCLES = 2;
 let traceInstalled = false;
 
 const traceJson = (v: unknown): string => {
@@ -334,11 +383,13 @@ export function createPavlusDebug(
   const pluginNames: string[] = [];
   let lastHistLen = 0;
   let lastMsgId: string | null = null;
+  /** Last component list shipped (state events carry it only when it changed). */
+  let lastComps = "";
   let seq = 0;
   /** True while the agent itself applies an effect (undo/redo/restoreTo). */
   let applyingControl = false;
   const pendingHttp = new Map<string, PendingHttp>();
-  const redoStack: StoreChange[] = [];
+  const redoStack: (StoreChange | UpdateEffect)[] = [];
   /** Steps being nested (a `handle` dispatched a message). */
   const stack: StepCtx[] = [];
   /** The plugin whose `handle` is currently running — the sender of any
@@ -519,7 +570,10 @@ export function createPavlusDebug(
 
   const isStoreChange = (e: Effect): boolean =>
     e.plugin === "store" &&
-    (e.type === "set" || e.type === "merge" || e.type === "remove");
+    (e.type === "set" ||
+      e.type === "merge" ||
+      e.type === "remove" ||
+      e.type === "update");
 
   /** A change value for the panel: cloned, or a marker when too big. */
   const valueOf = (v: unknown): unknown => {
@@ -536,7 +590,11 @@ export function createPavlusDebug(
   const entryOf = (h: HistoryEntry): DebugTimelineEntry => ({
     time: h.timestamp,
     type: h.effect.type,
-    path: String(h.effect.path ?? ""),
+    // A recipe-style change (`update`) has no path of its own; the branch it
+    // touched is the one its restore effect would set back.
+    path: String(
+      ("path" in h.effect ? h.effect.path : h.restoreEffect.path) ?? "",
+    ),
     value: valueOf("value" in h.effect ? h.effect.value : undefined),
     msgId: applyingControl ? null : lastMsgId,
   });
@@ -670,7 +728,26 @@ export function createPavlusDebug(
     } catch {
       truncated = true;
     }
-    push({ type: "state", appId, time: wall(), state: snap, truncated });
+    const ev: AgentEvent = {
+      type: "state",
+      appId,
+      time: wall(),
+      state: snap,
+      truncated,
+    };
+    // the live instances of `each` children come and go with the state —
+    // ship the component list when it changed, so the panel's tree follows
+    const comps = componentsOf(state);
+    const sig = JSON.stringify(comps);
+    if (sig !== lastComps) {
+      lastComps = sig;
+      ev.components = comps.components;
+      ev.tags = comps.tags;
+      ev.compKeys = comps.compKeys;
+      ev.eachGroups = comps.eachGroups;
+      ev.cycles = comps.cycles;
+    }
+    push(ev);
   };
 
   const control = (fn: () => void): void => {
@@ -683,26 +760,128 @@ export function createPavlusDebug(
     }
   };
 
-  /** Dotted paths of the app's components, walked once from `opts.app`. */
-  let components: string[] | undefined;
-  /** Display tag per component path (`ChildSpec.tag` or the component's own). */
-  let tags: Record<string, string> | undefined;
-  const componentsOf = (): string[] => {
-    if (components) return components;
+  /**
+   * The app's components as dotted paths, walked again on every call — the
+   * live instances of `each` children (a keyed embed is one component per
+   * element of a state map) come and go with the state. An instance's path
+   * (`list.row.7`) is the very path the component trace reports, so the
+   * panel's tree and its message / io filters all line up; its state key
+   * path is the element itself (`list.byId.7`). Returns the display tags and
+   * the state key paths alongside.
+   */
+  const componentsOf = (
+    state: unknown = store?.getState(),
+  ): {
+    components: string[];
+    tags: Record<string, string>;
+    compKeys: Record<string, string>;
+    eachGroups: string[];
+    cycles: Record<string, string>;
+  } => {
     const out: string[] = [];
     const tagMap: Record<string, string> = {};
-    const seen = new Set<object>();
-    const walk = (comp: unknown, prefix: string): void => {
-      if (!comp || typeof comp !== "object" || seen.has(comp)) return;
-      seen.add(comp);
+    const keyMap: Record<string, string> = {};
+    const groupList: string[] = [];
+    const cycleMap: Record<string, string> = {};
+    const at = (path: string): unknown => {
+      let o: unknown = state;
+      for (const k of path.split(".")) {
+        if (o == null || typeof o !== "object") return undefined;
+        o = (o as Record<string, unknown>)[k];
+      }
+      return o;
+    };
+    const walk = (
+      comp: unknown,
+      prefix: string,
+      keys: string,
+      seen: Map<object, number>,
+      firstPath: Map<object, string>,
+    ): void => {
+      if (!comp || typeof comp !== "object") return;
+      // a component may appear on a chain twice (the original + one repeat,
+      // so a cycle is visible); the third is a marker leaf, not walked
+      const n = seen.get(comp) ?? 0;
+      if (n >= MAX_CYCLES) return;
+      // the guards are ancestors-only: the same component under two paths (an
+      // `each` child's instances, a shared editor) is legitimately walked
+      // once per path, only a cycle must stop the recursion
+      const anc = new Map(seen);
+      anc.set(comp, n + 1);
+      const ancPaths = new Map(firstPath);
+      if (n === 0) ancPaths.set(comp, prefix);
       const c = comp as {
         children?: Record<string, ChildSpec>;
         routing?: Routing;
       };
+      // the child sees `state[key]` (`select` children without a key see the
+      // same state as their parent), so its slice path is the chain's keys
+      const childKeys = (spec: ChildSpec): string =>
+        typeof spec.key === "string" && spec.key
+          ? keys
+            ? `${keys}.${spec.key}`
+            : spec.key
+          : keys;
       for (const [name, spec] of Object.entries(c.children ?? {})) {
         const path = prefix ? `${prefix}.${name}` : name;
         out.push(path);
-        walk(spec.component, path);
+        const each =
+          typeof spec.each === "string" && spec.each ? spec.each : undefined;
+        if (each) {
+          // the group node keeps the embed's name; the instances nest under
+          // it, one per element of the parent slice's map — narrowed to the
+          // rendered keys when the app declares `live` (a page window), in
+          // the app's own order (a key with a dot in it would nest deeper —
+          // cosmetic, and rare)
+          groupList.push(path);
+          const slice = at(keys);
+          const map =
+            slice != null && typeof slice === "object"
+              ? (slice as Record<string, unknown>)[each]
+              : undefined;
+          const has =
+            map != null && typeof map === "object"
+              ? (key: string): boolean => key in (map as object)
+              : (): boolean => false;
+          let live: readonly string[] | undefined;
+          if (typeof spec.live === "function") {
+            // a tool reading app code must survive app code throwing
+            try {
+              live = spec.live(slice);
+            } catch {
+              live = undefined;
+            }
+          }
+          const list =
+            live ??
+            (map != null && typeof map === "object" ? Object.keys(map) : []);
+          let n = 0;
+          for (const key of list) {
+            if (++n > MAX_INSTANCES) break;
+            // no state for it (not loaded yet) — the boundary drops it too
+            if (!has(key)) continue;
+            const ipath = `${path}.${key}`;
+            const ikeys = `${keys ? `${keys}.` : ""}${each}.${key}`;
+            out.push(ipath);
+            keyMap[ipath] = ikeys;
+            // the instance repeats a component on the chain: a cycle — mark
+            // where it repeats from (its first occurrence on this chain)
+            if (spec.component && anc.has(spec.component))
+              cycleMap[ipath] = ancPaths.get(spec.component) ?? "";
+            walk(spec.component, ipath, ikeys, anc, ancPaths);
+          }
+        } else {
+          const k = childKeys(spec);
+          // keyMap is a component's OWN slice (a `key` child): a keyless
+          // child merely sees its parent's slice — the panel walks up the
+          // path for the nearest keyed ancestor instead
+          if (typeof spec.key === "string" && spec.key && k) keyMap[path] = k;
+          // the child repeats a component on the chain: a cycle — mark where
+          // it repeats from (its first occurrence on this chain)
+          if (spec.component && anc.has(spec.component))
+            cycleMap[path] = ancPaths.get(spec.component) ?? "";
+          walk(spec.component, path, k, anc, ancPaths);
+        }
         const t =
           typeof spec.tag === "string" && spec.tag
             ? spec.tag
@@ -713,7 +892,52 @@ export function createPavlusDebug(
         const child = routeName(pattern, spec);
         const path = prefix ? `${prefix}.${child}` : child;
         out.push(path);
-        walk(spec.component, path);
+        const each =
+          typeof spec.each === "string" && spec.each ? spec.each : undefined;
+        if (each) {
+          groupList.push(path);
+          const slice = at(keys);
+          const map =
+            slice != null && typeof slice === "object"
+              ? (slice as Record<string, unknown>)[each]
+              : undefined;
+          const has =
+            map != null && typeof map === "object"
+              ? (key: string): boolean => key in (map as object)
+              : (): boolean => false;
+          let live: readonly string[] | undefined;
+          if (typeof spec.live === "function") {
+            try {
+              live = spec.live(slice);
+            } catch {
+              live = undefined;
+            }
+          }
+          const list =
+            live ??
+            (map != null && typeof map === "object" ? Object.keys(map) : []);
+          let n = 0;
+          for (const key of list) {
+            if (++n > MAX_INSTANCES) break;
+            if (!has(key)) continue;
+            const ipath = `${path}.${key}`;
+            const ikeys = `${keys ? `${keys}.` : ""}${each}.${key}`;
+            out.push(ipath);
+            keyMap[ipath] = ikeys;
+            if (spec.component && anc.has(spec.component))
+              cycleMap[ipath] = ancPaths.get(spec.component) ?? "";
+            walk(spec.component, ipath, ikeys, anc, ancPaths);
+          }
+        } else {
+          const k = childKeys(spec);
+          // keyMap is a component's OWN slice (a `key` child): a keyless
+          // child merely sees its parent's slice — the panel walks up the
+          // path for the nearest keyed ancestor instead
+          if (typeof spec.key === "string" && spec.key && k) keyMap[path] = k;
+          if (spec.component && anc.has(spec.component))
+            cycleMap[path] = ancPaths.get(spec.component) ?? "";
+          walk(spec.component, path, k, anc, ancPaths);
+        }
         const t =
           typeof spec.tag === "string" && spec.tag
             ? spec.tag
@@ -721,9 +945,14 @@ export function createPavlusDebug(
         if (typeof t === "string" && t) tagMap[path] = t;
       }
     };
-    walk(opts.app, "");
-    tags = tagMap;
-    return (components = out);
+    walk(opts.app, "", "", new Map(), new Map());
+    return {
+      components: out,
+      tags: tagMap,
+      compKeys: keyMap,
+      eachGroups: groupList,
+      cycles: cycleMap,
+    };
   };
 
   /** The io maps as a plain hello payload, capped per direction. */
@@ -766,14 +995,21 @@ export function createPavlusDebug(
       redo[appId] = redoStack.length;
       lastHistLen = store.history.length;
     }
+    const comps = componentsOf();
+    lastComps = JSON.stringify(comps);
     const apps: DebugAppInfo[] = [
       {
         id: appId,
         name,
         plugins: [...pluginNames],
         hasStore: !!store,
-        components: componentsOf(),
-        ...(tags && Object.keys(tags).length ? { tags } : {}),
+        components: comps.components,
+        ...(Object.keys(comps.tags).length ? { tags: comps.tags } : {}),
+        ...(Object.keys(comps.compKeys).length
+          ? { compKeys: comps.compKeys }
+          : {}),
+        ...(comps.eachGroups.length ? { eachGroups: comps.eachGroups } : {}),
+        ...(Object.keys(comps.cycles).length ? { cycles: comps.cycles } : {}),
       },
     ];
     const from = Math.max(0, events.length - MAX_REPLAY);

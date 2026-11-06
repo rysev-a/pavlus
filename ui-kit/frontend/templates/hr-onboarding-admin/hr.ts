@@ -429,16 +429,18 @@ const PLAN_TPL: {
 const PLAN_DONE = ["h4.a", "h4.b", "h3.a"];
 
 export const PLAN: Task[] = HIRES.flatMap((h) =>
-  PLAN_TPL.map((t): Task => ({
-    id: `${h.id}.${t.key}`,
-    group: t.group,
-    title: t.title,
-    owner: t.owner,
-    due: addDays(h.start, t.offset),
-    done: PLAN_DONE.includes(`${h.id}.${t.key}`),
-    tag: "",
-    tagTone: "default",
-  })),
+  PLAN_TPL.map(
+    (t): Task => ({
+      id: `${h.id}.${t.key}`,
+      group: t.group,
+      title: t.title,
+      owner: t.owner,
+      due: addDays(h.start, t.offset),
+      done: PLAN_DONE.includes(`${h.id}.${t.key}`),
+      tag: "",
+      tagTone: "default",
+    }),
+  ),
 );
 
 // ------------------------------------------------------------- hire status
@@ -521,13 +523,15 @@ const CODE: Record<string, DocStatus> = {
 };
 
 export const DOCS: Doc[] = HIRES.flatMap((h) =>
-  DOC_TYPES.map(([type], i): Doc => ({
-    id: `${h.id}.${type}`,
-    hire: h.id,
-    type,
-    status: CODE[DOC_CODES[h.id][i]],
-    updated: addDays(TODAY, -((i * 3 + h.id.charCodeAt(1)) % 9)),
-  })),
+  DOC_TYPES.map(
+    ([type], i): Doc => ({
+      id: `${h.id}.${type}`,
+      hire: h.id,
+      type,
+      status: CODE[DOC_CODES[h.id][i]],
+      updated: addDays(TODAY, -((i * 3 + h.id.charCodeAt(1)) % 9)),
+    }),
+  ),
 );
 
 export const DOC_NEXT: Record<DocStatus, DocStatus | null> = {

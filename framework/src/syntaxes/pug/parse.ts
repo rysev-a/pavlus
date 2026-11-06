@@ -514,10 +514,22 @@ class Parser {
       );
     }
     const props: Prop[] = [];
+    let key: Expr | null = null;
     for (const item of head.items) {
       if (item.kind === "amp") props.push({ spread: item.expr });
       else if (item.kind === "attrs") {
         for (const a of item.attrs) {
+          if (/^[A-Za-z_$][\w$]*$/.test(a.name) && a.name === "key") {
+            // reserved: the instance key of a keyed embed, not a prop
+            const v = a.parts ?? [];
+            if (v.length !== 1 || typeof v[0] === "string")
+              fail(
+                "The embed's key must be one expression: key=user.id",
+                a.pos,
+              );
+            key = v[0] as Expr;
+            continue;
+          }
           if (!/^[A-Za-z_$][\w$]*$/.test(a.name)) {
             fail(`"${a.name}" is not a valid prop name`, a.pos);
           }
@@ -531,6 +543,7 @@ class Parser {
       component: head.component,
       dynamic: head.dynamic,
       name,
+      key,
       props,
       pos: head.pos,
     };

@@ -74,7 +74,12 @@ export function money(value: number, symbol = "$", decimals = 2): string {
 
 /** The tones every dashboard block understands (`k-adm-t-<tone>`). */
 export type Tone =
-  "default" | "success" | "warning" | "destructive" | "info" | "muted";
+  | "default"
+  | "success"
+  | "warning"
+  | "destructive"
+  | "info"
+  | "muted";
 
 /** Pure: a percentage kept between 0 and 100 and rounded. */
 export const clampPct = (value: number): number =>

@@ -43,9 +43,8 @@ export interface ServerState {
   [k: string]: unknown;
 }
 
-export interface RequestsPlugin<
-  S extends ServerState = ServerState,
-> extends StatefulPlugin<S, RequestsEffect> {
+export interface RequestsPlugin<S extends ServerState = ServerState>
+  extends StatefulPlugin<S, RequestsEffect> {
   /** Creates `state.requests[rid]` (idempotent). Called by the runtime. */
   open(rid: string): void;
   /** Deletes `state.requests[rid]`. Called by the runtime. */

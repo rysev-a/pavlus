@@ -283,7 +283,9 @@ test. It gets extended with nested static and dynamic children.
 5. **Swap semantics**: different value means clear and re-render; the child's
    state slice is kept and the swapping message must reset it.
 6. **Instance names are static per embed site**; identity inside loops
-   travels in payloads (`remove(user.id)`), not in prefixes.
+   travels in payloads (`remove(user.id)`), not in prefixes — except the
+   reserved `key=` prop (section 11), which moves it into the prefix on
+   purpose: one child boundary per element.
 7. **Lifecycle**: `onMounted` on `dom.mount` plus explicit `ctx.send`;
    template hooks later.
 
@@ -296,7 +298,9 @@ mounting a component, `createApp` taking any component form, the rewritten
 example, property tests for nested and swapping children (the
 "`diff` equals fresh render" invariant over random states, with the DOM
 checked for leaked nodes and listeners), display `tag` on `ChildSpec` and
-`Component` (the debug panel's Apps tab labels), and `setComponentTrace` —
+`Component` (the debug panel's Apps tab labels), keyed embeds (`+Row#row(key=user.id …)`
+with `each`: one child per element, per-key prefixes and store paths, paint
+answers sliced per key — section 11), and `setComponentTrace` —
 a global receive/emit hook per component boundary that the debug agent
 drains into per-component input/output (the Apps tab's **io** view), and
 `DomPlugin.update` — the plugin applies what a component computed (below).
@@ -347,3 +351,90 @@ applies the patches it is given.
 - On the server the shell renders whole, children included, from the same
   state; the browser hydrates the whole page at once (`adopt` walks the
   rendered nodes and attaches ids and listeners).
+
+## 11. Keyed embeds: one child per element (implemented)
+
+An embed inside a loop (`+Row#row(...)`) sends every row's events with the
+same `row.` prefix, so one boundary would serve all rows — and a plain `key`
+would hand every row the whole list. The reserved prop `key=<expr>` makes
+the instance name per element instead:
+
+```pavlus
+// user-list/user-list.pavlus
+import Row from "./row/row"
+
+for id in order
+  +Row#row(key=id user=byId[id])
+```
+
+Events carry the key in the prefix (`row.7.star`), and the boundary becomes
+a keyed one:
+
+```ts
+// user-list/user-list.ts
+children: Children<ListState> = {
+  row: { component: row, each: "byId" }, // state.byId: Record<id, User>
+};
+```
+
+- **Down (the same lens, per key):** the child is ONE element —
+  `state[each][key]` plus `props` — never the whole map; its store writes
+  root at `byId.7.…` (string or array paths); its replies come back as
+  `row.7.saved`. A message for a key with no element (removed, or not
+  loaded yet) is dropped, exactly like a `select: null` child.
+- **Up:** a `paint` answer is sliced to `byId[7]`'s `{ prev, next }`; node
+  ids and event prefixes compose per key. The trace reports the component
+  as `row.7`.
+- **Nesting composes:** a `username` child inside the row sees
+  `byId[7].username`, its writes root at `byId.7.username.…` — the lens
+  applied level by level. The row knows nothing of the other rows, the
+  row's children nothing of the row's siblings.
+- **`each` is a single state key** holding an id-keyed map
+  (`Record<id, User>`): not a dotted path, not an array (indexes survive no
+  sort). It cannot be combined with `key` or `select`.
+- **`live` narrows what tools show:** the debug agent's tree lists one node
+  per element of the map; `live: (s) => s.order` (a function of the PARENT's
+  state) tells it the rendered keys — a page window — so the tree shows the
+  rows on screen, not every loaded element. The runtime never calls it:
+  routing an instance's messages needs only the map.
+- **`key` is reserved:** it never reaches the child as a prop, and it must
+  be one expression (`key=user.id`; `key="x"` is a template error).
+- **Outside a loop** a keyed embed (`+Editor#ed(key=selectedId ...)`) is
+  one instance per key: a changed key means another instance — the diff
+  clears and re-renders the embed, like a changed `+{expr}` value. Inside
+  a loop the key of a matched pair is stable, and only the child's `diff`
+  runs.
+- `ctx.send("row", "7.star")` addresses one row from the parent.
+
+### A keyed row that paints itself
+
+Section 10's self-paint composes with the loop. The compiler records the
+slot of the iteration key for an embed inside a `for` (`meta.embeds.row` is
+`"#/42"` — the `#` is the key's slot), and the boundary turns it into the
+per-key prefix at paint time: node ids become `#<key>/42…`, events
+`row.<key>.…`. A row's own `paint` patches therefore address its own block
+whether it was rendered by the parent's render or by the row's diff.
+
+The prop wiring that makes both paths render the same tree: the embed's
+props are the row's own state, spread (`+Row#row(key=id ...byId[id])`), so
+the row's template is a pure function of one element — and its writes
+(`byId.<id>.…`) answer `paint`, whose sliced `{ prev, next }` diff back
+through the same template.
+
+```ts
+// user-list-row/user-list-row.ts — one row, one star, no siblings in sight
+star(_m: Message, s: RowState): Effect[] {
+  return [store.set("starred", !s.starred, { onSuccess: "paint" })];
+}
+paint(msg: Message): Effect[] {
+  const { prev, next } = msg.payload as { prev: RowState; next: RowState };
+  return [DomPlugin.update(view.diff(prev, next))]; // ids scope to #<id>/…
+}
+```
+
+The page paints its own writes (the pager, the selection); the row paints
+its own (the star). Neither repaints the other: the page's notes and diffs
+never carry the row's keyed ids, and the row's answer never leaves its
+boundary. The working reference is admin-app's users page
+(`app/user-list/`); the runtime guarantee is pinned by the boundary test
+"a keyed child in a loop paints itself: ids carry the iteration key".

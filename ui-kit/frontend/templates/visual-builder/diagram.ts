@@ -35,7 +35,12 @@ import {
 import { parseInitial } from "./bind.ts";
 
 export type NodeKind =
-  "page" | "section" | "element" | "chain" | "http" | "key";
+  | "page"
+  | "section"
+  | "element"
+  | "chain"
+  | "http"
+  | "key";
 export type EdgeKind =
   | "event"
   | "write"

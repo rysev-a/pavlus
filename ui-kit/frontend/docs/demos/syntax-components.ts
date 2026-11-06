@@ -9,7 +9,11 @@ p
   +Badge#status(label=text)`,
     state: { text: "New" },
     steps: [
-      { label: "text New → Done", prev: { text: "New" }, next: { text: "Done" } },
+      {
+        label: "text New → Done",
+        prev: { text: "New" },
+        next: { text: "Done" },
+      },
     ],
   },
   props: {
@@ -20,7 +24,10 @@ p
 +Chip#a(label="Fixed" kind="static" count=3)
 +Chip#b(label=user.name kind="user {user.id}" count=items.length active)
 +Chip#c(...user count=0)`,
-    state: { user: { id: 7, name: "Ann", label: "From spread" }, items: [1, 2] },
+    state: {
+      user: { id: 7, name: "Ann", label: "From spread" },
+      items: [1, 2],
+    },
   },
   "child-diff": {
     components: {

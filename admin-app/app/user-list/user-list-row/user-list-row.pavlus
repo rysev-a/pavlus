@@ -1,22 +1,17 @@
-// One row of the users table: the view half of the `+Row#row` embed in the
-// page's template (user-list-row.ts is the behavior half, joined to it by the
-// instance name). The page passes the row's props — the user, whether the
-// page's selection holds it, whether the user starred it — and this template
-// is a pure function of them. Its events leave prefixed `row.`: the page
-// handles what a row does to the table (pick, edit, remove), the row's own
-// component what it does to its user (star).
-tr(data-selected={selected ? "true" : null})
-  td.ui-resource-check
-    input.ui-data-check(type="checkbox" aria-label="Select row" checked=selected @change=pick(user.id))
-  td.id {user.id}
-  td {user.name}
-  td {user.email}
-  td
-    span.badge.ui-badge.ui-badge-secondary {user.role}
-  td.actions
-    button.star.ui-button.ui-button-ghost.ui-button-icon-sm.row-star(type="button" aria-label="Star" aria-pressed={starred ? "true" : "false"} class:starred=starred @click=star(user.id))
-      span.ui-icon(data-icon="star")
-    button.edit.ui-button.ui-button-ghost.ui-button-icon-sm(type="button" aria-label="Edit" @click=edit(user))
-      span.ui-icon(data-icon="pencil")
-    button.del.ui-button.ui-button-ghost.ui-button-icon-sm.row-delete(type="button" aria-label="Delete" @click=remove(user.id))
-      span.ui-icon(data-icon="trash")
+// One row's own cells: the view half of the keyed `+Row#row(key=id)` embed in
+// the page's table (user-list-row.ts is the behavior half, joined to it by the
+// instance name). The page spreads this row's element of `byId` into the embed
+// (`...byId[id]`), so what this template renders is exactly the row's state —
+// the very thing its component sees — and its events leave prefixed
+// `row.<id>.`, reaching only this row's component. The star is the row's own
+// concern; the checkbox and the edit/delete buttons (the table's concerns:
+// they change what the whole page shows) live in the page's template, outside
+// the embed.
+td.id {id}
+td {name}
+td {email}
+td
+  span.badge.ui-badge.ui-badge-secondary {role}
+td.actions
+  button.star.ui-button.ui-button-ghost.ui-button-icon-sm.row-star(type="button" aria-label="Star" aria-pressed={starred ? "true" : "false"} class:starred=starred @click=star)
+    span.ui-icon(data-icon="star")

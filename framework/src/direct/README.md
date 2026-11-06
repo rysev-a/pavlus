@@ -10,7 +10,7 @@ generator and the DOM plugin differ.
 | what is kept           | nothing in the view; the plugin keeps an id -> node table      | the block's closure keeps the last value of every binding               |
 | an update              | build vnodes / diff two states / patch list / id lookups / DOM | compare each bound value with its last one, write the DOM if it changed |
 | first render           | build vnodes, then DOM from vnodes                             | `cloneNode(true)` of a static skeleton, then fill the dynamic spots     |
-| effects (plugin)       | `dom.mount / unmount / update / focus / blur`                  | the same effects, plugin name `dom` too (swap `new DomPlugin()`)      |
+| effects (plugin)       | `dom.mount / unmount / update / focus / blur`                  | the same effects, plugin name `dom` too (swap `new DomPlugin()`)        |
 
 ```ts
 import { createDirectDomPlugin } from "@service-laboratory/pavlus/plugins/direct";
@@ -63,6 +63,15 @@ binding. Each block also guards itself: if every free identifier it reads
 once. That is what makes "one row changed in a list of 1000" cost a pointer
 comparison per other row. (It is the same assumption the vdom `diff` makes:
 state is immutable; mutating an object in place is invisible to both.)
+
+Bindings whose expression calls anything (`{total(rows)}`,
+`{name.toUpperCase()}`) get one more guard, per binding: the generated code
+remembers the inputs it read and skips the call while they keep their
+references — a compiled `computed` without a runtime graph, valid under the
+same purity assumption (a template expression is a function of what it
+reads). `meta.deps` publishes the graph as data: one row per binding
+(`{ line, of, reads, checked }`), so a tool can answer "who updates this DOM
+node" statically, which neither a signals runtime nor a vdom diff can.
 
 **`if`** mounts and drops a sub-block between its anchor and its siblings when
 the selected branch index changes, and forwards `u` otherwise. **`for`** keeps

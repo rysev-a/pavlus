@@ -63,10 +63,8 @@ export interface Plugin<E extends EffectLike = Effect, S = unknown> {
 }
 
 /** A plugin that owns application state. */
-export interface StatefulPlugin<
-  S = unknown,
-  E extends EffectLike = Effect,
-> extends Plugin<E, S> {
+export interface StatefulPlugin<S = unknown, E extends EffectLike = Effect>
+  extends Plugin<E, S> {
   getState(): S;
 }
 

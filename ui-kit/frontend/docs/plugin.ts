@@ -36,7 +36,13 @@ export function buildDoc(
     if (b.kind !== "demo") return { ...b, i };
     const demo = demos[b.name];
     return demo
-      ? { kind: "demo", name: b.name, view: run(b.name, demo, b.open), missing: false, i }
+      ? {
+          kind: "demo",
+          name: b.name,
+          view: run(b.name, demo, b.open),
+          missing: false,
+          i,
+        }
       : { kind: "demo", name: b.name, view: null, missing: true, i };
   });
   const toc = parsed.blocks.flatMap((b) =>
@@ -50,14 +56,32 @@ export function buildDoc(
 // ---- the plugin ----
 
 export type DocsEffect = Effect & { plugin: "docs" } & (
-    | { type: "load"; slug: string; lang: Lang; onSuccess: string; onError: string }
+    | {
+        type: "load";
+        slug: string;
+        lang: Lang;
+        onSuccess: string;
+        onError: string;
+      }
     | { type: "run"; template: string; state: string; onSuccess: string }
     | { type: "remember"; lang: Lang }
-    | { type: "trace"; template: string; prev: string; next: string; onSuccess: string; onError: string }
+    | {
+        type: "trace";
+        template: string;
+        prev: string;
+        next: string;
+        onSuccess: string;
+        onError: string;
+      }
   );
 
 export const docsEffector = {
-  load: (slug: string, lang: Lang, onSuccess: string, onError: string): DocsEffect => ({
+  load: (
+    slug: string,
+    lang: Lang,
+    onSuccess: string,
+    onError: string,
+  ): DocsEffect => ({
     plugin: "docs",
     type: "load",
     slug,
@@ -80,8 +104,20 @@ export const docsEffector = {
     next: string,
     onSuccess: string,
     onError: string,
-  ): DocsEffect => ({ plugin: "docs", type: "trace", template, prev, next, onSuccess, onError }),
-  remember: (lang: Lang): DocsEffect => ({ plugin: "docs", type: "remember", lang }),
+  ): DocsEffect => ({
+    plugin: "docs",
+    type: "trace",
+    template,
+    prev,
+    next,
+    onSuccess,
+    onError,
+  }),
+  remember: (lang: Lang): DocsEffect => ({
+    plugin: "docs",
+    type: "remember",
+    lang,
+  }),
 };
 
 const markdown = import.meta.glob<string>("./content/*/*.md", {
@@ -100,7 +136,10 @@ export function createDocsPlugin(
     handle(effect, ctx) {
       if (effect.type === "remember") {
         try {
-          doc.defaultView?.localStorage.setItem("ui-kit-docs-lang", effect.lang);
+          doc.defaultView?.localStorage.setItem(
+            "ui-kit-docs-lang",
+            effect.lang,
+          );
         } catch {
           // storage blocked: the language is just not remembered
         }
@@ -130,7 +169,14 @@ export function createDocsPlugin(
             id: effect.onSuccess,
             payload: error
               ? { stateError: error, view: null }
-              : { stateError: "", view: runDemo("playground", { template: effect.template, state: value }, ["module", "ast"]) },
+              : {
+                  stateError: "",
+                  view: runDemo(
+                    "playground",
+                    { template: effect.template, state: value },
+                    ["module", "ast"],
+                  ),
+                },
           });
         });
         return;

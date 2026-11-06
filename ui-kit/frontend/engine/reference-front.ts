@@ -44,7 +44,7 @@ export const FRONT: StageDoc[] = [
       {
         title: "Strip trailing comments (except in `|` lines)",
         text: "If the line does not start with `|`, `stripComment` removes a trailing `// ...`. The `//` only counts when it is at nesting depth 0 (outside `()` and `{}`), outside quotes, and at the start of the line or after whitespace. A text line that starts with `|` is never stripped, so `| a // b` keeps the whole `a // b`. If nothing is left after stripping, the line is dropped.",
-        code: "p hello // removed\n| keeps // this\np(title=\"a // b\") ok",
+        code: 'p hello // removed\n| keeps // this\np(title="a // b") ok',
         lang: "pavlus",
       },
       {
@@ -84,7 +84,8 @@ export const FRONT: StageDoc[] = [
         name: "Line",
         file: "template/parser.ts",
         kind: "type",
-        signature: "interface Line { no: number; indent: number; text: string }",
+        signature:
+          "interface Line { no: number; indent: number; text: string }",
         does: "One cleaned source line. `no` is the 1-based line number in the original source, `indent` the number of leading whitespace characters, `text` the trimmed line with comments removed. Created only in `parse`; passed to every line parser so they can report positions.",
       },
       {
@@ -122,7 +123,7 @@ export const FRONT: StageDoc[] = [
         file: "template/errors.ts",
         kind: "class",
         signature: "export class TemplateError extends Error",
-        does: "The error for every malformed template. It has `name = \"TemplateError\"` and two read-only fields `line` and `col` (1-based). The message you see is the given text plus the suffix ` (line L, col C)`, built in the constructor.",
+        does: 'The error for every malformed template. It has `name = "TemplateError"` and two read-only fields `line` and `col` (1-based). The message you see is the given text plus the suffix ` (line L, col C)`, built in the constructor.',
       },
       {
         name: "TemplateError.constructor",
@@ -135,75 +136,87 @@ export const FRONT: StageDoc[] = [
     patterns: [
       {
         text: "source.split(/\\r?\\n/)",
-        meaning: "Line splitter. Accepts LF and CRLF endings; line numbers are index + 1.",
+        meaning:
+          "Line splitter. Accepts LF and CRLF endings; line numbers are index + 1.",
         where: "parse, template/parser.ts",
       },
       {
         text: "//",
-        meaning: "Comment marker. A line that starts with it is dropped; a trailing one is cut by `stripComment` when it is at depth 0, outside quotes, and preceded by whitespace.",
+        meaning:
+          "Comment marker. A line that starts with it is dropped; a trailing one is cut by `stripComment` when it is at depth 0, outside quotes, and preceded by whitespace.",
         where: "parse and stripComment, template/parser.ts",
       },
       {
         text: "| ",
-        meaning: "Text-line marker. Lines starting with `|` are never comment-stripped, so `//` is safe inside them.",
+        meaning:
+          "Text-line marker. Lines starting with `|` are never comment-stripped, so `//` is safe inside them.",
         where: "parse, template/parser.ts",
       },
       {
         text: "Tabs are not allowed, use spaces",
-        meaning: "Thrown when the leading whitespace of a line contains a tab. Position: that line, column 1.",
+        meaning:
+          "Thrown when the leading whitespace of a line contains a tab. Position: that line, column 1.",
         where: "parse, template/parser.ts",
       },
       {
         text: "/^import\\s+([A-Za-z_$][\\w$]*)\\s+from\\s+(?:\"([^\"]+)\"|'([^']+)')$/",
-        meaning: "An import line: a name, `from`, then the path in double or single quotes. The path must be quoted; `import A from a` does not match and becomes an element.",
+        meaning:
+          "An import line: a name, `from`, then the path in double or single quotes. The path must be quoted; `import A from a` does not match and becomes an element.",
         where: "parse, template/parser.ts",
       },
       {
         text: "`import` lines must be at the top of the file",
-        meaning: "Thrown when an import has indent > 0 or any node was already created. Comments and blank lines before it are fine.",
+        meaning:
+          "Thrown when an import has indent > 0 or any node was already created. Comments and blank lines before it are fine.",
         where: "parse, template/parser.ts",
       },
       {
-        text: "\"X\" cannot be used as a component name (start with a capital letter, not String/Array/Map/Set/Error)",
-        meaning: "Import name rule: first char A-Z and not one of the reserved names.",
+        text: '"X" cannot be used as a component name (start with a capital letter, not String/Array/Map/Set/Error)',
+        meaning:
+          "Import name rule: first char A-Z and not one of the reserved names.",
         where: "parse, template/parser.ts",
       },
       {
-        text: "\"X\" is imported twice",
+        text: '"X" is imported twice',
         meaning: "Two imports with the same local name.",
         where: "parse, template/parser.ts",
       },
       {
         text: "while (stack[stack.length - 1].indent >= line.indent) stack.pop()",
-        meaning: "The one rule that turns indentation into nesting: close every open node that is not shallower than this line.",
+        meaning:
+          "The one rule that turns indentation into nesting: close every open node that is not shallower than this line.",
         where: "parse, template/parser.ts",
       },
       {
         text: "This line cannot have children",
-        meaning: "The parent frame has `into === null` (void tag, `|` text, `{` text, embed, outlet). Column 1.",
+        meaning:
+          "The parent frame has `into === null` (void tag, `|` text, `{` text, embed, outlet). Column 1.",
         where: "parse, template/parser.ts",
       },
       {
         text: "Inconsistent indentation",
-        meaning: "A child's indent differs from the indent of the first child of the same parent. Column 1.",
+        meaning:
+          "A child's indent differs from the indent of the first child of the same parent. Column 1.",
         where: "parse, template/parser.ts",
       },
       {
         text: "col = indent + offset + 1",
-        meaning: "How `at()` maps a position in the trimmed text to the real column.",
+        meaning:
+          "How `at()` maps a position in the trimmed text to the real column.",
         where: "at, template/parser.ts",
       },
       {
         text: "(line L, col C)",
-        meaning: "Suffix of every TemplateError message. Both numbers are 1-based.",
+        meaning:
+          "Suffix of every TemplateError message. Both numbers are 1-based.",
         where: "TemplateError, template/errors.ts",
       },
     ],
     pitfalls: [
       "Indentation is not a fixed unit. 2 spaces for one parent and 4 for another is fine; only siblings must agree with each other. But a first line that is indented (for example `  div`) makes all root lines need that same indent, so a later `p` at column 0 fails with `Inconsistent indentation`.",
-      "`stripComment` protects `//` inside parentheses, so `a(href=\"http://x\")` is not cut. But an unquoted `a(href=http://x)` is protected from the comment cutter and then fails later: the attribute expression `http://x` is tokenized and gives `Unexpected \":\"`. Always quote URLs.",
+      '`stripComment` protects `//` inside parentheses, so `a(href="http://x")` is not cut. But an unquoted `a(href=http://x)` is protected from the comment cutter and then fails later: the attribute expression `http://x` is tokenized and gives `Unexpected ":"`. Always quote URLs.',
       "Quotes are only tracked inside `()` and `{}`. An apostrophe in plain text, like `p it's // c`, is fine. A stray `)` in plain text makes `depth` negative and switches comment stripping off for the rest of the line: `p a) // c` keeps `a) // c` as text.",
-      "A comment inside an interpolation breaks it: `{a // b}` is never cut (depth is 1) and the expression parser fails with `Unexpected \"/\"`.",
+      'A comment inside an interpolation breaks it: `{a // b}` is never cut (depth is 1) and the expression parser fails with `Unexpected "/"`.',
       "A `|` text line is never comment-stripped, but an inline text after a tag is: `p hello // c` keeps only `hello`, while `| hello // c` keeps everything.",
       "Tabs are rejected only in the leading whitespace. `p\\t hi` is accepted and the text is `hi` (it is trimmed).",
       "The `import` regex is checked on the cleaned text before the stack logic, so an `import` line never changes nesting, and a trailing comment after it is fine. A malformed import (unquoted path) is not an error: it silently becomes an element called `import`.",
@@ -221,7 +234,7 @@ export const FRONT: StageDoc[] = [
     intro: [
       "After stage one every line is clean and knows its parent. Now each line must become a **node**. The loop in `parse` looks at the start of the line and picks one of six node types: `if` (with `else if` / `else` branches joined to it), `for`, text (`|` or `{`), `+outlet`, an embed (`+Name`), or by default an **element**. The result is the `TemplateAst` defined in `template/ast.ts`: `{ imports, nodes }`.",
       "The line parsers share a small class `Builder`. Its only state is `nid`, a counter. Every node (element, text, if, for, embed, outlet) takes the next number when it is created, in source order and parents before children. The `nid` is the node's identity for the rest of the pipeline: generated code uses it for DOM ids and for the `idSuffix` of loops. `else` branches get no `nid` and no node: they only add a branch to the `if` before them.",
-      "Inside a line there is a second level of parsing. `parseParts` splits text into plain strings and `{expr}` parts, using `matchBrace` to find the closing brace. `parseAttrs` reads the `(a=1 b=\"x {y}\" @click=go(item))` list, using `scanBare` to find where an unquoted value ends. All expressions go to `parseExpr` (the next stage). Events are turned into message bindings by `toMessage`.",
+      'Inside a line there is a second level of parsing. `parseParts` splits text into plain strings and `{expr}` parts, using `matchBrace` to find the closing brace. `parseAttrs` reads the `(a=1 b="x {y}" @click=go(item))` list, using `scanBare` to find where an unquoted value ends. All expressions go to `parseExpr` (the next stage). Events are turned into message bindings by `toMessage`.',
       "Everything the parser produces is plain data (no classes), so you can print it as JSON. Expression nodes are the `Expr` union; attribute values and text are `Part[]` (a string or an `Expr`).",
     ],
     steps: [
@@ -249,31 +262,31 @@ export const FRONT: StageDoc[] = [
       },
       {
         title: "Text lines",
-        text: "A `|` line takes the body after `| ` (one space is dropped, more are kept). A line starting with `{` is text too, with the whole line as the body. Both call `Builder.text`, which runs `parseParts`. Consecutive text nodes under one parent get a `\"\\n\"` string inserted at the front of the later one, which HTML shows as a space.",
+        text: 'A `|` line takes the body after `| ` (one space is dropped, more are kept). A line starting with `{` is text too, with the whole line as the body. Both call `Builder.text`, which runs `parseParts`. Consecutive text nodes under one parent get a `"\\n"` string inserted at the front of the later one, which HTML shows as a space.',
         code: "p\n  | Hello,\n  | {name}!",
         lang: "pavlus",
       },
       {
         title: "+outlet and embeds",
         text: "`+outlet` (with word boundary) must have nothing after it; it makes an `OutletNode`. Any other `+` line goes to `Builder.embed`, which reads `+Name#instance(props)` or `+{expr}#instance(props)`. A static `Name` must be imported; the instance name defaults to the name with a lower-case first letter.",
-        code: "import Card from \"./card.pavlus\"\n\n+Card#main(title=\"Hi\" ...extra)\n+{view}#panel(open)\n+outlet",
+        code: 'import Card from "./card.pavlus"\n\n+Card#main(title="Hi" ...extra)\n+{view}#panel(open)\n+outlet',
         lang: "pavlus",
       },
       {
         title: "Element: tag, classes, id",
-        text: "`Builder.element` reads an optional tag name (`/^[A-Za-z][\\w-]*/`, default `div`), then any number of `.class` and `#id` pieces. An `#id` becomes an ordinary attribute `id` with a literal value. If nothing was consumed the line is rejected as `Cannot parse line \"...\"`.",
+        text: '`Builder.element` reads an optional tag name (`/^[A-Za-z][\\w-]*/`, default `div`), then any number of `.class` and `#id` pieces. An `#id` becomes an ordinary attribute `id` with a literal value. If nothing was consumed the line is rejected as `Cannot parse line "..."`.',
         code: "section.card.card--wide#main\n.box\n#only-id",
         lang: "pavlus",
       },
       {
         title: "Element: attribute list",
         text: "If the next char is `(`, `parseAttrs` reads the list. Each entry goes through `addAttr`: names starting with `@` become events, names starting with `class:` become class toggles, all others become attributes. Whitespace and commas both separate entries.",
-        code: "a.link(href=\"/u/{user.id}\" class:on={active} @click.prevent=open(user.id) disabled)",
+        code: 'a.link(href="/u/{user.id}" class:on={active} @click.prevent=open(user.id) disabled)',
         lang: "pavlus",
       },
       {
         title: "Element: inline text",
-        text: "After the attribute list, anything left must start with whitespace (else `Unexpected \"x\"`). If it is not empty, it becomes the first child, a text node created right after the element (so its `nid` is the element's plus one).",
+        text: 'After the attribute list, anything left must start with whitespace (else `Unexpected "x"`). If it is not empty, it becomes the first child, a text node created right after the element (so its `nid` is the element\'s plus one).',
         code: "p.lead Hello {name}",
         lang: "pavlus",
       },
@@ -310,14 +323,14 @@ export const FRONT: StageDoc[] = [
         file: "template/parser.ts",
         kind: "method",
         signature: "element(line: Line): ElementNode",
-        does: "Parses an element line: tag (default `div`), `.class` / `#id` pieces, the `(attrs)` list through `parseAttrs` + `addAttr`, then optional inline text through `parseParts`. Throws `Cannot parse line` when nothing was consumed and `Unexpected \"x\"` when text follows without whitespace. Called from `parse` for every line no other rule claimed.",
+        does: 'Parses an element line: tag (default `div`), `.class` / `#id` pieces, the `(attrs)` list through `parseAttrs` + `addAttr`, then optional inline text through `parseParts`. Throws `Cannot parse line` when nothing was consumed and `Unexpected "x"` when text follows without whitespace. Called from `parse` for every line no other rule claimed.',
       },
       {
         name: "Builder.addAttr",
         file: "template/parser.ts",
         kind: "method",
         signature: "private addAttr(el: ElementNode, a: RawAttr): void",
-        does: "Sorts one parsed attribute into the element. A spread is an error. `@name.mod...` becomes an `EventBinding` (via `toMessage`; `prevent` and `stop` are the only modifiers it reads). `class:name` becomes a `ClassToggle` whose test is the single expression value. Anything else is pushed as `Attr { name, value }`. Events and toggles need a value that is exactly one expression, otherwise `\"name\" needs an expression value`.",
+        does: 'Sorts one parsed attribute into the element. A spread is an error. `@name.mod...` becomes an `EventBinding` (via `toMessage`; `prevent` and `stop` are the only modifiers it reads). `class:name` becomes a `ClassToggle` whose test is the single expression value. Anything else is pushed as `Attr { name, value }`. Events and toggles need a value that is exactly one expression, otherwise `"name" needs an expression value`.',
       },
       {
         name: "Builder.embed",
@@ -337,21 +350,24 @@ export const FRONT: StageDoc[] = [
         name: "matchBrace",
         file: "template/parser.ts",
         kind: "function",
-        signature: "function matchBrace(text: string, open: number, line: Line): number",
+        signature:
+          "function matchBrace(text: string, open: number, line: Line): number",
         does: "Returns the index of the `}` that matches the `{` at `open`. It counts nested braces and skips over single- and double-quoted strings (with `\\` escapes). Throws `Unclosed {` if the end is reached. Used by `parseParts`, by `parseAttrs` (for `name={expr}`) and by `Builder.embed` (for `+{expr}`).",
       },
       {
         name: "parseParts",
         file: "template/parser.ts",
         kind: "function",
-        signature: "function parseParts(text: string, base: number, line: Line): Part[]",
+        signature:
+          "function parseParts(text: string, base: number, line: Line): Part[]",
         does: "Splits text into literal strings and `{expr}` parts. `\\{` and `\\}` produce literal braces. On `{` it finds the match with `matchBrace`, pushes the pending literal, and parses the inside with `parseExpr` at the right column. Empty literals are not pushed, so the result may be `[]`. Used for text nodes and for quoted attribute and prop values.",
       },
       {
         name: "toMessage",
         file: "template/parser.ts",
         kind: "function",
-        signature: "function toMessage(e: Expr, p: Pos): { msg: string; args: Expr[] }",
+        signature:
+          "function toMessage(e: Expr, p: Pos): { msg: string; args: Expr[] }",
         does: "Turns an event expression into a message binding. Its inner `name(x)` accepts an `id` or a chain of `member`s and returns the dotted name (`users.remove`), else `null`. The callee of a `call` (or the expression itself) is named this way; arguments are the call arguments or `[]`. A non-name handler throws `Event handler must be a message id like `save` or `remove(item)``.",
       },
       {
@@ -375,7 +391,7 @@ export const FRONT: StageDoc[] = [
         kind: "function",
         signature:
           "function parseAttrs(text: string, start: number, line: Line): { attrs: RawAttr[]; end: number }",
-        does: "Parses an attribute list starting just after `(`. It skips whitespace and commas, stops at `)` and returns the entries plus the index after the `)`. An entry is `...expr`, `name`, or `name=value`, where value is a quoted string (with `{interp}`), a `{expr}`, or a bare expression. Names match `/^[@\\w:.\\-]+/`. Throws `Unclosed (`, `Unexpected \"c\" in attributes` or `Unterminated string`.",
+        does: 'Parses an attribute list starting just after `(`. It skips whitespace and commas, stops at `)` and returns the entries plus the index after the `)`. An entry is `...expr`, `name`, or `name=value`, where value is a quoted string (with `{interp}`), a `{expr}`, or a bare expression. Names match `/^[@\\w:.\\-]+/`. Throws `Unclosed (`, `Unexpected "c" in attributes` or `Unterminated string`.',
       },
       {
         name: "VOID_TAGS",
@@ -403,14 +419,16 @@ export const FRONT: StageDoc[] = [
         name: "parse: for branch",
         file: "template/parser.ts",
         kind: "function",
-        signature: "else if ((m = /^for\\s+(\\w+)(?:\\s*,\\s*(\\w+))?\\s+in\\s+(.+?):?$/.exec(t))) { ... }",
+        signature:
+          "else if ((m = /^for\\s+(\\w+)(?:\\s*,\\s*(\\w+))?\\s+in\\s+(.+?):?$/.exec(t))) { ... }",
         does: "Inline block in `parse`. Reads item and optional index names, splits off `key ...`, parses the list and key expressions, and builds a `ForNode` whose children go into `n.children`.",
       },
       {
         name: "parse: text, outlet, embed, element dispatch",
         file: "template/parser.ts",
         kind: "function",
-        signature: "t.startsWith(\"|\") / t.startsWith(\"{\") / /^\\+outlet\\b/ / t.startsWith(\"+\")",
+        signature:
+          't.startsWith("|") / t.startsWith("{") / /^\\+outlet\\b/ / t.startsWith("+")',
         does: "The last blocks of the dispatch chain. `|` and `{` build text through `Builder.text`; `+outlet` builds an `OutletNode` (anything after it throws `+outlet` takes nothing after it); other `+` lines call `Builder.embed`; the rest call `Builder.element` and use `VOID_TAGS` to decide whether children are allowed. After this the node gets the newline join (see patterns) and is pushed.",
       },
       // ast.ts
@@ -432,8 +450,9 @@ export const FRONT: StageDoc[] = [
         name: "Attr",
         file: "template/ast.ts",
         kind: "type",
-        signature: "export interface Attr { name: string; value: Part[] | null }",
-        does: "An ordinary attribute. `name` is as written (`data-id`, `aria.x`, `a:b` are all allowed). `value` is `null` for a bare boolean attribute like `disabled`. A quoted value without braces is `[\"text\"]`; an unquoted value `x=1` is `[{k:\"lit\",value:1}]`. Duplicates are kept in order. `#id` creates an Attr `id` with value `[\"theId\"]`.",
+        signature:
+          "export interface Attr { name: string; value: Part[] | null }",
+        does: 'An ordinary attribute. `name` is as written (`data-id`, `aria.x`, `a:b` are all allowed). `value` is `null` for a bare boolean attribute like `disabled`. A quoted value without braces is `["text"]`; an unquoted value `x=1` is `[{k:"lit",value:1}]`. Duplicates are kept in order. `#id` creates an Attr `id` with value `["theId"]`.',
       },
       {
         name: "EventBinding",
@@ -454,36 +473,41 @@ export const FRONT: StageDoc[] = [
         name: "ElementNode",
         file: "template/ast.ts",
         kind: "type",
-        signature: 'export interface ElementNode { type: "element"; nid; tag; classes; toggles; attrs; events; children; pos }',
-        does: "An HTML element. Fields: `type: \"element\"`; `nid: number`; `tag: string` (default `div`); `classes: string[]` (static `.class` pieces; a `class=` attribute stays in `attrs`); `toggles: ClassToggle[]`; `attrs: Attr[]`; `events: EventBinding[]`; `children: Node[]`; `pos: Pos`.",
+        signature:
+          'export interface ElementNode { type: "element"; nid; tag; classes; toggles; attrs; events; children; pos }',
+        does: 'An HTML element. Fields: `type: "element"`; `nid: number`; `tag: string` (default `div`); `classes: string[]` (static `.class` pieces; a `class=` attribute stays in `attrs`); `toggles: ClassToggle[]`; `attrs: Attr[]`; `events: EventBinding[]`; `children: Node[]`; `pos: Pos`.',
       },
       {
         name: "TextNode",
         file: "template/ast.ts",
         kind: "type",
-        signature: 'export interface TextNode { type: "text"; nid: number; line: number; parts: Part[] }',
-        does: "Text with interpolations. Fields: `type: \"text\"`; `nid`; `line` (source line); `parts: Part[]`. A later text sibling starts with the string part `\"\\n\"`.",
+        signature:
+          'export interface TextNode { type: "text"; nid: number; line: number; parts: Part[] }',
+        does: 'Text with interpolations. Fields: `type: "text"`; `nid`; `line` (source line); `parts: Part[]`. A later text sibling starts with the string part `"\\n"`.',
       },
       {
         name: "IfBranch",
         file: "template/ast.ts",
         kind: "type",
-        signature: "export interface IfBranch { test: Expr | null; children: Node[] }",
+        signature:
+          "export interface IfBranch { test: Expr | null; children: Node[] }",
         does: "One arm of an `if`. `test` is `null` for the final `else`. `children` are the nodes under that arm. Branches have no `nid`.",
       },
       {
         name: "IfNode",
         file: "template/ast.ts",
         kind: "type",
-        signature: 'export interface IfNode { type: "if"; nid: number; line: number; branches: IfBranch[] }',
-        does: "A whole `if / else if / else` chain as one node. Fields: `type: \"if\"`; `nid`; `line`; `branches: IfBranch[]` in source order. At most one branch has `test: null`, and it is last.",
+        signature:
+          'export interface IfNode { type: "if"; nid: number; line: number; branches: IfBranch[] }',
+        does: 'A whole `if / else if / else` chain as one node. Fields: `type: "if"`; `nid`; `line`; `branches: IfBranch[]` in source order. At most one branch has `test: null`, and it is last.',
       },
       {
         name: "ForNode",
         file: "template/ast.ts",
         kind: "type",
-        signature: 'export interface ForNode { type: "for"; nid; line; item: string; index: string | null; of: Expr; key: Expr | null; children: Node[] }',
-        does: "A loop. Fields: `type: \"for\"`; `nid`; `line`; `item` (loop variable); `index` (second variable or `null`); `of` (the list expression); `key` (identity expression or `null`, meaning use the index); `children: Node[]`.",
+        signature:
+          'export interface ForNode { type: "for"; nid; line; item: string; index: string | null; of: Expr; key: Expr | null; children: Node[] }',
+        does: 'A loop. Fields: `type: "for"`; `nid`; `line`; `item` (loop variable); `index` (second variable or `null`); `of` (the list expression); `key` (identity expression or `null`, meaning use the index); `children: Node[]`.',
       },
       {
         name: "Prop",
@@ -497,116 +521,136 @@ export const FRONT: StageDoc[] = [
         name: "EmbedNode",
         file: "template/ast.ts",
         kind: "type",
-        signature: 'export interface EmbedNode { type: "embed"; nid; component: string | null; dynamic: Expr | null; name: string; props: Prop[]; pos: Pos }',
-        does: "An embedded child view. Fields: `type: \"embed\"`; `nid`; `component` (imported local name, or `null`); `dynamic` (expression for `+{expr}`, or `null`); `name` (instance name: message prefix and state key of the child); `props: Prop[]`; `pos`. Exactly one of `component` and `dynamic` is set.",
+        signature:
+          'export interface EmbedNode { type: "embed"; nid; component: string | null; dynamic: Expr | null; name: string; props: Prop[]; pos: Pos }',
+        does: 'An embedded child view. Fields: `type: "embed"`; `nid`; `component` (imported local name, or `null`); `dynamic` (expression for `+{expr}`, or `null`); `name` (instance name: message prefix and state key of the child); `props: Prop[]`; `pos`. Exactly one of `component` and `dynamic` is set.',
       },
       {
         name: "OutletNode",
         file: "template/ast.ts",
         kind: "type",
-        signature: 'export interface OutletNode { type: "outlet"; nid: number; line: number }',
-        does: "`+outlet`: the place where the routed child (chosen by the component's routing) is shown. Fields: `type: \"outlet\"`, `nid`, `line`. It has no expression of its own.",
+        signature:
+          'export interface OutletNode { type: "outlet"; nid: number; line: number }',
+        does: '`+outlet`: the place where the routed child (chosen by the component\'s routing) is shown. Fields: `type: "outlet"`, `nid`, `line`. It has no expression of its own.',
       },
       {
         name: "Node",
         file: "template/ast.ts",
         kind: "type",
-        signature: "export type Node = ElementNode | TextNode | IfNode | ForNode | EmbedNode | OutletNode",
+        signature:
+          "export type Node = ElementNode | TextNode | IfNode | ForNode | EmbedNode | OutletNode",
         does: "The union of all node types. Distinguish by `type`.",
       },
       {
         name: "ImportDecl",
         file: "template/ast.ts",
         kind: "type",
-        signature: "export interface ImportDecl { local: string; from: string }",
-        does: "One `import Name from \"path\"` line: `local` is the component name, `from` the path string without quotes.",
+        signature:
+          "export interface ImportDecl { local: string; from: string }",
+        does: 'One `import Name from "path"` line: `local` is the component name, `from` the path string without quotes.',
       },
       {
         name: "TemplateAst",
         file: "template/ast.ts",
         kind: "type",
-        signature: "export interface TemplateAst { imports: ImportDecl[]; nodes: Node[] }",
+        signature:
+          "export interface TemplateAst { imports: ImportDecl[]; nodes: Node[] }",
         does: "What `parse` returns: all imports in order and the root nodes. There is no wrapping root element; several root nodes are allowed.",
       },
     ],
     patterns: [
       {
         text: "/^[A-Za-z][\\w-]*/",
-        meaning: "Tag name at the start of an element line; allows hyphens (`my-widget`). No match means the tag is `div`.",
+        meaning:
+          "Tag name at the start of an element line; allows hyphens (`my-widget`). No match means the tag is `div`.",
         where: "Builder.element, template/parser.ts",
       },
       {
         text: "/^([.#])([\\w-]+)/",
-        meaning: "A `.class` or `#id` piece directly after the tag. Applied repeatedly. `#id` becomes Attr `id`.",
+        meaning:
+          "A `.class` or `#id` piece directly after the tag. Applied repeatedly. `#id` becomes Attr `id`.",
         where: "Builder.element, template/parser.ts",
       },
       {
-        text: "Cannot parse line \"...\"",
-        meaning: "An element line where not even a tag, class or id could be read (for example `1p`).",
+        text: 'Cannot parse line "..."',
+        meaning:
+          "An element line where not even a tag, class or id could be read (for example `1p`).",
         where: "Builder.element, template/parser.ts",
       },
       {
-        text: "Unexpected \"x\"",
-        meaning: "Characters follow the tag/classes/attributes without whitespace (for example `p{x}` or `p(a=1)x`).",
+        text: 'Unexpected "x"',
+        meaning:
+          "Characters follow the tag/classes/attributes without whitespace (for example `p{x}` or `p(a=1)x`).",
         where: "Builder.element, template/parser.ts",
       },
       {
         text: "/^if\\s+(.+?):?$/",
-        meaning: "If line. Lazy `.+?` plus optional `:` means a trailing colon is allowed and removed.",
+        meaning:
+          "If line. Lazy `.+?` plus optional `:` means a trailing colon is allowed and removed.",
         where: "parse, template/parser.ts",
       },
       {
         text: "/^else\\s+if\\s+(.+?):?$/ and /^else:?$/",
-        meaning: "Else-if and else lines. `else x` (anything else after else) is not matched and becomes an element.",
+        meaning:
+          "Else-if and else lines. `else x` (anything else after else) is not matched and becomes an element.",
         where: "parse, template/parser.ts",
       },
       {
         text: "`else` without matching `if`",
-        meaning: "The previous sibling is not an `if`, or its last branch is already an `else`. Column = indent + 1.",
+        meaning:
+          "The previous sibling is not an `if`, or its last branch is already an `else`. Column = indent + 1.",
         where: "parse, template/parser.ts",
       },
       {
         text: "/^for\\s+(\\w+)(?:\\s*,\\s*(\\w+))?\\s+in\\s+(.+?):?$/",
-        meaning: "For line: `item`, optional `, index`, then `in` and the list. Three variables do not match and the line becomes an element called `for`.",
+        meaning:
+          "For line: `item`, optional `, index`, then `in` and the list. Three variables do not match and the line becomes an element called `for`.",
         where: "parse, template/parser.ts",
       },
       {
         text: "/^(.+?)\\s+key\\s+(.+)$/",
-        meaning: "Splits the `for` tail into the list and the key expression at the first ` key `.",
+        meaning:
+          "Splits the `for` tail into the list and the key expression at the first ` key `.",
         where: "parse, template/parser.ts",
       },
       {
-        text: "t.slice(t[1] === \" \" ? 2 : 1)",
-        meaning: "Body of a `|` line: one space after the bar is dropped, more spaces are kept.",
+        text: 't.slice(t[1] === " " ? 2 : 1)',
+        meaning:
+          "Body of a `|` line: one space after the bar is dropped, more spaces are kept.",
         where: "parse, template/parser.ts",
       },
       {
-        text: "node.parts.unshift(\"\\n\")",
-        meaning: "A text node right after another text node (same parent) starts with a newline string, which HTML renders as one space (like pug).",
+        text: 'node.parts.unshift("\\n")',
+        meaning:
+          "A text node right after another text node (same parent) starts with a newline string, which HTML renders as one space (like pug).",
         where: "parse, template/parser.ts",
       },
       {
         text: "/^\\+outlet\\b/",
-        meaning: "Outlet line. The word boundary means `+outlet2` is not an outlet (it is an embed and fails as not imported).",
+        meaning:
+          "Outlet line. The word boundary means `+outlet2` is not an outlet (it is an embed and fails as not imported).",
         where: "parse, template/parser.ts",
       },
       {
         text: "`+outlet` takes nothing after it",
-        meaning: "Anything after `+outlet`, such as `+outlet#x` or `+outlet foo`. Column = indent + 8.",
+        meaning:
+          "Anything after `+outlet`, such as `+outlet#x` or `+outlet foo`. Column = indent + 8.",
         where: "parse, template/parser.ts",
       },
       {
         text: "/^[A-Za-z_$][\\w$]*/",
-        meaning: "Component name after `+`, and (with a leading `#`) the instance name.",
+        meaning:
+          "Component name after `+`, and (with a leading `#`) the instance name.",
         where: "Builder.embed, template/parser.ts",
       },
       {
         text: "name = component[0].toLowerCase() + component.slice(1)",
-        meaning: "Default instance name: `+Card` is instance `card`. The name is the message prefix and the state key of the child.",
+        meaning:
+          "Default instance name: `+Card` is instance `card`. The name is the message prefix and the state key of the child.",
         where: "Builder.embed, template/parser.ts",
       },
       {
-        text: "\"X\" is not imported. Add `import X from \"...\"` or use +{X} for a component that comes from the state",
+        text: '"X" is not imported. Add `import X from "..."` or use +{X} for a component that comes from the state',
         meaning: "A static embed whose name has no import.",
         where: "Builder.embed, template/parser.ts",
       },
@@ -617,7 +661,8 @@ export const FRONT: StageDoc[] = [
       },
       {
         text: "Expected a component name or {expression} after +",
-        meaning: "A lone `+` or `+` followed by a character that cannot start a name.",
+        meaning:
+          "A lone `+` or `+` followed by a character that cannot start a name.",
         where: "Builder.embed, template/parser.ts",
       },
       {
@@ -626,28 +671,32 @@ export const FRONT: StageDoc[] = [
         where: "Builder.embed, template/parser.ts",
       },
       {
-        text: "\"x\" is not a valid prop name",
-        meaning: "Prop names must match `/^[A-Za-z_$][\\w$]*$/`; `data-x` is invalid for props (but valid for element attributes).",
+        text: '"x" is not a valid prop name',
+        meaning:
+          "Prop names must match `/^[A-Za-z_$][\\w$]*$/`; `data-x` is invalid for props (but valid for element attributes).",
         where: "Builder.embed, template/parser.ts",
       },
       {
-        text: "Unexpected \"...\" after component",
+        text: 'Unexpected "..." after component',
         meaning: "Text after the embed's props or name.",
         where: "Builder.embed, template/parser.ts",
       },
       {
         text: "/^[@\\w:.\\-]+/",
-        meaning: "Attribute name: letters, digits, `_`, `@`, `:`, `.`, `-`. So `@click.prevent`, `class:on`, `data-id`.",
+        meaning:
+          "Attribute name: letters, digits, `_`, `@`, `:`, `.`, `-`. So `@click.prevent`, `class:on`, `data-id`.",
         where: "parseAttrs, template/parser.ts",
       },
       {
-        text: "Unexpected \"c\" in attributes",
-        meaning: "A character that cannot start an attribute name inside `( )`.",
+        text: 'Unexpected "c" in attributes',
+        meaning:
+          "A character that cannot start an attribute name inside `( )`.",
         where: "parseAttrs, template/parser.ts",
       },
       {
         text: "Unclosed (  /  Unterminated string  /  Unclosed {",
-        meaning: "Missing `)`, missing closing quote of a quoted attribute value, and missing `}`. The first two point at the `(` or the opening quote.",
+        meaning:
+          "Missing `)`, missing closing quote of a quoted attribute value, and missing `}`. The first two point at the `(` or the opening quote.",
         where: "parseAttrs and matchBrace, template/parser.ts",
       },
       {
@@ -656,46 +705,52 @@ export const FRONT: StageDoc[] = [
         where: "Builder.addAttr, template/parser.ts",
       },
       {
-        text: "\"name\" needs an expression value",
-        meaning: "An event or `class:` toggle with no value or a plain string value. `@click=\"{go}\"` (one interpolation) is accepted.",
+        text: '"name" needs an expression value',
+        meaning:
+          'An event or `class:` toggle with no value or a plain string value. `@click="{go}"` (one interpolation) is accepted.',
         where: "Builder.addAttr, template/parser.ts",
       },
       {
         text: "Event handler must be a message id like `save` or `remove(item)`",
-        meaning: "The handler is not a name, dotted name, or a call of one (for example `@click=1`, `@click=a[0]`, `@click=f()()`).",
+        meaning:
+          "The handler is not a name, dotted name, or a call of one (for example `@click=1`, `@click=a[0]`, `@click=f()()`).",
         where: "toMessage, template/parser.ts",
       },
       {
         text: "\\{ and \\}",
-        meaning: "Escapes for literal braces in text and quoted attribute values. No other escape is processed.",
+        meaning:
+          "Escapes for literal braces in text and quoted attribute values. No other escape is processed.",
         where: "parseParts, template/parser.ts",
       },
       {
         text: "@name.prevent.stop",
-        meaning: "The first dot-separated word is the DOM event; `prevent` and `stop` set the flags; any other word is ignored.",
+        meaning:
+          "The first dot-separated word is the DOM event; `prevent` and `stop` set the flags; any other word is ignored.",
         where: "Builder.addAttr, template/parser.ts",
       },
       {
         text: "class:name",
-        meaning: "Prefix (6 chars, `class:`) for a conditional class; the rest is the class name.",
+        meaning:
+          "Prefix (6 chars, `class:`) for a conditional class; the rest is the class name.",
         where: "Builder.addAttr, template/parser.ts",
       },
       {
         text: "nid",
-        meaning: "Counter from 0, +1 per element/text/if/for/embed/outlet in source order (parents first; inline text right after its element). Not used by else branches, imports or attributes.",
+        meaning:
+          "Counter from 0, +1 per element/text/if/for/embed/outlet in source order (parents first; inline text right after its element). Not used by else branches, imports or attributes.",
         where: "Builder.nid, template/parser.ts",
       },
     ],
     pitfalls: [
-      "Unquoted attribute values stop at the first space. `class:on=i === current` fails with `Unexpected \"=\" in attributes`, and `x=a ? b : c` fails with `Unexpected \"?\" in attributes`. Write `class:on={i === current}` or wrap in parentheses `x=(a ? b : c)`. Inside `( )` or `[ ]` spaces are fine, so `f(a, b)` works unquoted.",
-      "Quoted attribute values are text, not expressions: `title=\"a b\"` is the string `a b`. To use an expression with other text, interpolate: `title=\"Hi {name}\"`. `x=\"{a}\"` is a single expression (type kept), but `x=\"{a} \"` is a string with an interpolation (type lost).",
-      "In a quoted value only `\\{` and `\\}` are unescaped. `x=\"say \\\"hi\\\"\"` keeps the backslashes in the value (the scanner skips `\\\"` to find the end, but nothing removes the `\\`). There is also no way to write a backslash before an interpolation.",
+      'Unquoted attribute values stop at the first space. `class:on=i === current` fails with `Unexpected "=" in attributes`, and `x=a ? b : c` fails with `Unexpected "?" in attributes`. Write `class:on={i === current}` or wrap in parentheses `x=(a ? b : c)`. Inside `( )` or `[ ]` spaces are fine, so `f(a, b)` works unquoted.',
+      'Quoted attribute values are text, not expressions: `title="a b"` is the string `a b`. To use an expression with other text, interpolate: `title="Hi {name}"`. `x="{a}"` is a single expression (type kept), but `x="{a} "` is a string with an interpolation (type lost).',
+      'In a quoted value only `\\{` and `\\}` are unescaped. `x="say \\"hi\\""` keeps the backslashes in the value (the scanner skips `\\"` to find the end, but nothing removes the `\\`). There is also no way to write a backslash before an interpolation.',
       "The columns of `Unclosed {` are relative to the text being parsed, not to the line. For `p hi {x` it reports col 4 (the real column is 6), and inside a quoted attribute value it can be as low as col 1. Columns of expression errors inside the same text are correct.",
-      "`#id` is just an attribute. `p#a(id=\"b\")` has two `id` attributes; the parser does not merge or reject duplicates (also true for `class`).",
+      '`#id` is just an attribute. `p#a(id="b")` has two `id` attributes; the parser does not merge or reject duplicates (also true for `class`).',
       "Event modifiers other than `prevent` and `stop` (like `.once`) are silently ignored.",
       "A word that looks like a keyword but does not fit its regex is an element: `if` alone, `for x, i, j in xs` (three names) or `else x` all become elements named `if`, `for`, `else`.",
       "`else` must follow its `if` as the next sibling. A node or a text line in between gives `else` without matching `if`; blank lines and comments in between are fine. A second `else` after `else` is also an error.",
-      "Because the list is cut at the first ` key `, `for x in a key b key c` makes the key `b key c`, which then fails to parse (`Unexpected \"key\"`).",
+      'Because the list is cut at the first ` key `, `for x in a key b key c` makes the key `b key c`, which then fails to parse (`Unexpected "key"`).',
       "Without `key`, rows are identified by index. Reordering such a list moves content instead of moving elements (see the diff stage).",
       "Void tags allow inline text (`br hi` is accepted) but never child lines.",
       "`parseExpr` error positions come from `t.indexOf(...)` for `if`/`for` and `t.lastIndexOf(...)` for `else if` and the key. If the same text also appears earlier in the line, an error column can point at the earlier occurrence (position only).",
@@ -743,7 +798,7 @@ export const FRONT: StageDoc[] = [
       },
       {
         title: "Primary",
-        text: "`primary` reads a number or string (`lit`), an identifier (a keyword literal or an `id`), a parenthesized expression (the parentheses disappear), or an array `[a, b]` (trailing comma allowed). Anything else is an error: `Unexpected end of expression` at the end, or `Unexpected \"x\"`.",
+        text: '`primary` reads a number or string (`lit`), an identifier (a keyword literal or an `id`), a parenthesized expression (the parentheses disappear), or an array `[a, b]` (trailing comma allowed). Anything else is an error: `Unexpected end of expression` at the end, or `Unexpected "x"`.',
       },
       {
         title: "Example: tree for a conditional",
@@ -776,7 +831,7 @@ export const FRONT: StageDoc[] = [
         name: "PUNCT",
         file: "template/expr.ts",
         kind: "const",
-        signature: "const PUNCT = [\"===\", \"!==\", \"??\", \"?.\", ...]",
+        signature: 'const PUNCT = ["===", "!==", "??", "?.", ...]',
         does: "The list of punctuators, tried in order with `find`, so longer ones come first: `===`, `!==`, `??`, `?.`, `&&`, `||`, `==`, `!=`, `<=`, `>=`, then the single characters `+ - * / % < > ! ? : . , ( ) [ ]`. A lone `=`, `&`, `|`, `{`, `}`, `;`, `@`, `#` and backtick are not here and fail as `Unexpected character`.",
       },
       {
@@ -797,7 +852,8 @@ export const FRONT: StageDoc[] = [
         name: "ESCAPES",
         file: "template/expr.ts",
         kind: "const",
-        signature: 'const ESCAPES: Record<string, string> = { n: "\\n", t: "\\t", r: "\\r" }',
+        signature:
+          'const ESCAPES: Record<string, string> = { n: "\\n", t: "\\t", r: "\\r" }',
         does: "Backslash escapes in string literals. After `\\`, `n`, `t`, `r` give newline, tab, carriage return; any other character stands for itself (`\\'` gives `'`, `\\\\` gives `\\`, `\\u` gives `u`).",
       },
       {
@@ -805,7 +861,7 @@ export const FRONT: StageDoc[] = [
         file: "template/expr.ts",
         kind: "function",
         signature: "function tokenize(src: string, at: Pos): Token[]",
-        does: "Turns the source into tokens ending with an `eof` token (`pos = src.length`). Whitespace is skipped. A digit, or `.` followed by a digit, starts a number; `'` or `\"` a string; a letter, `_` or `$` an identifier; otherwise the first matching `PUNCT`. Throws `Unterminated string` (at the opening quote) and `Unexpected character \"c\"`.",
+        does: 'Turns the source into tokens ending with an `eof` token (`pos = src.length`). Whitespace is skipped. A digit, or `.` followed by a digit, starts a number; `\'` or `"` a string; a letter, `_` or `$` an identifier; otherwise the first matching `PUNCT`. Throws `Unterminated string` (at the opening quote) and `Unexpected character "c"`.',
       },
       {
         name: "ExprParser",
@@ -847,14 +903,14 @@ export const FRONT: StageDoc[] = [
         file: "template/expr.ts",
         kind: "method",
         signature: "private eat(v: string): void",
-        does: "Consumes the punctuator `v` or throws `Expected \"v\"` at the current token. Used for `:`, `]`, `)` and the commas in lists.",
+        does: 'Consumes the punctuator `v` or throws `Expected "v"` at the current token. Used for `:`, `]`, `)` and the commas in lists.',
       },
       {
         name: "ExprParser.parseAll",
         file: "template/expr.ts",
         kind: "method",
         signature: "parseAll(): Expr",
-        does: "Parses one `ternary` and requires that nothing is left, otherwise `Unexpected \"x\"` (x is the leftover token's value). This is the only public method of the class.",
+        does: 'Parses one `ternary` and requires that nothing is left, otherwise `Unexpected "x"` (x is the leftover token\'s value). This is the only public method of the class.',
       },
       {
         name: "ExprParser.ternary",
@@ -889,21 +945,23 @@ export const FRONT: StageDoc[] = [
         file: "template/expr.ts",
         kind: "method",
         signature: "private primary(): Expr",
-        does: "Atoms: number or string token gives `lit`; identifier gives the `KEYWORDS` literal or an `id`; `( ternary )` returns the inner expression; `[ items ]` gives `array`. Otherwise throws `Unexpected end of expression` (at `eof`) or `Unexpected \"x\"`.",
+        does: 'Atoms: number or string token gives `lit`; identifier gives the `KEYWORDS` literal or an `id`; `( ternary )` returns the inner expression; `[ items ]` gives `array`. Otherwise throws `Unexpected end of expression` (at `eof`) or `Unexpected "x"`.',
       },
       // Expr kinds
       {
         name: "Expr",
         file: "template/ast.ts",
         kind: "type",
-        signature: "export type Expr = { k: \"lit\" ... } | { k: \"id\" ... } | ...",
+        signature:
+          'export type Expr = { k: "lit" ... } | { k: "id" ... } | ...',
         does: "The expression tree. A discriminated union on `k` with nine kinds, listed below. It is plain data and the same type is used by the parser, the analyzer and the code emitter.",
       },
       {
         name: 'Expr { k: "lit" }',
         file: "template/ast.ts",
         kind: "type",
-        signature: '{ k: "lit"; value: string | number | boolean | null | undefined }',
+        signature:
+          '{ k: "lit"; value: string | number | boolean | null | undefined }',
         does: "A literal: number, string, `true`, `false`, `null`, `undefined`. Note `undefined` is a literal with `value: undefined`, and a negative number is a `unary` over a `lit`.",
       },
       {
@@ -966,57 +1024,68 @@ export const FRONT: StageDoc[] = [
     patterns: [
       {
         text: "/^(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?/i",
-        meaning: "Number token: `12`, `1.5`, `1.` , `.5`, `1e3`, `2E-2`. No hex, no `_` separators, no leading `+`/`-` (those are unary).",
+        meaning:
+          "Number token: `12`, `1.5`, `1.` , `.5`, `1e3`, `2E-2`. No hex, no `_` separators, no leading `+`/`-` (those are unary).",
         where: "tokenize, template/expr.ts",
       },
       {
         text: "/[A-Za-z_$]/ then /^[\\w$]+/",
-        meaning: "Identifier: starts with a letter, `_` or `$`, continues with word characters or `$`. Non-ASCII letters are rejected.",
+        meaning:
+          "Identifier: starts with a letter, `_` or `$`, continues with word characters or `$`. Non-ASCII letters are rejected.",
         where: "tokenize, template/expr.ts",
       },
       {
         text: "\"...\" or '...'",
-        meaning: "String literals. Decoded with `ESCAPES`; every other escaped character is taken literally. No `\\uXXXX`, no `\\xNN`.",
+        meaning:
+          "String literals. Decoded with `ESCAPES`; every other escaped character is taken literally. No `\\uXXXX`, no `\\xNN`.",
         where: "tokenize, template/expr.ts",
       },
       {
         text: "Unterminated string",
-        meaning: "A quote with no closing quote (or ending in a lone backslash). Position: the opening quote.",
+        meaning:
+          "A quote with no closing quote (or ending in a lone backslash). Position: the opening quote.",
         where: "tokenize, template/expr.ts",
       },
       {
-        text: "Unexpected character \"c\"",
-        meaning: "A character that starts no token: `=`, `&`, `|`, `{`, `}`, `;`, `@`, `#`, backtick, non-ASCII letters.",
+        text: 'Unexpected character "c"',
+        meaning:
+          "A character that starts no token: `=`, `&`, `|`, `{`, `}`, `;`, `@`, `#`, backtick, non-ASCII letters.",
         where: "tokenize, template/expr.ts",
       },
       {
         text: "Empty expression",
-        meaning: "`{}` or an attribute with nothing after `=`. Position: start of the expression.",
+        meaning:
+          "`{}` or an attribute with nothing after `=`. Position: start of the expression.",
         where: "parseExpr, template/expr.ts",
       },
       {
-        text: "Unexpected \"x\"",
-        meaning: "A token that does not fit: an extra token after a complete expression, or a wrong token where an operand is needed. For number tokens `x` is the number's value printed back (for example `.1` prints as `0.1`).",
+        text: 'Unexpected "x"',
+        meaning:
+          "A token that does not fit: an extra token after a complete expression, or a wrong token where an operand is needed. For number tokens `x` is the number's value printed back (for example `.1` prints as `0.1`).",
         where: "parseAll and primary, template/expr.ts",
       },
       {
         text: "Unexpected end of expression",
-        meaning: "The input ended where an operand was needed (`a +`, `a ?`, `if x ==`).",
+        meaning:
+          "The input ended where an operand was needed (`a +`, `a ?`, `if x ==`).",
         where: "primary, template/expr.ts",
       },
       {
-        text: "Expected \"v\"",
-        meaning: "A required punctuator is missing: `Expected \":\"` in a ternary, `Expected \")\"`, `Expected \"]\"`, `Expected \",\"` in lists.",
+        text: 'Expected "v"',
+        meaning:
+          'A required punctuator is missing: `Expected ":"` in a ternary, `Expected ")"`, `Expected "]"`, `Expected ","` in lists.',
         where: "ExprParser.eat, template/expr.ts",
       },
       {
         text: "Expected property name",
-        meaning: "`.` or `?.` not followed by an identifier: `a.`, `a.'b'`, `a?.[0]`, `a?.(1)`.",
+        meaning:
+          "`.` or `?.` not followed by an identifier: `a.`, `a.'b'`, `a?.[0]`, `a?.(1)`.",
         where: "ExprParser.postfix, template/expr.ts",
       },
       {
         text: "?? 1 | || 2 | && 3 | == != === !== 4 | < > <= >= 5 | + - 6 | * / % 7",
-        meaning: "Binary precedence, low to high. All left-associative. The ternary is lower, unary and postfix are higher.",
+        meaning:
+          "Binary precedence, low to high. All left-associative. The ternary is lower, unary and postfix are higher.",
         where: "BINARY, template/expr.ts",
       },
       {
@@ -1025,24 +1094,27 @@ export const FRONT: StageDoc[] = [
         where: "KEYWORDS, template/expr.ts",
       },
       {
-        text: "{ k: \"member\", obj, prop } for both `.` and `?.`",
-        meaning: "Optional chaining is parsed but not recorded; the emitter makes every access, index and call null-safe.",
-        where: "ExprParser.postfix, template/expr.ts; ExprEmitter.expr, compiler/emit/expr.ts",
+        text: '{ k: "member", obj, prop } for both `.` and `?.`',
+        meaning:
+          "Optional chaining is parsed but not recorded; the emitter makes every access, index and call null-safe.",
+        where:
+          "ExprParser.postfix, template/expr.ts; ExprEmitter.expr, compiler/emit/expr.ts",
       },
       {
         text: "(obj)?.prop  (obj)?.[i]  (callee)?.(args)",
-        meaning: "How the emitter prints member, index and call. This is where null-safety lives.",
+        meaning:
+          "How the emitter prints member, index and call. This is where null-safety lives.",
         where: "ExprEmitter.expr, compiler/emit/expr.ts",
       },
     ],
     pitfalls: [
       "`a?.[0]` and `a?.(x)` are errors (`Expected property name`) even though plain `a[0]` and `a(x)` are already null-safe. Use the plain forms.",
       "`cond?.5:1` is tokenized as `cond`, `?.`, `5`... and fails. Put spaces around the ternary: `cond ? .5 : 1`.",
-      "Number tokens are printed back in error messages: `a.0` gives `Unexpected \"0\"` and `a.1b` gives `Unexpected \"0.1\"`. Array indexes must use brackets: `a[0]`.",
+      'Number tokens are printed back in error messages: `a.0` gives `Unexpected "0"` and `a.1b` gives `Unexpected "0.1"`. Array indexes must use brackets: `a[0]`.',
       "`1.` is accepted and equals 1, `08` equals 8, but `1.e`, `0x10` and `1_000` are errors. A negative literal is `unary(-, lit)`, so `-1` is not a `lit`.",
       "`??` mixed with `||` or `&&` without parentheses is accepted (JavaScript forbids it). `??` has the lowest precedence, so `a ?? b || c` means `a ?? (b || c)`.",
-      "There is no `**`, `typeof`, `in`, `new`, `=>`, assignment, comma operator or object literal. `(a, b)` fails with `Expected \")\"`, `{a:1}` with `Unexpected character \"{\"`, `typeof a` with `Unexpected \"a\"`.",
-      "Strings only decode `\\n \\t \\r`; `\"\\u0041\"` becomes `u0041`, not `A`.",
+      'There is no `**`, `typeof`, `in`, `new`, `=>`, assignment, comma operator or object literal. `(a, b)` fails with `Expected ")"`, `{a:1}` with `Unexpected character "{"`, `typeof a` with `Unexpected "a"`.',
+      'Strings only decode `\\n \\t \\r`; `"\\u0041"` becomes `u0041`, not `A`.',
       "`NaN`, `Infinity` and `this` are not keywords. They are `id`s, so they are looked up in the state (and counted as dependencies by the next stage).",
       "Keywords are only special at the start of an operand: `a.true` is a member named `true`, and `true.x` is a member of the literal `true`.",
       "Grouping parentheses vanish from the tree; `(a).b` and `a.b` give the same AST.",
@@ -1058,10 +1130,10 @@ export const FRONT: StageDoc[] = [
     id: "analyze",
     title: "Dependency analysis",
     intro: [
-      "Before the compiler writes any code, it asks one question for every node of the AST: **which names does this subtree read?** The answer is a `Set<string>` of root identifiers, such as `{ \"user\", \"busy\" }`. It lives in `compiler/analyze.ts` and has three working functions: `exprIdents` (names in one expression), `nodeDeps` (names of one node, including its children) and `listDeps` (names of a list of nodes).",
+      'Before the compiler writes any code, it asks one question for every node of the AST: **which names does this subtree read?** The answer is a `Set<string>` of root identifiers, such as `{ "user", "busy" }`. It lives in `compiler/analyze.ts` and has three working functions: `exprIdents` (names in one expression), `nodeDeps` (names of one node, including its children) and `listDeps` (names of a list of nodes).',
       "The set is the key to fast updates. The generated `diff(prev, next)` function compares the old and new state. For every node it writes a guard `if (prev.user !== next.user || ...)` over that node's dependencies. If none of the names changed (by `!==` identity), the whole subtree is skipped. A node with an empty set is static and gets no code at all in `diff`.",
       "Only **free** names count: what the subtree reads from outside itself, namely root state fields or the variables of an outer loop. A loop removes its own `item` and `index` from the set of its body, because those are created inside it. So `for t in tabs` depends on `tabs` (and on whatever its body reads from outside), never on `t`.",
-      "One special marker exists: the empty string `\"\"`. An `+outlet` adds it, and it spreads to all its ancestors. It means: this part may change whenever anything changes, because the routed child and its state slice cannot be named in the template. The guard for such nodes becomes `true`.",
+      'One special marker exists: the empty string `""`. An `+outlet` adds it, and it spreads to all its ancestors. It means: this part may change whenever anything changes, because the routed child and its state slice cannot be named in the template. The guard for such nodes becomes `true`.',
     ],
     steps: [
       {
@@ -1072,7 +1144,7 @@ export const FRONT: StageDoc[] = [
       },
       {
         title: "Collect names of one node",
-        text: "`nodeDeps(n)` returns the set for a node, using a `WeakMap` cache keyed by the node object. Text uses its parts. An element uses, in this order: attribute values, class-toggle tests, event arguments (not the message id), then its children. An `if` uses each branch test then the branch children. An embed uses its dynamic expression and its props (including spreads). An outlet adds `\"\"`.",
+        text: '`nodeDeps(n)` returns the set for a node, using a `WeakMap` cache keyed by the node object. Text uses its parts. An element uses, in this order: attribute values, class-toggle tests, event arguments (not the message id), then its children. An `if` uses each branch test then the branch children. An embed uses its dynamic expression and its props (including spreads). An outlet adds `""`.',
       },
       {
         title: "Remove loop variables",
@@ -1083,7 +1155,7 @@ export const FRONT: StageDoc[] = [
       {
         title: "Example: dependencies of that loop",
         text: "The body reads `r`, `row` and `suffix`; `r` and `row` belong to the loop, so they are removed. The loop's own dependencies are `suffix` and `rows`.",
-        code: "for node: [\"suffix\", \"rows\"]\nli node:  [\"r\", \"row\", \"suffix\"]",
+        code: 'for node: ["suffix", "rows"]\nli node:  ["r", "row", "suffix"]',
         lang: "text",
       },
       {
@@ -1092,7 +1164,7 @@ export const FRONT: StageDoc[] = [
       },
       {
         title: "Use the sets in `diff`",
-        text: "In `compiler/emit/diff.ts` (`diffNode`) the set decides the code: size 0 means nothing is written; the same set as the parent means no extra guard (the parent's check already covers it); otherwise an `if (...) { ... }` guard is written, joined with `||`. For a loop variable the comparison is `prevX !== nextX`, for state it is `prev.name !== next.name`. A `\"\"` anywhere makes the guard `true`.",
+        text: 'In `compiler/emit/diff.ts` (`diffNode`) the set decides the code: size 0 means nothing is written; the same set as the parent means no extra guard (the parent\'s check already covers it); otherwise an `if (...) { ... }` guard is written, joined with `||`. For a loop variable the comparison is `prevX !== nextX`, for state it is `prev.name !== next.name`. A `""` anywhere makes the guard `true`.',
         code: "// line 3: text (reads: label)\nif (prev.label !== next.label) {\n  ...\n}",
         lang: "ts",
       },
@@ -1106,14 +1178,16 @@ export const FRONT: StageDoc[] = [
         name: "exprIdents",
         file: "compiler/analyze.ts",
         kind: "function",
-        signature: "export function exprIdents(e: Expr, out: Set<string>): void",
+        signature:
+          "export function exprIdents(e: Expr, out: Set<string>): void",
         does: "Adds to `out` the name of every `id` found in the expression, recursively through member, index, call (callee and arguments), unary, binary, cond and array. Literals add nothing. The set is filled in place; nothing is returned. Called by `nodeDeps` for every expression of the AST.",
       },
       {
         name: "partsIdents",
         file: "compiler/analyze.ts",
         kind: "function",
-        signature: "function partsIdents(parts: Part[] | null, out: Set<string>): void",
+        signature:
+          "function partsIdents(parts: Part[] | null, out: Set<string>): void",
         does: "Runs `exprIdents` on every non-string part of a `Part[]`; `null` (a bare attribute) and plain strings add nothing. Not exported. Used for text, attribute values and prop values.",
       },
       {
@@ -1128,7 +1202,7 @@ export const FRONT: StageDoc[] = [
         file: "compiler/analyze.ts",
         kind: "function",
         signature: "export function nodeDeps(n: Node): Set<string>",
-        does: "The free identifiers of a subtree: everything it reads from the enclosing scope (root state or an outer loop variable). It switches on `n.type`, uses `exprIdents` / `partsIdents` / `listDeps`, subtracts loop variables for `for`, and adds `\"\"` for `outlet`. Result is cached in `memo`. The compiler's `diffNode` reads it to decide guards.",
+        does: 'The free identifiers of a subtree: everything it reads from the enclosing scope (root state or an outer loop variable). It switches on `n.type`, uses `exprIdents` / `partsIdents` / `listDeps`, subtracts loop variables for `for`, and adds `""` for `outlet`. Result is cached in `memo`. The compiler\'s `diffNode` reads it to decide guards.',
       },
       {
         name: "listDeps",
@@ -1163,7 +1237,7 @@ export const FRONT: StageDoc[] = [
         file: "compiler/analyze.ts",
         kind: "function",
         signature: 'case "outlet": s.add("")',
-        does: "An outlet adds the empty string, the marker for \"always\": what it shows depends on the route and on a child state slice the template cannot name.",
+        does: 'An outlet adds the empty string, the marker for "always": what it shows depends on the route and on a child state slice the template cannot name.',
       },
       {
         name: "nodeDeps: embed",
@@ -1177,48 +1251,57 @@ export const FRONT: StageDoc[] = [
         file: "compiler/analyze.ts",
         kind: "function",
         signature: 'case "for": { const inner = listDeps(n.children); ... }',
-        does: "Takes the body's dependencies, adds the key expression's names, deletes `item` and `index`, copies the rest into the result, and finally adds the names of the list expression `of`. The marker `\"\"` is not deleted, so a loop around an outlet is still \"always\".",
+        does: 'Takes the body\'s dependencies, adds the key expression\'s names, deletes `item` and `index`, copies the rest into the result, and finally adds the names of the list expression `of`. The marker `""` is not deleted, so a loop around an outlet is still "always".',
       },
     ],
     patterns: [
       {
-        text: "\"\"  (the empty string as an identifier)",
-        meaning: "Marker for \"may change at any time\". Added by `+outlet`, inherited by every ancestor. In `diff` it turns the guard into `true` (printed as `true`, the `reads:` comment says `the route and the routed child`).",
-        where: "nodeDeps (outlet), compiler/analyze.ts; changed and diffNode, compiler/emit/diff.ts",
+        text: '""  (the empty string as an identifier)',
+        meaning:
+          'Marker for "may change at any time". Added by `+outlet`, inherited by every ancestor. In `diff` it turns the guard into `true` (printed as `true`, the `reads:` comment says `the route and the routed child`).',
+        where:
+          "nodeDeps (outlet), compiler/analyze.ts; changed and diffNode, compiler/emit/diff.ts",
       },
       {
         text: "inner.delete(n.item); if (n.index) inner.delete(n.index)",
-        meaning: "How loop variables are removed from the dependencies of a loop.",
+        meaning:
+          "How loop variables are removed from the dependencies of a loop.",
         where: "nodeDeps (for), compiler/analyze.ts",
       },
       {
         text: "if (n.key) exprIdents(n.key, inner)",
-        meaning: "The key expression is analyzed in the loop's scope, before the loop variables are deleted.",
+        meaning:
+          "The key expression is analyzed in the loop's scope, before the loop variables are deleted.",
         where: "nodeDeps (for), compiler/analyze.ts",
       },
       {
         text: "exprIdents(n.of, s)  (after the delete)",
-        meaning: "The list expression is evaluated outside the loop, so its names are added after the loop variables are removed and can refer to an outer loop's variable.",
+        meaning:
+          "The list expression is evaluated outside the loop, so its names are added after the loop variables are removed and can refer to an outer loop's variable.",
         where: "nodeDeps (for), compiler/analyze.ts",
       },
       {
         text: "// line N: <tag.class> (reads: a, b)",
-        meaning: "The comment before each `diff` guard. `<tag.class>` / `text` / `if` / `for item, index` / `+Name#instance` / `+outlet` describe the node, `reads:` lists its dependency set.",
-        where: "note and describe, compiler/emit/base.ts and shared.ts; diffNode, compiler/emit/diff.ts",
+        meaning:
+          "The comment before each `diff` guard. `<tag.class>` / `text` / `if` / `for item, index` / `+Name#instance` / `+outlet` describe the node, `reads:` lists its dependency set.",
+        where:
+          "note and describe, compiler/emit/base.ts and shared.ts; diffNode, compiler/emit/diff.ts",
       },
       {
         text: "(reads: the route and the routed child)",
-        meaning: "Shown instead of a name list when the set contains `\"\"`.",
+        meaning: 'Shown instead of a name list when the set contains `""`.',
         where: "diffNode, compiler/emit/diff.ts",
       },
       {
         text: "prev.name !== next.name  |  prevItem !== nextItem",
-        meaning: "A guard term for one dependency: state field (identity compare of root values) or a loop variable on both sides. Several terms are joined with `||`.",
+        meaning:
+          "A guard term for one dependency: state field (identity compare of root values) or a loop variable on both sides. Several terms are joined with `||`.",
         where: "changed, compiler/emit/diff.ts",
       },
       {
         text: "deps.size === 0 → return",
-        meaning: "A static node (nothing is read) produces no diff code at all.",
+        meaning:
+          "A static node (nothing is read) produces no diff code at all.",
         where: "diffNode, compiler/emit/diff.ts",
       },
     ],
@@ -1230,7 +1313,7 @@ export const FRONT: StageDoc[] = [
       "Loop variables hide state of the same name inside the body: with `for x in xs`, `{x}` in the body is the loop variable, and the body does not depend on a state field called `x`. The list expression is outside, so `for x in x.items` still depends on the state field `x`.",
       "A nested loop variable stays in the inner loop's set and is removed one level up only by its own loop, so in `for t in tabs / for u in t.users` the inner `for` node still depends on `t`, while the outer `for` node does not.",
       "The cache is per node object. Do not mutate a set returned by `nodeDeps` or `listDeps` results of cached nodes; the compiler only reads them.",
-      "A `\"\"` spreads up to the root and cannot be removed by a loop, so one `+outlet` makes every ancestor element/if/for update on every diff.",
+      'A `""` spreads up to the root and cannot be removed by a loop, so one `+outlet` makes every ancestor element/if/for update on every diff.',
       "Set order is insertion order, which is why `reads:` lists attributes first, then class toggles, then event arguments, then children, then (for a loop) the list.",
     ],
   },

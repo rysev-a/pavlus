@@ -7,7 +7,11 @@
 import type { Tone } from "../admin-shell/shell.ts";
 
 export type VmStatus =
-  "running" | "stopped" | "starting" | "stopping" | "error";
+  | "running"
+  | "stopped"
+  | "starting"
+  | "stopping"
+  | "error";
 export type VmAction = "start" | "stop" | "reboot" | "delete";
 
 export interface Vm {

@@ -84,7 +84,12 @@ import {
 import view from "./professional-network.pavlus";
 
 export type View =
-  "home" | "network" | "jobs" | "messages" | "profile" | "company";
+  | "home"
+  | "network"
+  | "jobs"
+  | "messages"
+  | "profile"
+  | "company";
 
 export interface JobFilter {
   query: string;

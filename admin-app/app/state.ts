@@ -45,12 +45,30 @@ export interface FormState {
 /** The columns the table can sort by. */
 export type SortKey = "id" | "name" | "email" | "role";
 
+/**
+ * One row's own state: the user (what `GET /api/users` answered for it) plus
+ * the star — the row's own flag, written only by the row's component. The
+ * page keeps every row's state in `byId`, an id-keyed map; the row's keyed
+ * boundary (`each`) hands the row exactly its own element, and its writes
+ * land back in the same element (`byId.<id>.…`).
+ */
+export interface RowState extends User {
+  starred: boolean;
+}
+
 /** The slice the users page reads and paints. */
 export interface ListState {
-  /** Every user, as the API answered; the page slices it into `rows`. */
-  users: User[];
-  /** The current page's rows: computed by the handlers, never in the view. */
-  rows: User[];
+  /**
+   * Every user as an id-keyed map — the page's source of truth. A row's own
+   * state is its element (`byId[id]`): the keyed boundary of its embed slices
+   * the page down to it, and the row's writes land in its element.
+   */
+  byId: Record<string, RowState>;
+  /**
+   * The current page's row ids, in display order (matched, sorted, sliced):
+   * what the table loops over. Computed by the handlers, never in the view.
+   */
+  order: string[];
   /** How many users match the filter. */
   total: number;
   /** The toolbar's filter text, matched against every field. */
@@ -65,10 +83,11 @@ export interface ListState {
   status: "idle" | "loading" | "failed";
   /** The last list failure, shown until the next success. */
   error: string;
-  /** The checked rows' ids, in click order. */
-  selected: number[];
-  /** The starred rows' ids — the row component's own write. */
-  starred: number[];
+  /**
+   * The checked rows' ids, in click order — the table's concern (the footer's
+   * count, the header's box), kept at the page, not in the rows.
+   */
+  selected: string[];
   /** Whether every row on the page is checked — the header's box. */
   allOn: boolean;
   /** The column the table is sorted by, and its direction (1 up, -1 down). */
@@ -105,8 +124,8 @@ export const initialState: AppState = {
   menu: [{ path: "/", title: "Users", icon: "users" }],
   roles: [],
   list: {
-    users: [],
-    rows: [],
+    byId: {},
+    order: [],
     total: 0,
     filter: "",
     page: 1,
@@ -115,7 +134,6 @@ export const initialState: AppState = {
     status: "idle",
     error: "",
     selected: [],
-    starred: [],
     allOn: false,
     sortKey: "id",
     sortDir: 1,

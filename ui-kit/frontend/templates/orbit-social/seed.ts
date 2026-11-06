@@ -1704,7 +1704,7 @@ export function seedDb(seed = 20261104): Db {
   const clusters: number[][] = [];
   {
     const order = rng.shuffle(Array.from({ length: N }, (_, i) => i + 1));
-    for (let i = 0; i < order.length;) {
+    for (let i = 0; i < order.length; ) {
       const size = rng.int(15, 40);
       const c = order.slice(i, i + size);
       for (const u of c) clusterOf[u] = clusters.length;
@@ -1751,10 +1751,10 @@ export function seedDb(seed = 20261104): Db {
     if (addEdge(a, near(a), "accepted")) accepted++;
   }
   let pending = 0;
-  for (let k = 0; k < 4;)
-    if (addEdge(rng.int(3, N), 2, "pending")) (pending++, k++);
-  for (let k = 0; k < 2;)
-    if (addEdge(2, rng.int(3, N), "pending")) (pending++, k++);
+  for (let k = 0; k < 4; )
+    if (addEdge(rng.int(3, N), 2, "pending")) pending++, k++;
+  for (let k = 0; k < 2; )
+    if (addEdge(2, rng.int(3, N), "pending")) pending++, k++;
   while (pending < 300) {
     const a = rng.int(1, N);
     if (addEdge(a, near(a), "pending")) pending++;
@@ -2021,13 +2021,15 @@ export function seedDb(seed = 20261104): Db {
     });
   }
   playlistDraft.sort((a, b) => a.t - b.t);
-  db.playlists = playlistDraft.map((p, i): Playlist => ({
-    id: i + 1,
-    ownerId: p.ownerId,
-    title: p.title,
-    songIds: p.songIds,
-    createdAt: isoOf(p.t),
-  }));
+  db.playlists = playlistDraft.map(
+    (p, i): Playlist => ({
+      id: i + 1,
+      ownerId: p.ownerId,
+      title: p.title,
+      songIds: p.songIds,
+      createdAt: isoOf(p.t),
+    }),
+  );
 
   // ------------------------------------------------------------- posts
   const nPosts = 4000;
@@ -2277,9 +2279,9 @@ export function seedDb(seed = 20261104): Db {
     convDraft.push({ kind: "dm", members: [a, b], title: "", t: 0 });
     return true;
   };
-  for (let k = 0; k < 5;) if (addDm(2, rng.int(3, settled))) k++;
-  for (let k = 0; k < 2;) if (addDm(1, rng.int(2, settled))) k++;
-  for (let n = convDraft.length; n < 800;) {
+  for (let k = 0; k < 5; ) if (addDm(2, rng.int(3, settled))) k++;
+  for (let k = 0; k < 2; ) if (addDm(1, rng.int(2, settled))) k++;
+  for (let n = convDraft.length; n < 800; ) {
     const a = rng.int(1, settled);
     const fr = adj[a];
     const b =
@@ -2308,13 +2310,15 @@ export function seedDb(seed = 20261104): Db {
     d.t = between(lo, NOW_S - 2 * DAY);
   }
   convDraft.sort((a, b) => a.t - b.t);
-  db.conversations = convDraft.map((d, i): Conversation => ({
-    id: i + 1,
-    kind: d.kind,
-    title: d.title,
-    memberIds: d.members,
-    createdAt: isoOf(d.t),
-  }));
+  db.conversations = convDraft.map(
+    (d, i): Conversation => ({
+      id: i + 1,
+      kind: d.kind,
+      title: d.title,
+      memberIds: d.members,
+      createdAt: isoOf(d.t),
+    }),
+  );
   // message counts: at least 3 each, the rest by weight
   const nConv = convDraft.length;
   const weights = convDraft.map(
@@ -2380,13 +2384,15 @@ export function seedDb(seed = 20261104): Db {
     }
   }
   msgDraft.sort((a, b) => a.t - b.t || a.order - b.order);
-  db.messages = msgDraft.map((m, i): Message => ({
-    id: i + 1,
-    conversationId: m.conv,
-    authorId: m.authorId,
-    text: m.text,
-    createdAt: isoOf(m.t),
-  }));
+  db.messages = msgDraft.map(
+    (m, i): Message => ({
+      id: i + 1,
+      conversationId: m.conv,
+      authorId: m.authorId,
+      text: m.text,
+      createdAt: isoOf(m.t),
+    }),
+  );
 
   // ------------------------------------------------------------ scores
   const scoreDraft: {
@@ -2415,13 +2421,15 @@ export function seedDb(seed = 20261104): Db {
     });
   }
   scoreDraft.sort((a, b) => a.t - b.t);
-  db.scores = scoreDraft.map((s, i): Score => ({
-    id: i + 1,
-    userId: s.userId,
-    game: s.game,
-    score: s.score,
-    at: isoOf(s.t),
-  }));
+  db.scores = scoreDraft.map(
+    (s, i): Score => ({
+      id: i + 1,
+      userId: s.userId,
+      game: s.game,
+      score: s.score,
+      at: isoOf(s.t),
+    }),
+  );
 
   db.session = [];
   return db;

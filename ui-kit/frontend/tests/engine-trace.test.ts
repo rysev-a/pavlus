@@ -9,7 +9,12 @@ if items.length === 0
   p.empty Nothing here
 `;
 const a = JSON.stringify({ items: [{ id: 1, title: "A", done: false }] });
-const b = JSON.stringify({ items: [{ id: 1, title: "A", done: true }, { id: 2, title: "B", done: false }] });
+const b = JSON.stringify({
+  items: [
+    { id: 1, title: "A", done: true },
+    { id: 2, title: "B", done: false },
+  ],
+});
 
 test("every stage produces something for a real template", () => {
   const t = traceTemplate(tpl, a, b);

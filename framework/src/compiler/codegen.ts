@@ -8,16 +8,22 @@ class Codegen extends DiffEmitter {
     // The embeds the template declares: instance name → the node id scope the
     // child renders under (its `"/" + nid`), so a parent can enrich the
     // effects of a child that paints itself. The first nid wins: a name used
-    // twice (a loop) shares one children entry.
+    // twice (a loop) shares one children entry. An embed inside a `for`
+    // renders per iteration: its scope starts with "#", the place where the
+    // iteration's key goes (a keyed child's boundary puts its message key
+    // there when scoping the patches of a self-paint).
     const embeds = new Map<string, string>();
     let outlet: number | false = false;
-    const walk = (nodes: Node[]): void => {
+    const walk = (nodes: Node[], looped = false): void => {
       for (const n of nodes) {
         if (n.type === "outlet") outlet = outlet || n.nid;
         else if (n.type === "embed") {
-          if (!embeds.has(n.name)) embeds.set(n.name, `/${n.nid}`);
-        } else if (n.type === "element" || n.type === "for") walk(n.children);
-        else if (n.type === "if") n.branches.forEach((b) => walk(b.children));
+          const scope = `${looped ? "#" : ""}/${n.nid}`;
+          if (!embeds.has(n.name)) embeds.set(n.name, scope);
+        } else if (n.type === "element" || n.type === "for")
+          walk(n.children, looped || n.type === "for");
+        else if (n.type === "if")
+          n.branches.forEach((b) => walk(b.children, looped));
       }
     };
     walk(ast.nodes);

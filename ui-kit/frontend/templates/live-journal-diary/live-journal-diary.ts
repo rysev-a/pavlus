@@ -33,7 +33,13 @@ import {
 import view from "./live-journal-diary.pavlus";
 
 export type Screen =
-  "journal" | "entry" | "write" | "archive" | "friends" | "profile" | "read";
+  | "journal"
+  | "entry"
+  | "write"
+  | "archive"
+  | "friends"
+  | "profile"
+  | "read";
 
 export interface DiaryState extends Derived {
   screen: Screen;

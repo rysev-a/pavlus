@@ -9,6 +9,8 @@ type Rest<T extends HttpEffect["type"]> = Omit<Of<T>, "plugin" | "type">;
 export interface HttpEffector {
   /** `httpEffector.respond({ status: 201, json: { id } })` */
   respond(o: Omit<RespondEffect, "plugin" | "type">): Of<"respond">;
+  /** `httpEffector.makeResponse(201, { id })` — status first, body optional. */
+  makeResponse(status: number, body?: unknown): Of<"respond">;
   json(body: unknown, status?: number, extra?: Rest<"respond">): Of<"respond">;
   text(body: string, status?: number): Of<"respond">;
   redirect(url: string, status?: number): Of<"respond">;
@@ -25,6 +27,10 @@ export interface HttpEffector {
 
 export const httpEffector: HttpEffector = {
   respond: (o) => ({ plugin: "http", type: "respond", ...o }),
+  makeResponse: (status, body) =>
+    body === undefined
+      ? { plugin: "http", type: "respond", status }
+      : { plugin: "http", type: "respond", status, json: body },
   json: (body, status, extra) => ({
     plugin: "http",
     type: "respond",

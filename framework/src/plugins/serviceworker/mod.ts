@@ -7,7 +7,11 @@ export interface SwError {
 }
 
 export type WorkerPhase =
-  "installing" | "waiting" | "active" | "redundant" | "none";
+  | "installing"
+  | "waiting"
+  | "active"
+  | "redundant"
+  | "none";
 
 /** Registration state, as replied by register / ready and streamed by observe. */
 export interface SwState {
@@ -216,9 +220,15 @@ export interface ServiceWorkerPluginOptions {
   /** Target of online/offline events. Defaults to `globalThis`. */
   eventTarget?: EventTargetLike;
   /** Defaults to `globalThis.Response`. */
-  Response?: new (body?: any, init?: any) => any;
+  Response?: new (
+    body?: any,
+    init?: any,
+  ) => any;
   /** Defaults to `globalThis.Request`. */
-  Request?: new (url: string, init?: any) => any;
+  Request?: new (
+    url: string,
+    init?: any,
+  ) => any;
 }
 
 export interface ServiceWorkerPlugin extends Plugin<ServiceWorkerEffect, any> {

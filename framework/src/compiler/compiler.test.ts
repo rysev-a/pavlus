@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { parse } from "../template/parser.ts";
 import { TemplateError } from "../template/errors.ts";
+import type { EmbedNode } from "../template/ast.ts";
 import { compileToView } from "./mod.ts";
 import { toHtml } from "../runtime/vnode.ts";
 
@@ -205,12 +206,89 @@ describe("embeds: render", () => {
     );
   });
 
+  test("a keyed embed (key=expr) addresses each instance by its key", () => {
+    const parent = compileToView(
+      `import Row from "./row.pavlus"\nul\n  for it in items key it.id\n    +Row#row(key=it.id id=it.id label=it.label)`,
+      { components: { Row: row } },
+    );
+    const nodes = parent.render({
+      items: [
+        { id: 1, label: "a" },
+        { id: 2, label: "b" },
+      ],
+    });
+    const lis = (nodes[0] as any).children.filter((c: any) => c.t === "el");
+    expect(lis.map((l: any) => l.events.click)).toEqual([
+      { id: "row.1.pick", payload: 1 },
+      { id: "row.2.pick", payload: 2 },
+    ]);
+    // re-render and diff keep the key in the events of moved or new nodes
+    const next = [
+      { id: 2, label: "b" },
+      { id: 3, label: "c" },
+    ];
+    const re = parent.render({ items: next });
+    const reLis = (re[0] as any).children.filter((c: any) => c.t === "el");
+    expect(reLis.map((l: any) => l.events.click)).toEqual([
+      { id: "row.2.pick", payload: 2 },
+      { id: "row.3.pick", payload: 3 },
+    ]);
+  });
+
+  test("a keyed embed outside a loop: the key can be any expression", () => {
+    const p = compileToView(
+      `import Row from "./row.pavlus"\ndiv\n  +Row#editor(key=selected label=selected)`,
+      { components: { Row: row } },
+    );
+    const nodes = p.render({ selected: "u7" });
+    const li = (nodes[0] as any).children.find((c: any) => c.t === "el");
+    expect(li.events.click).toEqual({
+      id: "editor.u7.pick",
+      payload: undefined,
+    });
+    // the key in the deps: a change remounts the embed — another key is
+    // another instance, its events address the new key
+    const patches = p.diff({ selected: "u7" }, { selected: "u8" });
+    expect(patches).toEqual([
+      { op: "clear", from: expect.any(String), to: expect.any(String) },
+      {
+        op: "insert",
+        before: expect.any(String),
+        nodes: expect.any(Array),
+      },
+    ]);
+  });
+
+  test("the embed's key is not a prop, and must be one expression", () => {
+    const imp = `import Row from "./row.pavlus"\n`;
+    const ast = parse(`${imp}+Row#row(key=user.id user=user)`);
+    const embed = ast.nodes[0] as any as EmbedNode;
+    expect(embed.key).toMatchObject({ k: "member", prop: "id" });
+    expect(embed.props).toEqual([
+      { name: "user", value: [{ k: "id", name: "user" }] },
+    ]);
+    expect(() => parse(`${imp}+Row#row(key="x")`)).toThrow(
+      /key must be one expression/,
+    );
+    expect(() => parse(`${imp}+Row#row(key)`)).toThrow(/key must be one/);
+  });
+
   test("meta lists the instance names with their id scope", () => {
     const p = compileToView(
       `import Row from "./r"\n+Row#a\nif x\n  +{V}#b\n+Row#a`,
       { components: { Row: row } },
     );
     expect(p.meta).toEqual({ embeds: { a: "/0", b: "/2" }, outlet: false });
+  });
+
+  test("an embed inside a for records the slot of the iteration key", () => {
+    const p = compileToView(
+      `import Row from "./r"\nul\n  for it in xs key it.id\n    +Row#row(key=it.id)\n    if it.ok\n      +Row#row(key=it.id)`,
+      { components: { Row: row } },
+    );
+    // "#/…": the scope sits inside a `for` — the loop puts "#<key>" in front
+    // of the ids; a keyed child's boundary fills the slot with its key.
+    expect(p.meta).toEqual({ embeds: { row: "#/2" }, outlet: false });
   });
 
   test("compileToView without a needed component says which one", () => {

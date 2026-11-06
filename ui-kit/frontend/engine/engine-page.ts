@@ -1,4 +1,8 @@
-import { Component, type Effect, type Message } from "@service-laboratory/pavlus";
+import {
+  Component,
+  type Effect,
+  type Message,
+} from "@service-laboratory/pavlus";
 import { storeEffector as store } from "@service-laboratory/pavlus/plugins";
 import { type Inline, parseInline } from "../blocks/docs-layout/docs.ts";
 import { docsEffector } from "../docs/plugin.ts";
@@ -10,18 +14,73 @@ import { emptyTrace, type Trace } from "./trace.ts";
 import type { StageId } from "./types.ts";
 
 /** The stages in order, with what goes in and what comes out (for the strip at the top). */
-export const STAGE_LIST: { id: StageId; title: string; takes: string; gives: string }[] = [
-  { id: "source", title: "Source text and lines", takes: "template text", gives: "numbered lines" },
-  { id: "ast", title: "Parsing lines into an AST", takes: "lines", gives: "AST" },
-  { id: "expr", title: "Expressions", takes: "{…} text", gives: "expression trees" },
-  { id: "analyze", title: "Dependency analysis", takes: "AST", gives: "reads per node" },
-  { id: "codegen", title: "Code generation: the generator", takes: "AST + reads", gives: "code text" },
+export const STAGE_LIST: {
+  id: StageId;
+  title: string;
+  takes: string;
+  gives: string;
+}[] = [
+  {
+    id: "source",
+    title: "Source text and lines",
+    takes: "template text",
+    gives: "numbered lines",
+  },
+  {
+    id: "ast",
+    title: "Parsing lines into an AST",
+    takes: "lines",
+    gives: "AST",
+  },
+  {
+    id: "expr",
+    title: "Expressions",
+    takes: "{…} text",
+    gives: "expression trees",
+  },
+  {
+    id: "analyze",
+    title: "Dependency analysis",
+    takes: "AST",
+    gives: "reads per node",
+  },
+  {
+    id: "codegen",
+    title: "Code generation: the generator",
+    takes: "AST + reads",
+    gives: "code text",
+  },
   { id: "render", title: "Generated render", takes: "state", gives: "vnodes" },
-  { id: "diff", title: "Generated diff", takes: "prev, next", gives: "patches" },
-  { id: "module", title: "The module: compileTemplate", takes: "code text", gives: "ES module" },
-  { id: "instantiate", title: "From text to a function", takes: "code text", gives: "{ render, diff }" },
-  { id: "run", title: "Running render and diff", takes: "states", gives: "vnodes + patches" },
-  { id: "dom", title: "Applying patches: the DOM plugin", takes: "patches", gives: "DOM changes" },
+  {
+    id: "diff",
+    title: "Generated diff",
+    takes: "prev, next",
+    gives: "patches",
+  },
+  {
+    id: "module",
+    title: "The module: compileTemplate",
+    takes: "code text",
+    gives: "ES module",
+  },
+  {
+    id: "instantiate",
+    title: "From text to a function",
+    takes: "code text",
+    gives: "{ render, diff }",
+  },
+  {
+    id: "run",
+    title: "Running render and diff",
+    takes: "states",
+    gives: "vnodes + patches",
+  },
+  {
+    id: "dom",
+    title: "Applying patches: the DOM plugin",
+    takes: "patches",
+    gives: "DOM changes",
+  },
 ];
 
 interface StepView {
@@ -34,20 +93,39 @@ export interface StageView {
   title: string;
   intro: Inline[][];
   steps: StepView[];
-  functions: { name: string; file: string; kind: string; signature: string; runs: Inline[] }[];
+  functions: {
+    name: string;
+    file: string;
+    kind: string;
+    signature: string;
+    runs: Inline[];
+  }[];
   patterns: { text: string; runs: Inline[]; where: string }[];
   pitfalls: Inline[][];
   missing: boolean;
 }
 
-const LANG_FILE = { ts: "x.ts", pavlus: "x.pavlus", json: "x.ts", text: "x.txt" } as const;
+const LANG_FILE = {
+  ts: "x.ts",
+  pavlus: "x.pavlus",
+  json: "x.ts",
+  text: "x.txt",
+} as const;
 
 /** Pure: the reference of a stage, with its text cut into runs for the template. */
 export function stageView(id: StageId): StageView {
   const doc = STAGES.find((s) => s.id === id);
   const title = STAGE_LIST.find((s) => s.id === id)?.title ?? "";
   if (!doc)
-    return { title, intro: [], steps: [], functions: [], patterns: [], pitfalls: [], missing: true };
+    return {
+      title,
+      intro: [],
+      steps: [],
+      functions: [],
+      patterns: [],
+      pitfalls: [],
+      missing: true,
+    };
   return {
     title: doc.title,
     intro: doc.intro.map(parseInline),
@@ -64,7 +142,11 @@ export function stageView(id: StageId): StageView {
       signature: f.signature,
       runs: parseInline(f.does),
     })),
-    patterns: doc.patterns.map((p) => ({ text: p.text, runs: parseInline(p.meaning), where: p.where })),
+    patterns: doc.patterns.map((p) => ({
+      text: p.text,
+      runs: parseInline(p.meaning),
+      where: p.where,
+    })),
     pitfalls: doc.pitfalls.map(parseInline),
     missing: false,
   };
@@ -78,7 +160,15 @@ export interface EngineState {
   trace: Trace;
   status: "idle" | "running" | "failed";
   stage: number;
-  stages: { id: StageId; n: number; title: string; takes: string; gives: string; active: boolean; done: boolean }[];
+  stages: {
+    id: StageId;
+    n: number;
+    title: string;
+    takes: string;
+    gives: string;
+    active: boolean;
+    done: boolean;
+  }[];
   stageId: StageId;
   stageTitle: string;
   stageTakes: string;
@@ -92,7 +182,12 @@ export interface EngineState {
 }
 
 const navOf = (stage: number) => ({
-  stages: STAGE_LIST.map((s, i) => ({ ...s, n: i + 1, active: i === stage, done: i < stage })),
+  stages: STAGE_LIST.map((s, i) => ({
+    ...s,
+    n: i + 1,
+    active: i === stage,
+    done: i < stage,
+  })),
   stageId: STAGE_LIST[stage].id,
   stageTitle: STAGE_LIST[stage].title,
   stageTakes: STAGE_LIST[stage].takes,
@@ -113,7 +208,11 @@ export function engineState(): EngineState {
     status: "idle",
     stage: 0,
     focus: 0,
-    presets: PRESETS.map((x) => ({ id: x.id, name: x.name, active: x.id === p.id })),
+    presets: PRESETS.map((x) => ({
+      id: x.id,
+      name: x.name,
+      active: x.id === p.id,
+    })),
     ...navOf(0),
   };
 }
@@ -132,11 +231,17 @@ export class EnginePage extends Component<EngineState> {
   }
 
   _run(tpl: string, prev: string, next: string): Effect[] {
-    return [store.set("status", "running"), docsEffector.trace(tpl, prev, next, "traced", "traceFailed")];
+    return [
+      store.set("status", "running"),
+      docsEffector.trace(tpl, prev, next, "traced", "traceFailed"),
+    ];
   }
 
   traced(msg: Message): Effect[] {
-    return [store.set("trace", msg.payload as Trace), store.set("status", "idle")];
+    return [
+      store.set("trace", msg.payload as Trace),
+      store.set("status", "idle"),
+    ];
   }
 
   traceFailed(): Effect[] {
@@ -181,7 +286,9 @@ export class EnginePage extends Component<EngineState> {
   go(msg: Message): Effect[] {
     const i = Number(msg.payload);
     if (!(i >= 0 && i < STAGE_LIST.length)) return [];
-    return Object.entries(navOf(i)).map(([k, v]) => store.set(k, v)).concat([store.set("stage", i)]);
+    return Object.entries(navOf(i))
+      .map(([k, v]) => store.set(k, v))
+      .concat([store.set("stage", i)]);
   }
 
   step(msg: Message, state: EngineState): Effect[] {

@@ -5,21 +5,21 @@
   "workspaces": [
     "framework",
     "admin-app",
+    "coffee-shop-app",
     "phone-crm-app",
     "social-network-app",
-    "maximus",
     "server",
     "ui-kit"
   ],
   "scripts": {
     "test": "npm test --workspaces",
     "typecheck": "npm run typecheck --workspaces",
-    "format": "prettier --write \"**/*.ts\"",
-    "format:check": "prettier --check \"**/*.ts\"",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
     "docs:build": "node docs/site/scripts/build.ts",
     "debug:sync-firefox": "node debug-panel/sync-firefox.mjs"
   },
   "devDependencies": {
-    "prettier": "3.9.10"
+    "@biomejs/biome": "^2.6.5"
   }
 }

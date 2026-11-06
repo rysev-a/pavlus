@@ -1,7 +1,12 @@
 import type { Tone } from "../admin-shell/shell.ts";
 
 export type FieldKind =
-  "text" | "number" | "date" | "email" | "select" | "textarea";
+  | "text"
+  | "number"
+  | "date"
+  | "email"
+  | "select"
+  | "textarea";
 
 export interface Option {
   value: string;

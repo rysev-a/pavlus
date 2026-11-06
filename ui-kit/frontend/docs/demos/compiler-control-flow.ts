@@ -59,10 +59,26 @@ if error
   p.error {error}`,
     state: { error: null },
     steps: [
-      { label: "error none → Oops", prev: { error: null }, next: { error: "Oops" } },
-      { label: "error Oops → Again", prev: { error: "Oops" }, next: { error: "Again" } },
-      { label: "error Oops → none", prev: { error: "Oops" }, next: { error: null } },
-      { label: "error none → none", prev: { error: null }, next: { error: null } },
+      {
+        label: "error none → Oops",
+        prev: { error: null },
+        next: { error: "Oops" },
+      },
+      {
+        label: "error Oops → Again",
+        prev: { error: "Oops" },
+        next: { error: "Again" },
+      },
+      {
+        label: "error Oops → none",
+        prev: { error: "Oops" },
+        next: { error: null },
+      },
+      {
+        label: "error none → none",
+        prev: { error: null },
+        next: { error: null },
+      },
     ],
   },
   "if-chain": {
@@ -159,20 +175,56 @@ if error
     li(class:done=todo.done) {todo.title}`,
     state: { todos: [A, B, C] },
     steps: [
-      { label: "append D", prev: { todos: [A, B, C] }, next: { todos: [A, B, C, D] } },
-      { label: "remove A", prev: { todos: [A, B, C] }, next: { todos: [B, C] } },
-      { label: "remove B", prev: { todos: [A, B, C] }, next: { todos: [A, C] } },
-      { label: "insert D in the middle", prev: { todos: [A, B, C] }, next: { todos: [A, D, B, C] } },
-      { label: "swap A and B", prev: { todos: [A, B, C] }, next: { todos: [B, A, C] } },
-      { label: "C to the front", prev: { todos: [A, B, C] }, next: { todos: [C, A, B] } },
-      { label: "A to the end", prev: { todos: [A, B, C] }, next: { todos: [B, C, A] } },
+      {
+        label: "append D",
+        prev: { todos: [A, B, C] },
+        next: { todos: [A, B, C, D] },
+      },
+      {
+        label: "remove A",
+        prev: { todos: [A, B, C] },
+        next: { todos: [B, C] },
+      },
+      {
+        label: "remove B",
+        prev: { todos: [A, B, C] },
+        next: { todos: [A, C] },
+      },
+      {
+        label: "insert D in the middle",
+        prev: { todos: [A, B, C] },
+        next: { todos: [A, D, B, C] },
+      },
+      {
+        label: "swap A and B",
+        prev: { todos: [A, B, C] },
+        next: { todos: [B, A, C] },
+      },
+      {
+        label: "C to the front",
+        prev: { todos: [A, B, C] },
+        next: { todos: [C, A, B] },
+      },
+      {
+        label: "A to the end",
+        prev: { todos: [A, B, C] },
+        next: { todos: [B, C, A] },
+      },
       {
         label: "B done",
         prev: { todos: [A, B, C] },
         next: { todos: [A, { ...B, done: true }, C] },
       },
-      { label: "all replaced", prev: { todos: [A, B] }, next: { todos: [C, D] } },
-      { label: "nothing changed", prev: { todos: [A, B, C] }, next: { todos: [A, B, C] } },
+      {
+        label: "all replaced",
+        prev: { todos: [A, B] },
+        next: { todos: [C, D] },
+      },
+      {
+        label: "nothing changed",
+        prev: { todos: [A, B, C] },
+        next: { todos: [A, B, C] },
+      },
     ],
   },
   "for-moves": {
@@ -236,8 +288,16 @@ if items.length === 0
   p.empty Nothing here`,
     state: { items: [] },
     steps: [
-      { label: "[] → [x, y]", prev: { items: [] }, next: { items: ["x", "y"] } },
-      { label: "[x, y] → []", prev: { items: ["x", "y"] }, next: { items: [] } },
+      {
+        label: "[] → [x, y]",
+        prev: { items: [] },
+        next: { items: ["x", "y"] },
+      },
+      {
+        label: "[x, y] → []",
+        prev: { items: ["x", "y"] },
+        next: { items: [] },
+      },
       { label: "[] → undefined", prev: { items: [] }, next: {} },
     ],
   },
@@ -359,7 +419,7 @@ ul
       },
     ],
   },
-  "everything": {
+  everything: {
     template: `import Badge from "./badge.pavlus"
 
 main.board

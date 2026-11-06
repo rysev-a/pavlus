@@ -21,7 +21,11 @@ export interface AudioSnapshot {
 }
 
 export type MediaSessionAction =
-  "play" | "pause" | "next" | "previous" | "seek";
+  | "play"
+  | "pause"
+  | "next"
+  | "previous"
+  | "seek";
 
 export type AudioEffect =
   | {

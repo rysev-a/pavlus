@@ -22,7 +22,10 @@ export interface GeoPosition {
 }
 
 export type GeoErrorCode =
-  "PERMISSION_DENIED" | "POSITION_UNAVAILABLE" | "TIMEOUT" | "UNSUPPORTED";
+  | "PERMISSION_DENIED"
+  | "POSITION_UNAVAILABLE"
+  | "TIMEOUT"
+  | "UNSUPPORTED";
 
 export interface GeoError {
   code: GeoErrorCode;

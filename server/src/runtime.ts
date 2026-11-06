@@ -176,7 +176,8 @@ export function createServerApp<S extends ServerState = ServerState>(
 
   const requests =
     (opts.plugins.find((p) => p.name === "requests") as
-      RequestsPlugin<S> | undefined) ?? createRequestsPlugin<S>(opts.state);
+      | RequestsPlugin<S>
+      | undefined) ?? createRequestsPlugin<S>(opts.state);
   const plugins = opts.plugins.includes(requests)
     ? opts.plugins
     : [requests, ...opts.plugins];

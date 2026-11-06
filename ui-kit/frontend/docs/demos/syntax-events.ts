@@ -68,9 +68,11 @@ a(href="/help" @click.prevent.stop=openHelp) Help`,
     },
   },
   "with-component": {
-    components: { Row: `li
+    components: {
+      Row: `li
   span {label}
-  button(@click=pick(id)) Pick` },
+  button(@click=pick(id)) Pick`,
+    },
     template: `import Row from "./row.pavlus"
 ul
   +Row#first(id=1 label="One")

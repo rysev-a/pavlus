@@ -1,4 +1,12 @@
 import type { PluginContext, StatefulPlugin } from "../../core/types.ts";
+import { produceWithPaths } from "./produce.ts";
+
+export {
+  commonRoot,
+  produce,
+  produceWithPaths,
+  type Produced,
+} from "./produce.ts";
 
 /** `"user.email"` or `["user", "email"]`. Numeric segments index arrays. */
 export type Path = string | readonly (string | number)[];
@@ -27,6 +35,19 @@ export type StoreEffect =
       onSuccess?: string;
     }
   | { plugin: "store"; type: "remove"; path: Path; onSuccess?: string }
+  /**
+   * Recipe-style write: `recipe` mutates a draft of the state (see
+   * `produce`), the store keeps structural sharing, and history records the
+   * shallowest path that covers every change (so undo restores exactly the
+   * branch the recipe touched). Unlike the other changes this effect is not
+   * plain data — it lives in history for undo, not for serialization.
+   */
+  | {
+      plugin: "store";
+      type: "update";
+      recipe: (draft: never) => void;
+      onSuccess?: string;
+    }
   /** Revert the last `steps` (default 1) recorded changes. */
   | { plugin: "store"; type: "undo"; steps?: number }
   /** Revert everything recorded after `timestamp`. */
@@ -38,9 +59,12 @@ export type StoreChange = Extract<
   { type: "set" | "merge" | "remove" }
 >;
 
+/** A recipe-style change (see `produce`). */
+export type UpdateEffect = Extract<StoreEffect, { type: "update" }>;
+
 export interface HistoryEntry {
   timestamp: number;
-  effect: StoreChange;
+  effect: StoreChange | UpdateEffect;
   /** Applying this to the state after `effect` restores the state before it. */
   restoreEffect: StoreChange;
 }
@@ -212,6 +236,29 @@ export function createStorePlugin<S>(
     return true;
   };
 
+  const update = (effect: UpdateEffect, record: boolean): boolean => {
+    const { next, changed, root } = produceWithPaths(
+      state,
+      effect.recipe as (s: S) => void,
+    );
+    if (!changed) return false;
+    if (record) {
+      history.push({
+        timestamp: now(),
+        effect,
+        restoreEffect: {
+          plugin: "store",
+          type: "set",
+          path: root,
+          value: getIn(state, root).value,
+        },
+      });
+      if (history.length > max) history.shift();
+    }
+    state = next;
+    return true;
+  };
+
   return {
     name: "store",
     get history() {
@@ -225,6 +272,15 @@ export function createStorePlugin<S>(
         case "remove": {
           const prev = state;
           if (change(effect, true) && effect.onSuccess !== undefined)
+            ctx.dispatch({
+              id: effect.onSuccess,
+              payload: { prev, next: state },
+            });
+          return;
+        }
+        case "update": {
+          const prev = state;
+          if (update(effect, true) && effect.onSuccess !== undefined)
             ctx.dispatch({
               id: effect.onSuccess,
               payload: { prev, next: state },

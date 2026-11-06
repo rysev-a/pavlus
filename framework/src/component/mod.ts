@@ -8,11 +8,12 @@ import {
   matchPattern,
   matchRoute,
   type Route,
+  type RouteSpec,
+  type Routing,
   routeComponent,
   routedState,
   routeName,
-  type RouteSpec,
-  type Routing,
+  sameRoute,
 } from "../routing/mod.ts";
 import type { Patch, View } from "../runtime/vnode.ts";
 
@@ -51,6 +52,24 @@ export interface ChildSpec<S = any> {
   select?: (state: S) => ComponentLike<any> | null | undefined;
   /** State key of the child. It sees `state[key]`; its store paths get this prefix. */
   key?: string;
+  /**
+   * A keyed child — one per `key=<expr>` iteration of an embed
+   * (`+Row#row(key=user.id …)`): the child is ONE element of `state[each]`,
+   * the one named by the key segment of its message id (`row.<key>.…`). It
+   * sees only that element, its store paths are rooted at `<each>.<key>`, and
+   * messages it never sees don't reach it — the row knows nothing about the
+   * other rows. `each` must be a single state key holding an id-keyed map.
+   */
+  each?: string;
+  /**
+   * The currently rendered keys of an `each` child, for tools that show one
+   * node per instance (the debug agent's component tree): a page window
+   * (`s => s.order`) while `each` holds the whole map. The function receives
+   * the PARENT's state — the one whose `each` field holds the map. Absent =
+   * every element of the map. The runtime never calls it: routing an
+   * instance's messages needs only the map.
+   */
+  live?: (state: S) => readonly string[];
   /** Extra read-only fields merged into the child's state. */
   props?: (state: S) => Record<string, unknown>;
   /**
@@ -165,6 +184,46 @@ export interface ViewOfOptions<S = any, C = any> {
  * way it would through `children` — and the patches its `diff` computes come
  * out addressed to it (`handler` patches carry the prefixed message ids).
  */
+/**
+ * The last merge of a props function, so the same base and field values
+ * re-merge to the same object: states repeat references down the chain (the
+ * `next` of one message is the `prev` of the next), so a child's diff can stop
+ * at `prev === next` instead of walking its guards. Keyed by the function:
+ * a stable member of a `children` table. The merge must stay pure — the
+ * child only reads it.
+ */
+const propMerges = new WeakMap<
+  object,
+  { base: unknown; extra: Record<string, unknown>; out: unknown }
+>();
+
+const sameFields = (
+  a: Record<string, unknown>,
+  b: Record<string, unknown>,
+): boolean => {
+  const keys = Object.keys(a);
+  return (
+    keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k])
+  );
+};
+
+/** `base` with `extra` merged in, memoized by `props` (see {@link propMerges}). */
+function mergeProps(
+  props: object,
+  base: unknown,
+  extra: Record<string, unknown>,
+): unknown {
+  const last = propMerges.get(props);
+  if (last && last.base === base && sameFields(last.extra, extra))
+    return last.out;
+  const out =
+    typeof base === "object" && base !== null
+      ? { ...base, ...extra }
+      : { ...extra };
+  propMerges.set(props, { base, extra, out });
+  return out;
+}
+
 export function viewOf<S = any, C = any>(
   c: View | { view?: View } | ComponentFn,
   opts: ViewOfOptions<S, C> = {},
@@ -211,12 +270,7 @@ export function viewOf<S = any, C = any>(
   const slice = (s: S): C => {
     const base = pick(s);
     if (!opts.props) return base as C;
-    const extra = opts.props(s);
-    return (
-      typeof base === "object" && base !== null
-        ? { ...base, ...extra }
-        : { ...extra }
-    ) as C;
+    return mergeProps(opts.props, base, opts.props(s)) as C;
   };
   return {
     ...view,
@@ -235,7 +289,12 @@ function childHandler(
 ): ComponentFn | null {
   const comp = spec.select ? spec.select(state) : spec.component;
   if (!comp) return null;
-  return namespace(name, comp, { key: spec.key, props: spec.props, scope });
+  return namespace(name, comp, {
+    key: spec.key,
+    each: spec.each,
+    props: spec.props,
+    scope,
+  });
 }
 
 /** `base` + a path relative to it (`"/dashboard"` + `"/roles"`). */
@@ -265,7 +324,17 @@ function routedHandler(
     : `${parentRoute?.base ?? ""}${pattern === "*" || pattern === "/" ? "" : pattern}`;
   const inner = namespace(name, comp, {
     key: spec.key,
-    props: (s) => ({ ...(spec.props?.(s) ?? {}), route: childRoute }),
+    // The same merge the outlet renders (`routedState`), derived from the
+    // state it slices: one memo, so the child's own paint and the outlet's
+    // diff see the very same object and `prev === next` can prune them.
+    select: (s) => {
+      const r = asRoute((s as { route?: unknown })?.route);
+      return routedState(
+        spec,
+        s,
+        r ? (matchPattern(pattern, r)?.route ?? null) : null,
+      );
+    },
     scope: outletScope,
   });
   // `base` already holds every ancestor, so only the innermost routed child
@@ -315,7 +384,8 @@ function chain(component: unknown, state: unknown): ChainLink[] {
   return links;
 }
 
-const sameRoute = (a: Route, b: Route): boolean =>
+/** Same page position (search and hash changes do not re-enter a page). */
+const samePlace = (a: Route, b: Route): boolean =>
   a.path === b.path &&
   a.base === b.base &&
   JSON.stringify(a.params) === JSON.stringify(b.params);
@@ -363,7 +433,7 @@ function transitions(
   }
   if (level > 0 && level === before.length && level === after.length) {
     const leaf = after[level - 1];
-    if (!sameRoute(leaf.route, before[level - 1].route)) {
+    if (!samePlace(leaf.route, before[level - 1].route)) {
       effects.push(
         ...handler(
           { id: `${leaf.names.join(".")}.enter`, payload: leaf.route },
@@ -498,6 +568,13 @@ export abstract class Component<S = any> {
           base: "",
           params: {},
         };
+        // The location did not change (the logo while at "/"): the state
+        // already holds this very route, so there is nothing to write, paint
+        // or re-enter — not even a history entry.
+        const cur = isObject(state)
+          ? asRoute((state as { route?: unknown }).route)
+          : null;
+        if (sameRoute(cur, route)) return [];
         const next = { ...(isObject(state) ? state : {}), route };
         return [
           storeEffector.set("route", route),
@@ -612,6 +689,14 @@ export interface NamespaceOptions<S, C> {
   key?: string;
   /** Alternative to `key` for choosing the child's state. */
   select?: (state: S) => C;
+  /**
+   * A keyed child: it is ONE element of `state[each]`, picked by the key
+   * segment of its message id (`row.<key>.…`). Its state is
+   * `state[each][key]`, its store paths are rooted at `<each>.<key>`, and a
+   * message for a key that has no element yet is dropped. Mutually exclusive
+   * with `key` and `select`.
+   */
+  each?: string;
   /** Extra read-only fields merged into the child's state. */
   props?: (state: S) => Record<string, unknown>;
   /**
@@ -641,6 +726,11 @@ export function namespace<S = any, C = any>(
 ): ComponentFn<S> {
   const h = toHandler(child);
   const key = opts.key;
+  const each = opts.each;
+  if (each !== undefined && (key !== undefined || opts.select !== undefined))
+    throw new Error(
+      `pavlus: namespace("${prefix}"): each cannot be combined with key or select`,
+    );
   const slice =
     opts.select ??
     (key !== undefined
@@ -649,26 +739,51 @@ export function namespace<S = any, C = any>(
   const pick = (s: S): C => {
     const base = slice(s);
     if (!opts.props) return base;
-    const extra = opts.props(s);
-    return (
-      typeof base === "object" && base !== null
-        ? { ...base, ...extra }
-        : { ...extra }
-    ) as C;
+    return mergeProps(opts.props, base, opts.props(s)) as C;
+  };
+  // keyed: the child's state is the one element of `state[each]` its
+  // message key names — the lens every boundary composes level by level
+  const at = (s: S, k: string): C => {
+    const base = (s as any)?.[each as string]?.[k];
+    if (!opts.props) return base;
+    return mergeProps(opts.props, base, opts.props(s)) as C;
   };
   const head = `${prefix}.`;
   return (m, s) => {
     if (!m.id.startsWith(head)) return [];
-    const path = curPath ? `${curPath}.${prefix}` : prefix;
-    const childState = pick(s);
+    let rest = m.id.slice(head.length);
+    let k: string | null = null;
+    let childState: C;
+    if (each !== undefined) {
+      const dot = rest.indexOf(".");
+      if (dot <= 0) return []; // "row." (no key) or "row.7" (a bare key)
+      k = rest.slice(0, dot);
+      rest = rest.slice(dot + 1);
+      childState = at(s, k);
+      // no element for that key (removed, or not there yet): its messages
+      // are ignored, exactly like a `select` child that is `null`
+      if (childState === undefined || childState === null) return [];
+    } else childState = pick(s);
+    const khead = k === null ? head : `${head}${k}.`;
+    const path =
+      k === null
+        ? curPath
+          ? `${curPath}.${prefix}`
+          : prefix
+        : curPath
+          ? `${curPath}.${prefix}.${k}`
+          : `${prefix}.${k}`;
     // A paint answer carries the states of the whole app; the child's diff
     // wants its own slice, exactly as it renders it. Every boundary slices
     // (a lens composed level by level), so the answer is right no matter how
     // deep the component that asked for it sits.
-    const inner: Message = { ...m, id: m.id.slice(head.length) };
+    const inner: Message = { ...m, id: rest };
     if (opts.scope !== undefined && isPaintPayload(m.payload)) {
       const { prev, next } = m.payload as { prev: S; next: S };
-      inner.payload = { prev: pick(prev), next: pick(next) };
+      inner.payload = {
+        prev: k === null ? pick(prev) : at(prev, k),
+        next: k === null ? pick(next) : at(next, k),
+      };
     }
     const prev = curPath;
     curPath = path;
@@ -677,12 +792,27 @@ export function namespace<S = any, C = any>(
       const out = h(inner, childState).map((e) => {
         const out: Effect = { ...e };
         for (const f of REPLY_FIELDS) {
-          if (typeof out[f] === "string") out[f] = head + (out[f] as string);
+          if (typeof out[f] === "string") out[f] = khead + (out[f] as string);
         }
-        if (out.plugin === "store" && key !== undefined && "path" in out) {
+        if (
+          out.plugin === "store" &&
+          (key !== undefined || k !== null) &&
+          "path" in out
+        ) {
           const sp = out.path as string | readonly (string | number)[];
-          out.path =
-            typeof sp === "string" ? (sp ? `${key}.${sp}` : key) : [key, ...sp];
+          if (k === null) {
+            out.path =
+              typeof sp === "string"
+                ? sp
+                  ? `${key}.${sp}`
+                  : key
+                : [key!, ...sp];
+          } else {
+            out.path =
+              typeof sp === "string"
+                ? `${each}.${k}${sp ? `.${sp}` : ""}`
+                : [each!, k, ...sp];
+          }
         }
         if (
           out.plugin === "dom" &&
@@ -690,9 +820,17 @@ export function namespace<S = any, C = any>(
           out.target === undefined &&
           opts.scope !== undefined
         ) {
+          // An embed inside a `for` renders once per iteration: its recorded
+          // scope starts with "#", the slot of this instance's key (the loop
+          // puts `"#<key>"` in front of everything it renders) — a keyed
+          // child's own patches get it filled in here.
+          const scope =
+            k !== null && opts.scope.startsWith("#")
+              ? `#${k}${opts.scope.slice(1)}`
+              : opts.scope;
           out.patches = DomPlugin.scopePatches(out.patches as Patch[], {
-            ids: opts.scope,
-            ns: head,
+            ids: scope,
+            ns: khead,
           }) as unknown as typeof out.patches;
         }
         return out;

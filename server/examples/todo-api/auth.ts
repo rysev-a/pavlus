@@ -115,7 +115,8 @@ export const auth: Handler = (msg: Message, state: AppState) => {
       const r = at(state, msg, "lookup");
       if (!r) return [];
       const row = rows(msg)[0] as
-        { id: number; email: string; password_hash: string } | undefined;
+        | { id: number; email: string; password_hash: string }
+        | undefined;
       // Unknown email: still burn a verify against the dummy hash so the
       // response time does not reveal which emails exist.
       const hash = row?.password_hash ?? sharedOf(state).dummyHash;

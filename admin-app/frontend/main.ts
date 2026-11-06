@@ -29,7 +29,7 @@ export const router = createRouterPlugin();
 // Devtools panel (debug-panel/extension): records messages, effects and the
 // store timeline. No-op for the page itself.
 const debug = createPavlusDebug({
-  name: "admin-app",
+  name: "developers",
   app: shell,
   flushMs: 0,
 });

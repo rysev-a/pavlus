@@ -96,7 +96,8 @@ describe("boundaries: sinking messages slice the state, bubbling effects get enr
     }
     // The payload was sliced before the diff: the grandchild saw its `n`.
     const text = patches.find((p) => p.op === "text") as
-      { id: string; text: unknown } | undefined;
+      | { id: string; text: unknown }
+      | undefined;
     expect(text?.text).toBe("2");
     // Both scopes composed in front of the grandchild's own node id.
     expect(text?.id).toBe(`${scope}2`);
@@ -106,10 +107,87 @@ describe("boundaries: sinking messages slice the state, bubbling effects get enr
     const h = toHandler(new Root());
     const effects = h({ id: "c.g.inc" }, { c: { title: "t", g: { n: 1 } } });
     const write = effects.find((e) => e.plugin === "store") as
-      { path: unknown; value: unknown; onSuccess: unknown } | undefined;
+      | { path: unknown; value: unknown; onSuccess: unknown }
+      | undefined;
     expect(write).toBeDefined();
     expect(write!.path).toBe("c.g.n");
     expect(write!.value).toBe(2);
     expect(write!.onSuccess).toBe("c.g.paint");
+  });
+
+  test("a keyed child in a loop paints itself: ids carry the iteration key", () => {
+    // The row's view: its props are its state (the keyed boundary slices
+    // `state.byId[key]`, the embed spreads the same element as props).
+    const rowView = compileToView<{ id: string; on: boolean }>(
+      `td.r(class:on=on @click=toggle(id, on)) {id}`,
+    );
+    class Row extends Component<{ id: string; on: boolean }> {
+      view = rowView;
+      toggle(_m: Message, s: { id: string; on: boolean }): Effect[] {
+        return [
+          {
+            plugin: "store",
+            type: "set",
+            path: "on",
+            value: !s.on,
+            onSuccess: "paint",
+          },
+        ];
+      }
+      paint(msg: Message): Effect[] {
+        const { prev, next } = msg.payload as {
+          prev: { id: string; on: boolean };
+          next: { id: string; on: boolean };
+        };
+        return [DomPlugin.update(rowView.diff(prev, next))];
+      }
+    }
+    const listView = compileToView<{
+      byId: Record<string, { id: string; on: boolean }>;
+    }>(
+      `import Row from "./row.pavlus"
+table
+  for id in ids key id
+    +Row#row(key=id ...byId[id])`,
+      { components: { Row: rowView } },
+    );
+    class List extends Component<{
+      byId: Record<string, { id: string; on: boolean }>;
+    }> {
+      view = listView;
+      children = { row: { component: new Row(), each: "byId" } };
+    }
+    const h = toHandler(new List());
+    const prev = {
+      byId: { a: { id: "a", on: false }, b: { id: "b", on: false } },
+    };
+    const next = {
+      byId: { a: { id: "a", on: false }, b: { id: "b", on: true } },
+    };
+    const effects = h({ id: "row.b.paint", payload: { prev, next } }, next);
+
+    const update = effects.find(
+      (e) => e.plugin === "dom" && e.type === "update",
+    ) as { patches: Patch[] } | undefined;
+    expect(update).toBeDefined();
+    // The row's own diff knew nothing of the loop; the boundary scoped its
+    // ids with the key slot of the recorded scope ("#/…") and its events
+    // with the keyed prefix — exactly what the list's render built.
+    const scope = listView.meta!.embeds.row.replace("#", "#b");
+    for (const id of idsOf(update!.patches)) {
+      expect(id.startsWith(scope)).toBe(true);
+    }
+    const toggle = update!.patches.find(
+      (p) => p.op === "handler",
+    ) as unknown as { id: string; msg: { id: string } };
+    expect(toggle).toBeDefined();
+    expect(toggle.id.startsWith(scope)).toBe(true);
+    expect(toggle.msg.id).toBe("row.b.toggle");
+    const cls = update!.patches.find((p) => p.op === "attr") as unknown as {
+      id: string;
+      name: string;
+    };
+    expect(cls?.name).toBe("class");
+    expect(cls.id.startsWith(scope)).toBe(true);
   });
 });

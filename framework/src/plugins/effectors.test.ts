@@ -43,6 +43,34 @@ describe("effectors build the effects the plugins document", () => {
       value: 1,
       onSuccess: "saved",
     });
+    // pathless forms write to the root
+    expect(store.set({ a: "b" })).toEqual({
+      plugin: "store",
+      type: "set",
+      path: "",
+      value: { a: "b" },
+    });
+    expect(store.set({ a: "b" }, { onSuccess: "paint" })).toEqual({
+      plugin: "store",
+      type: "set",
+      path: "",
+      value: { a: "b" },
+      onSuccess: "paint",
+    });
+    // a lone string is a root value, not a path
+    expect(store.set("reloaded")).toEqual({
+      plugin: "store",
+      type: "set",
+      path: "",
+      value: "reloaded",
+    });
+    expect(store.merge({ page: 1, pages: 1 }, { onSuccess: "paint" })).toEqual({
+      plugin: "store",
+      type: "merge",
+      path: "",
+      value: { page: 1, pages: 1 },
+      onSuccess: "paint",
+    });
     expect(store.undo()).toEqual({ plugin: "store", type: "undo" });
     expect(store.undo(3)).toEqual({ plugin: "store", type: "undo", steps: 3 });
     expect(store.restoreTo(5)).toEqual({

@@ -15,7 +15,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "bench": "node bench/run.ts",
-    "example": "node examples/todo-api/main.ts"
+    "example": "node examples/todo-api/main.ts",
+    "example:shop": "node examples/shop-api/main.ts"
   },
   "dependencies": {
     "@service-laboratory/pavlus": "*",

@@ -105,7 +105,7 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
     const prevUsersView = asView(prev.usersComponent);
     const nextUsersView = asView(next.usersComponent);
     if (prevUsersView !== nextUsersView) {
-      // another view means another template: replace, never diff across
+      // another view (or key) means another instance: replace, never diff across
       if (prevUsersView) patches.push({ op: "clear", from: idSuffix + "8s", to: idSuffix + "8e" });
       if (nextUsersView) {
         patches.push({ op: "insert", before: idSuffix + "8e", nodes: nextUsersView.render(

@@ -108,8 +108,8 @@ const shell = new Shell();
 const handle = toHandler(shell);
 
 const where = (path: string) => ({ path, search: "", hash: "" });
-const state = (path: string) => ({
-  route: { ...where(path), base: "", params: {} },
+const state = (path: string, extra: object = {}) => ({
+  route: { ...where(path), base: "", params: {}, ...extra },
 });
 
 describe("routed children are children", () => {
@@ -238,10 +238,10 @@ describe("setRoute: enter and leave", () => {
     ]);
   });
 
-  test("the same page again, or a change only in search/hash: nothing", () => {
-    expect(change("/about", "/about")).toEqual([
-      store.set("route", route("/about")),
-    ]);
+  test("the same page again: nothing at all — not even the store write", () => {
+    expect(change("/about", "/about")).toEqual([]);
+    // again with search and hash: the location itself changed, so it is stored
+    // (but the page does not re-enter)
     expect(
       handle(
         {
@@ -249,7 +249,19 @@ describe("setRoute: enter and leave", () => {
           payload: { path: "/about", search: "?a=1", hash: "#h" },
         },
         state("/about"),
-      ).slice(1),
+      ),
+    ).toEqual([
+      store.set("route", route("/about", { search: "?a=1", hash: "#h" })),
+    ]);
+    // and repeating that very location writes nothing
+    expect(
+      handle(
+        {
+          id: "routeChanged",
+          payload: { path: "/about", search: "?a=1", hash: "#h" },
+        },
+        state("/about", { search: "?a=1", hash: "#h" }),
+      ),
     ).toEqual([]);
   });
 

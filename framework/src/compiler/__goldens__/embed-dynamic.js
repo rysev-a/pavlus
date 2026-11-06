@@ -59,7 +59,7 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
       const prevPanelView = asView(prev.panel);
       const nextPanelView = asView(next.panel);
       if (prevPanelView !== nextPanelView) {
-        // another view means another template: replace, never diff across
+        // another view (or key) means another instance: replace, never diff across
         if (prevPanelView) patches.push({ op: "clear", from: idSuffix + "1s", to: idSuffix + "1e" });
         if (nextPanelView) {
           patches.push({ op: "insert", before: idSuffix + "1e", nodes: nextPanelView.render(
@@ -111,7 +111,7 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
           const prevExtraView = asView(prev.extra);
           const nextExtraView = asView(next.extra);
           if (prevExtraView !== nextExtraView) {
-            // another view means another template: replace, never diff across
+            // another view (or key) means another instance: replace, never diff across
             if (prevExtraView) patches.push({ op: "clear", from: idSuffix + "3s", to: idSuffix + "3e" });
             if (nextExtraView) {
               patches.push({ op: "insert", before: idSuffix + "3e", nodes: nextExtraView.render(

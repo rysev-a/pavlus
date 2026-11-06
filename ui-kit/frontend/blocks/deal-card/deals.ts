@@ -122,18 +122,20 @@ export function dealBoard(
         stage.prob > 0 && stage.prob < 100
           ? `${usd(weightedOf(mine, stages))} weighted`
           : `${stage.prob}%`,
-      deals: mine.map((d): DealCardView => ({
-        id: d.id,
-        title: d.title,
-        company: d.company,
-        amount: usd(d.amount),
-        prob: stage.prob,
-        owner: d.owner,
-        close: dayText(d.close),
-        late: isOpen(stages, d.stage) && d.close < today,
-        canLeft: i > 0,
-        canRight: i < stages.length - 1,
-      })),
+      deals: mine.map(
+        (d): DealCardView => ({
+          id: d.id,
+          title: d.title,
+          company: d.company,
+          amount: usd(d.amount),
+          prob: stage.prob,
+          owner: d.owner,
+          close: dayText(d.close),
+          late: isOpen(stages, d.stage) && d.close < today,
+          canLeft: i > 0,
+          canRight: i < stages.length - 1,
+        }),
+      ),
     };
   });
 }

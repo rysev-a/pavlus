@@ -100,6 +100,13 @@ export interface EmbedNode {
   dynamic: Expr | null;
   /** Instance name: message prefix and state key of the child. */
   name: string;
+  /**
+   * The instance key (`key=<expr>`): one scoped child per key — its events
+   * carry the key in the id (`row.<key>.star`), and a children entry with
+   * `each` slices the child's state to `state[each][key]`. `null` when the
+   * embed is a plain single instance.
+   */
+  key: Expr | null;
   props: Prop[];
   pos: Pos;
 }
@@ -112,7 +119,12 @@ export interface OutletNode {
 }
 
 export type Node =
-  ElementNode | TextNode | IfNode | ForNode | EmbedNode | OutletNode;
+  | ElementNode
+  | TextNode
+  | IfNode
+  | ForNode
+  | EmbedNode
+  | OutletNode;
 
 export interface ImportDecl {
   local: string;

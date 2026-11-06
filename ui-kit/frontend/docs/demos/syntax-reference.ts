@@ -83,7 +83,10 @@ export const demos: Record<string, Demo> = {
       },
       {
         label: "name typed",
-        prev: { ...form, errors: { name: "Enter your name.", terms: "Accept the terms." } },
+        prev: {
+          ...form,
+          errors: { name: "Enter your name.", terms: "Accept the terms." },
+        },
         next: { ...form, name: "Ann", errors: { terms: "Accept the terms." } },
       },
       {
@@ -186,7 +189,11 @@ export const demos: Record<string, Demo> = {
       {
         label: "new event while on activity",
         prev: { ...panel, active: "activity" },
-        next: { ...panel, active: "activity", events: ["New event", ...panel.events] },
+        next: {
+          ...panel,
+          active: "activity",
+          events: ["New event", ...panel.events],
+        },
       },
     ],
   },

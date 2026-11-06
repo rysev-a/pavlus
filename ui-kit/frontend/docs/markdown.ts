@@ -70,7 +70,8 @@ export function parseMarkdown(source: string): ParsedDoc {
     if (fence) {
       const code: string[] = [];
       i++;
-      while (i < lines.length && !lines[i].startsWith("```")) code.push(lines[i++]);
+      while (i < lines.length && !lines[i].startsWith("```"))
+        code.push(lines[i++]);
       i++;
       const lang = fence[1] || "text";
       blocks.push({
@@ -157,7 +158,10 @@ export function parseMarkdown(source: string): ParsedDoc {
         else break;
         i++;
       }
-      blocks.push({ kind: ordered ? "ol" : "ul", items: items.map(parseInline) });
+      blocks.push({
+        kind: ordered ? "ol" : "ul",
+        items: items.map(parseInline),
+      });
       continue;
     }
 

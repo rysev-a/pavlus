@@ -20,7 +20,13 @@ export const demos: Record<string, Demo> = {
   compiled: {
     template: `p {user.name} wrote {count} {count === 1 ? "post" : "posts"}`,
     state: { user: { name: "Ann" }, count: 3 },
-    steps: [{ label: "count 3 → 4", prev: { user: { name: "Ann" }, count: 3 }, next: { user: { name: "Ann" }, count: 4 } }],
+    steps: [
+      {
+        label: "count 3 → 4",
+        prev: { user: { name: "Ann" }, count: 3 },
+        next: { user: { name: "Ann" }, count: 4 },
+      },
+    ],
   },
   "in-attributes": {
     template: `a.link(href="/users/{user.id}" title="Open {user.name}") {user.name}
@@ -97,9 +103,7 @@ p {nothing ?? 0 || 5}`,
     template: `p {count || "none"}
 p {count ?? "none"}`,
     state: { count: 0 },
-    steps: [
-      { label: "count 0 → 3", prev: { count: 0 }, next: { count: 3 } },
-    ],
+    steps: [{ label: "count 0 → 3", prev: { count: 0 }, next: { count: 3 } }],
   },
   "text-values": {
     template: `p [{nothing}]
@@ -161,7 +165,14 @@ p null is {nothing ? "truthy" : "falsy"}
 p an empty array is {list ? "truthy" : "falsy"}
 p an empty object is {obj ? "truthy" : "falsy"}
 p list.length is {list.length ? "truthy" : "falsy"}`,
-    state: { zero: 0, empty: "", zeroText: "0", nothing: null, list: [], obj: {} },
+    state: {
+      zero: 0,
+      empty: "",
+      zeroText: "0",
+      nothing: null,
+      list: [],
+      obj: {},
+    },
   },
   escapes: {
     template: `p Use \\{braces\\} to show braces, and {"}"} inside a string.
@@ -180,8 +191,19 @@ p A lone } is fine. Quote: {'say "hi"'}`,
     steps: [
       {
         label: "customer removed",
-        prev: { order: { id: 12, lines: [1, 2], late: true, customer: { name: "Ann" } }, total: 19.5 },
-        next: { order: { id: 12, lines: [1, 2], late: true, customer: null }, total: 19.5 },
+        prev: {
+          order: {
+            id: 12,
+            lines: [1, 2],
+            late: true,
+            customer: { name: "Ann" },
+          },
+          total: 19.5,
+        },
+        next: {
+          order: { id: 12, lines: [1, 2], late: true, customer: null },
+          total: 19.5,
+        },
       },
     ],
   },

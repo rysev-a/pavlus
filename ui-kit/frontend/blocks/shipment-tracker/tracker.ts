@@ -1,7 +1,11 @@
 import type { Tone } from "../admin-shell/shell.ts";
 
 export type ShipStatus =
-  "booked" | "transit" | "customs" | "delivered" | "delayed";
+  | "booked"
+  | "transit"
+  | "customs"
+  | "delivered"
+  | "delayed";
 export type Mode = "road" | "rail" | "sea" | "air";
 
 export const STATUSES: { id: ShipStatus; label: string; tone: Tone }[] = [

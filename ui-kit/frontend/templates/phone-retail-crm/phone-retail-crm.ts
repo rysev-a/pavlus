@@ -155,7 +155,9 @@ const USER: ShellUser = {
 let hrefOf: ((screen: string) => string) | undefined;
 
 /** An app with URL routing gives every screen a real address (`href` of its link). */
-export function setScreenHrefs(fn: ((screen: string) => string) | undefined): void {
+export function setScreenHrefs(
+  fn: ((screen: string) => string) | undefined,
+): void {
   hrefOf = fn;
 }
 
@@ -195,7 +197,13 @@ export interface SettingsView {
 }
 
 export type View =
-  "loading" | "list" | "form" | "shopsMap" | "sales" | "budget" | "settings";
+  | "loading"
+  | "list"
+  | "form"
+  | "shopsMap"
+  | "sales"
+  | "budget"
+  | "settings";
 
 export interface CrmState {
   status: "loading" | "ready" | "failed";

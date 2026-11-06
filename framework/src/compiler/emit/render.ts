@@ -147,6 +147,16 @@ export class RenderEmitter extends ExprEmitter {
         "));",
       );
     this.note(n);
+    // A keyed embed is a different instance per key: markers around it, so
+    // a key change can remount it wholesale (like an if-branch switch) and
+    // its events never carry a stale key.
+    const keyed = n.key !== null;
+    if (n.component && keyed) {
+      this.marker(out, this.id(n.nid, "s", ctx));
+      push(n.component);
+      this.marker(out, this.id(n.nid, "e", ctx));
+      return;
+    }
     if (n.component) return push(n.component);
     const view = this.name(`${n.name}View`);
     this.marker(out, this.id(n.nid, "s", ctx));

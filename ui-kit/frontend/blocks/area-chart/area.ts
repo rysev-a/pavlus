@@ -94,11 +94,13 @@ export function areaChart(
   const line = first
     ? `polygon(${points.map(top).join(", ")}, ${[...points].reverse().map(dip).join(", ")})`
     : "polygon(0 100%, 100% 100%, 100% 100%)";
-  const ticks = [0, 25, 50, 75, 100].map((y): Tick => ({
-    id: `t${y}`,
-    y,
-    label: format((max * y) / 100),
-  }));
+  const ticks = [0, 25, 50, 75, 100].map(
+    (y): Tick => ({
+      id: `t${y}`,
+      y,
+      label: format((max * y) / 100),
+    }),
+  );
   return { points, ticks, area, line, max };
 }
 

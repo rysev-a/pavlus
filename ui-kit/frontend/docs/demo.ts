@@ -64,7 +64,11 @@ function prettyHtml(html: string): string {
   for (const tok of html.match(/<[^>]+>|[^<]+/g) ?? []) {
     if (tok.startsWith("</")) depth = Math.max(0, depth - 1);
     out.push("  ".repeat(depth) + tok);
-    if (/^<[a-z]/i.test(tok) && !tok.endsWith("/>") && !/^<(br|hr|img|input|meta|link)\b/i.test(tok))
+    if (
+      /^<[a-z]/i.test(tok) &&
+      !tok.endsWith("/>") &&
+      !/^<(br|hr|img|input|meta|link)\b/i.test(tok)
+    )
       depth++;
   }
   return out.join("\n");
@@ -77,7 +81,11 @@ const viewOf = (template: string, components: Record<string, string> = {}) => {
   return compileToView(template, { components: views });
 };
 
-export function runDemo(name: string, demo: Demo, open: string[] = []): DemoView {
+export function runDemo(
+  name: string,
+  demo: Demo,
+  open: string[] = [],
+): DemoView {
   const base: DemoView = {
     name,
     openModule: open.includes("module"),

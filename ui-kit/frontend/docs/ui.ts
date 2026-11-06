@@ -98,7 +98,12 @@ export const UI: Record<Lang, Ui> = {
     loading: "Seite wird geladen...",
     failed: "Diese Seite konnte nicht geladen werden.",
     language: "Sprache",
-    tone: { note: "Hinweis", tip: "Tipp", warning: "Warnung", danger: "Gefahr" },
+    tone: {
+      note: "Hinweis",
+      tip: "Tipp",
+      warning: "Warnung",
+      danger: "Gefahr",
+    },
     demo: {
       template: "Template",
       state: "State",
@@ -127,7 +132,12 @@ export const UI: Record<Lang, Ui> = {
     loading: "Загрузка страницы...",
     failed: "Не удалось загрузить страницу.",
     language: "Язык",
-    tone: { note: "Заметка", tip: "Совет", warning: "Внимание", danger: "Опасно" },
+    tone: {
+      note: "Заметка",
+      tip: "Совет",
+      warning: "Внимание",
+      danger: "Опасно",
+    },
     demo: {
       template: "Шаблон",
       state: "Состояние",

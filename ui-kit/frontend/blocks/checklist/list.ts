@@ -106,16 +106,18 @@ export function checklistOf(
       total: p.total,
       pct: p.pct,
       tone: groupTone(mine, today),
-      items: mine.map((t): TaskView => ({
-        id: t.id,
-        title: t.title,
-        owner: t.owner,
-        due: t.due ? shortDate(t.due) : "",
-        done: t.done,
-        state: stateOf(t, today),
-        tag: t.tag,
-        tagTone: t.tagTone,
-      })),
+      items: mine.map(
+        (t): TaskView => ({
+          id: t.id,
+          title: t.title,
+          owner: t.owner,
+          due: t.due ? shortDate(t.due) : "",
+          done: t.done,
+          state: stateOf(t, today),
+          tag: t.tag,
+          tagTone: t.tagTone,
+        }),
+      ),
     };
   });
 }

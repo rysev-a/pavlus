@@ -170,18 +170,54 @@ export function routeComponent(
 /**
  * The state a routed child sees: its slice (`key`), the parent's `props`,
  * and its `route`. Shared by handlers and templates so both agree.
+ *
+ * The same state and route re-merge to the same object: states repeat
+ * references down the chain (the `next` of one message is the `prev` of the
+ * next), so a routed page's diff can stop at `prev === next` instead of
+ * walking its guards. The merge must stay pure — the child only reads it.
  */
+const merges = new WeakMap<
+  RouteSpec,
+  { state: unknown; route: Route | null; out: unknown }
+>();
+
+/** Routes equal by value: `matchPattern` builds a fresh one per call. */
+export const sameRoute = (a: Route | null, b: Route | null): boolean =>
+  a === b ||
+  (a !== null &&
+    b !== null &&
+    a.path === b.path &&
+    a.base === b.base &&
+    a.search === b.search &&
+    a.hash === b.hash &&
+    sameParams(a.params, b.params));
+
+const sameParams = (
+  a: Record<string, string>,
+  b: Record<string, string>,
+): boolean => {
+  const keys = Object.keys(a);
+  return (
+    keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k])
+  );
+};
+
 export function routedState(
   spec: RouteSpec,
   state: unknown,
   route: Route | null,
 ): unknown {
+  const last = merges.get(spec);
+  if (last && last.state === state && sameRoute(last.route, route))
+    return last.out;
   const slice =
     spec.key !== undefined
       ? (state as Record<string, unknown>)?.[spec.key]
       : state;
   const base = isObject(slice) ? slice : {};
-  return { ...base, ...(spec.props?.(state) ?? {}), route };
+  const out = { ...base, ...(spec.props?.(state) ?? {}), route };
+  merges.set(spec, { state, route, out });
+  return out;
 }
 
 export interface OutletMatch {

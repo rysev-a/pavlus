@@ -18,7 +18,13 @@ export const LANG_NAMES: Record<Lang, string> = {
 };
 
 type Titles = Record<Lang, string>;
-const t = (en: string, es: string, de: string, ru: string, zh: string): Titles => ({
+const t = (
+  en: string,
+  es: string,
+  de: string,
+  ru: string,
+  zh: string,
+): Titles => ({
   en,
   es,
   de,
@@ -75,7 +81,13 @@ export const PAGES: DocPageInfo[] = [
   {
     slug: "quick-start",
     group: "start",
-    title: t("Quick start", "Inicio rápido", "Schnellstart", "Быстрый старт", "快速开始"),
+    title: t(
+      "Quick start",
+      "Inicio rápido",
+      "Schnellstart",
+      "Быстрый старт",
+      "快速开始",
+    ),
   },
   {
     slug: "syntax-elements",
@@ -365,7 +377,11 @@ export function docsNav(lang: Lang): DocNavGroup[] {
     const title = GROUPS[p.group][lang];
     let g = groups.find((x) => x.title === title);
     if (!g) groups.push((g = { title, items: [] }));
-    g.items.push({ path: docPath(p.slug), title: p.title[lang], description: "" });
+    g.items.push({
+      path: docPath(p.slug),
+      title: p.title[lang],
+      description: "",
+    });
   }
   return groups;
 }
@@ -393,7 +409,8 @@ export function neighbours(
 export function initialLang(win: Window = window): Lang {
   try {
     const saved = win.localStorage.getItem("ui-kit-docs-lang");
-    if (saved && (LANGS as readonly string[]).includes(saved)) return saved as Lang;
+    if (saved && (LANGS as readonly string[]).includes(saved))
+      return saved as Lang;
   } catch {
     // storage blocked
   }

@@ -58,8 +58,13 @@ export interface Block<S = any> {
 /** A compiled direct template. */
 export interface DirectView<S = any> {
   create(env: Env, state: S): Block<S>;
-  /** Instance names of the children this template embeds. */
-  meta?: { embeds: string[]; outlet?: boolean };
+  /** Instance names of the children this template embeds, and what every
+   * binding reads (`meta.deps`, the printable dependency graph). */
+  meta?: {
+    embeds: string[];
+    outlet?: boolean;
+    deps?: { line: number; of: string; reads: string[]; checked: boolean }[];
+  };
 }
 
 /** Misconfiguration (not a data problem): thrown through, not reported. */

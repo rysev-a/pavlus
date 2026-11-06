@@ -4,10 +4,11 @@
   changes the framework — it uses what is already public: `Patch` as data,
   `view.render` / `view.diff` as pure functions, `DomPlugin.update`, and the
   `paint` handler that every component already owns.
-- **Status:** design. The reference implementation below is written against the
-  real types and the real users page
-  ([`admin-app/app/user-list`](../admin-app/app/user-list/user-list.ts)); it has
-  not been wired in yet.
+- **Status:** implemented. The helpers live in
+  [`admin-app/app/list-patches.ts`](../admin-app/app/list-patches.ts), wired
+  into the users page (`sort` and `removed` leave notes; `paint` spends them),
+  with equivalence tests in
+  [`admin-app/tests/list-patches.test.ts`](../admin-app/tests/list-patches.test.ts).
 - **Related:** [framework/docs/architecture.md](../framework/docs/architecture.md)
   (how `diff` works), [framework/docs/child-views.md](../framework/docs/child-views.md)
   (composition), [docs/refactor/doc.md](refactor/doc.md) (what was deferred and
@@ -458,9 +459,9 @@ module):
 const rows: ListBinding<ListState, User> = {
   field: "rows",
   keyOf: (u) => String(u.id),
-  start: (key) => `#${key}2[`, // ← the numbers come from the compiled module
-  end: (key) => `#${key}2]`, //   (copy its itemStartId / itemEndId; the
-  listEnd: "2e", //    dev assert below flags it going stale)
+  start: (key) => `#${key}37[`, // ← the numbers come from the compiled module
+  end: (key) => `#${key}37]`, //   (copy its itemStartId / itemEndId; the
+  listEnd: "37e", //    dev assert below flags it going stale)
 };
 ```
 
@@ -627,7 +628,9 @@ them make the notes valid:
   users page's states.
 - **Fallback tests.** Every unverifiable note returns `null`; the caller then
   diffs generically. A wrong note must never produce patches.
-- **The binding assert** (run once in dev, on mount):
+- **The binding assert** (run once in dev, on the first paint whose state
+  renders the list's region — the users page's table is absent while
+  `status == "loading"`, so the first paint is too early):
 
 ```ts
 function assertBinding<S, I>(view: View<S>, b: ListBinding<S, I>, s: S): void {

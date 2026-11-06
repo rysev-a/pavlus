@@ -67,7 +67,12 @@ import {
 
 export type Section = "overview" | "users" | "data" | "settings";
 export type AdminView =
-  "denied" | "overview" | "list" | "form" | "detail" | "settings";
+  | "denied"
+  | "overview"
+  | "list"
+  | "form"
+  | "detail"
+  | "settings";
 
 export interface Confirm {
   open: boolean;

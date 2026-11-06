@@ -21,6 +21,7 @@ import { compileToView } from "../compiler/mod.ts";
 import { compileDirectToView } from "./mod.ts";
 import { DomPlugin } from "../plugins/dom/mod.ts";
 import { createDirectDomPlugin } from "../plugins/direct/mod.ts";
+import type { View } from "../runtime/vnode.ts";
 import type { PluginContext } from "../core/types.ts";
 
 // @ts-ignore jsdom ships no types here
@@ -38,7 +39,10 @@ const SOURCE = `table.t
         td.id {r.id}
         td.label {r.label}
         td.n {r.n}
-        td.act(@click=select(r.id)) x`;
+        td.act(@click=select(r.id)) x
+  tfoot
+    tr
+      td.total(colspan=4) {total(rows)}`;
 
 interface Row {
   id: number;
@@ -48,7 +52,14 @@ interface Row {
 interface State {
   rows: Row[];
   selected: number;
+  /** A function in the state: `{total(rows)}` is a calling binding. */
+  total: (rows: Row[]) => number;
 }
+
+/** The sum the footer pays for on every render unless it is pre-checked
+ * (the direct pipeline skips it while `rows` keeps its reference; the win
+ * itself is proven by the call-count test, not by this noisy jsdom clock). */
+const total = (rows: Row[]): number => rows.reduce((n, r) => n + r.n, 0);
 
 const make = (n: number, from = 0): Row[] =>
   Array.from({ length: n }, (_, i) => ({
@@ -107,7 +118,21 @@ function driver(name: "vdom" | "direct"): Driver {
         update(next) {
           const prev = current;
           current = next;
-          plugin.handle({ plugin: "dom", type: "update", prev, next }, ctx);
+          // The two plugins take different update payloads: the vdom one is
+          // painted with patches (as a paint handler does), the direct one
+          // repaints from the state pair itself.
+          if (name === "vdom")
+            plugin.handle(
+              {
+                plugin: "dom",
+                type: "update",
+                target: root,
+                patches: (view as View<State>).diff(prev, next),
+              },
+              ctx,
+            );
+          else
+            plugin.handle({ plugin: "dom", type: "update", prev, next }, ctx);
         },
         unmount() {
           plugin.handle({ plugin: "dom", type: "unmount", target: root }, ctx);
@@ -149,7 +174,13 @@ interface Scenario {
   note?: string;
 }
 
-const base: State = { rows: make(ROWS), selected: -1 };
+const st = (rows: Row[], selected: number): State => ({
+  rows,
+  selected,
+  total,
+});
+
+const base: State = { rows: make(ROWS), selected: -1, total };
 const mid = Math.floor(ROWS / 2);
 const edited = (rows: Row[], i: number, label: string): Row[] => {
   const r = [...rows];
@@ -162,7 +193,7 @@ const scenarios: Scenario[] = [];
   const steps: State[] = [];
   const reported: boolean[] = [];
   for (let i = 0; i < ITER; i++) {
-    steps.push({ rows: edited(base.rows, mid, `edited ${i}`), selected: -1 });
+    steps.push(st(edited(base.rows, mid, `edited ${i}`), -1));
   }
   scenarios.push({ name: "update 1 cell", base, steps });
 }
@@ -176,14 +207,14 @@ const scenarios: Scenario[] = [];
         n: r.n + i,
       })),
       selected: -1,
+      total,
     });
   }
   scenarios.push({ name: "update every cell", base, steps });
 }
 {
   const steps: State[] = [];
-  for (let i = 0; i < ITER; i++)
-    steps.push({ rows: shuffled(base.rows), selected: -1 });
+  for (let i = 0; i < ITER; i++) steps.push(st(shuffled(base.rows), -1));
   scenarios.push({ name: "keyed shuffle (random permutation)", base, steps });
 }
 {
@@ -191,7 +222,7 @@ const scenarios: Scenario[] = [];
   let cur = base.rows;
   for (let i = 0; i < ITER; i++) {
     cur = [...cur].reverse();
-    steps.push({ rows: cur, selected: -1 });
+    steps.push(st(cur, -1));
   }
   scenarios.push({ name: "keyed reverse", base, steps });
 }
@@ -200,6 +231,7 @@ const scenarios: Scenario[] = [];
   const grown: State = {
     rows: [...base.rows, ...make(100, ROWS)],
     selected: -1,
+    total,
   };
   const steps: State[] = [];
   for (let i = 0; i < ITER; i++) steps.push(i % 2 === 0 ? grown : base);
@@ -221,6 +253,7 @@ const scenarios: Scenario[] = [];
   const cut: State = {
     rows: [...base.rows.slice(0, mid), ...base.rows.slice(mid + 100)],
     selected: -1,
+    total,
   };
   const steps: State[] = [];
   for (let i = 0; i < ITER; i++) steps.push(i % 2 === 0 ? cut : base);
@@ -239,8 +272,7 @@ const scenarios: Scenario[] = [];
 }
 {
   const steps: State[] = [];
-  for (let i = 0; i < ITER; i++)
-    steps.push({ rows: base.rows, selected: (i * 37) % ROWS });
+  for (let i = 0; i < ITER; i++) steps.push(st(base.rows, (i * 37) % ROWS));
   scenarios.push({ name: "select a row (class toggle)", base, steps });
 }
 

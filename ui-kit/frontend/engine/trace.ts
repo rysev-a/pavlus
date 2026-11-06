@@ -139,9 +139,12 @@ function exprsOf(nodes: Node[], out: ExprRow[]): void {
     switch (n.type) {
       case "element":
         for (const t of n.toggles) add(`class:${t.name}`, t.test, n.pos.line);
-        for (const a of n.attrs) parts(`attribute ${a.name}`, a.value, n.pos.line);
+        for (const a of n.attrs)
+          parts(`attribute ${a.name}`, a.value, n.pos.line);
         for (const ev of n.events)
-          ev.args.forEach((e) => add(`@${ev.name} → ${ev.msg}(…)`, e, n.pos.line));
+          ev.args.forEach((e) =>
+            add(`@${ev.name} → ${ev.msg}(…)`, e, n.pos.line),
+          );
         exprsOf(n.children, out);
         break;
       case "text":
@@ -307,7 +310,11 @@ export function traceTemplate(
         from: 2,
         to: Math.max(2, lineNo(/^const meta/) - 2),
       },
-      { label: "meta, render and diff (the generated code)", from: lineNo(/^const meta/), to: t.module.length - 3 },
+      {
+        label: "meta, render and diff (the generated code)",
+        from: lineNo(/^const meta/),
+        to: t.module.length - 3,
+      },
       { label: "exports", from: t.module.length - 2, to: t.module.length - 1 },
     ];
 
@@ -318,7 +325,11 @@ export function traceTemplate(
     };
 
     const body = `${code}\nreturn { render, diff, meta };`;
-    view = new Function(...t.helpersAll, ...ast.imports.map((i) => i.local), body)(
+    view = new Function(
+      ...t.helpersAll,
+      ...ast.imports.map((i) => i.local),
+      body,
+    )(
       ...t.helpersAll.map((n) => (runtime as Record<string, unknown>)[n]),
       ...ast.imports.map(() => ({ render: () => [], diff: () => [] })),
     ) as View;
@@ -370,7 +381,9 @@ export function traceTemplate(
         );
       else {
         for (const n of m.removedNodes)
-          log.push(`removed ${describeNode(n)} from ${pathOf(m.target, h.root)}`);
+          log.push(
+            `removed ${describeNode(n)} from ${pathOf(m.target, h.root)}`,
+          );
         for (const n of m.addedNodes)
           log.push(`added ${describeNode(n)} to ${pathOf(m.target, h.root)}`);
       }

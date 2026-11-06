@@ -38,7 +38,12 @@ export interface Friend {
 }
 
 export type PostKind =
-  "text" | "music" | "photo" | "picture" | "link" | "repost";
+  | "text"
+  | "music"
+  | "photo"
+  | "picture"
+  | "link"
+  | "repost";
 
 /**
  * An item of a wall. `wallId` is the user whose wall it is on (the author's own

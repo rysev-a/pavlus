@@ -66,17 +66,19 @@ export function boardOf(columns: ColumnDef[], tasks: Task[]): ColumnView[] {
   return columns.map((col, i) => {
     const cards = tasks
       .filter((t) => t.column === col.id)
-      .map((t): CardView => ({
-        id: t.id,
-        title: t.title,
-        sub: t.project,
-        who: t.who,
-        due: t.due,
-        tag: t.tag,
-        tone: t.tone,
-        canLeft: i > 0,
-        canRight: i < columns.length - 1,
-      }));
+      .map(
+        (t): CardView => ({
+          id: t.id,
+          title: t.title,
+          sub: t.project,
+          who: t.who,
+          due: t.due,
+          tag: t.tag,
+          tone: t.tone,
+          canLeft: i > 0,
+          canRight: i < columns.length - 1,
+        }),
+      );
     return { id: col.id, title: col.title, count: cards.length, cards };
   });
 }

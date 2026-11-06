@@ -44,7 +44,8 @@ const text = (b: DocBlock): string =>
 
 test("pages: slugs are unique and every page has a title in every language", () => {
   expect(new Set(PAGES.map((p) => p.slug)).size).toBe(PAGES.length);
-  for (const p of PAGES) for (const l of LANGS) expect(p.title[l].length).toBeGreaterThan(0);
+  for (const p of PAGES)
+    for (const l of LANGS) expect(p.title[l].length).toBeGreaterThan(0);
 });
 
 test("pages: the menu, the neighbours and the paths", () => {
@@ -86,13 +87,17 @@ describe.each(PAGES.map((p) => p.slug))("docs page %s", (slug) => {
     expect(exists("en", slug), `content/en/${slug}.md`).toBe(true);
     const doc = parseMarkdown(read(`content/en/${slug}.md`));
     expect(doc.summary.length).toBeGreaterThan(20);
-    expect(doc.blocks.filter((b) => b.kind === "h2").length).toBeGreaterThanOrEqual(3);
+    expect(
+      doc.blocks.filter((b) => b.kind === "h2").length,
+    ).toBeGreaterThanOrEqual(3);
     expect(doc.blocks.length).toBeGreaterThan(12);
   });
 
   test("its demos exist, compile and run", async () => {
     const doc = parseMarkdown(read(`content/en/${slug}.md`));
-    const names = doc.blocks.flatMap((b) => (b.kind === "demo" ? [b.name] : []));
+    const names = doc.blocks.flatMap((b) =>
+      b.kind === "demo" ? [b.name] : [],
+    );
     if (names.length === 0) return;
     const { demos } = await import(`../docs/demos/${slug}.ts`);
     for (const n of names) {
@@ -101,23 +106,30 @@ describe.each(PAGES.map((p) => p.slug))("docs page %s", (slug) => {
       expect(view.error, `demo ${n}`).toBe("");
     }
     // no demo goes unused
-    for (const n of Object.keys(demos)) expect(names, `unused demo ${n}`).toContain(n);
+    for (const n of Object.keys(demos))
+      expect(names, `unused demo ${n}`).toContain(n);
   });
 
   test("its pavlus code blocks compile", () => {
     const doc = parseMarkdown(read(`content/en/${slug}.md`));
     for (const b of doc.blocks) {
       if (b.kind === "code" && b.lang === "pavlus") {
-        expect(() => compileTemplate(text(b), { filename: "x.pavlus" }), text(b)).not.toThrow();
+        expect(
+          () => compileTemplate(text(b), { filename: "x.pavlus" }),
+          text(b),
+        ).not.toThrow();
       }
     }
   });
 
-  test.each(LANGS.filter((l) => l !== "en"))("%s keeps the shape of the english page", (lang) => {
-    expect(exists(lang, slug), `content/${lang}/${slug}.md`).toBe(true);
-    const en = parseMarkdown(read(`content/en/${slug}.md`));
-    const tr = parseMarkdown(read(`content/${lang}/${slug}.md`));
-    expect(tr.summary.length).toBeGreaterThan(5);
-    expect(shape(tr.blocks)).toEqual(shape(en.blocks));
-  });
+  test.each(LANGS.filter((l) => l !== "en"))(
+    "%s keeps the shape of the english page",
+    (lang) => {
+      expect(exists(lang, slug), `content/${lang}/${slug}.md`).toBe(true);
+      const en = parseMarkdown(read(`content/en/${slug}.md`));
+      const tr = parseMarkdown(read(`content/${lang}/${slug}.md`));
+      expect(tr.summary.length).toBeGreaterThan(5);
+      expect(shape(tr.blocks)).toEqual(shape(en.blocks));
+    },
+  );
 });

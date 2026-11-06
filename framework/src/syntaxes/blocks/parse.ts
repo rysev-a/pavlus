@@ -719,9 +719,12 @@ class BlockParser {
     let name = "";
     const props: Prop[] = [];
     let nameAttr: RawAttr | undefined;
+    let keyAttr: RawAttr | undefined;
     for (const a of attrs) {
       if (a.spread) props.push({ spread: a.value![0] as Expr });
       else if (a.name === "name") nameAttr = a;
+      else if (a.name === "key")
+        keyAttr = a; // reserved: the instance key
       else if (tag === "Dynamic" && a.name === "this") dynamic = this.single(a);
       else if (!IDENT.test(a.name))
         this.fail(`"${a.name}" is not a valid prop name`, a.at);
@@ -757,12 +760,24 @@ class BlockParser {
         start,
       );
     }
+    // key={expr}: a keyed embed — one scoped child per key
+    let key: Expr | null = null;
+    if (keyAttr) {
+      const v = keyAttr.value ?? [];
+      if (v.length !== 1 || typeof v[0] === "string")
+        this.fail(
+          "The embed's key must be one expression: key={user.id}",
+          keyAttr.at,
+        );
+      key = v[0] as Expr;
+    }
     return {
       type: "embed",
       nid: this.nid++,
       component,
       dynamic,
       name,
+      key,
       props,
       pos: this.pos(start),
     };
