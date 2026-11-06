@@ -1,27 +1,32 @@
-// Geometry of the flow canvas: the swimlanes, where the nodes and ports are, the
-// path of an edge, the auto-layout per lane, the viewport (zoom and pan) and the
-// keyboard navigation between nodes. Pure: the model in, numbers out.
+// Geometry of the flow canvas: the frames on the plot, where the nodes and ports are,
+// the path of an edge, the auto-layout, the viewport (zoom and pan) and the keyboard
+// navigation between nodes. Pure: the model in, numbers out.
 import {
   type EdgeKind,
   type FlowEdge,
   type FlowNode,
+  type Frame,
   type Lane,
   type Model,
   type ModuleDef,
   EXTERNAL_OF,
   type PluginManifest,
   externalIn,
-  LANES,
+  type LaneDef,
   NODE_H,
   NODE_W,
+  bandOf,
   defOf,
   findNode,
   laneOf,
+  lanesOf,
 } from "./model.ts";
 
 /** the width of the lane labels on the left */
 export const GUTTER = 92;
 export const COL_W = NODE_W + 68;
+/** the height of the header of a frame: its name, and what moves it */
+export const FRAME_HEAD = 24;
 export const LANE_PAD = 16;
 export const STACK_GAP = 14;
 export const LANE_MIN = NODE_H + LANE_PAD * 2;
@@ -30,9 +35,22 @@ export const VIEW_W = 800;
 export const VIEW_H = 460;
 
 export interface Band {
-  lane: Lane;
+  /** the id of the lane */
+  lane: string;
+  /** what the lane runs as (the board is coloured by it) */
+  role: Lane;
+  name: string;
   top: number;
   h: number;
+  /** the width, the same for every lane: a rectangle from the left edge of the board to here */
+  w: number;
+  /** the height is the one set by hand (the border can be dragged back up) */
+  fixed: boolean;
+  /** the width is the one set by hand */
+  fixedW: boolean;
+  /** the least the lane can be: its nodes and the padding */
+  min: number;
+  minW: number;
 }
 
 export interface PNode {
@@ -42,7 +60,10 @@ export interface PNode {
   y: number;
   w: number;
   h: number;
+  /** what the node runs as */
   lane: Lane;
+  /** the id of the frame it is attached to ("" = free on the plot) */
+  frame: string;
   /** the module an instance node stands for */
   def?: ModuleDef;
 }
@@ -106,32 +127,91 @@ export interface Wire {
 }
 
 export interface Placed {
-  bands: Band[];
+  frames: Frame[];
   nodes: PNode[];
   ports: Port[];
   edges: PEdge[];
   wires: Wire[];
   /** the plugins of the project, for the labels of the effects */
   plugins: PluginManifest[];
+  /** the right and bottom of what is on the plot, and the left and top (the plot has no end; this is where its content is) */
   width: number;
   height: number;
+  minX: number;
+  minY: number;
 }
 
 export type Offsets = Record<string, { x: number; y: number }>;
 
+/** how far right a node reaches, with room after it */
+const reach = (m: Model, n: FlowNode, over: Offsets): number =>
+  GUTTER + (over[n.id]?.x ?? n.x) + sizeOf(m, n).w + 48;
+
 export function bandsOf(m: Model, over: Offsets = {}): Band[] {
   let top = 0;
-  return LANES.map((lane) => {
-    const mine = m.nodes.filter((n) => laneOf(n) === lane);
+  // every lane is as wide as the design, or as wide as the person made them (never less)
+  const minW = Math.max(
+    GUTTER + 4 * COL_W,
+    ...m.nodes.map((n) => reach(m, n, over)),
+  );
+  const width = Math.max(minW, m.laneW ?? 0);
+  return lanesOf(m).map((def: LaneDef) => {
+    const mine = m.nodes.filter((n) => bandOf(m, n) === def.id);
     const bottom = mine.reduce(
       (mx, n) => Math.max(mx, (over[n.id]?.y ?? n.y) + sizeOf(m, n).h),
       0,
     );
-    const h = Math.max(LANE_MIN, bottom + LANE_PAD);
-    const band = { lane, top, h };
+    const min = Math.max(LANE_MIN, bottom + LANE_PAD);
+    const h = Math.max(min, def.h ?? 0);
+    const band: Band = {
+      lane: def.id,
+      role: def.role,
+      name: def.name.trim() || "Lane",
+      top,
+      h,
+      w: width,
+      fixed: (def.h ?? 0) > min,
+      fixedW: (m.laneW ?? 0) > minW,
+      min,
+      minW,
+    };
     top += h;
     return band;
   });
+}
+
+/**
+ * A design that has frames. An older one has lanes instead (Browser, App, Plugins and
+ * Externals, or the ones it saved): each becomes a frame the width of the board, the same
+ * place and the same size, and its nodes go to absolute places on the plot, attached to it.
+ * The drawing is the same; from then on a frame is a rectangle like any other. A design
+ * that has frames is returned as it is.
+ */
+export function toFrames(m: Model): Model {
+  if (m.frames) return m;
+  const bands = bandsOf(m);
+  const home = new Map(bands.map((b) => [b.lane, b]));
+  const frames: Frame[] = bands.map((b) => ({
+    id: b.lane,
+    name: b.name,
+    x: 0,
+    y: b.top,
+    w: b.w,
+    h: b.h,
+    role: b.role,
+  }));
+  const nodes = m.nodes.map((n) => {
+    const { band: _band, ...rest } = n;
+    const b = home.get(bandOf(m, n));
+    return {
+      ...rest,
+      x: GUTTER + n.x,
+      y: (b?.top ?? 0) + n.y,
+      frame: b?.lane ?? "",
+    };
+  });
+  const { lanes: _lanes, laneW: _laneW, ...design } = m;
+  return { ...design, nodes, frames };
 }
 
 export const portsOf = (p: PNode): Port[] =>
@@ -200,21 +280,20 @@ export function pointAt(
 }
 const r = (n: number): number => Math.round(n * 10) / 10;
 
-export function layoutOf(m: Model, over: Offsets = {}): Placed {
-  const bands = bandsOf(m, over);
-  const top = new Map(bands.map((b) => [b.lane, b.top]));
+export function layoutOf(design: Model, over: Offsets = {}): Placed {
+  const m = toFrames(design);
   const nodes: PNode[] = m.nodes.map((node) => {
-    const lane = laneOf(node);
     const o = over[node.id];
     const size = sizeOf(m, node);
     return {
       id: node.id,
       node,
-      x: GUTTER + (o?.x ?? node.x),
-      y: (top.get(lane) ?? 0) + (o?.y ?? node.y),
+      x: o?.x ?? node.x,
+      y: o?.y ?? node.y,
       w: size.w,
       h: size.h,
-      lane,
+      lane: laneOf(node),
+      frame: node.frame ?? "",
       def: defOf(m, node),
     };
   });
@@ -252,20 +331,29 @@ export function layoutOf(m: Model, over: Offsets = {}): Placed {
       y2: x.y,
     });
   }
-  const last = bands[bands.length - 1];
-  const width = Math.max(
-    GUTTER + 4 * COL_W,
+  // where the content is: the frames and the nodes (with room after them)
+  const frames = m.frames ?? [];
+  const rights = [
+    ...frames.map((f) => f.x + f.w),
     ...nodes.map((n) => n.x + n.w + 48),
-  );
+  ];
+  const bottoms = [
+    ...frames.map((f) => f.y + f.h),
+    ...nodes.map((n) => n.y + n.h + LANE_PAD),
+  ];
+  const lefts = [...frames.map((f) => f.x), ...nodes.map((n) => n.x)];
+  const tops = [...frames.map((f) => f.y), ...nodes.map((n) => n.y)];
   return {
-    bands,
+    frames,
     nodes,
     ports,
     edges,
     wires,
     plugins: m.plugins,
-    width,
-    height: last.top + last.h,
+    width: Math.max(480, ...rights),
+    height: Math.max(240, ...bottoms),
+    minX: lefts.length ? Math.min(...lefts) : 0,
+    minY: tops.length ? Math.min(...tops) : 0,
   };
 }
 
@@ -344,7 +432,64 @@ export function depthsOf(m: Model): Map<string, number> {
   return depth;
 }
 
+/** The nodes of a design that has frames: in columns, in the frame each is attached to. */
+function autoLayoutFrames(m: Model): Model {
+  const depth = depthsOf(m);
+  const frames = (m.frames ?? []).map((f) => ({ ...f }));
+  const nodes = m.nodes.map((n) => ({ ...n }));
+  const order = [...nodes].sort(
+    (a, b) =>
+      (depth.get(a.id) ?? 0) - (depth.get(b.id) ?? 0) ||
+      m.nodes.indexOf(findNode(m, a.id)!) - m.nodes.indexOf(findNode(m, b.id)!),
+  );
+  const place = (
+    group: FlowNode[],
+    x0: number,
+    y0: number,
+  ): { w: number; h: number } => {
+    const first = Math.min(...group.map((n) => depth.get(n.id) ?? 0));
+    const heights = new Map<number, number>();
+    let w = 0;
+    let h = 0;
+    for (const n of group) {
+      const col = (depth.get(n.id) ?? 0) - first;
+      const y = heights.get(col) ?? 0;
+      const size = sizeOf(m, n);
+      heights.set(col, y + size.h + STACK_GAP);
+      n.x = x0 + col * COL_W;
+      n.y = y0 + y;
+      w = Math.max(w, col * COL_W + size.w);
+      h = Math.max(h, y + size.h);
+    }
+    return { w, h };
+  };
+  // the room a frame has for its nodes: under its name, with a margin
+  const PAD = 16;
+  const HEAD = 34;
+  for (const f of frames) {
+    const mine = order.filter((n) => n.frame === f.id);
+    if (mine.length === 0) continue;
+    const used = place(mine, f.x + PAD, f.y + HEAD);
+    // a frame grows to hold what is in it, and is never made smaller
+    f.w = Math.max(f.w, used.w + PAD * 2);
+    f.h = Math.max(f.h, used.h + HEAD + PAD);
+  }
+  // what is attached to no frame goes under all of them
+  const free = order.filter(
+    (n) => !n.frame || !frames.some((f) => f.id === n.frame),
+  );
+  if (free.length > 0) {
+    const left = frames.length ? Math.min(...frames.map((f) => f.x)) : 0;
+    const bottom = frames.length
+      ? Math.max(...frames.map((f) => f.y + f.h))
+      : 0;
+    place(free, left, bottom + (frames.length ? 40 : 0));
+  }
+  return { ...m, nodes, frames };
+}
+
 export function autoLayout(m: Model): Model {
+  if (m.frames) return autoLayoutFrames(m);
   const depth = depthsOf(m);
   const heights = new Map<string, number>();
   const nodes = m.nodes.map((n) => ({ ...n }));
@@ -370,7 +515,12 @@ export interface Viewport {
   x: number;
   y: number;
   z: number;
+  /** the size of the board on the page, in px (absent: the size of the start) */
+  w?: number;
+  h?: number;
 }
+const vw = (v: Viewport): number => v.w ?? VIEW_W;
+const vh = (v: Viewport): number => v.h ?? VIEW_H;
 export const MIN_Z = 0.15;
 export const MAX_Z = 2.4;
 export const HOME: Viewport = { x: 0, y: 0, z: 1 };
@@ -378,35 +528,90 @@ export const HOME: Viewport = { x: 0, y: 0, z: 1 };
 export const clampZ = (z: number): number =>
   Math.min(MAX_Z, Math.max(MIN_Z, z));
 export const viewBoxOf = (v: Viewport): string =>
-  `${r(v.x)} ${r(v.y)} ${r(VIEW_W / v.z)} ${r(VIEW_H / v.z)}`;
+  `${r(v.x)} ${r(v.y)} ${r(vw(v) / v.z)} ${r(vh(v) / v.z)}`;
 export const viewSize = (v: Viewport): { w: number; h: number } => ({
-  w: VIEW_W / v.z,
-  h: VIEW_H / v.z,
+  w: vw(v) / v.z,
+  h: vh(v) / v.z,
+});
+
+/**
+ * What the minimap shows: the design and the view, whichever sticks out of the other, so
+ * the rectangle of the view is always on it (zoomed out far, the design gets small).
+ */
+/** Where the content of the plot is: its left and top (default 0), its right and bottom. */
+export interface World {
+  width: number;
+  height: number;
+  minX?: number;
+  minY?: number;
+}
+
+export function miniBox(
+  world: World,
+  v: Viewport,
+): { x: number; y: number; w: number; h: number } {
+  const { w, h } = viewSize(v);
+  const x0 = Math.min(world.minX ?? 0, v.x);
+  const y0 = Math.min(world.minY ?? 0, v.y);
+  const x1 = Math.max(world.width, v.x + w);
+  const y1 = Math.max(world.height, v.y + h);
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
+/** The view that has `center` (a point of the world) in the middle of it. */
+export const centeredAt = (v: Viewport, x: number, y: number): Viewport => ({
+  ...v,
+  x: x - vw(v) / v.z / 2,
+  y: y - vh(v) / v.z / 2,
 });
 
 /** Zoom by a factor around the center of the view. */
 export function zoomBy(v: Viewport, factor: number): Viewport {
   const z = clampZ(v.z * factor);
-  const cx = v.x + VIEW_W / v.z / 2;
-  const cy = v.y + VIEW_H / v.z / 2;
-  return { x: cx - VIEW_W / z / 2, y: cy - VIEW_H / z / 2, z };
+  const cx = v.x + vw(v) / v.z / 2;
+  const cy = v.y + vh(v) / v.z / 2;
+  return { ...v, x: cx - vw(v) / z / 2, y: cy - vh(v) / z / 2, z };
 }
 
-/** Shows the whole world. */
-export function fitView(width: number, height: number): Viewport {
+/**
+ * Zoom by a factor around a point of the board (px from its corner), which stays
+ * where it is under the pointer: the wheel zooms toward the cursor.
+ */
+export function zoomAt(
+  v: Viewport,
+  factor: number,
+  px: number,
+  py: number,
+): Viewport {
+  const z = clampZ(v.z * factor);
+  // the world point under the pointer, then the corner that keeps it there
+  const wx = v.x + px / v.z;
+  const wy = v.y + py / v.z;
+  return { ...v, x: wx - px / z, y: wy - py / z, z };
+}
+
+/** Shows the whole world (in a board of the size of `size`, else of the start). */
+export function fitView(
+  world: World,
+  size: { w?: number; h?: number } = {},
+): Viewport {
   const pad = 12;
-  const z = clampZ(
-    Math.min(VIEW_W / (width + pad * 2), VIEW_H / (height + pad * 2)),
-  );
+  const W = size.w ?? VIEW_W;
+  const H = size.h ?? VIEW_H;
+  const width = world.width - (world.minX ?? 0);
+  const height = world.height - (world.minY ?? 0);
+  const z = clampZ(Math.min(W / (width + pad * 2), H / (height + pad * 2)));
   return {
-    x: -pad - Math.max(0, VIEW_W / z - (width + pad * 2)) / 2,
-    y: -pad,
+    x: (world.minX ?? 0) - pad - Math.max(0, W / z - (width + pad * 2)) / 2,
+    y: (world.minY ?? 0) - pad,
     z,
+    ...(size.w !== undefined ? { w: size.w } : {}),
+    ...(size.h !== undefined ? { h: size.h } : {}),
   };
 }
 
 export function centerOn(v: Viewport, x: number, y: number): Viewport {
-  return { ...v, x: x - VIEW_W / v.z / 2, y: y - VIEW_H / v.z / 2 };
+  return { ...v, x: x - vw(v) / v.z / 2, y: y - vh(v) / v.z / 2 };
 }
 
 /** Moves the view only when the rectangle is not inside it (the token is followed). */
@@ -425,20 +630,22 @@ export function reveal(
   return centerOn(v, rect.x + rect.w / 2, rect.y + rect.h / 2);
 }
 
-/** Keeps the world in view: the view may not leave it by more than a margin. */
-export const clampView = (
-  v: Viewport,
-  width: number,
-  height: number,
-): Viewport => {
+/**
+ * Keeps the world within reach, and no more: the view can go as far as the world is
+ * still a quarter of the screen, so the design can be dragged to any side of the board
+ * (the space around it is as good as endless) and never gets lost.
+ */
+export const clampView = (v: Viewport, world: World): Viewport => {
   const { w, h } = viewSize(v);
-  const edge = 24;
-  const fit = (pos: number, view: number, world: number): number => {
-    const lo = view >= world ? world - view - edge : -edge;
-    const hi = view >= world ? edge : world - view + edge;
-    return Math.min(hi, Math.max(lo, pos));
+  const fit = (pos: number, view: number, lo: number, hi: number): number => {
+    const keep = view * 0.25;
+    return Math.min(hi - keep, Math.max(lo + keep - view, pos));
   };
-  return { ...v, x: fit(v.x, w, width), y: fit(v.y, h, height) };
+  return {
+    ...v,
+    x: fit(v.x, w, world.minX ?? 0, world.width),
+    y: fit(v.y, h, world.minY ?? 0, world.height),
+  };
 };
 
 // ---- the keyboard ----

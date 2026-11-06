@@ -17,6 +17,8 @@ div.vd.ui-shell(class:k-with-panel={panelOpen})
       span.vd-tag Programming with diagrams and pages
     div.vd-actions
       if projectId
+        button.ui-button.ui-button-ghost.ui-button-sm.vd-follow(type="button" aria-pressed={appLook ? "false" : "true"} class:k-header-on={!appLook} title="The app being designed wears the editor's theme and changes with it" @click=toggleFollow)
+          | Follow editor
         button.ui-button.ui-button-ghost.ui-button-sm.vd-apptheme(type="button" aria-label="Color theme of the app" aria-pressed={panelOpen && target === "app" ? "true" : "false"} class:k-header-on={panelOpen && target === "app"} @click=openPanel("app"))
           span.k-icon.k-icon-palette
           | App theme

@@ -410,6 +410,32 @@ describe("the theme of the app being designed", () => {
     expect(after(s0, effects).appLook).toBeNull();
   });
 
+  it("changing the editor's theme tells why the app did not change, when the app has its own", () => {
+    const own = { ...inProject, appLook: inProject.look };
+    const s = run(
+      "themepanel.palette",
+      own,
+      msg("themepanel.palette", ["vs-nord", "dark"]),
+    );
+    expect(s.notice).toMatch(/own theme/);
+    // an app that follows the editor needs no explanation
+    expect(
+      run(
+        "themepanel.palette",
+        inProject,
+        msg("themepanel.palette", ["vs-nord", "dark"]),
+      ).notice,
+    ).toBe("");
+  });
+
+  it("Follow editor switches between the editor's theme and one of its own", () => {
+    const own = run("toggleFollow", inProject, msg("toggleFollow"));
+    expect(own.appLook).toEqual(inProject.look);
+    const effects = call("toggleFollow", own, msg("toggleFollow"));
+    expect(after(own, effects).appLook).toBeNull();
+    expect(JSON.parse(http(effects)[0].body!.text)).toBeNull();
+  });
+
   it("reset gives the app the editor's theme back", () => {
     let s = run("openPanel", inProject, msg("openPanel", "app"));
     s = run(

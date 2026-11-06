@@ -17,6 +17,10 @@ export type LocalEffect = Effect & { plugin: "local" } & (
     | { type: "unkeys" }
     | { type: "prefix"; name: string; onSuccess: string }
     | { type: "media"; query: string; onSuccess: string }
+    | { type: "watch"; selector: string; onSuccess: string }
+    | { type: "wheel"; selector: string; onSuccess: string }
+    | { type: "fullscreen"; selector: string; onSuccess: string }
+    | { type: "drag"; onSuccess: string }
   );
 
 export const localEffector = {
@@ -66,6 +70,46 @@ export const localEffector = {
     onSuccess,
   }),
   unkeys: (): LocalEffect => ({ plugin: "local", type: "unkeys" }),
+  /**
+   * Replies `{ w, h }` (the size of the element that matches `selector`, in px) now
+   * and each time it changes: a drawing that fills its box needs to know the box.
+   */
+  watch: (selector: string, onSuccess: string): LocalEffect => ({
+    plugin: "local",
+    type: "watch",
+    selector,
+    onSuccess,
+  }),
+  /**
+   * Replies `{ dy, x, y, w, h }` for the wheel turned over the element with Shift
+   * (or Ctrl, which is a pinch on a trackpad) held: `x`, `y` are the pointer in px
+   * from the element's corner. The page does not scroll for it; a plain wheel does.
+   */
+  wheel: (selector: string, onSuccess: string): LocalEffect => ({
+    plugin: "local",
+    type: "wheel",
+    selector,
+    onSuccess,
+  }),
+  /**
+   * Toggles the full screen for the element that matches `selector` (and the page
+   * where the browser has no such thing). Replies `{ on }` each time it changes.
+   */
+  fullscreen: (selector: string, onSuccess: string): LocalEffect => ({
+    plugin: "local",
+    type: "fullscreen",
+    selector,
+    onSuccess,
+  }),
+  /**
+   * A drag that follows the pointer wherever it goes, off the element too: replies
+   * `{ x, y, done }` (px of the window) for each move, and once more with `done`.
+   */
+  drag: (onSuccess: string): LocalEffect => ({
+    plugin: "local",
+    type: "drag",
+    onSuccess,
+  }),
   /** Replies the prefix that messages of the asking component carry (`name` is the reply id without it). */
   prefix: (name: string): LocalEffect => ({
     plugin: "local",
@@ -123,6 +167,15 @@ export function createLocalPlugin(
   };
   let off: (() => void) | undefined;
   let offDrag: (() => void) | undefined;
+  const offWatch = new Map<string, () => void>();
+  let offWheel: (() => void) | undefined;
+  let offFull: (() => void) | undefined;
+  let offPointer: (() => void) | undefined;
+  /** where the pointer last went down (px of the window): where a drag started */
+  let pressed: { x: number; y: number } | undefined;
+  let offDown: (() => void) | undefined;
+  /** the page itself is the full screen (where the browser has no API for it) */
+  let pseudoFull = false;
   return {
     name: "local",
     init() {
@@ -138,6 +191,15 @@ export function createLocalPlugin(
       };
       doc.addEventListener("dragstart", fn);
       offDrag = () => doc.removeEventListener("dragstart", fn);
+      // a drag starts where the pointer went down, not where it first moved: a quick
+      // drag may have only a move at the far end
+      const down = (e: Event): void => {
+        const p = e as PointerEvent;
+        if (typeof p.clientX === "number")
+          pressed = { x: p.clientX, y: p.clientY };
+      };
+      doc.addEventListener("pointerdown", down, true);
+      offDown = () => doc.removeEventListener("pointerdown", down, true);
     },
     handle(effect, ctx) {
       switch (effect.type) {
@@ -231,11 +293,141 @@ export function createLocalPlugin(
         case "unkeys":
           off?.();
           off = undefined;
+          return;
+        case "watch": {
+          // one watcher per selector: asking again replaces it
+          offWatch.get(effect.selector)?.();
+          offWatch.delete(effect.selector);
+          const el = doc?.querySelector(effect.selector);
+          const win = doc?.defaultView;
+          if (!el || !win) return;
+          let last = "";
+          const tell = (): void => {
+            const r = el.getBoundingClientRect();
+            const size = { w: Math.round(r.width), h: Math.round(r.height) };
+            const key = `${size.w}x${size.h}`;
+            if (key === last || size.w === 0 || size.h === 0) return;
+            last = key;
+            ctx.dispatch({ id: effect.onSuccess, payload: size });
+          };
+          tell();
+          // the box changes when the element does, and when the window does
+          win.addEventListener("resize", tell);
+          const RO = (
+            win as unknown as { ResizeObserver?: typeof ResizeObserver }
+          ).ResizeObserver;
+          const ro = RO ? new RO(tell) : undefined;
+          ro?.observe(el);
+          offWatch.set(effect.selector, () => {
+            win.removeEventListener("resize", tell);
+            ro?.disconnect();
+          });
+          return;
+        }
+        case "wheel": {
+          offWheel?.();
+          if (!doc) return;
+          const fn = (e: Event): void => {
+            const w = e as WheelEvent;
+            if (!w.shiftKey && !w.ctrlKey) return;
+            const el = (w.target as Element | null)?.closest?.(effect.selector);
+            if (!el) return;
+            // the page does not scroll (or zoom) for it
+            w.preventDefault();
+            const r = el.getBoundingClientRect();
+            // Shift turns a vertical wheel into a horizontal one in some browsers
+            const dy = w.deltaY !== 0 ? w.deltaY : w.deltaX;
+            ctx.dispatch({
+              id: effect.onSuccess,
+              payload: {
+                dy,
+                x: w.clientX - r.left,
+                y: w.clientY - r.top,
+                w: r.width,
+                h: r.height,
+              },
+            });
+          };
+          doc.addEventListener("wheel", fn, { passive: false, capture: true });
+          offWheel = () =>
+            doc.removeEventListener("wheel", fn, { capture: true });
+          return;
+        }
+        case "fullscreen": {
+          const el = doc?.querySelector(effect.selector) as HTMLElement | null;
+          if (!el || !doc) return;
+          const tell = (on: boolean): void =>
+            ctx.dispatch({ id: effect.onSuccess, payload: { on } });
+          if (!offFull) {
+            const fn = (): void => {
+              if (!pseudoFull) tell(doc.fullscreenElement !== null);
+            };
+            doc.addEventListener("fullscreenchange", fn);
+            offFull = () => doc.removeEventListener("fullscreenchange", fn);
+          }
+          if (doc.fullscreenElement) {
+            void doc.exitFullscreen().catch(() => undefined);
+            return;
+          }
+          if (pseudoFull) {
+            pseudoFull = false;
+            tell(false);
+            return;
+          }
+          if (typeof el.requestFullscreen === "function") {
+            el.requestFullscreen().catch(() => {
+              pseudoFull = true;
+              tell(true);
+            });
+          } else {
+            pseudoFull = true;
+            tell(true);
+          }
+          return;
+        }
+        case "drag": {
+          offPointer?.();
+          const win = doc?.defaultView;
+          if (!win) return;
+          const send = (e: PointerEvent, done: boolean): void =>
+            ctx.dispatch({
+              id: effect.onSuccess,
+              payload: { x: e.clientX, y: e.clientY, done },
+            });
+          const move = (e: Event): void => send(e as PointerEvent, false);
+          // the first sample is where the pointer went down
+          if (pressed) {
+            ctx.dispatch({
+              id: effect.onSuccess,
+              payload: { x: pressed.x, y: pressed.y, done: false },
+            });
+            pressed = undefined;
+          }
+          const stop = (e: Event): void => {
+            send(e as PointerEvent, true);
+            offPointer?.();
+            offPointer = undefined;
+          };
+          win.addEventListener("pointermove", move);
+          win.addEventListener("pointerup", stop);
+          win.addEventListener("pointercancel", stop);
+          offPointer = () => {
+            win.removeEventListener("pointermove", move);
+            win.removeEventListener("pointerup", stop);
+            win.removeEventListener("pointercancel", stop);
+          };
+        }
       }
     },
     dispose() {
       off?.();
       offDrag?.();
+      offDown?.();
+      for (const off of offWatch.values()) off();
+      offWatch.clear();
+      offWheel?.();
+      offFull?.();
+      offPointer?.();
     },
   };
 }

@@ -614,8 +614,10 @@ describe("editing", () => {
     expect(findNode(model(s), "h1")!.x).toBe(n0.x);
     s.send("cvUp");
     const n1 = findNode(model(s), "h1")!;
-    expect(n1.x).toBe(n0.x + 80);
-    expect(n1.y).toBeGreaterThan(n0.y);
+    // the design has frames now: the node is where it was left on the plot
+    const after = layoutOf(model(s)).nodes.find((n) => n.id === "h1")!;
+    expect(after.x).toBe(p.x + 80);
+    expect(n1.y).toBeGreaterThan(p.y);
     s.send("undo");
     expect(findNode(model(s), "h1")!.x).toBe(n0.x);
     s.send("redo");
@@ -632,9 +634,11 @@ describe("editing", () => {
   test("the background pans, the buttons zoom, Fit shows everything, the minimap jumps", () => {
     const s = ready();
     s.send("cvDown", { x: 400, y: 300 });
-    s.send("cvMove", { x: 300, y: 280 });
+    // the pointer is followed by the window: the first move is where it is
+    s.send("dragMove", { x: 400, y: 300, done: false });
+    s.send("dragMove", { x: 300, y: 280, done: false });
     expect(s.state.vp.x).toBeGreaterThan(0);
-    s.send("cvUp");
+    s.send("dragMove", { x: 300, y: 280, done: true });
     expect(s.state.drag).toBeNull();
     const z = s.state.vp.z;
     s.send("zoomIn");

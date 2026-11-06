@@ -51,21 +51,35 @@ describe("swimlanes", () => {
     const app = bandsOf(laid).find((b) => b.lane === "app")!;
     expect(app.h).toBeGreaterThan(LANE_MIN + 2 * NODE_H);
   });
-  test("every node sits inside the band of its lane", () => {
+  test("an older design is drawn the same in frames: every node sits inside the frame of its lane", () => {
     for (const d of DEMOS) {
       const m = d.make();
       const p = layoutOf(m);
+      expect(p.frames.map((f) => f.role)).toEqual(LANES);
       for (const n of p.nodes) {
-        const band = p.bands.find((b) => b.lane === laneOf(n.node))!;
-        expect(n.y).toBeGreaterThanOrEqual(band.top);
-        expect(n.y + n.h).toBeLessThanOrEqual(band.top + band.h);
+        const frame = p.frames.find((f) => f.id === n.frame)!;
+        expect(frame.role).toBe(laneOf(n.node));
+        expect(n.y).toBeGreaterThanOrEqual(frame.y);
+        expect(n.y + n.h).toBeLessThanOrEqual(frame.y + frame.h);
         expect(n.x).toBeGreaterThanOrEqual(GUTTER);
+        expect(n.x + n.w).toBeLessThanOrEqual(frame.x + frame.w);
       }
     }
   });
+  test("the frames of an older design lie one under the other, and are the width of the design", () => {
+    const p = layoutOf(ping());
+    let top = 0;
+    for (const f of p.frames) {
+      expect(f.y).toBe(top);
+      expect(f.x).toBe(0);
+      expect(f.w).toBe(p.width);
+      top += f.h;
+    }
+    expect(p.height).toBe(top);
+  });
   test("a node that is dragged is placed by the offset without changing the model", () => {
     const m = ping();
-    const p = layoutOf(m, { h1: { x: 300, y: 50 } });
+    const p = layoutOf(m, { h1: { x: GUTTER + 300, y: 50 } });
     const n = p.nodes.find((x) => x.id === "h1")!;
     expect(n.x).toBe(GUTTER + 300);
     expect(findNode(m, "h1")!.x).not.toBe(300);
@@ -214,13 +228,13 @@ describe("the viewport", () => {
   test("fit shows the whole world", () => {
     const w = 3000;
     const h = 600;
-    const v = fitView(w, h);
+    const v = fitView({ width: w, height: h });
     const s = viewSize(v);
     expect(v.x).toBeLessThanOrEqual(0);
     expect(v.x + s.w).toBeGreaterThanOrEqual(w);
     expect(v.y + s.h).toBeGreaterThanOrEqual(h);
     // a small world is centered, never zoomed beyond the limit
-    const small = fitView(100, 100);
+    const small = fitView({ width: 100, height: 100 });
     expect(small.z).toBeLessThanOrEqual(MAX_Z);
   });
   test("centerOn and reveal", () => {
@@ -235,9 +249,34 @@ describe("the viewport", () => {
     expect(r.x + VIEW_W / 2).toBeCloseTo(2070, 5);
   });
   test("panning is limited to the world", () => {
-    const far = clampView({ x: 99999, y: -99999, z: 1 }, 1000, 500);
+    const far = clampView(
+      { x: 99999, y: -99999, z: 1 },
+      { width: 1000, height: 500 },
+    );
     expect(far.x).toBeLessThanOrEqual(1000);
     expect(far.y).toBeGreaterThanOrEqual(-VIEW_H);
+  });
+  test("the design can be dragged to either side of the board, and not out of reach", () => {
+    const v = { x: 0, y: 0, z: 1, w: 1400, h: 600 };
+    // the right edge of the design as far left as a quarter of the screen
+    expect(clampView({ ...v, x: 99999 }, { width: 1000, height: 500 }).x).toBe(
+      1000 - 350,
+    );
+    // the left edge as far right as three quarters of it
+    expect(clampView({ ...v, x: -99999 }, { width: 1000, height: 500 }).x).toBe(
+      -1050,
+    );
+    // a bigger design than the screen is no different
+    expect(clampView({ ...v, x: 400 }, { width: 3000, height: 500 }).x).toBe(
+      400,
+    );
+    // a place in reach is where it was put
+    expect(
+      clampView({ ...v, x: -600, y: -200 }, { width: 1000, height: 500 }),
+    ).toMatchObject({
+      x: -600,
+      y: -200,
+    });
   });
   test("the viewBox follows the zoom", () => {
     expect(viewBoxOf({ x: 5, y: 6, z: 2 })).toBe(

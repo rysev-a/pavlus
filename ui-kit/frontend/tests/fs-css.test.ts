@@ -7,7 +7,10 @@ describe("the stylesheet", () => {
     "utf8",
   );
   test("every class starts with fs-", () => {
-    const clean = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    // an icon is a data URI: its dots (www.w3.org) are not classes
+    const clean = css
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/url\("[^"]*"\)/g, "url()");
     const classes = [...clean.matchAll(/\.([A-Za-z_][\w-]*)/g)].map(
       (m) => m[1],
     );
@@ -27,6 +30,8 @@ describe("the stylesheet", () => {
           "is-done",
           "is-work",
           "is-armed",
+          "is-fixed",
+          "is-target",
           "is-unbound",
           "is-dashed",
           "is-passed",

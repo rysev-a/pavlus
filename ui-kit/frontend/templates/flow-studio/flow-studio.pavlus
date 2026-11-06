@@ -5,7 +5,7 @@
 // panel is a bottom sheet, the palette a row of chips and the tabs a select.
 import Field from "./field.pavlus"
 
-div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "closed"} data-playing={playing ? "true" : null} data-reduced={reduced ? "true" : null})
+div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "closed"} data-playing={playing ? "true" : null} data-reduced={reduced ? "true" : null} data-full={full ? "true" : null})
   datalist#fs-conds
     for o in condOptions key o.k
       option(value=o.k)
@@ -31,6 +31,7 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
       button.ui-button.ui-button-outline.ui-button-sm(type="button" aria-expanded={sheet.open === "vb" ? "true" : "false"} @click=sheet("vb")) From Visual Builder
       button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=exportJson) Export JSON
       button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=copyJson) Copy JSON
+      button.ui-button.ui-button-outline.ui-button-sm(type="button" aria-pressed={sideOpen ? "true" : "false"} title="The inspector, the debugger, the scenario and the plugins" @click=toggleSide) Panels
       span.fs-summary {summary}
   if heldCount
     div.fs-msg(role="status")
@@ -153,9 +154,27 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
           button.ui-button.ui-button-outline.ui-button-sm(type="button" title="Fit all (0)" @click=fit) Fit
           button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=home) 100%
           button.ui-button.ui-button-outline.ui-button-sm(type="button" title="Place the nodes of each lane in columns" @click=autoLayoutAll) Auto layout
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" title="A new frame in the middle of the board" @click=frameAdd) Add frame
+          button.ui-button.ui-button-outline.ui-button-sm(type="button" aria-pressed={framesOpen ? "true" : "false"} title="Name the frames, say what they run as, remove them (double-click the name of a frame too)" @click=toggleFrames) Frames
+          button.ui-button.ui-button-outline.ui-button-sm.fs-flowbar__panels(type="button" aria-pressed={sideOpen ? "true" : "false"} title="The inspector, the debugger, the scenario and the plugins" @click=toggleSide) Panels
           label.fs-check
             input(type="checkbox" checked={follow} @change=toggleFollow)
             span Follow the token
+        if framesOpen
+          section.fs-lanes(aria-label="Frames")
+            h2.fs-h2 Frames
+            p.fs-hint A frame is a rectangle on the plot, like a frame in Figma. Components are free on the plot; drop one on a frame to attach it, and it goes where the frame goes. Drag a frame by its header, change its size by a border or a corner. What a frame runs as is optional: a component attached to a frame that runs as App is an app component, in the simulation and the checks, whatever its kind.
+            ul.fs-lanelist
+              for f in framePanel key f.id
+                li.fs-lane-row
+                  input.ui-input.fs-lane-row__name(type="text" value=f.name aria-label="Name of the frame" maxlength="40" @input=frameName(f.id))
+                  select.ui-select-control.fs-lane-row__role(aria-label="{f.name} runs as" @change=frameRole(f.id))
+                    for r in f.roles key r.v
+                      option(value=r.v selected={r.selected}) {r.label}
+                  span.fs-hint {f.count} attached
+                  button.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-label="Remove {f.name}" @click=frameDel(f.id)) Remove
+            div.fs-row
+              button.ui-button.ui-button-default.ui-button-sm(type="button" @click=frameAdd) Add a frame
         if pipe
           section.fs-pipebar(aria-label="Stages of the pipe")
             h2.fs-h2 Pipe {pipe.name}
@@ -205,17 +224,14 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
                   strong {i.title}
                   small {i.detail}
         div.fs-canvas(data-hidden={isCodeBody ? "true" : null})
-          div#fs-flow.fs-flow
+          div#fs-flow.fs-flow(style=boardStyle)
+          button.fs-fullbtn(type="button" aria-label={full ? "Leave the full screen" : "Full screen"} aria-pressed={full ? "true" : "false"} title={full ? "Leave the full screen (Esc)" : "Full screen"} @click=toggleFull)
+            span.fs-ic(class:fs-ic--exit={full} class:fs-ic--full={!full})
+          div.fs-resize(role="separator" aria-orientation="horizontal" aria-label="Height of the board: drag, or use the up and down arrows" aria-valuenow={boardH} tabindex="0" title="Drag to change the height" @pointerdown=heightDown @keydown=heightKey)
+            span.fs-resize__grip
         div.fs-under(data-hidden={isCodeBody ? "true" : null})
           div.fs-mm
             div#fs-minimap.fs-mm__svg
-          div.fs-legend(aria-label="Colours of the edges")
-            span.fs-key.fs-key--request request
-            span.fs-key.fs-key--effect effect
-            span.fs-key.fs-key--reply reply
-            span.fs-key.fs-key--error error
-            span.fs-key.fs-key--cancel cancel
-            span.fs-key.fs-key--rid rid on the edge
           p.fs-hint Drag a node to move it, the dot at its right edge onto another node to link them, the background to pan. Arrows move the selection, Enter edits, Delete removes, Space steps, B sets a breakpoint, right click too. Double-click a module (or press O) to open its body, Esc to leave it.
       section.fs-panel(data-show={isSequence ? "true" : "false"} aria-label="Sequence diagram")
         p.fs-hint Generated from the design: the lifelines, the messages with their rid, activation bars, and alt / opt fragments for the conditions and the failure paths (onError). The arrow of the current step is lit.
@@ -277,6 +293,7 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
             span.fs-hint {source.count}
           pre.fs-code.fs-code--src {source.code}
     aside.fs-side(aria-label="Inspector and debugger")
+      button.fs-side__close.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-label="Hide the panels" title="Hide the panels" @click=toggleSide) Hide
       button.fs-side__handle(type="button" aria-expanded={sideOpen ? "true" : "false"} @click=toggleSide)
         span.fs-side__grip
         span.fs-side__title {inspector.mode === "none" ? "Inspector" : inspector.title}

@@ -125,6 +125,9 @@ export function initialState(look: Look = startLook()): AppState {
   };
 }
 
+const KEEPS_OWN =
+  "The app being designed has its own theme, so it did not change. Turn on “Follow editor” to give it this one too.";
+
 const PROJECT_PATH = /^\/projects\/([1-9]\d*)\/(flow|interface)$/;
 
 /** the project and the editor an address names */
@@ -289,7 +292,7 @@ export class App extends Component<AppState> {
   }
 
   toggleMode(_msg: Message, state: AppState): Effect[] {
-    return this._chooseEditor(flipMode(state.look));
+    return this._chooseEditor(state, flipMode(state.look));
   }
 
   "themepanel.close"(): Effect[] {
@@ -348,7 +351,7 @@ export class App extends Component<AppState> {
   "themepanel.reset"(_msg: Message, state: AppState): Effect[] {
     return state.target === "app"
       ? this._chooseApp(state, null)
-      : this._chooseEditor(defaultLook(state.look.mode));
+      : this._chooseEditor(state, defaultLook(state.look.mode));
   }
 
   /** the look in the panel as a stylesheet: this style only, or all of them */
@@ -378,15 +381,32 @@ export class App extends Component<AppState> {
   _choose(state: AppState, look: Look): Effect[] {
     return state.target === "app"
       ? this._chooseApp(state, look)
-      : this._chooseEditor(look);
+      : this._chooseEditor(state, look);
   }
 
-  /** the editor's new look: remembered, shown, and the export updated */
-  _chooseEditor(look: Look): Effect[] {
+  /**
+   * the editor's new look: remembered, shown, and the export updated. An app that has
+   * its own theme does not change with it: the bar says so, or "nothing changes".
+   */
+  _chooseEditor(state: AppState, look: Look): Effect[] {
     return [
       store.set("look", look),
       store.set("css", cssOf(look)),
       themeEffector.apply(look, true),
+      ...(state.appLook && state.tab === "interface"
+        ? [store.set("notice", KEEPS_OWN)]
+        : []),
+    ];
+  }
+
+  /**
+   * "Follow editor": the app wears the editor's theme (and changes with it), or gets a
+   * theme of its own, to start with the editor's.
+   */
+  toggleFollow(_msg: Message, state: AppState): Effect[] {
+    return [
+      store.set("notice", ""),
+      ...this._chooseApp(state, state.appLook ? null : state.look),
     ];
   }
 

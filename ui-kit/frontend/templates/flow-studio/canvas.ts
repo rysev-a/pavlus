@@ -19,17 +19,18 @@ import {
   type PNode,
   type Placed,
   type Viewport,
-  GUTTER,
+  FRAME_HEAD,
   MOD_ROW,
   VIEW_H,
   VIEW_W,
   pathOf,
   pinY,
   pointAt,
+  miniBox,
   viewBoxOf,
 } from "./layout.ts";
 import { markerDefs } from "./sequence.ts";
-import { KIND_LABEL, LANE_LABEL, effectDefIn } from "./model.ts";
+import { KIND_LABEL, effectDefIn } from "./model.ts";
 
 export interface CanvasUi {
   prefix: string;
@@ -53,9 +54,13 @@ export interface CanvasUi {
   progress: number;
   /** fault ids that are on, to mark the nodes they hit */
   faultNodes: string[];
+  /** the frame a component being dragged is over: it is attached to it when dropped */
+  dropFrame?: string;
   /** inside a module: the ports bound to each node, shown as badges above it */
   badges?: Record<string, { ins: string[]; outs: string[] }>;
 }
+
+const r1 = (n: number): number => Math.round(n * 10) / 10;
 
 const short = (s: string, n: number): string =>
   s.length > n ? `${s.slice(0, n - 1)}…` : s;
@@ -216,39 +221,103 @@ export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
   const byId = new Map(placed.nodes.map((n) => [n.id, n]));
   const cur = seen.current;
 
-  // ---- lanes ----
-  const lanes: SvgNode[] = placed.bands.flatMap((b, i) => [
-    rect({
-      key: `LB${b.lane}`,
-      class: `fs-lane fs-lane--${b.lane}${i % 2 ? " is-odd" : ""}`,
-      x: 0,
-      y: b.top,
-      width: placed.width,
-      height: b.h,
-    }),
-    rect({
-      key: `LG${b.lane}`,
-      class: `fs-lane__gutter fs-lane__gutter--${b.lane}`,
-      x: 0,
-      y: b.top,
-      width: GUTTER - 8,
-      height: b.h,
-    }),
-    text(
-      { key: `LT${b.lane}`, class: "fs-lane__title", x: 10, y: b.top + 24 },
-      LANE_LABEL[b.lane],
-    ),
-    text(
-      { key: `LS${b.lane}`, class: "fs-lane__sub", x: 10, y: b.top + 38 },
-      b.lane === "browser"
-        ? "pavlus UI"
-        : b.lane === "app"
-          ? "pure fn"
-          : b.lane === "plugins"
-            ? "do the I/O"
-            : "the world",
-    ),
-  ]);
+  // ---- frames ----
+  // a frame is a rectangle on a plot that has no end: its header moves it (with what is
+  // attached to it), its borders and corners change its size, and a component dropped on
+  // it is attached to it
+  const hit = Math.max(8, 10 / ui.vp.z);
+  const frames: SvgNode[] = placed.frames.flatMap((f, i) => {
+    const t = hit / 2;
+    const c = hit * 1.3;
+    // the top border's handle sits mostly above the frame, so the header (which moves it) is the header
+    const top = f.y - hit * 0.75;
+    const handles = [
+      { mode: "n", x: f.x + c, y: top, w: f.w - c * 2, h: hit },
+      { mode: "s", x: f.x + c, y: f.y + f.h - t, w: f.w - c * 2, h: hit },
+      { mode: "w", x: f.x - t, y: f.y + c, w: hit, h: f.h - c * 2 },
+      { mode: "e", x: f.x + f.w - t, y: f.y + c, w: hit, h: f.h - c * 2 },
+      { mode: "nw", x: f.x - t, y: top, w: c, h: c },
+      { mode: "ne", x: f.x + f.w - c + t, y: top, w: c, h: c },
+      { mode: "sw", x: f.x - t, y: f.y + f.h - c + t, w: c, h: c },
+      { mode: "se", x: f.x + f.w - c + t, y: f.y + f.h - c + t, w: c, h: c },
+    ];
+    const name = f.name.trim() || "Frame";
+    const room = Math.max(4, Math.floor((f.w - 64) / 7));
+    return [
+      rect({
+        key: `FB${f.id}`,
+        class: `fs-frame${f.role ? ` fs-frame--${f.role}` : ""}${ui.dropFrame === f.id ? " is-target" : ""}`,
+        x: f.x,
+        y: f.y,
+        width: f.w,
+        height: f.h,
+        rx: 6,
+      }),
+      rect({
+        key: `FH${f.id}`,
+        class: "fs-frame__head",
+        x: f.x,
+        y: f.y,
+        width: f.w,
+        height: FRAME_HEAD,
+        rx: 6,
+        on: {
+          pointerdown: msg("frameDown", { id: f.id }, { stop: true }),
+          dblclick: msg("frameEdit", { id: f.id }, { stop: true }),
+        },
+      }),
+      text(
+        {
+          key: `FT${f.id}`,
+          class: "fs-frame__title",
+          x: f.x + 10,
+          y: f.y + 16,
+          "pointer-events": "none",
+        },
+        short(name, room) +
+          (f.role && name.toLowerCase() !== f.role ? `  · ${f.role}` : ""),
+      ),
+      // the cross that takes the frame away (what is on it stays on the plot)
+      rect({
+        key: `FX${f.id}`,
+        class: "fs-frame__x",
+        x: f.x + f.w - 24,
+        y: f.y + 4,
+        width: 18,
+        height: 16,
+        rx: 4,
+        on: { pointerdown: msg("frameDel", { id: f.id }, { stop: true }) },
+      }),
+      text(
+        {
+          key: `FXT${f.id}`,
+          class: "fs-frame__xt",
+          x: f.x + f.w - 15,
+          y: f.y + 16,
+          "text-anchor": "middle",
+          "pointer-events": "none",
+        },
+        "×",
+      ),
+      ...handles.map((h) =>
+        rect({
+          key: `FZ${f.id}${h.mode}`,
+          class: `fs-frame__size fs-frame__size--${h.mode}`,
+          x: h.x,
+          y: h.y,
+          width: Math.max(0, h.w),
+          height: Math.max(0, h.h),
+          on: {
+            pointerdown: msg(
+              "frameSize",
+              { id: f.id, edge: h.mode },
+              { stop: true },
+            ),
+          },
+        }),
+      ),
+    ];
+  });
 
   // ---- the plugin to external wires ----
   const wires = placed.wires.map((w) =>
@@ -597,7 +666,7 @@ export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
       preserveAspectRatio: "xMinYMin meet",
       class: "fs-fl",
       role: "group",
-      "aria-label": "Flow canvas: swimlanes Browser, App, Plugins, Externals",
+      "aria-label": `Flow canvas: ${placed.frames.length ? `frames ${placed.frames.map((f) => f.name).join(", ")}` : "no frames"}`,
       on: {
         pointermove: msg("cvMove"),
         pointerup: msg("cvUp"),
@@ -615,7 +684,7 @@ export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
       height: 12000,
       on: { pointerdown: msg("cvDown") },
     }),
-    ...lanes,
+    ...frames,
     ...wires,
     ...edgeNodes,
     ...synth,
@@ -634,27 +703,34 @@ export function minimapTree(
   vp: Viewport,
   prefix: string,
   selNode: string,
+  /** what it shows (the design and the view); fixed while the rectangle is dragged */
+  box: { x: number; y: number; w: number; h: number } = miniBox(placed, vp),
 ): SvgNode {
-  const w = placed.width;
-  const h = placed.height;
   return root(
     {
-      viewBox: `0 0 ${w} ${h}`,
+      viewBox: `${r1(box.x)} ${r1(box.y)} ${r1(box.w)} ${r1(box.h)}`,
       preserveAspectRatio: "xMidYMid meet",
       class: "fs-mini",
       role: "img",
-      "aria-label": "Minimap: click to move the view",
-      on: { pointerdown: { id: `${prefix}mmClick`, payload: {}, stop: true } },
+      "aria-label":
+        "Minimap: the rectangle is what the board shows; drag it, or click to move the view",
+      on: { pointerdown: { id: `${prefix}mmDown`, payload: {}, stop: true } },
     },
-    rect({ class: "fs-mm__bg", x: 0, y: 0, width: w, height: h }),
-    ...placed.bands.map((b) =>
+    rect({
+      class: "fs-mm__bg",
+      x: box.x,
+      y: box.y,
+      width: box.w,
+      height: box.h,
+    }),
+    ...placed.frames.map((f) =>
       rect({
-        key: `MB${b.lane}`,
-        class: `fs-mm__lane fs-mm__lane--${b.lane}`,
-        x: 0,
-        y: b.top,
-        width: w,
-        height: b.h,
+        key: `MB${f.id}`,
+        class: `fs-mm__lane fs-mm__lane--${f.role || "free"}`,
+        x: f.x,
+        y: f.y,
+        width: f.w,
+        height: f.h,
       }),
     ),
     ...placed.nodes.map((n) =>
@@ -673,8 +749,8 @@ export function minimapTree(
       class: "fs-mm__view",
       x: vp.x,
       y: vp.y,
-      width: VIEW_W / vp.z,
-      height: VIEW_H / vp.z,
+      width: (vp.w ?? VIEW_W) / vp.z,
+      height: (vp.h ?? VIEW_H) / vp.z,
     }),
   );
 }

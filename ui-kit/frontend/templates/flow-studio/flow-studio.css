@@ -313,10 +313,7 @@
 
 /* ---- the body ---- */
 .fs-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 10px;
-  align-items: start;
+  display: block;
 }
 .fs-side {
   display: flex;
@@ -374,11 +371,30 @@
 .fs-group .fs-h3 {
   margin-top: 0;
 }
+/* the panels (inspector, debugger, scenario, plugins) are a drawer over the right edge,
+   hidden until the Panels button asks for them: the board has the whole width */
 .fs-side {
-  position: sticky;
-  top: 76px;
-  max-height: calc(100vh - 92px);
+  display: none;
+  position: fixed;
+  top: 64px;
+  right: 12px;
+  bottom: 12px;
+  width: min(380px, calc(100vw - 24px));
+  max-height: none;
+  z-index: 40;
   padding: 0;
+  box-shadow: var(--shadow-lg);
+}
+.fs[data-sheet="open"] .fs-side {
+  display: flex;
+}
+.fs-side__body {
+  flex: 1;
+  min-height: 0;
+}
+.fs-side__close {
+  align-self: flex-end;
+  margin: 6px 6px 0;
 }
 .fs-side__handle {
   display: none;
@@ -455,7 +471,6 @@
   font-size: 12px;
   font-family: var(--font-mono);
 }
-.fs-canvas,
 .fs-scroll {
   overflow: auto;
   background: var(--card);
@@ -463,8 +478,169 @@
   border-radius: var(--radius-lg);
   max-height: 68vh;
 }
+/* the board: as wide as the page, as high as the handle under it says */
+.fs-canvas {
+  position: relative;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
 .fs-flow {
-  min-width: 640px;
+  width: 100%;
+  height: 520px;
+  min-width: 0;
+  /* the plot the lanes lie on: it has no end, so it is not the colour of a lane */
+  background: color-mix(in srgb, var(--muted) 55%, var(--background));
+}
+.fs-flow > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.fs-fullbtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.fs-fullbtn:hover {
+  background: var(--accent);
+}
+.fs-ic {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: var(--fs-ic) center / contain no-repeat;
+  mask: var(--fs-ic) center / contain no-repeat;
+}
+.fs-ic--full {
+  --fs-ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3'/%3E%3C/svg%3E");
+}
+.fs-ic--exit {
+  --fs-ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3'/%3E%3C/svg%3E");
+}
+/* the handle under the board: drag it to change the height */
+.fs-resize {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 14px;
+  cursor: ns-resize;
+  touch-action: none;
+  border-top: 1px solid var(--border);
+  background: var(--muted);
+}
+.fs-resize:hover,
+.fs-resize:focus-visible {
+  background: var(--accent);
+}
+.fs-resize__grip {
+  width: 44px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--muted-foreground);
+  opacity: 0.7;
+}
+/* the board fills the screen: the studio is a column and the board takes what is left */
+.fs[data-full="true"] {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: auto;
+  padding: 8px 12px;
+  background: var(--background);
+}
+.fs[data-full="true"] .fs-body,
+.fs[data-full="true"] .fs-main,
+.fs[data-full="true"] .fs-panel[data-show="true"] {
+  flex: 1;
+  min-height: 0;
+}
+.fs[data-full="true"] .fs-body,
+.fs[data-full="true"] .fs-main {
+  display: flex;
+  flex-direction: column;
+}
+.fs[data-full="true"] .fs-canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+.fs[data-full="true"] .fs-flow {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+.fs[data-full="true"] .fs-side {
+  top: 12px;
+}
+.fs[data-full="true"] .fs-resize {
+  display: none;
+}
+/* the board and what runs it: the rest of the page waits outside the full screen */
+.fs[data-full="true"] .fs-top,
+.fs[data-full="true"] .fs-msg,
+.fs[data-full="true"] .fs-sheet,
+.fs[data-full="true"] .fs-addbar,
+.fs[data-full="true"] .fs-under,
+.fs[data-full="true"] .fs-run__row--chips,
+.fs[data-full="true"] .fs-run__status {
+  display: none;
+}
+/* the Panels button of the board's bar is for the full screen, where the top bar is away */
+.fs-flowbar__panels {
+  display: none;
+}
+.fs[data-full="true"] .fs-flowbar__panels {
+  display: inline-flex;
+}
+/* the lanes panel */
+.fs-lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.fs-lanelist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fs-lane-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.fs-lane-row__name {
+  flex: 1 1 160px;
+  max-width: 240px;
+}
+.fs-lane-row__role {
+  flex: 0 0 130px;
 }
 .fs-seq {
   min-width: 900px;
@@ -489,35 +665,6 @@
 .fs-mm__svg {
   height: 90px;
 }
-.fs-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  font-size: 12px;
-  grid-column: 2;
-}
-.fs-key::before {
-  content: "";
-  display: inline-block;
-  width: 18px;
-  height: 0;
-  margin-right: 5px;
-  vertical-align: middle;
-  border-top: 3px solid var(--kc, var(--muted-foreground));
-}
-.fs-key--request { --kc: var(--k-request); }
-.fs-key--effect { --kc: var(--k-effect); }
-.fs-key--reply { --kc: var(--k-reply); }
-.fs-key--error { --kc: var(--k-error); }
-.fs-key--cancel { --kc: var(--k-cancel); }
-.fs-key--cancel::before { border-top-style: dashed; }
-.fs-key--rid::before {
-  width: 16px;
-  height: 10px;
-  border: 1px solid var(--muted-foreground);
-  border-radius: 5px;
-  background: var(--muted);
-}
 .fs-under > .fs-hint {
   grid-column: 1 / -1;
 }
@@ -541,32 +688,67 @@
   fill: transparent;
   cursor: grab;
 }
-.fs-lane {
+/* a frame: a rectangle on the plot. Its header moves it; its borders and corners resize it. */
+.fs-frame {
+  fill: color-mix(in srgb, var(--card) 88%, var(--muted));
   stroke: var(--border);
   stroke-width: 1;
   pointer-events: none;
 }
-.fs-lane--browser { fill: color-mix(in srgb, var(--info) 6%, var(--card)); }
-.fs-lane--app { fill: color-mix(in srgb, var(--primary) 6%, var(--card)); }
-.fs-lane--plugins { fill: color-mix(in srgb, var(--warning) 7%, var(--card)); }
-.fs-lane--externals { fill: color-mix(in srgb, var(--muted-foreground) 9%, var(--card)); }
-.fs-lane__gutter {
-  fill: var(--muted);
-  opacity: 0.6;
-  pointer-events: none;
+.fs-frame--browser { fill: color-mix(in srgb, var(--info) 6%, var(--card)); }
+.fs-frame--app { fill: color-mix(in srgb, var(--primary) 6%, var(--card)); }
+.fs-frame--plugins { fill: color-mix(in srgb, var(--warning) 7%, var(--card)); }
+.fs-frame--externals { fill: color-mix(in srgb, var(--muted-foreground) 9%, var(--card)); }
+.fs-frame.is-target {
+  stroke: var(--primary);
+  stroke-width: 2;
 }
-.fs-lane__title {
+.fs-frame__head {
+  fill: color-mix(in srgb, var(--foreground) 7%, transparent);
+  cursor: grab;
+}
+.fs-frame__head:active {
+  cursor: grabbing;
+}
+.fs-frame__title {
   fill: var(--foreground);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   pointer-events: none;
 }
-.fs-lane__sub {
+.fs-frame__x {
+  fill: transparent;
+  cursor: pointer;
+}
+.fs-frame__x:hover {
+  fill: color-mix(in srgb, var(--destructive) 25%, transparent);
+}
+.fs-frame__xt {
   fill: var(--muted-foreground);
-  font-size: 10px;
+  font-size: 14px;
   pointer-events: none;
+}
+.fs-frame__size {
+  fill: transparent;
+}
+.fs-frame__size:hover {
+  fill: color-mix(in srgb, var(--primary) 22%, transparent);
+}
+.fs-frame__size--n,
+.fs-frame__size--s {
+  cursor: ns-resize;
+}
+.fs-frame__size--e,
+.fs-frame__size--w {
+  cursor: ew-resize;
+}
+.fs-frame__size--nw,
+.fs-frame__size--se {
+  cursor: nwse-resize;
+}
+.fs-frame__size--ne,
+.fs-frame__size--sw {
+  cursor: nesw-resize;
 }
 .fs-wire {
   stroke: var(--muted-foreground);
@@ -848,6 +1030,9 @@
 /* the minimap */
 .fs-mm .fs-mm__bg {
   fill: var(--muted);
+}
+.fs-mm__lane--free {
+  fill: color-mix(in srgb, var(--muted) 40%, transparent);
 }
 .fs-mm__lane {
   fill: none;
@@ -1281,9 +1466,6 @@
   .fs-under {
     grid-template-columns: 1fr;
   }
-  .fs-legend {
-    grid-column: 1;
-  }
 }
 @media (max-width: 900px) {
   .fs {
@@ -1338,8 +1520,10 @@
   .fs-flow {
     min-width: 720px;
   }
-  /* the inspector is a bottom sheet */
+  /* the inspector is a bottom sheet: its handle shows even when it is shut */
   .fs-side {
+    display: flex;
+    width: auto;
     position: fixed;
     left: 0;
     right: 0;
@@ -1537,4 +1721,8 @@
   color: var(--muted-foreground);
   font-family: var(--font-mono);
   font-size: 11px;
+}
+
+.fs-mm__view {
+  cursor: grab;
 }

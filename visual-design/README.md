@@ -58,6 +58,27 @@ another, and are tried again after a failure; a load waits for the saves before 
 document that could not be read is never written over. The bar shows the state:
 *Saving...*, *Saved*, *Not saved: trying again*.
 
+## The diagram board
+
+Flow Studio's board is the page: as wide as the browser, with the inspector, debugger, scenario
+and plugins in a drawer that stays shut until you press **Panels**.
+
+- **Zoom:** Shift + mouse wheel, toward the pointer (a plain wheel scrolls the page; the +/- buttons,
+  Fit and 100% are still there).
+- **Full screen:** the icon in the top right corner of the board. Esc leaves it.
+- **Height:** drag the bar under the board (or focus it and use the up and down arrows).
+- **Frames:** the plot has no end and nothing on it is fixed. A *frame* is a rectangle, like a frame in
+  Figma: **Add frame** puts one in the middle of the board; drag its header to move it, a border or a
+  corner to resize it, the cross in its header (or **Remove** in the **Frames** list) to take it away. A
+  component is free on the plot, anywhere. Drop it on a frame and it is attached to it (the frame lights
+  up), and it goes where the frame goes; drag it off and it is free again. A frame can say what its
+  components run as (Browser, App, Plugins, Externals), which is how lanes come back: a frame the width
+  of the board that runs as App is the App lane. A design that was made with lanes opens exactly as it
+  was, with the four lanes as four frames you can now move, resize or remove.
+- **Minimap:** it shows the whole design and the rectangle of what the board shows, which gets smaller as
+  you zoom in. Drag the rectangle to move the board, or click the minimap to jump there. The height of the
+  board is remembered in the browser. Drag a node into another lane to move it there.
+
 ## Color themes
 
 Two themes, both from the ui-kit's panel (about 40 VS Code themes such as Dracula, One Dark,

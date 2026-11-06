@@ -69,3 +69,4 @@ html, body { margin: 0; background: var(--background); color: var(--foreground);
 /* the app being designed wears its own theme (frontend/app-theme.ts sets the variables on its frame) */
 .vb-frame { color: var(--foreground); font-family: var(--font-sans); }
 .vd-apptheme { gap: 6px; }
+.vd-follow { font-size: 12px; }

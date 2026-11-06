@@ -73,11 +73,15 @@ import {
   HOME,
   autoLayout,
   centerOn,
+  centeredAt,
   clampView,
   fitView,
   layoutOf,
+  miniBox,
   neighbor,
   reveal,
+  toFrames,
+  zoomAt,
   zoomBy,
 } from "./layout.ts";
 import { counts, lintCached as lint } from "./lint.ts";
@@ -119,27 +123,43 @@ import {
 } from "./modules.ts";
 import {
   type FlowNode,
+  type Lane,
   type Model,
   type NodeKind,
   type PluginManifest,
   EFFECTS,
+  FRAME_H,
+  FRAME_MIN_H,
+  FRAME_MIN_W,
+  FRAME_W,
   KIND_LABEL,
   LANE_LABEL,
+  LANES,
   addEdge,
+  addFrame,
   addNode,
+  attachNode,
   condNames,
   emptyModel,
   findDef,
   findEdge,
+  findFrame,
   findNode,
+  frameAt,
+  framesOf,
   laneOf,
+  moveFrame,
   moveNode,
   newId,
   parsePlugins,
   parseProject,
   projectText,
   removeEdge,
+  removeFrame,
   removeNode,
+  renameFrame,
+  setFrameRect,
+  setFrameRole,
   slugify,
 } from "./model.ts";
 import { parseQuick, QUICK_EXAMPLES } from "./quick.ts";
@@ -158,6 +178,23 @@ const SYNC = "fs-sync";
 export const STEP_MS = 650;
 const TICK_MS = 50;
 export const SPEEDS = [0.5, 1, 2, 4];
+
+/** the board on the page: its height to start with, and the least and the most */
+export const BOARD_H = 520;
+export const BOARD_MIN = 240;
+export const BOARD_MAX = 2400;
+/** where the height of the board is remembered (in this browser) */
+export const BOARD_KEY = "pavlus-flow-board";
+/** the board starts at least this zoomed in */
+const START_Z = 0.7;
+const boardStyle = (h: number, full: boolean): string =>
+  full ? "" : `height: ${h}px`;
+
+/** the view size a viewport has, else the one of the state it replaces */
+const sized = (vp: Viewport, from: Viewport): Viewport =>
+  vp.w !== undefined || from.w === undefined
+    ? vp
+    : { ...vp, w: from.w, h: from.h };
 
 export type View =
   | "flow"
@@ -190,9 +227,57 @@ export type Drag =
       oy: number;
       x: number;
       y: number;
+      /** the frame under the node: it is attached to it when dropped ("" = none) */
+      frame: string;
       moved: boolean;
     }
-  | { kind: "pan"; ax: number; ay: number; moved: boolean }
+  /** the background: the view where it was (`vx`, `vy`) and the pointer (px of the window), null until it moves */
+  | {
+      kind: "pan";
+      cx: number | null;
+      cy: number | null;
+      vx: number;
+      vy: number;
+      moved: boolean;
+    }
+  /**
+   * a frame by its header: `cx0` and `cy0` are where the pointer was (px of the window),
+   * null until it moves; `dx` and `dy` how far it has gone, in the world
+   */
+  | {
+      kind: "frame";
+      id: string;
+      cx0: number | null;
+      cy0: number | null;
+      dx: number;
+      dy: number;
+    }
+  /** a border or a corner of a frame (`edge`: n, s, e, w, ne, nw, se, sw), and the rectangle it was and is */
+  | {
+      kind: "frameSize";
+      id: string;
+      edge: string;
+      cx0: number | null;
+      cy0: number | null;
+      r0: { x: number; y: number; w: number; h: number };
+      r: { x: number; y: number; w: number; h: number };
+    }
+  /** the handle under the board: its height */
+  | { kind: "height"; cy0: number | null; h0: number }
+  /**
+   * the rectangle on the minimap: the view where it was (`vx`, `vy`), the pointer (px of the
+   * window, null until it moves), what a px of the minimap is in the world (`k`) and what the
+   * minimap shows, which stays as it was while the rectangle is dragged
+   */
+  | {
+      kind: "mini";
+      cx0: number | null;
+      cy0: number | null;
+      vx: number;
+      vy: number;
+      k: number;
+      box: { x: number; y: number; w: number; h: number };
+    }
   | {
       kind: "link";
       from: string;
@@ -219,6 +304,14 @@ export interface Core {
   side: Side;
   sideOpen: boolean;
   vp: Viewport;
+  /** the height of the board on the page (px); the handle under it changes it */
+  boardH: number;
+  /** the size of the minimap on the page (px), to know what its rectangle moves by */
+  mini: { w: number; h: number };
+  /** the board fills the screen */
+  full: boolean;
+  /** the panel that edits the frames */
+  framesOpen: boolean;
   drag: Drag | null;
   follow: boolean;
   trace: Trace | null;
@@ -350,6 +443,15 @@ interface Derived {
   tlNote: string;
   demoList: { id: string; title: string; about: string }[];
   zoomText: string;
+  /** the style of the board's box: its height, unless it fills the screen */
+  boardStyle: string;
+  framePanel: {
+    id: string;
+    name: string;
+    /** how many components are attached to it */
+    count: number;
+    roles: { v: "" | Lane; label: string; selected: boolean }[];
+  }[];
   connectList: { id: string; title: string }[];
   quickExamples: { k: string; text: string }[];
   speeds: { v: string; label: string; selected: boolean }[];
@@ -552,6 +654,10 @@ export function coreOf(model: Model): Core {
     side: "inspect",
     sideOpen: false,
     vp: HOME,
+    boardH: BOARD_H,
+    mini: { w: 0, h: 0 },
+    full: false,
+    framesOpen: false,
     drag: null,
     follow: true,
     trace: null,
@@ -794,6 +900,24 @@ export function derive(c: Core): Derived {
     tlNote: has ? "" : "Run the flow to see where the time of a request goes.",
     demoList: DEMO_LIST,
     zoomText: `${Math.round(c.vp.z * 100)}%`,
+    boardStyle: boardStyle(c.boardH, c.full),
+    framePanel: framesOf(toFrames(model)).map((f) => ({
+      id: f.id,
+      name: f.name,
+      count: model.nodes.filter((n) => n.frame === f.id).length,
+      roles: [
+        {
+          v: "" as const,
+          label: "Nothing (what its kind says)",
+          selected: !f.role,
+        },
+        ...LANES.map((v) => ({
+          v,
+          label: LANE_LABEL[v],
+          selected: f.role === v,
+        })),
+      ],
+    })),
     connectList: model.nodes
       .filter((n) => c.sel.kind === "node" && n.id !== c.sel.id)
       .map((n) => ({ id: n.id, title: `${KIND_LABEL[n.kind]}: ${n.title}` })),
@@ -869,6 +993,10 @@ const CORE_KEYS = [
   "side",
   "sideOpen",
   "vp",
+  "boardH",
+  "mini",
+  "full",
+  "framesOpen",
   "drag",
   "follow",
   "trace",
@@ -904,12 +1032,25 @@ const MISS: Record<string, string> = {
 };
 
 /** the trees of the drawings the current view shows */
+/**
+ * The model with what is being dragged where the pointer has it (a design that has frames):
+ * a component where it is and in the frame it is over, a frame where it has gone with what is
+ * attached to it, a frame in the size it is given.
+ */
+function dragged(m: Model, d: Drag | null): Model {
+  if (d?.kind === "node")
+    return attachNode(moveNode(m, d.id, d.x, d.y), d.id, d.frame || null);
+  if (d?.kind === "frame") return moveFrame(m, d.id, d.dx, d.dy);
+  if (d?.kind === "frameSize") return setFrameRect(m, d.id, d.r);
+  return m;
+}
+
 export function trees(
   c: Core,
 ): { target: string; tree: ReturnType<typeof canvasTree> }[] {
   const root = c.hist.present;
   const scope = scopeOf(c);
-  const m = modelAt(root, scope);
+  const m = toFrames(modelAt(root, scope));
   const out: { target: string; tree: ReturnType<typeof canvasTree> }[] = [];
   // the sequence and the timeline show the flat design; the board shows the scope
   const trace = c.trace;
@@ -917,11 +1058,7 @@ export function trees(
   const cur =
     trace && c.pos >= 0 ? trace[Math.min(c.pos, trace.length - 1)] : null;
   if (c.tab === "flow") {
-    const over =
-      c.drag?.kind === "node"
-        ? { [c.drag.id]: { x: c.drag.x, y: c.drag.y } }
-        : {};
-    const placed = layoutOf(m, over);
+    const placed = layoutOf(dragged(m, c.drag));
     const faultNodes = root.scenario.faults
       .filter((f) => f.on)
       .map((f) => localId(scope, f.target))
@@ -955,6 +1092,7 @@ export function trees(
           pos: c.pos,
           progress: c.reduced ? 1 : c.progress,
           faultNodes,
+          dropFrame: c.drag?.kind === "node" ? c.drag.frame : "",
         }),
       },
       {
@@ -964,6 +1102,7 @@ export function trees(
           c.vp,
           c.prefix,
           c.sel.kind === "node" ? c.sel.id : "",
+          c.drag?.kind === "mini" ? c.drag.box : miniBox(placed, c.vp),
         ),
       },
     );
@@ -1004,6 +1143,11 @@ export class FlowStudio extends Component<FsState> {
     return viewModel(state);
   }
 
+  /** the same, as a design that has frames (an older design is turned into one) */
+  _frames(state: FsState): Model {
+    return toFrames(viewModel(state));
+  }
+
   /** the whole project, whatever module is open */
   _root(state: FsState): Model {
     return state.hist.present;
@@ -1025,6 +1169,7 @@ export class FlowStudio extends Component<FsState> {
     extra: Effect[] = [],
     mount = false,
   ): Effect[] {
+    if (patch.vp) patch = { ...patch, vp: sized(patch.vp, state.vp) };
     const next: Core = { ...coreFrom(state), ...patch };
     const d = derive(next);
     const saved = next.hist.present !== state.hist.present;
@@ -1040,6 +1185,7 @@ export class FlowStudio extends Component<FsState> {
 
   /** a repaint only: the pointer moved while dragging (no need to derive the panels) */
   _light(state: FsState, patch: Partial<Core>): Effect[] {
+    if (patch.vp) patch = { ...patch, vp: sized(patch.vp, state.vp) };
     const next: Core = { ...coreFrom(state), ...patch };
     return [store.merge("", patch), ...this._paint(next, false)];
   }
@@ -1057,7 +1203,8 @@ export class FlowStudio extends Component<FsState> {
     layoutOnly = false,
   ): Effect[] {
     const root = state.hist.present;
-    let full = putAt(root, scopeOf(state), model);
+    // a design edited has frames (an older one is turned into them, drawn the same)
+    let full = putAt(root, scopeOf(state), toFrames(model));
     // the body of a pipe is generated from its stages: a stage added or deleted
     // on the board rebuilds the chain
     const open = defAt(root, scopeOf(state));
@@ -1148,12 +1295,19 @@ export class FlowStudio extends Component<FsState> {
       local.media("(prefers-reduced-motion: reduce)", "gotMotion"),
       local.load(STORAGE_KEY, "loaded"),
       local.load(MINE_KEY, "mineLoaded"),
+      local.load(BOARD_KEY, "boardLoaded"),
       ...(state.ready ? [time.setTimeout(SYNC, 0, "sync")] : []),
     ];
   }
 
   leave(): Effect[] {
-    return [local.unkeys(), time.cancel(TICK), time.cancel(SYNC)];
+    return [
+      local.unkeys(),
+      time.cancel(TICK),
+      time.cancel(SYNC),
+      // the full screen is the board's: leaving the page ends it
+      store.set("full", false),
+    ];
   }
 
   gotPrefix(msg: Message, state: FsState): Effect[] {
@@ -1189,6 +1343,9 @@ export class FlowStudio extends Component<FsState> {
           ...core,
           prefix: state.prefix,
           reduced: state.reduced,
+          // how the board sits on the page is not the project's
+          boardH: state.boardH,
+          mini: state.mini,
           ready: true,
           message: "Opened your saved flow",
         },
@@ -1202,7 +1359,13 @@ export class FlowStudio extends Component<FsState> {
 
   /** mounts the drawings once their containers are on the page */
   sync(_msg: Message, state: FsState): Effect[] {
-    return this._paint(coreFrom(state), true);
+    return [
+      ...this._paint(coreFrom(state), true),
+      // the board fills its box: the box is measured, and Shift + wheel zooms it
+      local.watch("#fs-flow", "boardSize"),
+      local.watch("#fs-minimap", "miniSize"),
+      local.wheel("#fs-flow", "boardWheel"),
+    ];
   }
 
   missFlow(_m: Message, state: FsState): Effect[] {
@@ -1519,18 +1682,29 @@ export class FlowStudio extends Component<FsState> {
 
   cvDown(msg: Message, state: FsState): Effect[] {
     const p = msg.payload as { x: number; y: number };
-    return this._commit(state, {
-      sel: NO_SEL,
-      drag: { kind: "pan", ax: p.x, ay: p.y, moved: false },
-    });
+    void p;
+    // the pointer is followed wherever it goes, off the board too
+    return [
+      ...this._commit(state, {
+        sel: NO_SEL,
+        drag: {
+          kind: "pan",
+          cx: null,
+          cy: null,
+          vx: state.vp.x,
+          vy: state.vp.y,
+          moved: false,
+        },
+      }),
+      local.drag("dragMove"),
+    ];
   }
 
   nodeDown(msg: Message, state: FsState): Effect[] {
     const p = msg.payload as { id: string; x: number; y: number };
     const a = this._abs(state, p.id);
     if (!a) return [];
-    const m = this._model(state);
-    const n = findNode(m, p.id)!;
+    const n = findNode(this._frames(state), p.id)!;
     return this._commit(state, {
       sel: { kind: "node", id: p.id },
       side: state.side === "scenario" ? "scenario" : "inspect",
@@ -1539,8 +1713,9 @@ export class FlowStudio extends Component<FsState> {
         id: p.id,
         ox: p.x - a.x,
         oy: p.y - a.y,
-        x: n.x,
-        y: n.y,
+        x: a.x,
+        y: a.y,
+        frame: n.frame ?? "",
         moved: false,
       },
     });
@@ -1571,46 +1746,42 @@ export class FlowStudio extends Component<FsState> {
     const d = state.drag;
     if (!d) return [];
     const p = msg.payload as { x: number; y: number };
-    if (d.kind === "pan") {
-      const placed = layoutOf(this._model(state));
-      const vp = clampView(
-        {
-          ...state.vp,
-          x: state.vp.x + (d.ax - p.x),
-          y: state.vp.y + (d.ay - p.y),
-        },
-        placed.width,
-        placed.height,
-      );
-      return this._light(state, {
-        vp,
-        drag: {
-          ...d,
-          moved: d.moved || Math.abs(d.ax - p.x) + Math.abs(d.ay - p.y) > 2,
-        },
-      });
-    }
     if (d.kind === "link")
       return this._light(state, { drag: { ...d, x: p.x, y: p.y } });
-    // a node follows the pointer, inside its lane
-    const m = this._model(state);
+    // a node follows the pointer, anywhere on the plot; over a frame, it will be attached to it
+    if (d.kind !== "node") return [];
+    const m = this._frames(state);
     const node = findNode(m, d.id);
     if (!node) return [];
-    const placed = layoutOf(m);
-    const band = placed.bands.find((b) => b.lane === laneOf(node));
-    const x = Math.max(0, Math.round(p.x - d.ox - GUTTER));
-    const y = Math.max(8, Math.round(p.y - d.oy - (band?.top ?? 0)));
-    const moved = d.moved || Math.abs(x - node.x) + Math.abs(y - node.y) > 4;
-    return moved ? this._light(state, { drag: { ...d, x, y, moved } }) : [];
+    const size = layoutOf(m).nodes.find((n) => n.id === d.id);
+    const x = Math.round(p.x - d.ox);
+    const y = Math.round(p.y - d.oy);
+    const moved = d.moved || Math.abs(x - d.x) + Math.abs(y - d.y) > 4;
+    if (!moved) return [];
+    // the middle of the node says which frame it is over
+    const over = frameAt(m, x + (size?.w ?? 0) / 2, y + (size?.h ?? 0) / 2);
+    return this._light(state, {
+      drag: { ...d, x, y, moved, frame: over?.id ?? "" },
+    });
   }
 
   _endDrag(state: FsState): Effect[] {
     const d = state.drag;
     if (!d) return [];
+    // these are followed by the window, and end with its release (`dragMove` with `done`): a
+    // release over the board, which comes first, is not their end
+    if (
+      d.kind === "frame" ||
+      d.kind === "frameSize" ||
+      d.kind === "height" ||
+      d.kind === "pan" ||
+      d.kind === "mini"
+    )
+      return [];
     if (d.kind === "node" && d.moved)
       return this._edit(
         state,
-        moveNode(this._model(state), d.id, d.x, d.y),
+        dragged(this._frames(state), d),
         "",
         { drag: null },
         true,
@@ -1623,9 +1794,8 @@ export class FlowStudio extends Component<FsState> {
   }
 
   cvLeave(_msg: Message, state: FsState): Effect[] {
-    return state.drag?.kind === "node" ||
-      state.drag?.kind === "link" ||
-      state.drag?.kind === "pan"
+    // a pan goes on outside the board: the pointer is followed by the window
+    return state.drag?.kind === "node" || state.drag?.kind === "link"
       ? this._commit(state, { drag: null })
       : [];
   }
@@ -1728,6 +1898,64 @@ export class FlowStudio extends Component<FsState> {
     });
   }
 
+  /** the minimap measured: what a pixel of it is in the world depends on it */
+  miniSize(msg: Message, state: FsState): Effect[] {
+    const s = msg.payload as { w: number; h: number };
+    return state.mini.w === s.w && state.mini.h === s.h
+      ? []
+      : this._light(state, { mini: { w: s.w, h: s.h } });
+  }
+
+  /**
+   * A press on the minimap: on the rectangle, it is taken where it is; elsewhere, the view
+   * goes there. The pointer then moves the rectangle wherever it goes.
+   */
+  mmDown(msg: Message, state: FsState): Effect[] {
+    const p = msg.payload as { x: number; y: number };
+    const placed = layoutOf(this._model(state));
+    const box = miniBox(placed, state.vp);
+    const size = { w: state.vp.w ?? 800, h: state.vp.h ?? 460 };
+    const inside =
+      p.x >= state.vp.x &&
+      p.x <= state.vp.x + size.w / state.vp.z &&
+      p.y >= state.vp.y &&
+      p.y <= state.vp.y + size.h / state.vp.z;
+    const vp = inside
+      ? state.vp
+      : this._clamp(state, centeredAt(state.vp, p.x, p.y));
+    // a px of the minimap, in world units: it shows the box as large as fits
+    const scale =
+      state.mini.w > 0 && state.mini.h > 0
+        ? Math.min(state.mini.w / box.w, state.mini.h / box.h)
+        : 0.1;
+    return [
+      ...this._commit(state, {
+        vp,
+        drag: {
+          kind: "mini",
+          cx0: null,
+          cy0: null,
+          vx: vp.x,
+          vy: vp.y,
+          k: 1 / scale,
+          box,
+        },
+      }),
+      local.drag("dragMove"),
+    ];
+  }
+
+  boardLoaded(msg: Message, state: FsState): Effect[] {
+    const text = (msg.payload as { text: string | null } | undefined)?.text;
+    const h = Number(text);
+    if (!text || !Number.isFinite(h) || h === state.boardH) return [];
+    const boardH = Math.min(BOARD_MAX, Math.max(BOARD_MIN, Math.round(h)));
+    return this._commit(state, {
+      boardH,
+      vp: state.vp.w === undefined ? state.vp : { ...state.vp, h: boardH },
+    });
+  }
+
   zoomIn(_m: Message, state: FsState): Effect[] {
     return this._commit(state, {
       vp: this._clamp(state, zoomBy(state.vp, 1.25)),
@@ -1740,7 +1968,9 @@ export class FlowStudio extends Component<FsState> {
   }
   fit(_m: Message, state: FsState): Effect[] {
     const placed = layoutOf(this._model(state));
-    return this._commit(state, { vp: fitView(placed.width, placed.height) });
+    return this._commit(state, {
+      vp: fitView(placed, state.vp),
+    });
   }
   home(_m: Message, state: FsState): Effect[] {
     return this._commit(state, { vp: HOME });
@@ -1749,12 +1979,324 @@ export class FlowStudio extends Component<FsState> {
     return this._commit(state, { follow: !state.follow });
   }
 
+  // ---- the board in its box: its size, the wheel, the full screen, the height ----
+
+  /** the box of the board was measured: the drawing fills it (and shows the whole design the first time) */
+  boardSize(msg: Message, state: FsState): Effect[] {
+    const s = msg.payload as { w: number; h: number };
+    if (state.vp.w === s.w && state.vp.h === s.h) return [];
+    const placed = layoutOf(this._model(state));
+    const first = state.vp.w === undefined;
+    // the first time the whole design is shown, but not smaller than it can be read
+    const fit = fitView(placed, s);
+    return this._commit(state, {
+      vp: first
+        ? fit.z >= START_Z
+          ? fit
+          : { ...fit, x: -12, y: -12, z: START_Z }
+        : { ...state.vp, w: s.w, h: s.h },
+    });
+  }
+
+  /** Shift + wheel: zoom toward the pointer */
+  boardWheel(msg: Message, state: FsState): Effect[] {
+    const w = msg.payload as { dy: number; x: number; y: number };
+    const factor = Math.exp(-w.dy * 0.0018);
+    return this._commit(state, {
+      vp: this._clamp(state, zoomAt(state.vp, factor, w.x, w.y)),
+    });
+  }
+
+  toggleFull(): Effect[] {
+    return [local.fullscreen(".fs", "fullChanged")];
+  }
+
+  fullChanged(msg: Message, state: FsState): Effect[] {
+    const on = (msg.payload as { on: boolean }).on === true;
+    // the box is another size now: measure it again
+    return on === state.full
+      ? []
+      : this._commit(state, { full: on }, [
+          time.setTimeout("fs-measure", 80, "remeasure"),
+        ]);
+  }
+
+  /** the box of the board is measured again, once the page has laid itself out */
+  remeasure(): Effect[] {
+    return [local.watch("#fs-flow", "boardSize")];
+  }
+
+  /** the handle under the board: the height follows the pointer */
+  heightDown(_msg: Message, state: FsState): Effect[] {
+    return [
+      ...this._light(state, {
+        drag: { kind: "height", cy0: null, h0: state.boardH },
+      }),
+      local.drag("dragMove"),
+    ];
+  }
+
+  heightKey(msg: Message, state: FsState): Effect[] {
+    const k = msg.event?.key;
+    if (k !== "ArrowUp" && k !== "ArrowDown") return [];
+    const h = Math.min(
+      BOARD_MAX,
+      Math.max(BOARD_MIN, state.boardH + (k === "ArrowDown" ? 40 : -40)),
+    );
+    return this._commit(
+      state,
+      {
+        boardH: h,
+        vp: { ...state.vp, h },
+      },
+      [local.save(BOARD_KEY, String(h))],
+    );
+  }
+
+  /** a frame by its header: it follows the pointer, and what is attached to it goes with it */
+  frameDown(msg: Message, state: FsState): Effect[] {
+    const id = (msg.payload as { id: string }).id;
+    if (!findFrame(this._frames(state), id)) return [];
+    return [
+      ...this._light(state, {
+        sel: NO_SEL,
+        drag: { kind: "frame", id, cx0: null, cy0: null, dx: 0, dy: 0 },
+      }),
+      local.drag("dragMove"),
+    ];
+  }
+
+  /** a border or a corner of a frame: the rectangle follows the pointer */
+  frameSize(msg: Message, state: FsState): Effect[] {
+    const p = msg.payload as { id: string; edge: string };
+    const f = findFrame(this._frames(state), p.id);
+    if (!f) return [];
+    const r = { x: f.x, y: f.y, w: f.w, h: f.h };
+    return [
+      ...this._light(state, {
+        sel: NO_SEL,
+        drag: {
+          kind: "frameSize",
+          id: p.id,
+          edge: p.edge,
+          cx0: null,
+          cy0: null,
+          r0: r,
+          r,
+        },
+      }),
+      local.drag("dragMove"),
+    ];
+  }
+
+  /** the pointer moves, anywhere on the screen, while the height of the board or of a lane is dragged */
+  dragMove(msg: Message, state: FsState): Effect[] {
+    const d = state.drag;
+    if (
+      !d ||
+      (d.kind !== "frame" &&
+        d.kind !== "frameSize" &&
+        d.kind !== "height" &&
+        d.kind !== "pan" &&
+        d.kind !== "mini")
+    )
+      return [];
+    const p = msg.payload as { x: number; y: number; done: boolean };
+    if (d.kind === "mini") {
+      if (p.done) return this._commit(state, { drag: null });
+      if (d.cx0 === null || d.cy0 === null)
+        return this._light(state, { drag: { ...d, cx0: p.x, cy0: p.y } });
+      const placed = layoutOf(this._model(state));
+      return this._light(state, {
+        vp: clampView(
+          {
+            ...state.vp,
+            x: d.vx + (p.x - d.cx0) * d.k,
+            y: d.vy + (p.y - d.cy0) * d.k,
+          },
+          placed,
+        ),
+      });
+    }
+    if (d.kind === "pan") {
+      if (p.done) return this._commit(state, { drag: null });
+      if (d.cx === null || d.cy === null)
+        return this._light(state, { drag: { ...d, cx: p.x, cy: p.y } });
+      const placed = layoutOf(this._model(state));
+      const dx = p.x - d.cx;
+      const dy = p.y - d.cy;
+      return this._light(state, {
+        vp: clampView(
+          {
+            ...state.vp,
+            x: d.vx - dx / state.vp.z,
+            y: d.vy - dy / state.vp.z,
+          },
+          placed,
+        ),
+        drag: { ...d, moved: d.moved || Math.abs(dx) + Math.abs(dy) > 2 },
+      });
+    }
+    if (d.cy0 === null) {
+      return p.done
+        ? this._light(state, { drag: null })
+        : this._light(state, {
+            drag: {
+              ...d,
+              cy0: p.y,
+              ...(d.kind === "frame" || d.kind === "frameSize"
+                ? { cx0: p.x }
+                : {}),
+            },
+          });
+    }
+    const dy = p.y - d.cy0;
+    if (d.kind === "height") {
+      const h = Math.min(BOARD_MAX, Math.max(BOARD_MIN, Math.round(d.h0 + dy)));
+      // the box of the board is exactly this high: the drawing follows at once
+      const vp = { ...state.vp, h };
+      if (p.done)
+        return this._commit(state, { drag: null, boardH: h, vp }, [
+          local.save(BOARD_KEY, String(h)),
+        ]);
+      const next: Core = { ...coreFrom(state), drag: { ...d }, boardH: h, vp };
+      return [
+        store.merge("", {
+          drag: { ...d },
+          boardH: h,
+          vp,
+          boardStyle: boardStyle(h, state.full),
+        }),
+        ...this._paint(next, false),
+      ];
+    }
+    const dx = (p.x - (d.cx0 ?? p.x)) / state.vp.z;
+    const dyw = dy / state.vp.z;
+    if (d.kind === "frame") {
+      if (!p.done) return this._light(state, { drag: { ...d, dx, dy: dyw } });
+      // a drag that ended where it began is no step of the history
+      if (Math.abs(dx) + Math.abs(dyw) < 1)
+        return this._commit(state, { drag: null });
+      return this._edit(
+        state,
+        moveFrame(this._frames(state), d.id, dx, dyw),
+        "",
+        { drag: null },
+        true,
+      );
+    }
+    // the edges of the rectangle that the handle holds move, the others stay
+    const r = d.r0;
+    const left = d.edge.includes("w");
+    const right = d.edge.includes("e");
+    const top = d.edge.includes("n");
+    const bottom = d.edge.includes("s");
+    const w = Math.max(FRAME_MIN_W, r.w + (right ? dx : 0) - (left ? dx : 0));
+    const h = Math.max(FRAME_MIN_H, r.h + (bottom ? dyw : 0) - (top ? dyw : 0));
+    const next = {
+      // the side that is held by the opposite border does not move when the least size is reached
+      x: left ? r.x + r.w - w : r.x,
+      y: top ? r.y + r.h - h : r.y,
+      w,
+      h,
+    };
+    if (!p.done) return this._light(state, { drag: { ...d, r: next } });
+    if (next.x === r.x && next.y === r.y && next.w === r.w && next.h === r.h)
+      return this._commit(state, { drag: null });
+    return this._edit(
+      state,
+      setFrameRect(this._frames(state), d.id, next),
+      "",
+      { drag: null },
+      true,
+    );
+  }
+
+  // ---- the frames: add, name, what they run as, take away ----
+
+  toggleFrames(_m: Message, state: FsState): Effect[] {
+    return this._commit(state, { framesOpen: !state.framesOpen });
+  }
+
+  /** a double click on the name of a frame: the panel that edits the frames */
+  frameEdit(_m: Message, state: FsState): Effect[] {
+    return this._commit(state, { framesOpen: true });
+  }
+
+  /** a new frame in the middle of what the board shows */
+  frameAdd(_m: Message, state: FsState): Effect[] {
+    const vp = state.vp;
+    const w = (vp.w ?? 800) / vp.z;
+    const h = (vp.h ?? 460) / vp.z;
+    // not larger than the board, and not under the corner of the last one
+    const fw = Math.min(FRAME_W, Math.max(FRAME_MIN_W, w * 0.6));
+    const fh = Math.min(FRAME_H, Math.max(FRAME_MIN_H, h * 0.6));
+    const m = this._frames(state);
+    const step = framesOf(m).length * 24;
+    return this._edit(
+      state,
+      addFrame(
+        m,
+        {
+          x: vp.x + (w - fw) / 2 + step,
+          y: vp.y + (h - fh) / 2 + step,
+          w: fw,
+          h: fh,
+        },
+        `Frame ${framesOf(m).length + 1}`,
+      ).model,
+      "",
+      { message: "Added a frame. Drag its header, or a component onto it." },
+      true,
+    );
+  }
+
+  frameName(msg: Message, state: FsState): Effect[] {
+    const id = String(msg.payload);
+    return this._edit(
+      state,
+      renameFrame(this._frames(state), id, msg.event?.value ?? ""),
+      `frame-name:${id}`,
+      {},
+      true,
+    );
+  }
+
+  frameRole(msg: Message, state: FsState): Effect[] {
+    const v = msg.event?.value ?? "";
+    if (v !== "" && !(LANES as string[]).includes(v)) return [];
+    return this._edit(
+      state,
+      setFrameRole(this._frames(state), String(msg.payload), v as "" | Lane),
+      "",
+      {},
+      true,
+    );
+  }
+
+  /** the cross of a frame, or Remove in the panel: the components on it stay on the plot */
+  frameDel(msg: Message, state: FsState): Effect[] {
+    const raw = msg.payload as { id?: string } | string;
+    const id = typeof raw === "string" ? raw : String(raw?.id ?? "");
+    return this._edit(
+      state,
+      removeFrame(this._frames(state), id),
+      "",
+      { message: "Removed the frame: its components stay where they are" },
+      true,
+    );
+  }
+
   autoLayoutAll(_m: Message, state: FsState): Effect[] {
     return this._edit(
       state,
-      autoLayout(this._model(state)),
+      autoLayout(this._frames(state)),
       "",
-      { vp: HOME, message: "Laid out the lanes", live: "Auto layout done" },
+      {
+        vp: HOME,
+        message: "Laid out the components in their frames",
+        live: "Auto layout done",
+      },
       true,
     );
   }
@@ -1769,7 +2311,7 @@ export class FlowStudio extends Component<FsState> {
         ? this._model(state).plugins.find((p) => p.external === title)
         : undefined;
     const r = addNode(
-      this._model(state),
+      this._frames(state),
       kind,
       title,
       owner ? { plugin: owner.name } : {},
@@ -1793,15 +2335,13 @@ export class FlowStudio extends Component<FsState> {
   _reveal(state: FsState, model: Model, node: FlowNode): Viewport {
     const placed = layoutOf(model);
     const p = placed.nodes.find((n) => n.id === node.id);
-    return p
-      ? clampView(reveal(state.vp, p), placed.width, placed.height)
-      : state.vp;
+    return p ? clampView(reveal(state.vp, p), placed) : state.vp;
   }
 
   /** the view stays over the world */
   _clamp(state: FsState, vp: Viewport): Viewport {
     const placed = layoutOf(this._model(state));
-    return clampView(vp, placed.width, placed.height);
+    return clampView(vp, placed);
   }
 
   quickKey(msg: Message, state: FsState): Effect[] {

@@ -159,7 +159,10 @@ export const scopeValid = (m: Model, path: string[]): boolean =>
 /** The model whose nodes and edges are the body of the module at `path`. */
 export function modelAt(m: Model, path: string[]): Model {
   const def = defAt(m, path);
-  return def ? { ...m, nodes: def.nodes, edges: def.edges } : m;
+  // a body has its own frames: the ones of the design are the top level's
+  return def
+    ? { ...m, nodes: def.nodes, edges: def.edges, frames: def.frames }
+    : m;
 }
 
 /**
@@ -174,8 +177,16 @@ export function putAt(m: Model, path: string[], scoped: Model): Model {
     ...scoped,
     nodes: m.nodes,
     edges: m.edges,
+    frames: m.frames,
     modules: scoped.modules.map((d) =>
-      d.id === def.id ? { ...d, nodes: scoped.nodes, edges: scoped.edges } : d,
+      d.id === def.id
+        ? {
+            ...d,
+            nodes: scoped.nodes,
+            edges: scoped.edges,
+            frames: scoped.frames,
+          }
+        : d,
     ),
   };
 }

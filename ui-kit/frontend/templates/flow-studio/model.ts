@@ -26,6 +26,54 @@ export const LANE_HINT: Record<Lane, string> = {
   externals: "Postgres, Redis, third-party API, the client",
 };
 
+/**
+ * A lane of the board. The four of the start (Browser, App, Plugins, Externals) are
+ * lanes like any other: they can be renamed, removed and resized, and new ones added.
+ * A lane has a role, which is what the simulation and the checks know it by: a node in
+ * a lane with the role `browser` runs in the browser, in `app` on the server, in
+ * `plugins` it is an effect, in `externals` it is the world.
+ */
+export interface LaneDef {
+  /** the four of the start are `browser`, `app`, `plugins`, `externals` */
+  id: string;
+  name: string;
+  role: Lane;
+  /** the height set by hand; a lane is never shorter than its nodes */
+  h?: number;
+}
+
+/** the lanes of a project that has not changed them */
+export const DEFAULT_LANES: LaneDef[] = LANES.map((id) => ({
+  id,
+  name: LANE_LABEL[id],
+  role: id,
+}));
+
+/**
+ * A frame: a rectangle on the plot, like a frame in Figma. It has a name, a place and a size
+ * and nothing else is required of it: components are placed on the plot freely, and
+ * dropped on a frame they are attached to it and go where it goes. A frame can also
+ * say what its components run as (`role`), which is how lanes come back: a frame the width
+ * of the board with the role `app` is the App lane. Absent a role, a component keeps the
+ * one of its kind.
+ */
+export interface Frame {
+  id: string;
+  name: string;
+  /** the corner, and the size, in world units (the plot has no end, and no origin that matters) */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** what the components attached to it run as ("" = what their kind says) */
+  role: "" | Lane;
+}
+
+export const FRAME_MIN_W = 120;
+export const FRAME_MIN_H = 80;
+export const FRAME_W = 380;
+export const FRAME_H = 240;
+
 export type NodeKind =
   | "ui-event"
   | "fe-handler"
@@ -157,8 +205,12 @@ export interface FlowNode {
   note: string;
   /** module: the id of the module (`modules`) this node is an instance of */
   ref: string;
-  /** module: the lane of the instance, the side of its module ("" = default) */
+  /** the role the node has, when it is not the one of its kind ("" = the kind's); a module: the side of its module */
   lane: "" | Lane;
+  /** an older design: the lane the node sits in (a design that has `frames` has none) */
+  band?: string;
+  /** the frame the node is attached to: it goes where the frame goes (absent: free on the plot) */
+  frame?: string;
   /**
    * Only in a flattened model, never saved: this node stands for a module with a
    * code body. The engine runs the code when a message reaches it.
@@ -295,6 +347,8 @@ export interface ModuleDef {
   stages: string[];
   nodes: FlowNode[];
   edges: FlowEdge[];
+  /** the frames of the body of a graph module (see Model.frames) */
+  frames?: Frame[];
 }
 
 export interface Model {
@@ -314,6 +368,16 @@ export interface Model {
   /** ms per plugin (`pg`, `redis`, ..., `net`, `app`) that replaces the default */
   latency: Record<string, number>;
   scenario: Scenario;
+  /**
+   * The frames of the plot. Absent, the design is an older one with lanes (`lanes`, `laneW`,
+   * or the four of the start), and its nodes are placed in them: `toFrames` (layout.ts) turns
+   * it into frames, the same drawing, the first time it is edited.
+   */
+  frames?: Frame[];
+  /** an older design: the lanes of the board, top to bottom (absent: the four of the start) */
+  lanes?: LaneDef[];
+  /** the width of every lane, set by hand; never narrower than the design (absent: as wide as the design) */
+  laneW?: number;
   /** the counter that makes ids */
   seq: number;
 }
@@ -702,8 +766,162 @@ export const findDef = (m: Model, id: string): ModuleDef | undefined =>
 /** The module an instance node stands for. */
 export const defOf = (m: Model, n: FlowNode): ModuleDef | undefined =>
   n.kind === "module" ? findDef(m, n.ref) : undefined;
+/** The role of a node: what it runs as (its lane's role, else the one of its kind). */
 export const laneOf = (n: FlowNode): Lane =>
-  n.kind === "module" && n.lane ? n.lane : KIND_LANE[n.kind];
+  n.lane ? n.lane : KIND_LANE[n.kind];
+
+/** The lanes of the board. */
+export const lanesOf = (m: Pick<Model, "lanes">): LaneDef[] =>
+  m.lanes && m.lanes.length > 0 ? m.lanes : DEFAULT_LANES;
+
+/** The id of the lane a node sits in: its own, else the first lane with its role, else the first. */
+export function bandOf(m: Pick<Model, "lanes">, n: FlowNode): string {
+  const lanes = lanesOf(m);
+  if (n.band && lanes.some((l) => l.id === n.band)) return n.band;
+  const role = laneOf(n);
+  return (lanes.find((l) => l.role === role) ?? lanes[0]).id;
+}
+
+const mapNodes = (m: Model, fn: (n: FlowNode) => FlowNode): Model => ({
+  ...m,
+  nodes: m.nodes.map(fn),
+});
+
+// ---- frames: rectangles on the plot, and the nodes attached to them ----
+// These work on a design that has frames (`toFrames` in layout.ts makes one of an older one).
+
+export const framesOf = (m: Pick<Model, "frames">): Frame[] => m.frames ?? [];
+export const findFrame = (
+  m: Pick<Model, "frames">,
+  id: string,
+): Frame | undefined => framesOf(m).find((f) => f.id === id);
+
+const setFrames = (m: Model, frames: Frame[]): Model => ({ ...m, frames });
+const updateFrame = (m: Model, id: string, patch: Partial<Frame>): Model =>
+  setFrames(
+    m,
+    framesOf(m).map((f) => (f.id === id ? { ...f, ...patch } : f)),
+  );
+
+/** What a node runs as once it is attached to a frame with a role (a module keeps its side). */
+const stamp = (n: FlowNode, role: "" | Lane): FlowNode =>
+  n.kind === "module"
+    ? n
+    : { ...n, lane: role && role !== KIND_LANE[n.kind] ? role : "" };
+
+/** A new frame, on top of the others; `at` is its corner. */
+export function addFrame(
+  m: Model,
+  at: { x: number; y: number; w?: number; h?: number },
+  name = "Frame",
+): { model: Model; id: string } {
+  const made = newId(m, "f");
+  const frame: Frame = {
+    id: made.id,
+    name: name.trim() || "Frame",
+    x: Math.round(at.x),
+    y: Math.round(at.y),
+    w: Math.max(FRAME_MIN_W, Math.round(at.w ?? FRAME_W)),
+    h: Math.max(FRAME_MIN_H, Math.round(at.h ?? FRAME_H)),
+    role: "",
+  };
+  return { model: setFrames(made.model, [...framesOf(m), frame]), id: made.id };
+}
+
+export const renameFrame = (m: Model, id: string, name: string): Model =>
+  updateFrame(m, id, { name });
+
+/** A frame's place and size (never smaller than the least). */
+export function setFrameRect(
+  m: Model,
+  id: string,
+  r: { x: number; y: number; w: number; h: number },
+): Model {
+  return updateFrame(m, id, {
+    x: Math.round(r.x),
+    y: Math.round(r.y),
+    w: Math.max(FRAME_MIN_W, Math.round(r.w)),
+    h: Math.max(FRAME_MIN_H, Math.round(r.h)),
+  });
+}
+
+/** A frame moved by (dx, dy), and the nodes attached to it with it. */
+export function moveFrame(m: Model, id: string, dx: number, dy: number): Model {
+  const f = findFrame(m, id);
+  if (!f || (dx === 0 && dy === 0)) return m;
+  const moved = updateFrame(m, id, {
+    x: Math.round(f.x + dx),
+    y: Math.round(f.y + dy),
+  });
+  return mapNodes(moved, (n) =>
+    n.frame === id
+      ? { ...n, x: Math.round(n.x + dx), y: Math.round(n.y + dy) }
+      : n,
+  );
+}
+
+/** What the attached nodes of a frame run as: the nodes take the role with it. */
+export function setFrameRole(m: Model, id: string, role: "" | Lane): Model {
+  return mapNodes(updateFrame(m, id, { role }), (n) =>
+    n.frame === id ? stamp(n, role) : n,
+  );
+}
+
+/**
+ * A node attached to a frame (it goes where the frame goes, and runs as its role), or
+ * free on the plot when `frameId` is null.
+ */
+export function attachNode(
+  m: Model,
+  id: string,
+  frameId: string | null,
+): Model {
+  const node = findNode(m, id);
+  if (!node) return m;
+  const frame = frameId ? findFrame(m, frameId) : undefined;
+  const { frame: _old, ...rest } = node;
+  const next: FlowNode = frame
+    ? stamp({ ...rest, frame: frame.id }, frame.role)
+    : stamp(rest, "");
+  // `frame` is set to undefined, not left out, when the node is let go
+  return updateNode(m, id, { ...next, frame: next.frame });
+}
+
+/** A frame taken away: its nodes stay where they are, free on the plot. */
+export function removeFrame(m: Model, id: string): Model {
+  if (!findFrame(m, id)) return m;
+  const cleared = mapNodes(m, (n) => {
+    if (n.frame !== id) return n;
+    const { frame: _f, ...rest } = n;
+    return stamp(rest, "");
+  });
+  return setFrames(
+    cleared,
+    framesOf(m).filter((f) => f.id !== id),
+  );
+}
+
+/** One place down (the frame is above the next one) or up the stack of frames. */
+export function raiseFrame(m: Model, id: string): Model {
+  const frames = framesOf(m);
+  const f = frames.find((x) => x.id === id);
+  return f ? setFrames(m, [...frames.filter((x) => x.id !== id), f]) : m;
+}
+
+/** The frame a point of the plot is in: the one on top. */
+export function frameAt(
+  m: Pick<Model, "frames">,
+  x: number,
+  y: number,
+): Frame | undefined {
+  const frames = framesOf(m);
+  for (let i = frames.length - 1; i >= 0; i--) {
+    const f = frames[i];
+    if (x >= f.x && x <= f.x + f.w && y >= f.y && y <= f.y + f.h) return f;
+  }
+  return undefined;
+}
+
 export const outEdges = (m: Model, id: string): FlowEdge[] =>
   m.edges.filter((e) => e.from === id);
 export const inEdges = (m: Model, id: string): FlowEdge[] =>
@@ -743,16 +961,41 @@ export function addNode(
   });
   if (kind === "route" && !node.detail)
     node = { ...node, detail: msgOfRoute(t) };
-  // a new node goes to the right of the others in its lane
-  if (patch.x === undefined) {
-    const lane = laneOf(node);
-    const right = made.model.nodes
-      .filter((n) => laneOf(n) === lane)
+  let model = made.model;
+  if (patch.x === undefined && model.frames) {
+    // a new node goes into the frame that runs as its kind (the lanes of an older design
+    // are such frames), to the right of what is there; with none, to the right of the others
+    const role = laneOf(node);
+    const home = framesOf(model).find((f) => f.role === role);
+    if (home) {
+      const mine = model.nodes.filter((n) => n.frame === home.id);
+      const x = mine.length
+        ? mine.reduce((mx, n) => Math.max(mx, n.x + NODE_W + 28), 0)
+        : home.x + 16;
+      node = { ...node, x, y: home.y + 34, frame: home.id };
+      const need = x + NODE_W + 16 - home.x;
+      if (need > home.w)
+        model = updateFrame(model, home.id, { w: Math.round(need) });
+    } else {
+      const right = model.nodes.reduce(
+        (mx, n) => Math.max(mx, n.x + NODE_W + 28),
+        0,
+      );
+      const top = model.nodes.length
+        ? Math.min(...model.nodes.map((n) => n.y))
+        : 0;
+      node = { ...node, x: right, y: top };
+    }
+  } else if (patch.x === undefined) {
+    // a new node goes to the right of the others in its lane
+    const lane = bandOf(model, node);
+    const right = model.nodes
+      .filter((n) => bandOf(model, n) === lane)
       .reduce((mx, n) => Math.max(mx, n.x + NODE_W + 28), 0);
     node = { ...node, x: Math.max(right, 0) };
   }
   return {
-    model: { ...made.model, nodes: [...made.model.nodes, node] },
+    model: { ...model, nodes: [...model.nodes, node] },
     id: made.id,
   };
 }
@@ -1141,10 +1384,9 @@ function nodeFrom(v: unknown): FlowNode | null {
     clientSet: strMap(v.clientSet),
     note: str(v.note),
     ref: kind === "module" ? str(v.ref) : "",
-    lane:
-      kind === "module" && (LANES as string[]).includes(str(v.lane))
-        ? (v.lane as Lane)
-        : "",
+    lane: (LANES as string[]).includes(str(v.lane)) ? (v.lane as Lane) : "",
+    ...(str(v.band) ? { band: str(v.band) } : {}),
+    ...(str(v.frame) ? { frame: str(v.frame) } : {}),
   });
 }
 
@@ -1266,6 +1508,7 @@ function modulesFrom(v: unknown): ModuleDef[] {
         held: str(d.held),
         stages: strList(d.stages),
         ...g,
+        ...framesField(d.frames),
       };
     })
     .filter((d, i, all) => all.findIndex((o) => o.id === d.id) === i);
@@ -1303,6 +1546,58 @@ function scenarioFrom(v: unknown, ids: Set<string>): Scenario {
     seed: Math.round(num(v.seed, 1)),
   };
 }
+
+/** The lanes of a saved project: a field only when it has lanes of its own. */
+/** The frames of a saved design: a field only when it has frames of its own (even none). */
+function framesFrom(v: unknown): Frame[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const seen = new Set<string>();
+  const frames: Frame[] = [];
+  for (const x of v) {
+    if (!isObj(x) || typeof x.id !== "string" || x.id === "" || seen.has(x.id))
+      continue;
+    seen.add(x.id);
+    frames.push({
+      id: x.id,
+      name: str(x.name, "Frame"),
+      x: Math.round(num(x.x, 0)),
+      y: Math.round(num(x.y, 0)),
+      w: Math.max(FRAME_MIN_W, Math.round(num(x.w, FRAME_W))),
+      h: Math.max(FRAME_MIN_H, Math.round(num(x.h, FRAME_H))),
+      role: (LANES as string[]).includes(str(x.role)) ? (x.role as Lane) : "",
+    });
+  }
+  return frames;
+}
+const framesField = (v: unknown): { frames?: Frame[] } => {
+  const frames = framesFrom(v);
+  return frames ? { frames } : {};
+};
+
+function lanesFrom(v: unknown): LaneDef[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const seen = new Set<string>();
+  const lanes: LaneDef[] = [];
+  for (const x of v) {
+    if (!isObj(x) || typeof x.id !== "string" || x.id === "" || seen.has(x.id))
+      continue;
+    seen.add(x.id);
+    const h = Math.round(num(x.h, 0));
+    lanes.push({
+      id: x.id,
+      name: str(x.name, x.id),
+      role: (LANES as string[]).includes(str(x.role))
+        ? (x.role as Lane)
+        : "app",
+      ...(h > 0 ? { h } : {}),
+    });
+  }
+  return lanes.length > 0 ? lanes : undefined;
+}
+const lanesField = (v: unknown): { lanes?: LaneDef[] } => {
+  const lanes = lanesFrom(v);
+  return lanes ? { lanes } : {};
+};
 
 export function readModel(value: unknown): Model | string {
   if (
@@ -1344,6 +1639,11 @@ export function readModel(value: unknown): Model | string {
         .map(([k, x]) => [k, x as number]),
     ),
     scenario: scenarioFrom(value.scenario, ids),
+    ...framesField(value.frames),
+    ...lanesField(value.lanes),
+    ...(num(value.laneW, 0) > 0
+      ? { laneW: Math.round(num(value.laneW, 0)) }
+      : {}),
     seq: Math.max(num(value.seq, 0), top),
   };
 }
