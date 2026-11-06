@@ -1223,6 +1223,34 @@ describe("the dock: drag a component from the top of the board onto the plot", (
     expect(s.send("toggleDockMore").state.dockMore).toBe(false);
   });
 
+  test("a component dragged out of the list closes it, and the list is out of the way while it is on its way", () => {
+    const s = board();
+    s.send("toggleDockMore");
+    s.send("dockDown", ["effect", "pg.query"]);
+    s.send("dragMove", { x: 100, y: 20, done: false });
+    expect(s.state.drag).toMatchObject({ live: false });
+    s.send("dragMove", {
+      x: 300,
+      y: 20,
+      done: false,
+      rx: 200,
+      ry: 200,
+      inside: true,
+    });
+    expect(s.state.drag).toMatchObject({ kind: "add", live: true });
+    expect(s.state.dockMore).toBe(true);
+    s.send("dragMove", {
+      x: 300,
+      y: 20,
+      done: true,
+      rx: 200,
+      ry: 200,
+      inside: true,
+    });
+    expect(s.state.drag).toBeNull();
+    expect(s.state.dockMore).toBe(false);
+  });
+
   test("the dock lists the kinds that are put on a board", () => {
     expect(board().state.dock.map((k) => k.kind)).toEqual(
       expect.arrayContaining(["ui-event", "handler", "route", "effect"]),

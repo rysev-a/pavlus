@@ -1818,24 +1818,140 @@
 .fs-dockmore {
   position: absolute;
   top: 48px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 8px;
+  bottom: 8px;
   z-index: 4;
-  width: min(560px, calc(100% - 16px));
-  max-height: calc(100% - 60px);
-  overflow: auto;
+  width: min(300px, calc(100% - 16px));
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
+  transition: opacity 0.12s;
 }
-.fs-pal__btn {
+/* while a component is on its way to the board the list gets out of the way */
+.fs-dockmore--drag {
+  opacity: 0;
+  pointer-events: none;
+}
+.fs-dockmore__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 0 12px;
+}
+.fs-dockmore__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--foreground);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.fs-dockmore__close:hover {
+  background: var(--accent);
+}
+.fs-dockmore__hint {
+  margin: 0;
+  padding: 0 12px 6px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+/* the list scrolls; a finger that goes up or down scrolls it, one that goes sideways takes the component */
+.fs-dockmore__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 6px 8px;
+}
+.fs-dockmore__h {
+  margin: 10px 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.fs-dockrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  color: var(--foreground);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
   cursor: grab;
-  touch-action: none;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.fs-dockrow:hover,
+.fs-dockrow:focus-visible {
+  background: var(--accent);
+}
+.fs-dockrow:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.fs-dockrow--new {
+  cursor: pointer;
+  color: var(--muted-foreground);
+}
+.fs-dockrow__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fs-dockrow .fs-dock__ic {
+  flex: none;
+}
+.fs-dockrow[data-kind="ui-event"],
+.fs-dockrow[data-kind="fe-handler"],
+.fs-dockrow[data-kind="fe-state"] {
+  color: var(--info);
+}
+.fs-dockrow[data-kind="route"],
+.fs-dockrow[data-kind="handler"],
+.fs-dockrow[data-kind="reply"],
+.fs-dockrow[data-kind="module"] {
+  color: var(--primary);
+}
+.fs-dockrow[data-kind="error"] {
+  color: var(--destructive);
+}
+.fs-dockrow[data-kind="effect"] {
+  color: var(--warning);
+}
+.fs-dockrow[data-kind="external"] {
+  color: var(--muted-foreground);
+}
+.fs-dockrow__label {
+  color: var(--foreground);
+}
+.fs-dock__ic[data-kind="module"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8'/></svg>");
+}
+.fs-dock__ic[data-kind="plus"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 5v14M5 12h14'/></svg>");
+}
+.fs-dock__ic[data-kind="close"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 6l12 12M18 6L6 18'/></svg>");
 }
 /* what is on its way from the dock to the plot: where it would be put */
 .fs-ghost {

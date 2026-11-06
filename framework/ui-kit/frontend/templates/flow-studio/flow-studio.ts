@@ -2401,6 +2401,8 @@ export class FlowStudio extends Component<FsState> {
       "",
       {
         drag: null,
+        // the list that it came from is done
+        dockMore: false,
         sel: { kind: "node", id: made.id },
         side: "inspect",
         message: `Added ${label} ${d.what.title}`,

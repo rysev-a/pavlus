@@ -127,6 +127,9 @@ body {
 /* a board that was saved with frames (lanes) shows them no more: components are free on the plot */
 .md-main .fs-frame,
 .md-main .fs-frame__head,
+.md-main .fs-frame__title,
+.md-main .fs-frame__x,
+.md-main .fs-frame__xt,
 .md-main .fs-frame__size {
   display: none;
 }

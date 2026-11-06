@@ -208,23 +208,39 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
             button.fs-dock__btn.fs-dock__more(type="button" aria-expanded={dockMore ? "true" : "false"} title="Every effect, external and module" aria-label="More components" @click=toggleDockMore)
               span.fs-ic.fs-dock__ic(data-kind="more")
           if dockMore
-            div.fs-dockmore(role="group" aria-label="More components: drag one onto the board")
-              for g in palette key g.lane
-                div.fs-group
-                  h3.fs-h3 {g.lane}
-                  div.fs-pal
-                    for it in g.items key it.label
-                      button.fs-pal__btn(type="button" @pointerdown.prevent=dockDown(it.kind, it.title)) {it.label}
-              div.fs-group
-                h3.fs-h3 Modules
-                div.fs-pal
-                  for d in library key d.k
-                    button.fs-pal__btn(type="button" disabled={!d.ok} title="{d.name}: {d.side}, {d.uses} in use" @pointerdown.prevent=dockModuleDown(d.id)) {d.name}
-                  button.fs-pal__btn(type="button" title="A module that runs on the server" @click=newModule("backend")) New server module
-                  button.fs-pal__btn(type="button" title="A module that runs in the browser" @click=newModule("frontend")) New browser module
-                  button.fs-pal__btn(type="button" title="A chain of modules: the middleware of a route" @click=newPipe("backend")) New pipe
-                  button.fs-pal__btn(type="button" title="A server module written as code" @click=newCodeModule("backend")) New server code module
-                  button.fs-pal__btn(type="button" title="A browser module written as code" @click=newCodeModule("frontend")) New browser code module
+            div.fs-dockmore(role="group" aria-label="More components: drag one onto the board" class:fs-dockmore--drag={drag && drag.kind === "add" && drag.live})
+              div.fs-dockmore__head
+                strong Components
+                button.fs-dockmore__close(type="button" aria-label="Close the list" @click=toggleDockMore)
+                  span.fs-ic.fs-dock__ic(data-kind="close")
+              p.fs-dockmore__hint Drag one onto the board
+              div.fs-dockmore__list
+                for g in palette key g.lane
+                  h3.fs-dockmore__h {g.lane}
+                  for it in g.items key it.label
+                    button.fs-dockrow(type="button" data-kind=it.kind @pointerdown.prevent=dockDown(it.kind, it.title))
+                      span.fs-ic.fs-dock__ic(data-kind=it.kind)
+                      span.fs-dockrow__label {it.label}
+                h3.fs-dockmore__h Modules
+                for d in library key d.k
+                  button.fs-dockrow(type="button" data-kind="module" disabled={!d.ok} title="{d.name}: {d.side}, {d.uses} in use" @pointerdown.prevent=dockModuleDown(d.id))
+                    span.fs-ic.fs-dock__ic(data-kind="module")
+                    span.fs-dockrow__label {d.name}
+                button.fs-dockrow.fs-dockrow--new(type="button" title="A module that runs on the server" @click=newModule("backend"))
+                  span.fs-ic.fs-dock__ic(data-kind="plus")
+                  span.fs-dockrow__label New server module
+                button.fs-dockrow.fs-dockrow--new(type="button" title="A module that runs in the browser" @click=newModule("frontend"))
+                  span.fs-ic.fs-dock__ic(data-kind="plus")
+                  span.fs-dockrow__label New browser module
+                button.fs-dockrow.fs-dockrow--new(type="button" title="A chain of modules: the middleware of a route" @click=newPipe("backend"))
+                  span.fs-ic.fs-dock__ic(data-kind="plus")
+                  span.fs-dockrow__label New pipe
+                button.fs-dockrow.fs-dockrow--new(type="button" title="A server module written as code" @click=newCodeModule("backend"))
+                  span.fs-ic.fs-dock__ic(data-kind="plus")
+                  span.fs-dockrow__label New server code module
+                button.fs-dockrow.fs-dockrow--new(type="button" title="A browser module written as code" @click=newCodeModule("frontend"))
+                  span.fs-ic.fs-dock__ic(data-kind="plus")
+                  span.fs-dockrow__label New browser code module
           button.fs-fullbtn(type="button" aria-label={full ? "Leave the full screen" : "Full screen"} aria-pressed={full ? "true" : "false"} title={full ? "Leave the full screen (Esc)" : "Full screen"} @click=toggleFull)
             span.fs-ic(class:fs-ic--exit={full} class:fs-ic--full={!full})
           div.fs-resize(role="separator" aria-orientation="horizontal" aria-label="Height of the board: drag, or use the up and down arrows" aria-valuenow={boardH} tabindex="0" title="Drag to change the height" @pointerdown=heightDown @keydown=heightKey)
