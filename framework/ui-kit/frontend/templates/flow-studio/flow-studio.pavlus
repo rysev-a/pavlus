@@ -113,30 +113,6 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
         button.ui-button.ui-button-default.ui-button-sm(type="button" @click=quickAdd) Add
       if quick.error
         small.fs-error(role="alert") {quick.error}
-    details.fs-palette
-      summary.fs-palette__sum Palette
-      div.fs-palette__grid
-        div.fs-quick__examples
-          span.fs-hint Try
-          for x in quickExamples key x.k
-            button.fs-example(type="button" @click=quickExample(x.text)) {x.text}
-        div.fs-groups
-          for g in palette key g.lane
-            div.fs-group
-              h3.fs-h3 {g.lane}
-              div.fs-pal
-                for it in g.items key it.label
-                  button.fs-pal__btn(type="button" @click=addNodeOf(it.kind, it.title)) {it.label}
-          div.fs-group
-            h3.fs-h3 Modules
-            div.fs-pal
-              for d in library key d.k
-                button.fs-pal__btn(type="button" disabled={!d.ok} title="{d.name}: {d.side}, {d.uses} in use" @click=addInstanceOf(d.id)) {d.name}
-              button.fs-pal__btn(type="button" title="A module that runs on the server" @click=newModule("backend")) New server module
-              button.fs-pal__btn(type="button" title="A module that runs in the browser" @click=newModule("frontend")) New browser module
-              button.fs-pal__btn(type="button" title="A chain of modules: the middleware of a route" @click=newPipe("backend")) New pipe
-              button.fs-pal__btn(type="button" title="A server module written as code" @click=newCodeModule("backend")) New server code module
-              button.fs-pal__btn(type="button" title="A browser module written as code" @click=newCodeModule("frontend")) New browser code module
   div.fs-body
     main.fs-main
       section.fs-panel(data-show={isFlow ? "true" : "false"} aria-label="Flow")
@@ -163,7 +139,7 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
         if framesOpen
           section.fs-lanes(aria-label="Frames")
             h2.fs-h2 Frames
-            p.fs-hint A frame is a rectangle on the plot, like a frame in Figma. Components are free on the plot; drop one on a frame to attach it, and it goes where the frame goes. Drag a frame by its header, change its size by a border or a corner. What a frame runs as is optional: a component attached to a frame that runs as App is an app component, in the simulation and the checks, whatever its kind.
+            p.fs-hint A frame is a rectangle on the plot, like a frame in Figma. Components are free on the plot; drop one on a frame to attach it, and it goes where the frame goes. Drag a frame by its header, change its size by a corner. What a frame runs as is optional: a component attached to a frame that runs as App is an app component, in the simulation and the checks, whatever its kind.
             ul.fs-lanelist
               for f in framePanel key f.id
                 li.fs-lane-row
@@ -225,6 +201,30 @@ div.k-template.fs(data-tab=tab data-side=side data-sheet={sideOpen ? "open" : "c
                   small {i.detail}
         div.fs-canvas(data-hidden={isCodeBody ? "true" : null})
           div#fs-flow.fs-flow(style=boardStyle)
+          div.fs-dock(role="toolbar" aria-label="Add a component: drag an icon onto the board")
+            for k in dock key k.kind
+              button.fs-dock__btn(type="button" data-kind=k.kind title="{k.label}: drag it onto the board" aria-label="{k.label}: drag it onto the board, or press Enter to put it in the middle" @pointerdown.prevent=dockDown(k.kind, k.title) @keydown=dockKey(k.kind, k.title))
+                span.fs-ic.fs-dock__ic(data-kind=k.kind)
+            button.fs-dock__btn.fs-dock__more(type="button" aria-expanded={dockMore ? "true" : "false"} title="Every effect, external and module" aria-label="More components" @click=toggleDockMore)
+              span.fs-ic.fs-dock__ic(data-kind="more")
+          if dockMore
+            div.fs-dockmore(role="group" aria-label="More components: drag one onto the board")
+              for g in palette key g.lane
+                div.fs-group
+                  h3.fs-h3 {g.lane}
+                  div.fs-pal
+                    for it in g.items key it.label
+                      button.fs-pal__btn(type="button" @pointerdown.prevent=dockDown(it.kind, it.title)) {it.label}
+              div.fs-group
+                h3.fs-h3 Modules
+                div.fs-pal
+                  for d in library key d.k
+                    button.fs-pal__btn(type="button" disabled={!d.ok} title="{d.name}: {d.side}, {d.uses} in use" @pointerdown.prevent=dockModuleDown(d.id)) {d.name}
+                  button.fs-pal__btn(type="button" title="A module that runs on the server" @click=newModule("backend")) New server module
+                  button.fs-pal__btn(type="button" title="A module that runs in the browser" @click=newModule("frontend")) New browser module
+                  button.fs-pal__btn(type="button" title="A chain of modules: the middleware of a route" @click=newPipe("backend")) New pipe
+                  button.fs-pal__btn(type="button" title="A server module written as code" @click=newCodeModule("backend")) New server code module
+                  button.fs-pal__btn(type="button" title="A browser module written as code" @click=newCodeModule("frontend")) New browser code module
           button.fs-fullbtn(type="button" aria-label={full ? "Leave the full screen" : "Full screen"} aria-pressed={full ? "true" : "false"} title={full ? "Leave the full screen (Esc)" : "Full screen"} @click=toggleFull)
             span.fs-ic(class:fs-ic--exit={full} class:fs-ic--full={!full})
           div.fs-resize(role="separator" aria-orientation="horizontal" aria-label="Height of the board: drag, or use the up and down arrows" aria-valuenow={boardH} tabindex="0" title="Drag to change the height" @pointerdown=heightDown @keydown=heightKey)

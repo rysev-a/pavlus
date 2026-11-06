@@ -668,9 +668,30 @@
   border: 1px dashed color-mix(in srgb, var(--primary) 30%, transparent);
   border-radius: 3px;
 }
-.vb-drop:hover {
-  background: color-mix(in srgb, var(--primary) 22%, transparent);
-  border-style: solid;
+/* where what is dragged would land: the rectangle it would take */
+.vb-ghost {
+  z-index: 5;
+  pointer-events: none;
+  border: 2px solid var(--primary);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+/* a press is followed by the window: nothing is selected or dragged by the browser */
+.vb-pal,
+.vb-cell,
+.vb-handle {
+  touch-action: none;
+}
+.vb-pal {
+  user-select: none;
+}
+.vb[data-drag="on"] {
+  cursor: grabbing;
+  user-select: none;
+}
+.vb[data-drag="on"] * {
+  cursor: grabbing;
 }
 
 /* ---- the elements ---- */
@@ -1422,4 +1443,14 @@ label.vb-field {
   .vb-canvas {
     padding: 6px;
   }
+}
+
+/* the table is the ui-kit's data table: the row buttons sit together on the right */
+.vb-rowactions {
+  display: inline-flex;
+  gap: 6px;
+}
+.vb-datatable {
+  width: 100%;
+  min-width: 0;
 }

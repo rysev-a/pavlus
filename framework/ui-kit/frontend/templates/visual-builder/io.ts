@@ -48,6 +48,7 @@ function action(v: unknown, depth = 0): Action | null {
     return null;
   const a: Action = { t: t as Action["t"] };
   for (const k of [
+    "when",
     "key",
     "value",
     "index",

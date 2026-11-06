@@ -7,7 +7,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function validateField(f: FormField, value: unknown): string {
   const text = value === null || value === undefined ? "" : String(value);
   const custom = (fallback: string): string => f.message || fallback;
-  if (f.type === "checkbox") {
+  if (f.type === "checkbox" || f.type === "switch") {
     return f.required === "yes" && value !== true
       ? custom(`${f.label} is required`)
       : "";
@@ -16,6 +16,17 @@ export function validateField(f: FormField, value: unknown): string {
     return f.required === "yes" ? custom(`${f.label} is required`) : "";
   if (f.type === "email" && !EMAIL.test(text))
     return custom("Enter a valid email");
+  if (f.type === "url") {
+    try {
+      if (!/^https?:$/.test(new URL(text).protocol)) throw new Error("scheme");
+    } catch {
+      return custom("Enter a valid web address");
+    }
+  }
+  if (f.type === "tel" && !/^[+()\d\s.-]{5,}$/.test(text))
+    return custom("Enter a valid phone number");
+  if (f.type === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(text))
+    return custom("Enter a date (yyyy-mm-dd)");
   if (f.type === "number") {
     const n = Number(text);
     if (!Number.isFinite(n)) return custom("Enter a number");

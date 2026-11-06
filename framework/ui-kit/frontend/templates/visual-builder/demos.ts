@@ -1,6 +1,7 @@
 // The built-in demos. Each is a whole model; every HTTP call goes to a mock
 // route, so they work on a static site.
 import { coffeeUi } from "./demo-coffee.ts";
+import { usersUi } from "./demo-users.ts";
 import { builder, go, http, key, notice, set } from "./build.ts";
 import type { Action, MockRoute, Model } from "./model.ts";
 
@@ -937,6 +938,13 @@ export interface Demo {
 }
 
 export const DEMOS: Demo[] = [
+  {
+    id: "users-crud",
+    title: "Users CRUD",
+    about:
+      "A table of users, a form to create one, a form to change the selected one and a button to remove it. Linked to the Flow Studio diagram of the same name, which is its backend.",
+    make: usersUi,
+  },
   {
     id: "coffee",
     title: "Coffee shop CRM",

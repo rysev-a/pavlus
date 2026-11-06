@@ -1,6 +1,6 @@
 import type { Effect, Message } from "@pavlus/frontend";
 import { describe, expect, test } from "vitest";
-import { createLocalPlugin } from "../local.ts";
+import { createLocalPlugin, localEffector as local } from "../local.ts";
 import { initialData } from "../templates/visual-builder/bind.ts";
 import {
   DEMOS,
@@ -15,6 +15,7 @@ import {
 } from "../templates/visual-builder/io.ts";
 import { meta } from "../templates/visual-builder/meta.ts";
 import {
+  ELEMENTS,
   allElements,
   emptyModel,
   findElement,
@@ -120,23 +121,140 @@ describe("designing", () => {
     expect(new Set(styles).size).toBe(5);
   });
 
-  test("drag from the palette and drop on a cell; drag begins after the browser started it", () => {
+  // A drag is a press, then the pointer followed by the window (`local.drag`), which says
+  // what cell it is over; letting go over a cell drops it there.
+  const cell = (secId: string, x: number, y: number) => `${secId}|${x}|${y}`;
+  const move = (
+    s: Sim,
+    x: number,
+    y: number,
+    over: string | null = null,
+    done = false,
+  ) => s.send("dragMove", { x, y, over, done });
+
+  test("drag from the palette: a press starts it, the pointer shows where it would land, letting go drops it", () => {
     const s = blank().send("addSection", "empty");
-    const dragStart = page.dispatch(
+    const secId = model(s).pages[0].sections[0].id;
+    const press = page.dispatch(
       { id: "dragPalette", payload: "badge" },
       s.state,
     );
-    expect(dragStart.every((e) => e.plugin === "time")).toBe(true); // nothing is repainted inside dragstart
-    s.send("dragBegin", { kind: "palette", type: "badge" });
+    expect(press).toContainEqual(local.drag("dragMove"));
+    s.send("dragPalette", "badge");
+    // the press, then the pointer moves a little: still a click
+    move(s, 100, 100);
+    move(s, 102, 101, cell(secId, 5, 2));
+    expect(s.state.dragLive).toBe(false);
+    expect(s.state.stage.sections[0].drops).toEqual([]);
+    // far enough: it is a drag, the cells are there
+    move(s, 140, 150, cell(secId, 5, 2));
+    expect(s.state.dragLive).toBe(true);
     expect(s.state.stage.sections[0].drops.length).toBe(
       12 * (s.state.stage.sections[0].rows + 1),
     );
-    const secId = model(s).pages[0].sections[0].id;
-    s.send("drop", [secId, 5, 2]);
+    // and the place it would take is shown: the size of a badge, at that cell
+    const badge = ELEMENTS.badge;
+    expect(s.state.stage.sections[0].ghost?.style).toBe(
+      `grid-column: 6 / span ${badge.w}; grid-row: 3 / span ${badge.h}`,
+    );
+    move(s, 150, 160, cell(secId, 5, 2), true);
     const el = allElements(model(s))[0];
     expect(el.pos.desktop).toMatchObject({ x: 5, y: 2 });
     expect(s.state.drag).toBeNull();
     expect(s.state.stage.sections[0].drops).toEqual([]);
+    expect(s.state.stage.sections[0].ghost).toBeNull();
+  });
+
+  test("the place follows the pointer from cell to cell, and goes when the pointer is over none", () => {
+    const s = blank().send("addSection", "empty");
+    const secId = model(s).pages[0].sections[0].id;
+    s.send("dragPalette", "card");
+    move(s, 10, 10);
+    move(s, 60, 60, cell(secId, 1, 1));
+    const first = s.state.stage.sections[0].ghost?.style;
+    expect(first).toContain("grid-column: 2 /");
+    move(s, 90, 60, cell(secId, 4, 1));
+    expect(s.state.stage.sections[0].ghost?.style).toContain(
+      "grid-column: 5 /",
+    );
+    move(s, 90, 600, null);
+    expect(s.state.stage.sections[0].ghost).toBeNull();
+    // let go over nothing: nothing is dropped
+    move(s, 90, 600, null, true);
+    expect(allElements(model(s))).toHaveLength(0);
+    expect(s.state.drag).toBeNull();
+  });
+
+  test("a press that does not move is a click: no drop, and the drag is gone", () => {
+    const s = blank().send("addSection", "empty");
+    const secId = model(s).pages[0].sections[0].id;
+    s.send("dragPalette", "badge");
+    move(s, 10, 10);
+    move(s, 12, 11, cell(secId, 3, 3), true);
+    expect(allElements(model(s))).toHaveLength(0);
+    expect(s.state.drag).toBeNull();
+  });
+
+  test("the first sample is where the press was: a quick drag with one move at the far end is a drag", () => {
+    const s = blank().send("addSection", "empty");
+    const secId = model(s).pages[0].sections[0].id;
+    s.send("dragPalette", "badge");
+    move(s, 10, 10);
+    move(s, 400, 300, cell(secId, 7, 4), true);
+    expect(allElements(model(s))[0].pos.desktop).toMatchObject({ x: 7, y: 4 });
+  });
+
+  test("an element that is moved keeps its size in the place shown, and is selected when the drag starts", () => {
+    const s = blank().send("addEl", "text");
+    const el = allElements(model(s))[0];
+    const secId = model(s).pages[0].sections[0].id;
+    s.send("select", "none");
+    s.send("dragEl", el.id);
+    move(s, 5, 5);
+    move(s, 60, 80, cell(secId, 6, 3));
+    const r = el.pos.desktop;
+    expect(s.state.stage.sections[0].ghost?.style).toBe(
+      `grid-column: 7 / span ${r.w}; grid-row: 4 / span ${r.h}`,
+    );
+    expect(s.state.sel).toEqual({ kind: "element", id: el.id });
+    move(s, 60, 80, cell(secId, 6, 3), true);
+    expect(findElement(model(s), el.id)!.el.pos.desktop).toMatchObject({
+      x: 6,
+      y: 3,
+    });
+  });
+
+  test("a resize shows the rectangle from the corner of the element to the cell, in its own section only", () => {
+    const s = blank().send("addEl", "text").send("addSection", "empty");
+    const m = model(s);
+    const el = allElements(m)[0];
+    const [first, second] = m.pages[0].sections;
+    s.send("dragResize", el.id);
+    move(s, 5, 5);
+    move(s, 80, 40, cell(first.id, 3, 0));
+    expect(s.state.stage.sections[0].ghost?.style).toBe(
+      "grid-column: 1 / span 4; grid-row: 1 / span 1",
+    );
+    // over another section: nothing to show
+    move(s, 80, 400, cell(second.id, 3, 0));
+    expect(s.state.stage.sections[1].ghost).toBeNull();
+    expect(s.state.stage.sections[0].ghost).toBeNull();
+    move(s, 80, 40, cell(first.id, 3, 0), true);
+    expect(findElement(model(s), el.id)!.el.pos.desktop).toMatchObject({
+      w: 4,
+      h: 1,
+    });
+  });
+
+  test("the cells and the place are for the design, not the preview", () => {
+    const s = blank().send("addSection", "empty").send("addEl", "text");
+    const secId = model(s).pages[0].sections[0].id;
+    s.send("setTab", "preview");
+    s.send("dragPalette", "badge");
+    move(s, 0, 0);
+    move(s, 90, 90, cell(secId, 2, 2));
+    expect(s.state.stage.sections[0].drops).toEqual([]);
+    expect(s.state.stage.sections[0].ghost).toBeNull();
   });
 
   test("move and resize by drag; a collision pushes down", () => {

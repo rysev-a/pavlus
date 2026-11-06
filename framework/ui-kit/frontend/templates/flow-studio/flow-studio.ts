@@ -88,6 +88,10 @@ import {
   addNode,
   attachNode,
   condNames,
+  DEFAULT_TITLE,
+  NODE_H,
+  NODE_KINDS,
+  NODE_W,
   EFFECTS,
   emptyModel,
   type FlowNode,
@@ -181,6 +185,8 @@ export const BOARD_MIN = 240;
 export const BOARD_MAX = 2400;
 /** where the height of the board is remembered (in this browser) */
 export const BOARD_KEY = "pavlus-flow-board";
+/** how far the pointer goes before a press on the dock is a drag (px) */
+const DRAG_SLOP = 5;
 /** the board starts at least this zoomed in */
 const START_Z = 0.7;
 const boardStyle = (h: number, full: boolean): string =>
@@ -261,6 +267,28 @@ export type Drag =
   /** the handle under the board: its height */
   | { kind: "height"; cy0: number | null; h0: number }
   /**
+   * a component taken from the dock to be put on the plot: what it is (`ref` is the module of an
+   * instance), where the pointer was pressed (px, null until the first sample), whether it has
+   * moved enough to be a drag, and where it would land (the world, whether the pointer is on the
+   * board, and the frame it is over)
+   */
+  | {
+      kind: "add";
+      what: {
+        kind: NodeKind | "module";
+        title: string;
+        ref?: string;
+        plugin?: string;
+      };
+      cx: number | null;
+      cy: number | null;
+      live: boolean;
+      x: number;
+      y: number;
+      inside: boolean;
+      frame: string;
+    }
+  /**
    * the rectangle on the minimap: the view where it was (`vx`, `vy`), the pointer (px of the
    * window, null until it moves), what a px of the minimap is in the world (`k`) and what the
    * minimap shows, which stays as it was while the rectangle is dragged
@@ -308,6 +336,8 @@ export interface Core {
   full: boolean;
   /** the panel that edits the frames */
   framesOpen: boolean;
+  /** the list under the dock with every kind of effect, external and module */
+  dockMore: boolean;
   drag: Drag | null;
   follow: boolean;
   trace: Trace | null;
@@ -441,6 +471,8 @@ interface Derived {
   zoomText: string;
   /** the style of the board's box: its height, unless it fills the screen */
   boardStyle: string;
+  /** the icons of the dock: one for each kind of component */
+  dock: { kind: NodeKind; title: string; label: string }[];
   framePanel: {
     id: string;
     name: string;
@@ -654,6 +686,7 @@ export function coreOf(model: Model): Core {
     mini: { w: 0, h: 0 },
     full: false,
     framesOpen: false,
+    dockMore: false,
     drag: null,
     follow: true,
     trace: null,
@@ -897,6 +930,11 @@ export function derive(c: Core): Derived {
     demoList: DEMO_LIST,
     zoomText: `${Math.round(c.vp.z * 100)}%`,
     boardStyle: boardStyle(c.boardH, c.full),
+    dock: NODE_KINDS.filter((k) => k !== "module").map((kind) => ({
+      kind,
+      title: DEFAULT_TITLE[kind],
+      label: KIND_LABEL[kind],
+    })),
     framePanel: framesOf(toFrames(model)).map((f) => ({
       id: f.id,
       name: f.name,
@@ -993,6 +1031,7 @@ const CORE_KEYS = [
   "mini",
   "full",
   "framesOpen",
+  "dockMore",
   "drag",
   "follow",
   "trace",
@@ -1088,7 +1127,21 @@ export function trees(
           pos: c.pos,
           progress: c.reduced ? 1 : c.progress,
           faultNodes,
-          dropFrame: c.drag?.kind === "node" ? c.drag.frame : "",
+          dropFrame:
+            c.drag?.kind === "node" || (c.drag?.kind === "add" && c.drag.live)
+              ? c.drag.frame
+              : "",
+          addGhost:
+            c.drag?.kind === "add" && c.drag.live && c.drag.inside
+              ? {
+                  x: c.drag.x - NODE_W / 2,
+                  y: c.drag.y - NODE_H / 2,
+                  w: NODE_W,
+                  h: NODE_H,
+                  label: c.drag.what.title,
+                  kind: c.drag.what.kind,
+                }
+              : undefined,
         }),
       },
       {
@@ -1482,7 +1535,7 @@ export class FlowStudio extends Component<FsState> {
       return this._open(
         state,
         { ...emptyModel(), name: "Blank flow" },
-        "A blank flow. Add nodes from the palette or the Quick add bar.",
+        "A blank flow. Drag a component from the dock on the board, or use the Quick add bar.",
       );
     const d = demoOf(id);
     return this._open(
@@ -1771,7 +1824,8 @@ export class FlowStudio extends Component<FsState> {
       d.kind === "frameSize" ||
       d.kind === "height" ||
       d.kind === "pan" ||
-      d.kind === "mini"
+      d.kind === "mini" ||
+      d.kind === "add"
     )
       return [];
     if (d.kind === "node" && d.moved)
@@ -2094,10 +2148,40 @@ export class FlowStudio extends Component<FsState> {
         d.kind !== "frameSize" &&
         d.kind !== "height" &&
         d.kind !== "pan" &&
-        d.kind !== "mini")
+        d.kind !== "mini" &&
+        d.kind !== "add")
     )
       return [];
-    const p = msg.payload as { x: number; y: number; done: boolean };
+    const p = msg.payload as {
+      x: number;
+      y: number;
+      done: boolean;
+      rx?: number;
+      ry?: number;
+      inside?: boolean;
+    };
+    if (d.kind === "add") {
+      // the first sample is where the pointer was pressed
+      if (d.cx === null || d.cy === null)
+        return p.done
+          ? this._light(state, { drag: null })
+          : this._light(state, { drag: { ...d, cx: p.x, cy: p.y } });
+      const live =
+        d.live || Math.abs(p.x - d.cx) + Math.abs(p.y - d.cy) >= DRAG_SLOP;
+      const inside = p.inside === true;
+      // the pointer on the board is a place of the plot
+      const x = inside ? state.vp.x + (p.rx ?? 0) / state.vp.z : d.x;
+      const y = inside ? state.vp.y + (p.ry ?? 0) / state.vp.z : d.y;
+      const over = inside ? frameAt(this._frames(state), x, y) : undefined;
+      const next = { ...d, live, inside, x, y, frame: over?.id ?? "" };
+      // let go on the board, after a drag: it is put there; anywhere else, or a press that
+      // did not move (it is not a click that adds), nothing is
+      if (p.done)
+        return live && inside
+          ? this._dropAdd(state, next)
+          : this._light(state, { drag: null });
+      return this._light(state, { drag: next });
+    }
     if (d.kind === "mini") {
       if (p.done) return this._commit(state, { drag: null });
       if (d.cx0 === null || d.cy0 === null)
@@ -2204,6 +2288,124 @@ export class FlowStudio extends Component<FsState> {
       setFrameRect(this._frames(state), d.id, next),
       "",
       { drag: null },
+      true,
+    );
+  }
+
+  // ---- the dock: a component is taken from it and dragged onto the plot ----
+
+  _pressAdd(
+    state: FsState,
+    what: Extract<Drag, { kind: "add" }>["what"],
+  ): Effect[] {
+    return [
+      ...this._light(state, {
+        drag: {
+          kind: "add",
+          what,
+          cx: null,
+          cy: null,
+          live: false,
+          x: 0,
+          y: 0,
+          inside: false,
+          frame: "",
+        },
+      }),
+      local.drag("dragMove", FLOW),
+    ];
+  }
+
+  /** a kind of component of the dock (or an item of its list), pressed */
+  dockDown(msg: Message, state: FsState): Effect[] {
+    const [kind, title] = msg.payload as [NodeKind, string];
+    // an external of a plugin of the project stands behind that plugin
+    const owner =
+      kind === "external"
+        ? this._model(state).plugins.find((p) => p.external === title)
+        : undefined;
+    return this._pressAdd(state, {
+      kind,
+      title,
+      ...(owner ? { plugin: owner.name } : {}),
+    });
+  }
+
+  /** a module of the library, pressed: an instance of it is what is dragged */
+  dockModuleDown(msg: Message, state: FsState): Effect[] {
+    const ref = String(msg.payload);
+    const def = findDef(this._root(state), ref);
+    return def
+      ? this._pressAdd(state, { kind: "module", title: def.name, ref })
+      : [];
+  }
+
+  /** the keyboard: Enter or Space on an icon puts the component in the middle of the board */
+  dockKey(msg: Message, state: FsState): Effect[] {
+    const k = msg.event?.key;
+    if (k !== "Enter" && k !== " ") return [];
+    const [kind, title] = msg.payload as [NodeKind, string];
+    const vp = state.vp;
+    const x = vp.x + (vp.w ?? 800) / vp.z / 2;
+    const y = vp.y + (vp.h ?? 460) / vp.z / 2;
+    const over = frameAt(this._frames(state), x, y);
+    return this._dropAdd(state, {
+      kind: "add",
+      what: { kind, title },
+      cx: 0,
+      cy: 0,
+      live: true,
+      x,
+      y,
+      inside: true,
+      frame: over?.id ?? "",
+    });
+  }
+
+  toggleDockMore(_m: Message, state: FsState): Effect[] {
+    return this._commit(state, { dockMore: !state.dockMore });
+  }
+
+  /** the component is put where it was let go (centered on the pointer), in the frame it is over */
+  _dropAdd(state: FsState, d: Extract<Drag, { kind: "add" }>): Effect[] {
+    const m = this._frames(state);
+    const at = {
+      x: Math.round(d.x - NODE_W / 2),
+      y: Math.round(d.y - NODE_H / 2),
+    };
+    let made: { model: Model; id: string } | null;
+    if (d.what.kind === "module") {
+      const ref = d.what.ref ?? "";
+      const open = defAt(this._root(state), scopeOf(state));
+      if (!canNest(this._root(state), open?.id ?? "", ref))
+        return this._commit(state, {
+          drag: null,
+          message:
+            "A module cannot contain itself, not even through another module.",
+        });
+      made = addInstance(m, ref, at);
+    } else
+      made = addNode(m, d.what.kind, d.what.title, {
+        ...at,
+        ...(d.what.plugin ? { plugin: d.what.plugin } : {}),
+      });
+    if (!made) return this._commit(state, { drag: null });
+    const model = d.frame
+      ? attachNode(made.model, made.id, d.frame)
+      : made.model;
+    const label =
+      d.what.kind === "module" ? "an instance of" : KIND_LABEL[d.what.kind];
+    return this._edit(
+      state,
+      model,
+      "",
+      {
+        drag: null,
+        sel: { kind: "node", id: made.id },
+        side: "inspect",
+        message: `Added ${label} ${d.what.title}`,
+        live: `Added ${label} ${d.what.title}`,
+      },
       true,
     );
   }

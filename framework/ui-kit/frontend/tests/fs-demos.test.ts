@@ -22,6 +22,7 @@ describe("the demos", () => {
     expect(DEMOS.map((d) => d.title)).toEqual([
       "Login with rate limit",
       "Coffee shop CRM",
+      "Users CRUD",
       "Login in modules",
       "Todo CRUD with cache",
       "Websocket chat with history",

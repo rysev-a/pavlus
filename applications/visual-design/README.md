@@ -43,10 +43,12 @@ project's diagram as it is now, so a route you draw in the diagram answers the
 requests of the interface at once (the simulated backend; switch it off to send them
 to a real server). Edit the diagram, open the Interface: the change is there.
 
-New projects start from a template: *Blank*, or the *Coffee shop CRM* (the diagram of
+New projects start from a template: *Users CRUD* (the simplest whole example: a table of users
+loaded from the backend, create, update and remove: a diagram of four routes over one table, and one
+page wired to it), *Blank*, or the *Coffee shop CRM* (the diagram of
 its backend and the front desk wired to it). Flow Studio can generate the @pavlus/backend
-app of a diagram (Export, or `node ../ui-kit/scripts/flow-generate.ts`): that is how
-`../coffee-shop-app` was made.
+app of a diagram (Export, or `node ../../framework/ui-kit/scripts/flow-generate.ts`): that is how
+`../coffee-shop` was made.
 
 ## How the editors save to the server
 
@@ -67,9 +69,13 @@ and plugins in a drawer that stays shut until you press **Panels**.
   Fit and 100% are still there).
 - **Full screen:** the icon in the top right corner of the board. Esc leaves it.
 - **Height:** drag the bar under the board (or focus it and use the up and down arrows).
+- **The dock:** the small icons at the top of the board (interface event, handler, state, route, server handler, reply, error, effect, external, and `...` for the whole list with the modules). Press an
+  icon and drag it onto the plot: a dashed outline shows where it will be, and where you let go it is put (centered on the pointer;
+  over a frame it joins that frame). A press that does not move, or a drop outside the board, adds nothing. With the keyboard, Enter on
+  an icon puts the component in the middle of the board.
 - **Frames:** the plot has no end and nothing on it is fixed. A *frame* is a rectangle, like a frame in
-  Figma: **Add frame** puts one in the middle of the board; drag its header to move it, a border or a
-  corner to resize it, the cross in its header (or **Remove** in the **Frames** list) to take it away. A
+  Figma: **Add frame** puts one in the middle of the board; drag its header to move it, a corner to
+  resize it, the cross in its header (or **Remove** in the **Frames** list) to take it away. A
   component is free on the plot, anywhere. Drop it on a frame and it is attached to it (the frame lights
   up), and it goes where the frame goes; drag it off and it is free again. A frame can say what its
   components run as (Browser, App, Plugins, Externals), which is how lanes come back: a frame the width
@@ -79,7 +85,33 @@ and plugins in a drawer that stays shut until you press **Panels**.
   you zoom in. Drag the rectangle to move the board, or click the minimap to jump there. The height of the
   board is remembered in the browser. Drag a node into another lane to move it there.
 
-## Color themes
+## Build the users CRUD from scratch
+
+The *Users CRUD* template is what you get when you do this by hand (start from *Blank*):
+
+1. **Diagram.** In the diagram editor open *Demos* and take *Users CRUD* (or draw the four routes of a table
+   yourself): that is the backend. The interface is wired to it.
+2. **State** (the *State* tab of the interface editor): *Add key* for `users` (json, `[]`), `selected`
+   (json, `null`), `newForm` and `editForm` (json, `{}`).
+3. **A table** (*Elements*, *Table*): array `state.users`, columns `id|number, name:Full name,
+   email:Email address` (`key`, `key:Header`, `key|number`, `key|pill`, `key|date`), a search box, rows per
+   page, check boxes on the rows, row actions `Edit, Delete`.
+4. **Two forms** (*Form*): a title, the submit label, the key it is bound to (`newForm` / `editForm`), and its
+   fields: name, label, type (text, email, number, password, url, tel, date, textarea, select, radio, checkbox,
+   switch), required, placeholder, help text, rules.
+5. **Actions.** On the page heading *page load*: an HTTP request, *Route of the diagram* `GET /users`, answer into
+   `users`. On the new-user form *submit*: `POST /users`, then a notice and the list again. On the table
+   *row action*: one chain for both buttons, each action with **Only when**: `action == "Edit"` sets `selected` and
+   `editForm` to `row`; `action == "Delete"` sends `DELETE /users/{row.id}` and loads the list again.
+
+The table and the fields are the ui-kit's own (the data table and the field, checkbox, switch, radio group and
+select components, in their shadcn styles).
+
+## The interface editor
+
+Drag an element from the library onto the page, or an element of the page to another place, or its
+corner to resize it: the grid cells appear, and the **place it would take** is shown (its size, at the cell
+under the pointer) until you let go. A press that does not move is a click (it adds or selects).
 
 Two themes, both from the ui-kit's panel (about 40 VS Code themes such as Dracula, One Dark,
 Nord, Monokai, Solarized and Tokyo Night, plus other design systems, fonts, styles, corners and
@@ -121,8 +153,8 @@ npm run typecheck
 
 ## Notes
 
-- This folder is not a workspace of the root `package.json`; it resolves `pavlus`,
-  `@pavlus/backend`, `pg` and `vite` from the root `node_modules` (like `coffee-shop-app`).
+- This is a workspace of the root `package.json` (`applications/visual-design`), next to the other
+  applications; the editors come from `../../framework/ui-kit`, the frameworks from `@pavlus/*`.
 - `npm run build` builds the web app; serving it from the API is not done yet (in
   production put the two behind one proxy: `/api` goes to the API, the rest is `dist/`).
 - No sign-in: the projects are shared by everyone who can reach the API.

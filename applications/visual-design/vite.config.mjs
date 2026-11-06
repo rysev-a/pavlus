@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { pavlus } from "@pavlus/frontend/vite";
 import { scaleCss } from "../../framework/ui-kit/vite.config.mjs";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const API = process.env.API_URL ?? "http://127.0.0.1:3030";
 
 /** The ui-kit scales its sizes with the Theming variables; the styles of the editors are loaded the same way here. */
@@ -50,7 +50,7 @@ export default {
   plugins: [scaleSizes(), pavlus(), spaFallback()],
   server: {
     port: 5190,
-    // the ui-kit (editors, styles) sits next to this app
+    // the ui-kit (editors, styles) is in framework/ui-kit, above the applications
     fs: { allow: [root] },
     proxy,
   },

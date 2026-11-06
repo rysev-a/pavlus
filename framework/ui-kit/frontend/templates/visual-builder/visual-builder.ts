@@ -58,7 +58,14 @@ import {
   layoutGraph,
   removeEdge,
 } from "./diagram.ts";
-import { addElement, layoutOf, moveTo, nudge, resizeTo } from "./grid.ts";
+import {
+  addElement,
+  clampRect,
+  layoutOf,
+  moveTo,
+  nudge,
+  resizeTo,
+} from "./grid.ts";
 import {
   canRedo,
   canUndo,
@@ -126,11 +133,30 @@ export interface Sel {
   id: string;
 }
 
-export type Drag =
+/**
+ * What is being dragged. The pointer is followed by the window (`local.drag`): `cx` and `cy`
+ * are where it was pressed (px, null until the first sample), the drag is `live` once it
+ * has moved a few pixels (a click that does not move is a click), and `over` is the cell of
+ * a section it is over, as `section|x|y` ("" = none).
+ */
+export type Drag = (
   | { kind: "palette"; type: ElType }
   | { kind: "move"; id: string }
   | { kind: "resize"; id: string }
-  | { kind: "section"; section: SectionKind };
+  | { kind: "section"; section: SectionKind }
+) & { live?: boolean; cx?: number | null; cy?: number | null; over?: string };
+
+/** how far the pointer goes before a press is a drag (px) */
+const DRAG_SLOP = 5;
+
+/** where a drag would land: a rectangle of a section's grid */
+export interface Ghost {
+  section: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 export interface DiagramState {
   collapsed: Record<string, boolean>;
@@ -168,6 +194,8 @@ interface Core {
 
 interface Derived {
   model: Model;
+  /** a drag is under way (the pointer has moved): the cells to drop on are there */
+  dragLive: boolean;
   canUndo: boolean;
   canRedo: boolean;
   summary: string;
@@ -265,6 +293,54 @@ function labelOf(e: El): string {
   ).slice(0, 28);
 }
 
+/** the cell a drag is over, from its `over` (`section|x|y`) */
+export function cellOf(
+  over: string | undefined,
+): { section: string; x: number; y: number } | null {
+  const [section, x, y] = (over ?? "").split("|");
+  return section && /^\d+$/.test(x ?? "") && /^\d+$/.test(y ?? "")
+    ? { section, x: Number(x), y: Number(y) }
+    : null;
+}
+
+/**
+ * Where what is dragged would land: an element from the library at its size, an element that
+ * is moved at its own size, a resize from the corner of the element to the cell. Nothing when
+ * the pointer is not over a cell, or when the drop would do nothing.
+ */
+export function ghostOf(c: Core, model: Model): Ghost | null {
+  const d = c.drag;
+  const cell = cellOf(d?.over);
+  if (!d || !cell) return null;
+  const target = findSection(model, cell.section);
+  if (!target) return null;
+  let w = 1;
+  let h = 1;
+  let x = cell.x;
+  let y = cell.y;
+  if (d.kind === "palette") {
+    w = ELEMENTS[d.type].w;
+    h = ELEMENTS[d.type].h;
+  } else if (d.kind === "move") {
+    const f = findElement(model, d.id);
+    const r = f && layoutOf(f.section, c.bp)[d.id];
+    if (!r) return null;
+    w = r.w;
+    h = r.h;
+  } else if (d.kind === "resize") {
+    const f = findElement(model, d.id);
+    const r = f && layoutOf(f.section, c.bp)[d.id];
+    // a resize is within the section the element is in
+    if (!r || f.section.id !== cell.section) return null;
+    x = r.x;
+    y = r.y;
+    w = Math.max(1, cell.x - r.x + 1);
+    h = Math.max(1, cell.y - r.y + 1);
+  } else return null;
+  const rect = clampRect({ x, y, w, h });
+  return { section: cell.section, ...rect };
+}
+
 /** Pure: everything the template shows that follows from the core. */
 export function derive(c: Core): Derived {
   const model = c.hist.present;
@@ -283,7 +359,8 @@ export function derive(c: Core): Derived {
           ui: preview ? c.run.ui : {},
           selected: c.sel.kind === "element" ? c.sel.id : "",
           selectedSection: c.sel.kind === "section" ? c.sel.id : "",
-          dragging: c.drag !== null,
+          dragging: c.drag?.live === true,
+          ghost: c.drag?.live ? ghostOf(c, model) : null,
           location: c.run.location,
         });
   const elements = allElements(model);
@@ -292,6 +369,7 @@ export function derive(c: Core): Derived {
     : undefined;
   return {
     model,
+    dragLive: c.drag?.live === true,
     canUndo: canUndo(c.hist),
     canRedo: canRedo(c.hist),
     summary: `${model.pages.length} page${model.pages.length === 1 ? "" : "s"} · ${elements.length} elements · ${model.keys.length} state keys · ${countActions(model)} actions`,
@@ -929,48 +1007,81 @@ export class VisualBuilder extends Component<VbState> {
   }
 
   // ---- drag and drop ----
+  // A press on the library, on an element or on its corner starts a drag that the window
+  // follows (`local.drag`, which tells what cell the pointer is over); moving a few pixels
+  // makes it live (the cells and the place where it would land are shown), and letting go
+  // over a cell drops it there. Not native drag and drop: that does not tell where the
+  // pointer is over, and does not start every time.
 
-  dragPalette(msg: Message): Effect[] {
+  _press(state: VbState, drag: Drag): Effect[] {
     return [
-      time.setTimeout("vb-drag", 0, "dragBegin", {
-        kind: "palette",
-        type: msg.payload,
+      ...this._commit(state, {
+        drag: { ...drag, live: false, cx: null, cy: null, over: "" },
       }),
+      local.drag("dragMove"),
     ];
   }
-  dragEl(msg: Message): Effect[] {
-    return [
-      time.setTimeout("vb-drag", 0, "dragBegin", {
-        kind: "move",
-        id: msg.payload,
-      }),
-    ];
+  dragPalette(msg: Message, state: VbState): Effect[] {
+    return this._press(state, { kind: "palette", type: msg.payload as ElType });
   }
-  dragResize(msg: Message): Effect[] {
-    return [
-      time.setTimeout("vb-drag", 0, "dragBegin", {
-        kind: "resize",
-        id: msg.payload,
-      }),
-    ];
+  dragEl(msg: Message, state: VbState): Effect[] {
+    return this._press(state, { kind: "move", id: String(msg.payload) });
   }
-  dragSection(msg: Message): Effect[] {
-    return [
-      time.setTimeout("vb-drag", 0, "dragBegin", {
-        kind: "section",
-        section: msg.payload,
-      }),
-    ];
+  dragResize(msg: Message, state: VbState): Effect[] {
+    return this._press(state, { kind: "resize", id: String(msg.payload) });
   }
-  /** the drag state is set after the browser started the drag (changing the DOM inside `dragstart` can cancel it) */
+  dragSection(msg: Message, state: VbState): Effect[] {
+    return this._press(state, {
+      kind: "section",
+      section: msg.payload as SectionKind,
+    });
+  }
+
+  /** the pointer moves, anywhere on the screen, with a drag pressed */
+  dragMove(msg: Message, state: VbState): Effect[] {
+    const d = state.drag;
+    if (!d) return [];
+    const p = msg.payload as {
+      x: number;
+      y: number;
+      done: boolean;
+      over?: string | null;
+    };
+    // the first sample is where the pointer was pressed
+    if (d.cx === null || d.cx === undefined) {
+      return p.done
+        ? this._commit(state, { drag: null })
+        : this._commit(state, { drag: { ...d, cx: p.x, cy: p.y } });
+    }
+    const live =
+      d.live === true ||
+      Math.abs(p.x - d.cx) + Math.abs(p.y - (d.cy ?? p.y)) >= DRAG_SLOP;
+    const over = live ? (p.over ?? "") : "";
+    if (p.done) {
+      const cell = live ? cellOf(over) : null;
+      // a press that did not move is a click: it is left to the click
+      if (!cell) return this._commit(state, { drag: null });
+      return this.drop(
+        { id: "drop", payload: [cell.section, cell.x, cell.y] },
+        state,
+      );
+    }
+    if (live === d.live && over === d.over) return [];
+    return this._commit(state, {
+      drag: { ...d, live, over },
+      // an element that is moved is the one that is selected
+      ...(live && !d.live && d.kind === "move"
+        ? { sel: { kind: "element" as const, id: d.id } }
+        : {}),
+    });
+  }
+
+  /** the drag state, set by hand (the keyboard and the tests) */
   dragBegin(msg: Message, state: VbState): Effect[] {
     return this._commit(state, { drag: msg.payload as Drag });
   }
   dragEnd(_msg: Message, state: VbState): Effect[] {
     return state.drag ? this._commit(state, { drag: null }) : [];
-  }
-  over(): Effect[] {
-    return [];
   }
 
   /** dropped on the cell (x, y) of a section */
@@ -1833,6 +1944,59 @@ export class VisualBuilder extends Component<VbState> {
     return this._commit(state, {
       run: this._ui(state, id, { sort: col, dir, page: 0 }),
     });
+  }
+
+  /** a check box of a table: the row is checked or not; the rows checked are in `bind` */
+  "e.onSelect"(msg: Message, state: VbState): Effect[] {
+    const [id, index] = msg.payload as [string, number];
+    const cur = new Set(state.run.ui[id]?.sel ?? []);
+    if (cur.has(index)) cur.delete(index);
+    else cur.add(index);
+    return this._selected(
+      state,
+      id,
+      [...cur].sort((a, b) => a - b),
+    );
+  }
+
+  /** the check box of the header: every row that is shown, or none */
+  "e.onSelectAll"(msg: Message, state: VbState): Effect[] {
+    const id = String(msg.payload);
+    const el = this._el(state, id);
+    if (!el) return [];
+    const shown = state.stage.sections
+      .flatMap((s) => s.items)
+      .find((i) => i.id === id)
+      ?.rows.map((r) => r.index);
+    const cur = new Set(state.run.ui[id]?.sel ?? []);
+    const every = !!shown?.length && shown.every((i) => cur.has(i));
+    for (const i of shown ?? []) every ? cur.delete(i) : cur.add(i);
+    return this._selected(
+      state,
+      id,
+      [...cur].sort((a, b) => a - b),
+    );
+  }
+
+  /** the rows that are checked, and the key of the table that holds them (the rows themselves) */
+  _selected(state: VbState, id: string, sel: number[]): Effect[] {
+    const el = this._el(state, id);
+    let run = this._ui(state, id, { sel });
+    if (el?.bind) {
+      const rows = listOf(
+        el.props.source ?? "",
+        scopeOf(run.data, { location: run.location }),
+      );
+      run = {
+        ...run,
+        data: setPath(
+          run.data,
+          el.bind,
+          sel.filter((i) => i < rows.length).map((i) => rows[i]),
+        ),
+      };
+    }
+    return this._commit(state, { run });
   }
 
   "e.onPage"(msg: Message, state: VbState): Effect[] {

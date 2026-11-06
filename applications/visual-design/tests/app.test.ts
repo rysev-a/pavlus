@@ -232,7 +232,7 @@ describe("the projects page", () => {
 
 describe("what a new project starts from", () => {
   it("is two documents the editors can open", () => {
-    for (const t of ["blank", "coffee"] as const) {
+    for (const t of ["blank", "users", "coffee"] as const) {
       const docs = docsOf(t, "My app");
       const flow = parseFlow(docs.flow);
       const ui = parseUi(docs.interface);
@@ -252,6 +252,26 @@ describe("what a new project starts from", () => {
     const ui = parseUi(docsOf("coffee", "x").interface);
     if (typeof ui === "string") throw new Error("bad");
     expect(ui.flow?.nodes.length).toBe(coffee.nodes.length);
+  });
+
+  it("the simplest example is the one it starts with: four routes over one table, and a page wired to them", () => {
+    expect(initialProjects().template).toBe("users");
+    const docs = docsOf("users", "Team");
+    const flow = parseFlow(docs.flow);
+    const ui = parseUi(docs.interface);
+    if (typeof flow === "string" || typeof ui === "string")
+      throw new Error("bad");
+    expect(
+      flow.nodes.filter((n) => n.kind === "route").map((n) => n.title),
+    ).toEqual([
+      "GET /users",
+      "POST /users",
+      "PATCH /users/:id",
+      "DELETE /users/:id",
+    ]);
+    expect(Object.keys(flow.db)).toEqual(["users"]);
+    expect(ui.name).toBe("Team");
+    expect(ui.flow?.nodes.length).toBe(flow.nodes.length);
   });
 
   it("knows its templates", () => {

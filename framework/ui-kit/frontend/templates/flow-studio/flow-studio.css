@@ -728,19 +728,16 @@
   font-size: 14px;
   pointer-events: none;
 }
+/* the corners are the handles of a frame: small squares you can see, faint until the pointer is on one */
 .fs-frame__size {
-  fill: transparent;
+  fill: var(--card);
+  stroke: var(--primary);
+  stroke-width: 1.5;
+  opacity: 0.55;
 }
 .fs-frame__size:hover {
-  fill: color-mix(in srgb, var(--primary) 22%, transparent);
-}
-.fs-frame__size--n,
-.fs-frame__size--s {
-  cursor: ns-resize;
-}
-.fs-frame__size--e,
-.fs-frame__size--w {
-  cursor: ew-resize;
+  fill: color-mix(in srgb, var(--primary) 30%, var(--card));
+  opacity: 1;
 }
 .fs-frame__size--nw,
 .fs-frame__size--se {
@@ -1725,4 +1722,134 @@
 
 .fs-mm__view {
   cursor: grab;
+}
+
+/* the dock: small icons on the top of the board; drag one onto the plot to add a component */
+.fs-dock {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+.fs-dock__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--foreground);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.fs-dock__btn:hover,
+.fs-dock__btn:focus-visible {
+  background: var(--accent);
+}
+.fs-dock__more {
+  cursor: pointer;
+}
+.fs-dock__ic {
+  width: 16px;
+  height: 16px;
+}
+.fs-dock__ic[data-kind="ui-event"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 3l14 7-6 2-2 6z'/></svg>");
+}
+.fs-dock__ic[data-kind="fe-handler"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M8 7l-5 5 5 5M16 7l5 5-5 5'/></svg>");
+}
+.fs-dock__ic[data-kind="fe-state"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><ellipse cx='12' cy='6' rx='7' ry='3'/><path d='M5 6v12c0 1.7 3 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3 3 7 3s7-1.3 7-3'/></svg>");
+}
+.fs-dock__ic[data-kind="route"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 12h12M12 6l6 6-6 6'/></svg>");
+}
+.fs-dock__ic[data-kind="handler"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M7 4l10 16M13 11l-7 9'/></svg>");
+}
+.fs-dock__ic[data-kind="reply"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 14L4 9l5-5M4 9h10a6 6 0 0 1 6 6v3'/></svg>");
+}
+.fs-dock__ic[data-kind="error"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l10 18H2zM12 10v5M12 18h.01'/></svg>");
+}
+.fs-dock__ic[data-kind="effect"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M13 2L4 14h7l-1 8 9-12h-7z'/></svg>");
+}
+.fs-dock__ic[data-kind="external"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/></svg>");
+}
+.fs-dock__ic[data-kind="more"] {
+  --fs-ic: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='5' cy='12' r='1.5'/><circle cx='12' cy='12' r='1.5'/><circle cx='19' cy='12' r='1.5'/></svg>");
+}
+/* the kinds have the colour of their lane */
+.fs-dock__btn[data-kind="ui-event"],
+.fs-dock__btn[data-kind="fe-handler"],
+.fs-dock__btn[data-kind="fe-state"] {
+  color: var(--info);
+}
+.fs-dock__btn[data-kind="route"],
+.fs-dock__btn[data-kind="handler"],
+.fs-dock__btn[data-kind="reply"] {
+  color: var(--primary);
+}
+.fs-dock__btn[data-kind="error"] {
+  color: var(--destructive);
+}
+.fs-dock__btn[data-kind="effect"] {
+  color: var(--warning);
+}
+.fs-dock__btn[data-kind="external"] {
+  color: var(--muted-foreground);
+}
+.fs-dockmore {
+  position: absolute;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  width: min(560px, calc(100% - 16px));
+  max-height: calc(100% - 60px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+.fs-pal__btn {
+  cursor: grab;
+  touch-action: none;
+}
+/* what is on its way from the dock to the plot: where it would be put */
+.fs-ghost {
+  fill: color-mix(in srgb, var(--primary) 16%, transparent);
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  pointer-events: none;
+}
+.fs-ghost__label {
+  fill: var(--foreground);
+  font-size: 11px;
+  font-weight: 600;
+}
+.fs[data-full="true"] .fs-dock {
+  top: 12px;
 }

@@ -53,6 +53,15 @@ export interface CanvasUi {
   faultNodes: string[];
   /** the frame a component being dragged is over: it is attached to it when dropped */
   dropFrame?: string;
+  /** a component from the dock, on its way to the plot: where it would be put */
+  addGhost?: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    label: string;
+    kind: string;
+  };
   /** inside a module: the ports bound to each node, shown as badges above it */
   badges?: Record<string, { ins: string[]; outs: string[] }>;
 }
@@ -220,24 +229,23 @@ export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
 
   // ---- frames ----
   // a frame is a rectangle on a plot that has no end: its header moves it (with what is
-  // attached to it), its borders and corners change its size, and a component dropped on
-  // it is attached to it
-  const hit = Math.max(8, 10 / ui.vp.z);
+  // attached to it), its four corners change its size (only the corners: the borders are
+  // not handles), and a component dropped on it is attached to it
+  const grip = Math.max(10, 12 / ui.vp.z);
   const frames: SvgNode[] = placed.frames.flatMap((f, i) => {
-    const t = hit / 2;
-    const c = hit * 1.3;
-    // the top border's handle sits mostly above the frame, so the header (which moves it) is the header
-    const top = f.y - hit * 0.75;
+    // a small square centered on each corner, always the same size on the screen
     const handles = [
-      { mode: "n", x: f.x + c, y: top, w: f.w - c * 2, h: hit },
-      { mode: "s", x: f.x + c, y: f.y + f.h - t, w: f.w - c * 2, h: hit },
-      { mode: "w", x: f.x - t, y: f.y + c, w: hit, h: f.h - c * 2 },
-      { mode: "e", x: f.x + f.w - t, y: f.y + c, w: hit, h: f.h - c * 2 },
-      { mode: "nw", x: f.x - t, y: top, w: c, h: c },
-      { mode: "ne", x: f.x + f.w - c + t, y: top, w: c, h: c },
-      { mode: "sw", x: f.x - t, y: f.y + f.h - c + t, w: c, h: c },
-      { mode: "se", x: f.x + f.w - c + t, y: f.y + f.h - c + t, w: c, h: c },
-    ];
+      { mode: "nw", x: f.x, y: f.y },
+      { mode: "ne", x: f.x + f.w, y: f.y },
+      { mode: "sw", x: f.x, y: f.y + f.h },
+      { mode: "se", x: f.x + f.w, y: f.y + f.h },
+    ].map((h) => ({
+      mode: h.mode,
+      x: h.x - grip / 2,
+      y: h.y - grip / 2,
+      w: grip,
+      h: grip,
+    }));
     const name = f.name.trim() || "Frame";
     const room = Math.max(4, Math.floor((f.w - 64) / 7));
     return [
@@ -304,6 +312,7 @@ export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
           y: h.y,
           width: Math.max(0, h.w),
           height: Math.max(0, h.h),
+          rx: 2,
           on: {
             pointerdown: msg(
               "frameSize",
@@ -690,6 +699,30 @@ export function canvasTree(placed: Placed, ui: CanvasUi): SvgNode {
     ...labelNodes,
     ...preview,
     ...tokens,
+    ...(ui.addGhost
+      ? [
+          rect({
+            key: "GHOST",
+            class: `fs-ghost fs-ghost--${ui.addGhost.kind}`,
+            x: ui.addGhost.x,
+            y: ui.addGhost.y,
+            width: ui.addGhost.w,
+            height: ui.addGhost.h,
+            rx: 8,
+          }),
+          text(
+            {
+              key: "GHOSTT",
+              class: "fs-ghost__label",
+              x: ui.addGhost.x + ui.addGhost.w / 2,
+              y: ui.addGhost.y + ui.addGhost.h / 2 + 4,
+              "text-anchor": "middle",
+              "pointer-events": "none",
+            },
+            short(ui.addGhost.label, 18),
+          ),
+        ]
+      : []),
   );
 }
 

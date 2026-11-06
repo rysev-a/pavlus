@@ -92,6 +92,11 @@ export type ActionType =
 
 export interface Action {
   t: ActionType;
+  /**
+   * An expression: the action runs only when it is true (empty = always). One chain can
+   * branch on it: `action == "Delete"` on the actions of a row action of a table.
+   */
+  when?: string;
   /** state key or path (`user.name`) */
   key?: string;
   /** an expression: the value to set / push */
@@ -156,10 +161,19 @@ export interface FormField {
     | "email"
     | "number"
     | "password"
+    | "url"
+    | "tel"
+    | "date"
     | "textarea"
     | "select"
-    | "checkbox";
+    | "radio"
+    | "checkbox"
+    | "switch";
   required: "yes" | "no";
+  /** the hint inside an empty field */
+  placeholder?: string;
+  /** a line of help under the field */
+  description?: string;
   minLength: string;
   maxLength: string;
   min: string;
@@ -543,7 +557,7 @@ export const ELEMENTS: Record<ElType, ElDef> = {
         name: "columns",
         label: "Columns",
         kind: "text",
-        hint: "name, email  (blank = all)",
+        hint: "name, email:Email address, amount|number, status|pill  (blank = all)",
       },
       {
         name: "filter",
@@ -559,10 +573,16 @@ export const ELEMENTS: Record<ElType, ElDef> = {
       },
       { name: "pageSize", label: "Rows per page (0 = all)", kind: "text" },
       {
+        name: "select",
+        label: "Check boxes on the rows",
+        kind: "choice",
+        choices: ["no", "yes"],
+      },
+      {
         name: "rowActions",
         label: "Row actions",
         kind: "text",
-        hint: "Edit, Delete",
+        hint: "Edit, Delete  (one event, `action` says which: use Only when)",
       },
       { name: "empty", label: "Empty text", kind: "text" },
     ],
@@ -572,6 +592,7 @@ export const ELEMENTS: Record<ElType, ElDef> = {
       filter: "",
       search: "no",
       pageSize: "0",
+      select: "no",
       rowActions: "",
       empty: "No rows.",
     },
@@ -823,6 +844,8 @@ export function blankField(
     pattern: "",
     message: "",
     options: "",
+    placeholder: "",
+    description: "",
   };
 }
 

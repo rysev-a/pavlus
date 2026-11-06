@@ -2,6 +2,7 @@
 // to Run. They are written in the style of server/examples/todo-api (a request is a
 // chain of small pure handlers, each reply is a message with the same rid).
 import { coffeeDemo } from "./demo-coffee.ts";
+import { usersDemo } from "./demo-users.ts";
 import { Draw, req } from "./draw.ts";
 import { type Model } from "./model.ts";
 
@@ -859,6 +860,13 @@ export const DEMOS: Demo[] = [
     about:
       "Customers with loyalty points, the menu, orders and a dashboard: modules, a pipe, a code module, a mailer plugin and real tables. The backend of the Visual Builder demo of the same name.",
     make: coffeeDemo,
+  },
+  {
+    id: "users-crud",
+    title: "Users CRUD",
+    about:
+      "A table of users and four routes: list, create, update, remove. The backend of the Visual Builder demo of the same name.",
+    make: usersDemo,
   },
   {
     id: "modules",

@@ -38,6 +38,8 @@ export interface Slot {
 }
 
 export interface UiState {
+  /** a table: the rows that are checked (their places in the source array) */
+  sel?: number[];
   sort?: string;
   dir?: "asc" | "desc";
   page?: number;
@@ -180,6 +182,18 @@ export function execute(
   const scope = (): Scope =>
     scopeOf(run.data, { location: run.location, ...extras });
   for (const a of actions ?? []) {
+    // an action with a condition that is not true (or cannot be read) is left out
+    if (a.when?.trim()) {
+      const g = evalExpr(a.when, scope());
+      if (!g.ok) {
+        run = logged(run, `${a.t}: when ${g.error}`);
+        continue;
+      }
+      if (!g.value) {
+        run = logged(run, `${a.t} skipped (when ${a.when})`);
+        continue;
+      }
+    }
     switch (a.t) {
       case "set": {
         const r = evalExpr(a.value ?? "", scope());

@@ -20,7 +20,7 @@ export type LocalEffect = Effect & { plugin: "local" } & (
     | { type: "watch"; selector: string; onSuccess: string }
     | { type: "wheel"; selector: string; onSuccess: string }
     | { type: "fullscreen"; selector: string; onSuccess: string }
-    | { type: "drag"; onSuccess: string }
+    | { type: "drag"; onSuccess: string; rel?: string }
   );
 
 export const localEffector = {
@@ -103,12 +103,17 @@ export const localEffector = {
   }),
   /**
    * A drag that follows the pointer wherever it goes, off the element too: replies
-   * `{ x, y, done }` (px of the window) for each move, and once more with `done`.
+   * `{ x, y, done, over }` (px of the window) for each move, and once more with `done`.
+   * `over` is the `data-drop` of the element under the pointer (or of its closest ancestor
+   * that has one), else null: what the thing being dragged is over. With `rel` (a selector)
+   * it also says where the pointer is on that element: `{ rx, ry, inside }`, px from its
+   * corner, and whether it is within it.
    */
-  drag: (onSuccess: string): LocalEffect => ({
+  drag: (onSuccess: string, rel?: string): LocalEffect => ({
     plugin: "local",
     type: "drag",
     onSuccess,
+    ...(rel ? { rel } : {}),
   }),
   /** Replies the prefix that messages of the asking component carry (`name` is the reply id without it). */
   prefix: (name: string): LocalEffect => ({
@@ -389,17 +394,41 @@ export function createLocalPlugin(
           offPointer?.();
           const win = doc?.defaultView;
           if (!win) return;
-          const send = (e: PointerEvent, done: boolean): void =>
+          const send = (e: PointerEvent, done: boolean): void => {
+            const under = doc?.elementFromPoint?.(e.clientX, e.clientY);
+            const over = under
+              ?.closest?.("[data-drop]")
+              ?.getAttribute("data-drop");
+            const box = effect.rel
+              ? doc?.querySelector(effect.rel)?.getBoundingClientRect()
+              : undefined;
             ctx.dispatch({
               id: effect.onSuccess,
-              payload: { x: e.clientX, y: e.clientY, done },
+              payload: {
+                x: e.clientX,
+                y: e.clientY,
+                done,
+                over: over ?? null,
+                ...(box
+                  ? {
+                      rx: e.clientX - box.left,
+                      ry: e.clientY - box.top,
+                      inside:
+                        e.clientX >= box.left &&
+                        e.clientX <= box.right &&
+                        e.clientY >= box.top &&
+                        e.clientY <= box.bottom,
+                    }
+                  : {}),
+              },
             });
+          };
           const move = (e: Event): void => send(e as PointerEvent, false);
           // the first sample is where the pointer went down
           if (pressed) {
             ctx.dispatch({
               id: effect.onSuccess,
-              payload: { x: pressed.x, y: pressed.y, done: false },
+              payload: { x: pressed.x, y: pressed.y, done: false, over: null },
             });
             pressed = undefined;
           }

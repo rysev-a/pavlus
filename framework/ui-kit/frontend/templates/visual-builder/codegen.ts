@@ -6,6 +6,7 @@
 import { HELPERS, parseInitial, splitTemplate } from "./bind.ts";
 import { walk } from "./chain.ts";
 import { layoutOf } from "./grid.ts";
+import { columnsOf } from "./stage.ts";
 import {
   type Action,
   allElements,
@@ -148,22 +149,22 @@ function elementLines(el: El): string[] {
           : []),
       ];
     case "table": {
-      const cols = csv(p.columns);
+      const cols = columnsOf(p.columns ?? "");
       return [
         `// filter / sort / paging of "${p.filter || "-"}": compute the visible rows in the handler`,
         `table.vb-table`,
         ...(cols.length
-          ? [`  thead`, `    tr`, ...cols.map((c) => `      th ${c}`)]
+          ? [`  thead`, `    tr`, ...cols.map((c) => `      th ${c.label}`)]
           : []),
         `  tbody`,
         `    for row, index in ${exprT(p.source)} key index`,
         `      tr${ev(el, "click", "@click", "row, index")}`,
         ...(cols.length
-          ? cols.map((c) => `        td {row.${c.replace(/\W/g, "")}}`)
+          ? cols.map((c) => `        td {row.${c.key.replace(/\W/g, "")}}`)
           : [`        td {row}`]),
         ...csv(p.rowActions).map(
           (a) =>
-            `        td\n          button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=${msgName(el, "rowAction")}(row, index)) ${a}`,
+            `        td\n          button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=${msgName(el, "rowAction")}(row, index, ${jsString(a)})) ${a}`,
         ),
       ];
     }
@@ -296,6 +297,15 @@ function actionLines(
   path: string,
   pad: string,
 ): string[] {
+  // an action with a condition is in the list only when the condition is true
+  if (a.when?.trim()) {
+    const { when: _when, ...rest } = a;
+    return [
+      `${pad}...(${js(a.when)} ? [`,
+      ...actionLines(rest, id, path, `${pad}  `),
+      `${pad}] : []),`,
+    ];
+  }
   const key = a.key ? jsString(a.key) : '""';
   switch (a.t) {
     case "set":

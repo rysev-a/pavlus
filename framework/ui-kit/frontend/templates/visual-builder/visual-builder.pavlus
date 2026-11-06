@@ -4,7 +4,7 @@
 import Field from "./field.pavlus"
 import El from "./element.pavlus"
 
-div.k-template.vb(data-tab=tab data-pane=pane data-bp=bp data-drag={drag ? "on" : null})
+div.k-template.vb(data-tab=tab data-pane=pane data-bp=bp data-drag={dragLive ? "on" : null})
   datalist#vb-keys
     for k in keyNames key k.k
       option(value=k.k)
@@ -93,7 +93,7 @@ div.k-template.vb(data-tab=tab data-pane=pane data-bp=bp data-drag={drag ? "on" 
             h3.vb-h3 {g.group}
             div.vb-palette
               for it in g.items key it.type
-                button.vb-pal(type="button" draggable="true" data-vb-drag="true" @dragstart=dragPalette(it.type) @dragend=dragEnd @click=addEl(it.type)) {it.label}
+                button.vb-pal(type="button" @pointerdown=dragPalette(it.type) @click=addEl(it.type)) {it.label}
         else if leftTab === "sections"
           p.vb-hint Sections are the blocks of a page, each with its own 12-column grid.
           div.vb-palette.vb-palette--wide
@@ -177,12 +177,14 @@ div.k-template.vb(data-tab=tab data-pane=pane data-bp=bp data-drag={drag ? "on" 
                   button.ui-button.ui-button-ghost.ui-button-sm(type="button" aria-label="Delete {s.name}" @click.stop=secDel(s.id)) Delete
                 div.vb-grid(role="group" aria-label="Grid of {s.name}: 12 columns" style=s.gridStyle)
                   for it in s.items key it.id
-                    div.vb-cell(style=it.style data-sel={it.selected ? "true" : null} draggable="true" data-vb-drag="true" tabindex="0" role="button" aria-label="{it.kind} element, select" aria-pressed={it.selected ? "true" : "false"} @dragstart=dragEl(it.id) @dragend=dragEnd @click.stop=select(it.id) @keydown=cellKey(it.id))
+                    div.vb-cell(style=it.style data-sel={it.selected ? "true" : null} tabindex="0" role="button" aria-label="{it.kind} element, select" aria-pressed={it.selected ? "true" : "false"} @pointerdown.prevent=dragEl(it.id) @click.stop=select(it.id) @keydown=cellKey(it.id))
                       +El#e(...it)
                       if it.selected
-                        div.vb-handle(draggable="true" data-vb-drag="true" role="button" aria-label="Resize {it.kind}: drag to a cell" @dragstart.stop=dragResize(it.id) @dragend=dragEnd)
+                        div.vb-handle(role="button" aria-label="Resize {it.kind}: drag to a cell" @pointerdown.stop.prevent=dragResize(it.id))
                   for d in s.drops key d.k
-                    div.vb-drop(style=d.style role="button" aria-label=d.label @dragover.prevent=over @drop.prevent=drop(s.id, d.x, d.y))
+                    div.vb-drop(style=d.style data-drop=d.drop aria-label=d.label)
+                  if s.ghost
+                    div.vb-ghost(style=s.ghost.style aria-hidden="true")
                 if s.empty
                   p.vb-sec__empty Drop an element here, or click one in the library.
             if stage.empty

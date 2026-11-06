@@ -199,6 +199,29 @@ export function actionFields(
           : "";
     return field(ctx, name, label, value, kind, choices, hint, err);
   };
+  // every action can have a condition
+  const when = f(
+    "when",
+    "Only when (expression)",
+    "expr",
+    [],
+    "empty = always  ·  action == 'Delete'",
+  );
+  return [when, ...ownFields(a, f, ctx, routes)];
+}
+
+function ownFields(
+  a: Action,
+  f: (
+    name: keyof Action,
+    label: string,
+    kind: FieldSpec["kind"] | "number",
+    choices?: string[],
+    hint?: string,
+  ) => FieldView,
+  ctx: string,
+  routes: FlowRoute[],
+): FieldView[] {
   switch (a.t) {
     case "set":
       return [
@@ -544,11 +567,24 @@ function formFieldViews(ctx: string, fd: FormField): FieldView[] {
       "email",
       "number",
       "password",
+      "url",
+      "tel",
+      "date",
       "textarea",
       "select",
+      "radio",
       "checkbox",
+      "switch",
     ]),
     field(ctx, "required", "Required", fd.required, "choice", ["yes", "no"]),
+    field(ctx, "placeholder", "Placeholder", fd.placeholder ?? "", "text"),
+    field(
+      ctx,
+      "description",
+      "Help text (under the field)",
+      fd.description ?? "",
+      "text",
+    ),
     field(ctx, "minLength", "Min length", fd.minLength, "number"),
     field(ctx, "maxLength", "Max length", fd.maxLength, "number"),
     field(ctx, "min", "Min (number)", fd.min, "number"),
@@ -565,7 +601,7 @@ function formFieldViews(ctx: string, fd: FormField): FieldView[] {
     field(
       ctx,
       "options",
-      "Options (select)",
+      "Options (select, radio)",
       fd.options,
       "text",
       [],

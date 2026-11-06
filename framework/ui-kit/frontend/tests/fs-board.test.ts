@@ -675,7 +675,7 @@ describe("the board in the studio", () => {
     s.send("dragMove", { x: 200, y: 100, done: true });
     expect(findFrame(model(s), "app")!.x).toBeGreaterThan(f0.x);
     // the same for the border of a frame, the background and the minimap
-    s.send("frameSize", { id: "app", edge: "e" });
+    s.send("frameSize", { id: "app", edge: "se" });
     s.send("cvUp");
     expect(s.state.drag).toMatchObject({ kind: "frameSize" });
     s.send("dragMove", { x: 0, y: 0, done: true });
@@ -701,7 +701,7 @@ describe("the board in the studio", () => {
     expect(s.state.drag).toBeNull();
   });
 
-  test("a frame is resized by a border or a corner: the side that is held moves, the opposite one stays", () => {
+  test("a frame is resized by its corners: the corner that is held moves, the opposite one stays", () => {
     const s = ready().send("boardSize", { w: 1500, h: 520 });
     s.send("home");
     s.send("frameAdd");
@@ -714,21 +714,33 @@ describe("the board in the studio", () => {
       s.send("dragMove", { x: 500 + dx * z, y: 300 + dy * z, done: true });
       return findFrame(model(s), id)!;
     };
-    // the right border: wider, and the left stays
-    const e = drag("e", 100, 0);
-    expect([e.x, e.w, e.h]).toEqual([f.x, f.w + 100, f.h]);
-    // the left border: the left edge moves, the right edge stays
-    const w = drag("w", -50, 0);
-    expect([w.x, w.x + w.w]).toEqual([e.x - 50, e.x + e.w]);
-    // the top border
-    const n = drag("n", 0, -40);
-    expect([n.y, n.y + n.h]).toEqual([w.y - 40, w.y + w.h]);
-    // the bottom right corner: both
-    const se = drag("se", 30, 20);
-    expect([se.w, se.h]).toEqual([n.w + 30, n.h + 20]);
+    // the bottom right corner: wider and taller, the top left stays
+    const se = drag("se", 100, 60);
+    expect([se.x, se.y, se.w, se.h]).toEqual([f.x, f.y, f.w + 100, f.h + 60]);
     // the top left corner: the bottom right stays
-    const nw = drag("nw", 10, 10);
+    const nw = drag("nw", -50, -40);
     expect([nw.x + nw.w, nw.y + nw.h]).toEqual([se.x + se.w, se.y + se.h]);
+    expect([nw.x, nw.y]).toEqual([se.x - 50, se.y - 40]);
+    // the top right corner: the bottom left stays
+    const ne = drag("ne", 30, -20);
+    expect([ne.x, ne.y + ne.h]).toEqual([nw.x, nw.y + nw.h]);
+    expect(ne.w).toBe(nw.w + 30);
+    // the bottom left corner: the top right stays
+    const sw = drag("sw", -10, 25);
+    expect([sw.x + sw.w, sw.y]).toEqual([ne.x + ne.w, ne.y]);
+  });
+
+  test("the corners are the only handles a frame has", () => {
+    const s = ready().send("frameAdd");
+    const text = JSON.stringify(trees(coreFrom(s.state))[0].tree);
+    const modes = [...text.matchAll(/"edge":"(\w+)"/g)].map((m) => m[1]);
+    // four to a frame
+    const id = framesOf(model(s)).at(-1)!.id;
+    const mine = [
+      ...text.matchAll(new RegExp(`"id":"${id}","edge":"(\\w+)"`, "g")),
+    ].map((m) => m[1]);
+    expect(mine.sort()).toEqual(["ne", "nw", "se", "sw"]);
+    expect(modes.every((m) => ["ne", "nw", "se", "sw"].includes(m))).toBe(true);
   });
 
   test("a frame is never made smaller than the least, and the side that is not held does not move for it", () => {
@@ -738,7 +750,7 @@ describe("the board in the studio", () => {
     const id = framesOf(model(s)).at(-1)!.id;
     const f = findFrame(model(s), id)!;
     const z = s.state.vp.z;
-    s.send("frameSize", { id, edge: "w" });
+    s.send("frameSize", { id, edge: "nw" });
     s.send("dragMove", { x: 0, y: 0, done: false });
     s.send("dragMove", { x: 5000 * z, y: 0, done: true });
     const g = findFrame(model(s), id)!;
@@ -955,8 +967,8 @@ describe("the helpers of the page (the local plugin)", () => {
       new MouseEvent("pointermove", { clientX: 9, clientY: 9 }),
     );
     expect(f.ctx.sent.map((m) => m.payload)).toEqual([
-      { x: 5, y: 6, done: false },
-      { x: 7, y: 8, done: true },
+      { x: 5, y: 6, done: false, over: null },
+      { x: 7, y: 8, done: true, over: null },
     ]);
   });
 
@@ -990,12 +1002,39 @@ describe("the helpers of the page (the local plugin)", () => {
       new MouseEvent("pointerup", { clientX: 400, clientY: 260 }),
     );
     expect(sent.map((m) => m.payload)).toEqual([
-      { x: 100, y: 200, done: false },
-      { x: 400, y: 260, done: false },
-      { x: 400, y: 260, done: true },
+      { x: 100, y: 200, done: false, over: null },
+      { x: 400, y: 260, done: false, over: null },
+      { x: 400, y: 260, done: true, over: null },
     ]);
     plugin.dispose?.();
     void f;
+  });
+
+  test("a drag says what it is over: the data-drop of the element under the pointer, or of its ancestor", () => {
+    const f = frame();
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      '<div data-drop="s1|3|2"><span id="inner"></span></div>',
+    );
+    const inner = document.querySelector("#inner");
+    (
+      document as unknown as { elementFromPoint: () => Element | null }
+    ).elementFromPoint = () => inner;
+    f.run(local.drag("moved"));
+    window.dispatchEvent(
+      new MouseEvent("pointermove", { clientX: 1, clientY: 2 }),
+    );
+    (
+      document as unknown as { elementFromPoint: () => Element | null }
+    ).elementFromPoint = () => document.body;
+    window.dispatchEvent(
+      new MouseEvent("pointerup", { clientX: 3, clientY: 4 }),
+    );
+    expect(
+      f.ctx.sent.map((m) => (m.payload as { over: string | null }).over),
+    ).toEqual(["s1|3|2", null]);
+    delete (document as unknown as { elementFromPoint?: unknown })
+      .elementFromPoint;
   });
 
   test("fullscreen: the browser's, or the page's own when it has none", () => {
@@ -1010,5 +1049,129 @@ describe("the helpers of the page (the local plugin)", () => {
       f.run(local.fullscreen(".fs", "full"));
       expect(f.ctx.sent.at(-1)).toEqual({ id: "full", payload: { on: false } });
     });
+  });
+});
+
+describe("the dock: drag a component from the top of the board onto the plot", () => {
+  const board = () => {
+    const s = ready().send("boardSize", { w: 1500, h: 520 });
+    s.send("home");
+    return s;
+  };
+  /** press at (100,20), move far enough, let go at (rx, ry) of the board */
+  const drag = (
+    s: Sim,
+    what: unknown[],
+    to: { rx: number; ry: number; inside: boolean },
+  ) => {
+    s.send("dockDown", what);
+    s.send("dragMove", { x: 100, y: 20, done: false });
+    s.send("dragMove", { x: 400, y: 300, done: false, ...to });
+    return s;
+  };
+
+  test("pressing an icon follows the pointer on the board, and is not yet a component", () => {
+    const s = board();
+    const n = model(s).nodes.length;
+    expect(s.send("dockDown", ["handler", "orders.list"]).last).toContainEqual(
+      local.drag("dragMove", "#fs-flow"),
+    );
+    expect(s.state.drag).toMatchObject({ kind: "add", live: false });
+    expect(model(s).nodes.length).toBe(n);
+  });
+
+  test("dragged over the board it shows where it would be, and the drop puts it there, centered", () => {
+    const s = board();
+    const n = model(s).nodes.length;
+    drag(s, ["handler", "orders.list"], { rx: 600, ry: 250, inside: true });
+    expect(s.state.drag).toMatchObject({
+      kind: "add",
+      live: true,
+      inside: true,
+    });
+    // the ghost is on the board while it is dragged
+    const ghost = JSON.stringify(trees(coreFrom(s.state))[0].tree);
+    expect(ghost).toContain("fs-ghost");
+    s.send("dragMove", {
+      x: 400,
+      y: 300,
+      done: true,
+      rx: 600,
+      ry: 250,
+      inside: true,
+    });
+    expect(model(s).nodes.length).toBe(n + 1);
+    const made = model(s).nodes.find((x) => x.title === "orders.list")!;
+    expect(made.kind).toBe("handler");
+    const z = s.state.vp.z;
+    expect(made.x).toBeCloseTo(s.state.vp.x + 600 / z - 70, -1);
+    expect(s.state.drag).toBeNull();
+    // one step of the history
+    s.send("undo");
+    expect(model(s).nodes.length).toBe(n);
+  });
+
+  test("let go outside the board, or without moving, adds nothing: it is not a click that adds", () => {
+    const s = board();
+    const n = model(s).nodes.length;
+    s.send("dockDown", ["handler", "x"]);
+    s.send("dragMove", { x: 100, y: 20, done: false });
+    s.send("dragMove", {
+      x: 100,
+      y: 20,
+      done: true,
+      rx: 5,
+      ry: 5,
+      inside: true,
+    });
+    expect(model(s).nodes.length).toBe(n);
+    drag(s, ["handler", "x"], { rx: 0, ry: 0, inside: false });
+    s.send("dragMove", {
+      x: 400,
+      y: 300,
+      done: true,
+      rx: 0,
+      ry: 0,
+      inside: false,
+    });
+    expect(model(s).nodes.length).toBe(n);
+    expect(s.state.drag).toBeNull();
+  });
+
+  test("dropped on a frame it belongs to that frame", () => {
+    const s = board();
+    s.send("frameAdd");
+    const f = framesOf(model(s)).at(-1)!;
+    const z = s.state.vp.z;
+    const rx = (f.x + f.w / 2 - s.state.vp.x) * z;
+    const ry = (f.y + f.h / 2 - s.state.vp.y) * z;
+    drag(s, ["route", "GET /x"], { rx, ry, inside: true });
+    s.send("dragMove", { x: 400, y: 300, done: true, rx, ry, inside: true });
+    const made = model(s).nodes.find((x) => x.title === "GET /x");
+    expect(made?.frame).toBe(f.id);
+  });
+
+  test("the keyboard puts it in the middle of the board: Enter, not a click", () => {
+    const s = board();
+    const n = model(s).nodes.length;
+    expect(
+      s.send("dockKey", ["effect", "pg.query"], { key: "a" }).last,
+    ).toEqual([]);
+    s.send("dockKey", ["effect", "pg.query"], { key: "Enter" });
+    expect(model(s).nodes.length).toBe(n + 1);
+  });
+
+  test("the more button opens the whole list", () => {
+    const s = board();
+    expect(s.state.dockMore).toBe(false);
+    expect(s.send("toggleDockMore").state.dockMore).toBe(true);
+    expect(s.send("toggleDockMore").state.dockMore).toBe(false);
+  });
+
+  test("the dock lists the kinds that are put on a board", () => {
+    expect(board().state.dock.map((k) => k.kind)).toEqual(
+      expect.arrayContaining(["ui-event", "handler", "route", "effect"]),
+    );
+    expect(board().state.dock.map((k) => k.kind)).not.toContain("module");
   });
 });

@@ -1,5 +1,7 @@
-# Builds the ui-kit (every shadcn component as a pavlus template) and publishes
-# it on GitHub Pages. Pull requests only build and test; the deploy runs on main.
+# Builds the ui-kit (every shadcn component as a pavlus template) and the phone
+# app (applications/mobile-dev) and publishes them on GitHub Pages: the ui-kit at
+# /<repo>/ and the phone app at /<repo>/mobile/. Pull requests only build and
+# test; the deploy runs on main.
 #
 # One-time setup: Settings -> Pages -> Build and deployment -> Source:
 # "GitHub Actions".
@@ -12,6 +14,7 @@ on:
       - "framework/ui-kit/**"
       - "applications/admin/public/styles.css"
       - "framework/**"
+      - "applications/mobile-dev/**"
       - "package-lock.json"
       - ".github/workflows/ui-kit-pages.yml"
   pull_request:
@@ -19,6 +22,7 @@ on:
       - "framework/ui-kit/**"
       - "applications/admin/public/styles.css"
       - "framework/**"
+      - "applications/mobile-dev/**"
       - "package-lock.json"
       - ".github/workflows/ui-kit-pages.yml"
   workflow_dispatch:
@@ -48,6 +52,14 @@ jobs:
         run: npm run build --workspace @pavlus/ui-kit
         env:
           UI_KIT_BASE: /${{ github.event.repository.name }}/
+      - run: npm run typecheck --workspace mobile-dev
+      - run: npm test --workspace mobile-dev
+      - name: Build the phone app for /<repo>/mobile/
+        run: npm run build --workspace mobile-dev
+        env:
+          MOBILE_BASE: /${{ github.event.repository.name }}/mobile/
+      - name: Put the phone app inside the site
+        run: cp -R applications/mobile-dev/dist framework/ui-kit/dist/mobile
       - uses: actions/upload-pages-artifact@v3
         with:
           path: framework/ui-kit/dist

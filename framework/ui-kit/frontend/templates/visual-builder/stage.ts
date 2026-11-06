@@ -28,15 +28,22 @@ import type { UiState } from "./actions.ts";
 export interface Cell {
   k: string;
   text: string;
+  /** shown as a pill (a status), or to the right (a number) */
+  pill: boolean;
+  right: boolean;
 }
 export interface ColumnView {
   k: string;
   label: string;
   sort: string;
+  /** nothing sorts by it now (its arrows are faint) */
+  idle: boolean;
+  right: boolean;
 }
 export interface RowView {
   k: string;
   index: number;
+  checked: boolean;
   cells: Cell[];
 }
 export interface FieldInput {
@@ -51,7 +58,13 @@ export interface FieldInput {
   isArea: boolean;
   isSelect: boolean;
   isCheck: boolean;
+  isSwitch: boolean;
+  isRadio: boolean;
   inputType: string;
+  placeholder: string;
+  description: string;
+  /** the id of the control, for its label */
+  fid: string;
   options: { k: string; label: string; selected: boolean }[];
 }
 
@@ -105,6 +118,12 @@ export interface ElView {
   rows: RowView[];
   rowActions: string[];
   hasActions: boolean;
+  /** a table with a check box on each row */
+  selectable: boolean;
+  allChecked: boolean;
+  checkedCount: number;
+  /** the columns the table has, with the check box and the actions */
+  span: number;
   searchBox: boolean;
   q: string;
   paged: boolean;
@@ -138,6 +157,8 @@ export interface DropCell {
   y: number;
   style: string;
   label: string;
+  /** what the pointer reports when it is over this cell: `section|x|y` */
+  drop: string;
 }
 
 export interface SectionView {
@@ -153,6 +174,8 @@ export interface SectionView {
   gridStyle: string;
   items: ElView[];
   drops: DropCell[];
+  /** the place where what is dragged would land, in this section */
+  ghost: { style: string } | null;
   empty: boolean;
 }
 
@@ -174,6 +197,14 @@ export interface StageIn {
   selectedSection: string;
   /** show the drop cells (a drag is going on) */
   dragging: boolean;
+  /** where the drag would land (a rectangle of the grid of one section) */
+  ghost?: {
+    section: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null;
   location: string;
 }
 
@@ -234,6 +265,10 @@ function blank(el: El): ElView {
     rows: [],
     rowActions: [],
     hasActions: false,
+    selectable: false,
+    allChecked: false,
+    checkedCount: 0,
+    span: 1,
     searchBox: false,
     q: "",
     paged: false,
@@ -261,6 +296,37 @@ function blank(el: El): ElView {
 const optionList = (labels: string[], value: string) =>
   labels.map((l, i) => ({ k: `${i}`, label: l, selected: l === value }));
 
+/**
+ * A column of a table, from the text of `columns`: `name`, `name:Full name` (a header),
+ * `amount|number` (to the right), `status|pill` (a pill), `joined|date`.
+ */
+export interface ColumnSpec {
+  key: string;
+  label: string;
+  kind: "text" | "number" | "pill" | "date";
+}
+export function columnsOf(text: string): ColumnSpec[] {
+  return csv(text).map((c) => {
+    const [head, kind = ""] = c.split("|").map((x) => x.trim());
+    const [key, ...label] = head.split(":");
+    const k = key.trim();
+    return {
+      key: k,
+      label: label.join(":").trim() || k,
+      kind:
+        (["number", "pill", "date"] as const).find((x) => x === kind) ?? "text",
+    };
+  });
+}
+
+const shown = (v: unknown, kind: ColumnSpec["kind"]): string => {
+  if (kind === "date") {
+    const d = new Date(String(v ?? ""));
+    return Number.isNaN(d.getTime()) ? toText(v) : d.toISOString().slice(0, 10);
+  }
+  return toText(v);
+};
+
 function tableView(
   el: El,
   v: ElView,
@@ -274,11 +340,20 @@ function tableView(
     entries = entries.filter((e) =>
       truthy(p.filter, { ...scope, row: e.row, index: e.index }, true),
     );
-  const cols = csv(p.columns ?? "");
+  const specs = columnsOf(p.columns ?? "");
   const first = all.find((r) => r && typeof r === "object") as
     | Record<string, unknown>
     | undefined;
-  const names = cols.length ? cols : first ? Object.keys(first) : [];
+  const cols: ColumnSpec[] = specs.length
+    ? specs
+    : first
+      ? Object.keys(first).map((key) => ({
+          key,
+          label: key,
+          kind: "text" as const,
+        }))
+      : [];
+  const names = cols.map((c) => c.key);
   const q = (ui?.q ?? "").toLowerCase();
   v.searchBox = p.search === "yes";
   v.q = ui?.q ?? "";
@@ -307,22 +382,36 @@ function tableView(
   if (size > 0) entries = entries.slice((v.pageNo - 1) * size, v.pageNo * size);
   v.prevOff = v.pageNo <= 1;
   v.nextOff = v.pageNo >= v.pages;
-  v.columns = names.map((c) => ({
-    k: c,
-    label: c,
+  v.columns = cols.map((c) => ({
+    k: c.key,
+    label: c.label,
     sort:
-      ui?.sort === c
+      ui?.sort === c.key
         ? ui.dir === "desc"
           ? "descending"
           : "ascending"
         : "none",
+    idle: ui?.sort !== c.key,
+    right: c.kind === "number",
   }));
   v.rowActions = csv(p.rowActions ?? "");
   v.hasActions = v.rowActions.length > 0;
+  v.selectable = p.select === "yes";
+  const checked = new Set(ui?.sel ?? []);
+  v.checkedCount = [...checked].filter((i) => i < all.length).length;
+  v.allChecked =
+    entries.length > 0 && entries.every((e) => checked.has(e.index));
+  v.span = cols.length + (v.selectable ? 1 : 0) + (v.hasActions ? 1 : 0);
   v.rows = entries.map((e) => ({
     k: `r${e.index}`,
     index: e.index,
-    cells: names.map((c) => ({ k: c, text: toText(getPath(e.row, c)) })),
+    checked: checked.has(e.index),
+    cells: cols.map((c) => ({
+      k: c.key,
+      text: shown(getPath(e.row, c.key), c.kind),
+      pill: c.kind === "pill",
+      right: c.kind === "number",
+    })),
   }));
   v.empty = fill(p.empty ?? "", scope);
   v.isEmpty = entries.length === 0;
@@ -513,16 +602,30 @@ export function elView(
           checked: val === true,
           error: err,
           invalid: err ? "true" : null,
-          isText: !["textarea", "select", "checkbox"].includes(fd.type),
+          isText: ![
+            "textarea",
+            "select",
+            "checkbox",
+            "switch",
+            "radio",
+          ].includes(fd.type),
           isArea: fd.type === "textarea",
           isSelect: fd.type === "select",
           isCheck: fd.type === "checkbox",
-          inputType:
-            fd.type === "select" ||
-            fd.type === "textarea" ||
-            fd.type === "checkbox"
-              ? "text"
-              : fd.type,
+          isSwitch: fd.type === "switch",
+          isRadio: fd.type === "radio",
+          inputType: [
+            "select",
+            "textarea",
+            "checkbox",
+            "switch",
+            "radio",
+          ].includes(fd.type)
+            ? "text"
+            : fd.type,
+          placeholder: fd.placeholder ?? "",
+          description: fd.description ?? "",
+          fid: `${el.id}-${fd.name}`,
           options: optionList(
             csv(fd.options),
             val === undefined ? "" : toText(val),
@@ -545,6 +648,7 @@ function dropCells(section: Section, rows: number): DropCell[] {
         y,
         style: `grid-column: ${x + 1}; grid-row: ${y + 1}`,
         label: `Column ${x + 1}, row ${y + 1} of ${section.name}`,
+        drop: `${section.id}|${x}|${y}`,
       });
   return out;
 }
@@ -579,6 +683,12 @@ export function stageOf(inp: StageIn): StageView {
       items,
       drops:
         inp.mode === "design" && inp.dragging ? dropCells(s, rows + 1) : [],
+      ghost:
+        inp.mode === "design" && inp.ghost && inp.ghost.section === s.id
+          ? {
+              style: `grid-column: ${inp.ghost.x + 1} / span ${inp.ghost.w}; grid-row: ${inp.ghost.y + 1} / span ${Math.max(1, Math.min(inp.ghost.h, rows + 1 - inp.ghost.y))}`,
+            }
+          : null,
       empty: items.length === 0,
     };
   });

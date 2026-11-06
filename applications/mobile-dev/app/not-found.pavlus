@@ -1,0 +1,3 @@
+section.md-lost
+  p There is no page at this address.
+  a.ui-button.ui-button-default(href="/" @click.prevent=open("/")) Back to the board

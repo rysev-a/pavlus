@@ -1,0 +1,134 @@
+/* Mobile Dev: a phone screen. The editor fills it, the tab bar is under the thumb. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+#app:empty::before {
+  content: "Loading...";
+  display: block;
+  padding: 48px;
+  text-align: center;
+  color: #888;
+}
+.md {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+.md-main {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: env(safe-area-inset-top) 0 0;
+  -webkit-overflow-scrolling: touch;
+}
+.md-bar {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  border-top: 1px solid var(--border);
+  background: var(--background);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.md-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: 6px 4px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  background: none;
+  border: 0;
+  text-decoration: none;
+  cursor: pointer;
+}
+.md-tab--on {
+  color: var(--primary);
+  font-weight: 600;
+}
+.md-lost {
+  padding: 32px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+/* ---- the board on a phone: the board is the screen ------------------------
+   Flow Studio keeps its toolbar in one row you swipe, drops what is for a desk
+   (the run bar, the quick-add line, the minimap and hints) and gives the rest of
+   the height to the board. Components are added from the dock on the board. */
+.md-main .fs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 6px;
+  gap: 6px;
+  box-sizing: border-box;
+}
+.md-main .fs-brand__title,
+.md-main .fs-run,
+.md-main .fs-addbar,
+.md-main .fs-under,
+.md-main .fs-resize,
+.md-main .fs-summary {
+  display: none;
+}
+.md-main .fs-top {
+  flex: none;
+}
+.md-main .fs-top__row--tools {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.md-main .fs-top__row--tools > * {
+  flex: none;
+}
+.md-main .fs-body,
+.md-main .fs-main,
+.md-main .fs-panel[data-show="true"] {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.md-main .fs-panel[data-show="false"] {
+  display: none;
+}
+.md-main .fs-canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: none;
+}
+.md-main .fs-flow {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  height: auto;
+}
+.md-main .fs-side {
+  bottom: calc(52px + env(safe-area-inset-bottom));
+}
+/* the dock fits a narrow screen: its icons are 30px, nine of them and the more button */
+.md-main .fs-dock {
+  max-width: calc(100% - 16px);
+  overflow-x: auto;
+}
+.md-main .fs-tabsel {
+  display: none;
+}
