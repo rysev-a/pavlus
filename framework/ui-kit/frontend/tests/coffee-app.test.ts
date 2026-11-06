@@ -16,12 +16,12 @@ const files = generateProject(coffeeDemo(), { name: "coffee-shop" });
 
 const ROOT = join(__dirname, "../../../..");
 
-/** what the formatter of the repository makes of generated code (the app is kept formatted) */
+/** what the formatter of the repository makes of generated code (the app is kept formatted, imports in order) */
 const formatted = (path: string, code: string): string =>
   path.endsWith(".ts")
     ? execFileSync(
         join(ROOT, "node_modules/.bin/biome"),
-        ["format", "--stdin-file-path", join(APP, path)],
+        ["check", "--write", "--stdin-file-path", join(APP, path)],
         { input: code, cwd: ROOT, encoding: "utf8" },
       )
     : code;
