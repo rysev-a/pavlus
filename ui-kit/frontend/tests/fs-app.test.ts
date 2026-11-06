@@ -850,6 +850,15 @@ describe("the files", () => {
       expect(s.state.projectName).toBe("Login with rate limit");
     }
   });
+  test("an empty board is the project's own when the place that keeps it says so (keepEmpty)", () => {
+    const empty = projectText({ ...emptyModel(), name: "Blank one" });
+    const s = ready();
+    s.state = { ...s.state, ready: false };
+    s.send("loaded", { text: empty, keepEmpty: true });
+    expect(s.state.ready).toBe(true);
+    expect(s.state.projectName).toBe("Blank one");
+    expect(model(s).nodes).toHaveLength(0);
+  });
   test("enter asks for the shortcuts of this page only, the saved flow and the motion query", () => {
     const s = ready();
     s.send("enter");

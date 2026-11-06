@@ -1,0 +1,7 @@
+section.vd-projects
+  div.ui-card.vd-failed
+    div.ui-card-header
+      h3.ui-card-title Nothing here
+      p.ui-card-description There is no page at this address.
+    div.ui-card-footer
+      a.ui-button.ui-button-default(href="/" @click.prevent=navigate("/")) All projects

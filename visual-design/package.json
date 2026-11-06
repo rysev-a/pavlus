@@ -1,0 +1,32 @@
+{
+  "name": "visual-design",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Visual Design: an application for programming visually. Projects (a Flow Studio diagram and a Visual Builder interface that is wired to it) live in Postgres; the frontend is pavlus, the backend is pavlus-server",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.ts",
+    "dev:web": "vite",
+    "dev:api": "node --watch --env-file-if-exists=.env server/main.ts",
+    "build": "vite build",
+    "preview": "vite preview",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d --wait",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@service-laboratory/pavlus": "*",
+    "pavlus-server": "*",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "jsdom": "^30.1.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

@@ -1173,7 +1173,15 @@ export class FlowStudio extends Component<FsState> {
     if (state.ready) return [time.setTimeout(SYNC, 0, "sync")];
     const text = (msg.payload as { text: string | null } | undefined)?.text;
     const parsed = text ? parseProject(text) : null;
-    if (parsed && typeof parsed !== "string" && parsed.nodes.length > 0) {
+    // an empty board is the demo, unless the place that keeps the project says it is
+    // the project's own (an application that saves it: `keepEmpty`)
+    const keepEmpty =
+      (msg.payload as { keepEmpty?: boolean } | undefined)?.keepEmpty === true;
+    if (
+      parsed &&
+      typeof parsed !== "string" &&
+      (parsed.nodes.length > 0 || keepEmpty)
+    ) {
       const core = coreOf(parsed);
       return this._commit(
         state,

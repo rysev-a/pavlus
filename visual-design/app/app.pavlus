@@ -1,0 +1,18 @@
+// The shell: the bar (the way back, the name of the project, its two editors, the
+// state of the saves) and the page the route selects.
+div.vd.ui-shell
+  header.vd-bar
+    a.vd-brand(href="/" @click.prevent=navigate("/")) Visual Design
+    if projectId
+      span.vd-sep /
+      input.ui-input.vd-name(type="text" value=projectName aria-label="Project name" maxlength="120" @change=renameProject)
+      nav.vd-tabs(aria-label="Editors")
+        a.vd-tab(href={"/projects/" + projectId + "/flow"} class:vd-tab--on={tab === "flow"} aria-current={tab === "flow" ? "page" : "false"} @click.prevent=navigate("/projects/" + projectId + "/flow")) Diagram
+        a.vd-tab(href={"/projects/" + projectId + "/interface"} class:vd-tab--on={tab === "interface"} aria-current={tab === "interface" ? "page" : "false"} @click.prevent=navigate("/projects/" + projectId + "/interface")) Interface
+      span.vd-save(role="status" class:vd-save--busy={save === "saving"} class:vd-save--error={save === "error"}) {saveText}
+    else
+      span.vd-tag Programming with diagrams and pages
+  main.ui-shell-content.k-wide.vd-main
+    if notice
+      p.vd-notice(role="alert") {notice}
+    +outlet
