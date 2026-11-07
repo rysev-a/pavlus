@@ -1,0 +1,33 @@
+// The feed: my match, best first. The percent is the coverage of the slot's
+// skills; the note says when the grade is lower; no percent — the slot names
+// no skills, the profession alone matched.
+div.feed
+  h1.feed-title open slots for you
+  if status == "loading"
+    p.state loading...
+  if status == "failed"
+    p.state.err could not load the feed — are you signed in?
+  if status == "idle"
+    if items.length == 0
+      p.state nothing matches yet — add professions and skills to your profile
+    div.feed-list
+      for item in items key item.slotId
+        button.feed-one(type="button" @click=open(item.projectSlug))
+          div.feed-top
+            span.feed-project {item.projectName}
+            span.feed-kind {item.kind}
+          p.feed-tagline {item.tagline}
+          div.feed-match
+            if item.match
+              span.feed-percent data-ok={item.match.gradeOk ? "true" : null}
+                | {item.match.percent ?? "—"}%
+              span.feed-details {item.match.details.join("  ·  ")}
+              if item.match.note
+                span.feed-note {item.match.note}
+            else
+              span.feed-percent —
+              span.feed-details the profession matches
+          span.feed-bucket
+            | wants {item.bucket}
+            if item.myBucket
+              |  · you are {item.myBucket}

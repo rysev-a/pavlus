@@ -1,0 +1,40 @@
+// The project: the header (name, tagline, owner), the slots — filled ones
+// show who sits in them, open ones the requirements and the apply button.
+div.project
+  if data
+    div.project-head
+      h1 {data.name}
+      p.tagline {data.tagline}
+      p.meta
+        span.kind {data.kind}
+        span.owner by {data.owner}
+      if data.description
+        p.desc {data.description}
+    div.slots
+      h2 slots
+      for slot in data.slots key slot.id
+        div.slot data-filled={slot.userId ? "true" : null}
+          div.slot-head
+            span.prof {slot.profession}
+            span.bucket {slot.bucket}
+            if slot.pay
+              span.pay {slot.pay}
+          if slot.description
+            p.slot-desc {slot.description}
+          if slot.skills.length
+            p.slot-skills
+              for skill in slot.skills key skill.name
+                span.skill
+                  | {skill.name} {skill.level}/10
+          if slot.userId
+            span.sitting {slot.userName} is in this seat
+          else
+            if applied
+              span.applied applied — wait for the owner's call
+            else
+              button.apply(type="button" @click=apply(slot.id)) apply
+  else
+    if status == "failed"
+      p.state.err no such project
+    else
+      p.state loading...

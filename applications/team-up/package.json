@@ -1,0 +1,29 @@
+{
+  "name": "team-up",
+  "private": true,
+  "version": "0.1.0",
+  "description": "team-up (the port): profiles with skills, projects with role slots, a computed two-way match, and live chat — the pavlus stack exercised end to end: http, pg, crypto, ws rooms, redis pub/sub and a redis queue",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env backend/server.ts",
+    "build": "vite build && vite build --ssr app/entry-server.ts --outDir dist/server",
+    "start": "NODE_ENV=production node --env-file-if-exists=.env backend/server.ts",
+    "db:init": "node --env-file-if-exists=.env backend/db/init/main.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pavlus/backend": "*",
+    "@pavlus/core": "*",
+    "@pavlus/frontend": "*",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "jsdom": "^30.1.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

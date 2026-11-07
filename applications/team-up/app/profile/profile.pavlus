@@ -1,0 +1,29 @@
+// The public profile: the name, the city, the status; the professions with
+// their grades; the skills with their ratings.
+div.profile
+  if data
+    div.profile-head
+      h1 {data.name}
+      p.meta
+        if data.city
+          span {data.city}
+        span.status {data.status}
+    if data.professions.length
+      h2 professions
+      div.profs
+        for profession in data.professions key profession.slug
+          span.prof
+            | {profession.name}
+            if profession.bucket
+              span.bucket {profession.bucket}
+    if data.skills.length
+      h2 skills
+      div.skills
+        for skill in data.skills key skill.slug
+          div.skill
+            span.skill-name {skill.name}
+            span.skill-dots
+              | {"●".repeat(skill.level ?? 0)}{"○".repeat(10 - (skill.level ?? 0))}
+            span.skill-num {skill.level ?? "—"}/10
+  else
+    p.state loading...

@@ -1,0 +1,26 @@
+// The chat: the inbox on the left (unread badges), the open thread on the
+// right. The dot says the ws is live; messages arrive as they are sent.
+div.chat
+  aside.inbox
+    div.inbox-head
+      h2 chats
+      span.dot data-live={live == "live" ? "true" : null} {live == "live" ? "live" : "off"}
+    for thread in threads key thread.id
+      button.inbox-one(type="button" data-open={open == thread.id ? "true" : null} @click=openThread(thread.id))
+        span.inbox-title {thread.title}
+        if thread.unread
+          span.inbox-unread {thread.unread}
+  section.room
+    if open
+      div.room-messages
+        for message in messages key message.id
+          div.msg data-mine={message.userId == meId ? "true" : null}
+            div.msg-head
+              span.msg-author {message.author}
+              span.msg-at {message.sentAt.slice(11, 16)}
+            p.msg-body {message.body}
+      form.composer(@submit.prevent=send)
+        input.draft(type="text" value=draft placeholder="say it" @input=setDraft)
+        button.send(type="submit" disabled=(live != "live" || draft.trim() == "")) send
+    else
+      p.state pick a chat on the left

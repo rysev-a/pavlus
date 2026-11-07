@@ -1,0 +1,17 @@
+// The shell: a top bar (who is signed in, the nav, sign out) and whichever
+// page the route selects. A guest sees the pages too, but every page but the
+// login one bounces to /login (the backend answers 401 anyway).
+div.tu-shell
+  header.tu-bar
+    span.tu-brand team-up
+    if me
+      nav.tu-nav
+        a(href="/" data-active={route.path == "/" ? "true" : null}) feed
+        a(href="/chat" data-active={route.path == "/chat" ? "true" : null}) chat
+        span.tu-me
+          | {me.name}
+          button.out.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=signOut) sign out
+    else
+      span.tu-me guest
+  main.tu-body
+    +outlet
