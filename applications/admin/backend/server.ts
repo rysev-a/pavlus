@@ -21,6 +21,7 @@ import {
   createPagesPlugin,
   createPostgresPlugin,
   createServerApp,
+  runCluster,
   type FrontendMode,
   type PagesPlugin,
   type ServerApp,
@@ -124,15 +125,24 @@ export function startServer(
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const started = startServer();
-  const shutdown = (signal: string): void => {
-    console.log(`\n${signal}: shutting down`);
-    void started.close().then(() => process.exit(0));
+  const boot = (): void => {
+    const started = startServer();
+    const shutdown = (signal: string): void => {
+      console.log(`\n${signal}: shutting down`);
+      void started.close().then(() => process.exit(0));
+    };
+    process.once("SIGINT", () => shutdown("SIGINT"));
+    process.once("SIGTERM", () => shutdown("SIGTERM"));
+    void started.listening().then(() => {
+      const mode = process.env.NODE_ENV === "production" ? "dist" : "dev";
+      console.log(`admin-app (${mode}) on http://localhost:${started.port()}/`);
+    });
   };
-  process.once("SIGINT", () => shutdown("SIGINT"));
-  process.once("SIGTERM", () => shutdown("SIGTERM"));
-  void started.listening().then(() => {
-    const mode = process.env.NODE_ENV === "production" ? "dist" : "dev";
-    console.log(`admin-app (${mode}) on http://localhost:${started.port()}/`);
-  });
+  // WORKERS=max (or a number) forks that many processes on one port. Default:
+  // one process — every worker runs its own Vite in dev, so cluster is for
+  // production (dist) deployments.
+  const raw = process.env.WORKERS ?? "1";
+  const workers: number | "max" = raw === "max" ? "max" : Number(raw) || 1;
+  if (workers === "max" || workers > 1) runCluster(boot, { workers });
+  else boot();
 }

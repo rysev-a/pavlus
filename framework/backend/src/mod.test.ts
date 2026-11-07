@@ -41,6 +41,8 @@ describe("public surface", () => {
     // route-helpers
     expect(typeof api.createFlowFetch).toBe("function");
     expect(typeof api.PagesAPI).toBe("function");
+    // multi-process
+    expect(typeof api.runCluster).toBe("function");
   });
   it("effectors build the effects the plugins accept", () => {
     expect(api.httpEffector.json({ a: 1 }, 201)).toEqual({

@@ -90,5 +90,9 @@ npm run db:init          # schema + seed
 npm run dev              # http://localhost:3000 — SSR + Vite hot reload
 ```
 
+Production: `npm run build`, then `WORKERS=max NODE_ENV=production node
+backend/server.ts` forks one process per core on the same port (keep one
+worker in dev — every worker runs its own Vite).
+
 `npm test` runs against the real API and the real database (it reseeds the
 development database first, and once more at the end).

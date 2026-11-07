@@ -48,6 +48,9 @@ export {
 } from "./plugins/http/mod.ts";
 export type { RawHttpServerPlugin, RawHttpStats } from "./plugins/http/raw.ts";
 export { createRawHttpServerPlugin } from "./plugins/http/raw.ts";
+// ---- multi-process: runCluster on node:cluster ------------------------------
+export type { ClusterOptions } from "./cluster/mod.ts";
+export { runCluster } from "./cluster/mod.ts";
 export * from "./plugins/log/mod.ts";
 export * from "./plugins/pages/mod.ts";
 export * from "./plugins/postgres/mod.ts";
