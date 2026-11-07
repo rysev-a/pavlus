@@ -21,7 +21,9 @@ export class PagesAPI {
         Array.isArray(v) ? v.map((x) => [k, x]) : [[k, v]],
       ) as [string, string][],
     ).toString();
-    return [pagesEffector.serve(req.path, search ? `?${search}` : "")];
+    return [
+      pagesEffector.serve(req.path, search ? `?${search}` : "", req.cookies),
+    ];
   }
 
   /**

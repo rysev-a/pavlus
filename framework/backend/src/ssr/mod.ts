@@ -46,6 +46,17 @@ export interface Page {
 /** A plugin that accepts its effects and does nothing: no DOM on the server. */
 const inert = (name: string): Plugin => ({ name, handle() {} });
 
+export interface RenderPageOptions {
+  /** Where the page is rendered at: the router reports this to the app. */
+  at?: PageLocation;
+  /**
+   * Plugin names the app uses that have no business on the server (a ws
+   * connection, audio, ...) — inert placeholders accept their effects, so
+   * the render does not throw. "dom" and "router" are always inert.
+   */
+  inert?: string[];
+}
+
 /**
  * Renders the page: the route goes in first (the same `routeChanged` the
  * router plugin dispatches in the browser — it activates the page, whose
@@ -55,17 +66,19 @@ const inert = (name: string): Plugin => ({ name, handle() {} });
 export async function renderPage(
   frontend: Frontend,
   ssrFetch: typeof fetch,
-  at: PageLocation = { path: "/" },
+  opts: RenderPageOptions = {},
 ): Promise<Page> {
   const view = viewOf(frontend.app);
   if (!view) throw new Error("ssr: the app has no view");
   const store = createStorePlugin(frontend.initialState);
   const http = createHttpPlugin({ fetch: ssrFetch });
+  const inertNames = ["dom", "router", ...(opts.inert ?? [])];
   const instance = createApp({
     app: frontend.app,
-    plugins: [store, http, inert("dom"), inert("router")],
+    plugins: [store, http, ...inertNames.map(inert)],
   });
   try {
+    const at = opts.at ?? { path: "/" };
     instance.dispatch({
       id: "routeChanged",
       payload: { path: at.path, search: at.search ?? "", hash: at.hash ?? "" },

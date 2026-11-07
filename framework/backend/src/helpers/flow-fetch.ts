@@ -7,7 +7,11 @@
 import type { Effect, Message } from "@pavlus/core";
 import type pg from "pg";
 import { newRid } from "../ctx.ts";
-import { normalizeRespond, type RespondEffect } from "../plugins/http/mod.ts";
+import {
+  normalizeRespond,
+  parseCookies,
+  type RespondEffect,
+} from "../plugins/http/mod.ts";
 import { createPostgresPlugin } from "../plugins/postgres/mod.ts";
 import {
   applyRequestsEffect,
@@ -15,8 +19,8 @@ import {
 } from "../plugins/requests/mod.ts";
 import {
   dispatchRoute,
-  type RouteTable,
   type Router,
+  type RouteTable,
   toRouter,
 } from "../routing.ts";
 
@@ -80,6 +84,10 @@ export function createFlowFetch(
       }
     }
     const method = init?.method ?? "GET";
+    // The render acts as the user: whatever cookie the page request carried
+    // (the caller forwards it) rides on the synthetic request too.
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    const cookies = parseCookies(headers.cookie ?? headers.Cookie ?? undefined);
     const rid = newRid();
     const ctx = { rid, conn: "ssr" };
     let state: ServerState = { requests: { [rid]: {} }, shared: {} };
@@ -92,6 +100,7 @@ export function createFlowFetch(
         path: url.pathname,
         query: Object.fromEntries(url.searchParams),
         body,
+        cookies,
       },
       ctx,
     });
@@ -107,7 +116,12 @@ export function createFlowFetch(
     // an http respond effect answers the request.
     for (let guard = 0; guard < 200 && queue.length > 0; guard++) {
       const msg = queue.shift()!;
-      const effects = app(msg, state) ?? [];
+      const produced = app(msg, state) ?? [];
+      // The context of a message rides on its effects, like in the runtime —
+      // the requests plugin's writes are addressed by it.
+      const effects = msg.ctx
+        ? produced.map((e) => (e.ctx ? e : { ...e, ctx: msg.ctx }))
+        : produced;
       for (const e of effects) {
         state = applyRequestsEffect(state, e);
         if (e.plugin === "pg") {

@@ -21,16 +21,16 @@ import {
   createPagesPlugin,
   createPostgresPlugin,
   createServerApp,
-  runCluster,
   type FrontendMode,
   type PagesPlugin,
+  runCluster,
   type ServerApp,
 } from "@pavlus/backend";
 import type { Frontend } from "@pavlus/backend/ssr";
 import { renderDocument, renderPage } from "@pavlus/backend/ssr";
 import { createAdminApp } from "./app.ts";
-import { createPool } from "./db/pool.ts";
 import { resetStatements } from "./db/init/reset.ts";
+import { createPool } from "./db/pool.ts";
 import { routes } from "./routes.ts";
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -87,8 +87,7 @@ export function startServer(
       renderDocument(
         template,
         await renderPage((await frontend()) as Frontend, ssrFetch, {
-          path,
-          search,
+          at: { path, search },
         }),
       ),
   });

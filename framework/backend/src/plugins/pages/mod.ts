@@ -36,6 +36,8 @@ export interface PagesEffect {
   path: string;
   /** "?a=b" or "". */
   search: string;
+  /** The request's cookies, so a server render can act as the user. */
+  cookies?: Record<string, string>;
   ctx?: Record<string, unknown>;
   replyTo?: string;
   onError?: string;
@@ -43,11 +45,16 @@ export interface PagesEffect {
 }
 
 export const pagesEffector = {
-  serve: (path: string, search: string): PagesEffect => ({
+  serve: (
+    path: string,
+    search: string,
+    cookies?: Record<string, string>,
+  ): PagesEffect => ({
     plugin: "pages",
     type: "serve",
     path,
     search,
+    ...(cookies && { cookies }),
     replyTo: "pages.served",
     onError: "pages.failed",
   }),
@@ -286,6 +293,8 @@ export interface DocumentInput {
   /** The request path, and "?a=b" or "". */
   path: string;
   search: string;
+  /** The request's cookies — a server render can act as the user. */
+  cookies: Record<string, string>;
 }
 
 export interface PagesPluginOptions {
@@ -320,7 +329,12 @@ export function createPagesPlugin(opts: PagesPluginOptions): PagesPlugin {
    * Renders the page; if that fails, the plain document (the app renders in
    * the browser).
    */
-  async function render(pages: Pages, path: string, search: string) {
+  async function render(
+    pages: Pages,
+    path: string,
+    search: string,
+    cookies: Record<string, string>,
+  ) {
     let template: string;
     try {
       template = await pages.template(path);
@@ -337,6 +351,7 @@ export function createPagesPlugin(opts: PagesPluginOptions): PagesPlugin {
           frontend: () => pages.frontend(),
           path,
           search,
+          cookies,
         });
       } catch (e) {
         console.error(`render ${path}:`, e);
@@ -345,14 +360,18 @@ export function createPagesPlugin(opts: PagesPluginOptions): PagesPlugin {
     return htmlAnswer(html);
   }
 
-  async function serve(path: string, search: string): Promise<ServedPage> {
+  async function serve(
+    path: string,
+    search: string,
+    cookies: Record<string, string>,
+  ): Promise<ServedPage> {
     if (!pages)
       return jsonAnswer(404, {
         error: "no frontend: this server runs the API only",
       });
     const p = await pages;
     const asset = await p.asset(path, search);
-    return asset ?? (await render(p, path, search));
+    return asset ?? (await render(p, path, search, cookies));
   }
 
   let closing: Promise<void> | undefined;
@@ -374,7 +393,14 @@ export function createPagesPlugin(opts: PagesPluginOptions): PagesPlugin {
         try {
           deliver(
             ctx.dispatch,
-            ok(effect, await serve(effect.path, effect.search)),
+            ok(
+              effect,
+              await serve(
+                effect.path,
+                effect.search,
+                (effect.cookies as Record<string, string> | undefined) ?? {},
+              ),
+            ),
           );
         } catch (e) {
           deliver(
