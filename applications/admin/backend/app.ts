@@ -8,9 +8,9 @@
 import type { ServerState } from "@pavlus/backend";
 import { PagesAPI } from "@pavlus/backend";
 import type { Effect, Message } from "@pavlus/core";
-import { ResetAPI } from "./api/reset/reset.ts";
-import { RolesAPI } from "./api/roles/roles.ts";
-import { UsersAPI } from "./api/users/users.ts";
+import { ResetAPI } from "./api/reset.ts";
+import { RolesAPI } from "./api/roles.ts";
+import { UsersAPI } from "./api/users.ts";
 
 /** A handler method of a module: one message id, (message, state) => effects. */
 type ModuleMethod = (

@@ -19,7 +19,7 @@ import {
   type UserRow,
   type UserSave,
   UserService,
-} from "../../db/services/user-service.ts";
+} from "../db/services/user-service.ts";
 
 /** This request's slice: what the continuations need. */
 const slice = (msg: Message, state: ServerState): Record<string, unknown> => {

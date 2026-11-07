@@ -3,7 +3,7 @@
 
 import { httpEffector, rowsOf } from "@pavlus/backend";
 import type { Effect, Message } from "@pavlus/core";
-import { type RoleRow, RoleService } from "../../db/services/role-service.ts";
+import { type RoleRow, RoleService } from "../db/services/role-service.ts";
 
 export class RolesAPI {
   "roles.list"(): Effect[] {
