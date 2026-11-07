@@ -110,6 +110,9 @@ export function startServer(
     mode,
     root: ROOT,
     quiet: opts.quiet,
+    // admin dev keeps Vite's default (24678); team-up gets its own so the two
+    // dev servers run side by side.
+    hmrPort: 24679,
     document: async ({ template, frontend, path, search, cookies }) =>
       renderDocument(
         template,

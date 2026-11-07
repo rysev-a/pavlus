@@ -155,7 +155,11 @@ function distPages(root: string): Pages {
  * as one `pages.served` reply), and calls `next` for what it does not know —
  * a page.
  */
-async function devPages(root: string, quiet: boolean): Promise<Pages> {
+async function devPages(
+  root: string,
+  quiet: boolean,
+  hmrPort?: number,
+): Promise<Pages> {
   const { createServer: createVite } = await import("vite");
   const { pavlus } = await import("@pavlus/frontend/vite");
   const vite = await createVite({
@@ -167,7 +171,12 @@ async function devPages(root: string, quiet: boolean): Promise<Pages> {
     configFile: false,
     root,
     appType: "custom",
-    server: { middlewareMode: true },
+    server: {
+      middlewareMode: true,
+      // The HMR websocket needs its own port (Vite's default 24678): two dev
+      // servers on one machine — admin and an application — would collide.
+      ...(hmrPort && { hmr: { port: hmrPort } }),
+    },
     logLevel: quiet ? "silent" : "info",
     plugins: [pavlus()],
     ssr: { external: ["@pavlus/frontend"] },
@@ -304,6 +313,12 @@ export interface PagesPluginOptions {
   /** No Vite log (tests). */
   quiet?: boolean;
   /**
+   * The port of Vite's HMR websocket in dev (default: Vite's own 24678).
+   * Give each dev server on one machine its own — e.g. admin stays on the
+   * default and team-up takes 24679 — or the second one fails to bind.
+   */
+  hmrPort?: number;
+  /**
    * Renders the whole document — the server render. The answer is the full
    * HTML. When the hook throws, or is not given, the plain template is served
    * and the app renders in the browser.
@@ -320,7 +335,7 @@ export interface PagesPlugin extends Plugin<PagesEffect, unknown> {
 export function createPagesPlugin(opts: PagesPluginOptions): PagesPlugin {
   const pages: Promise<Pages> | undefined =
     opts.mode === "dev"
-      ? devPages(opts.root, opts.quiet ?? false)
+      ? devPages(opts.root, opts.quiet ?? false, opts.hmrPort)
       : opts.mode === "dist"
         ? Promise.resolve(distPages(opts.root))
         : undefined;
