@@ -99,8 +99,11 @@ export class ChatPage extends Component<ChatSlice> {
   /** The inbox' click: open the thread (its history over http), join live. */
   openThread(msg: Message, s: ChatSlice): Effect[] {
     const id = Number((msg.payload as { id?: number }).id);
+    const title = s.threads.find((t) => t.id === id)?.title ?? "";
     const effects: Effect[] = [
       store.set("open", id, { onSuccess: "paint" }),
+      store.set("openTitle", title, { onSuccess: "paint" }),
+      store.set("messages", [], { onSuccess: "paint" }),
       http.request({
         id: `thread-${id}`,
         url: `/api/chat/threads/${id}`,

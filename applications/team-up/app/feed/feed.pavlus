@@ -1,33 +1,49 @@
-// The feed: my match, best first. The percent is the coverage of the slot's
-// skills; the note says when the grade is lower; no percent — the slot names
-// no skills, the profession alone matched.
-div.feed
-  h1.feed-title open slots for you
+// The feed, in the original teamUP look: a st__card per open slot, the match
+// percent in the corner (is-good / is-mid / is-low color it), the why-line
+// under the slot. The percent is the coverage of the slot's skills; no
+// percent — the slot names no skills, the profession alone matched.
+div.st__feed
+  h1.shell__h1 Open for you
   if status == "loading"
-    p.state loading...
+    div.shell__card
+      p.shell__muted Loading…
   if status == "failed"
-    p.state.err could not load the feed — are you signed in?
+    div.shell__card
+      p.pf__notice.is-err Could not load the feed — are you signed in?
   if status == "idle"
     if items.length == 0
-      p.state nothing matches yet — add professions and skills to your profile
-    div.feed-list
+      div.shell__card
+        p.shell__muted
+          | Nothing matches yet — add professions and skills to your profile.
+    div.st__feed-list
       for item in items key item.slotId
-        button.feed-one(type="button" @click=open(item.projectSlug))
-          div.feed-top
-            span.feed-project {item.projectName}
-            span.feed-kind {item.kind}
-          p.feed-tagline {item.tagline}
-          div.feed-match
+        div.shell__card.st__card
+          div.st__card-top
+            a.st__name(href="/projects/{item.projectSlug}") {item.projectName}
+            if item.kind != "startup"
+              span.st__chip.st__chip--kind {item.kind}
             if item.match
-              span.feed-percent data-ok={item.match.gradeOk ? "true" : null}
-                | {item.match.percent ?? "—"}%
-              span.feed-details {item.match.details.join("  ·  ")}
-              if item.match.note
-                span.feed-note {item.match.note}
-            else
-              span.feed-percent —
-              span.feed-details the profession matches
-          span.feed-bucket
-            | wants {item.bucket}
-            if item.myBucket
-              |  · you are {item.myBucket}
+              if item.match.percent != null
+                span.st__match(class:is-good={item.match.percent >= 80} class:is-mid={item.match.percent >= 50 && item.match.percent < 80} class:is-low={item.match.percent < 50})
+                  | {item.match.percent}%
+          p.st__tagline {item.tagline}
+          p.st__owner Founder: {item.owner}
+          ul.st__slots.st__feed-slots
+            li.st__slot
+              div.st__slot-main
+                p.st__slot-title {item.profession}
+                p.st__slot-desc
+                  | wants {item.bucket}
+                  if item.myBucket
+                    |  · you are {item.myBucket}
+                if item.match
+                  p.st__matchline
+                    if item.match.percent != null
+                      span.st__match(class:is-good={item.match.percent >= 80} class:is-mid={item.match.percent >= 50 && item.match.percent < 80} class:is-low={item.match.percent < 50})
+                        | {item.match.percent}%
+                    span.st__why
+                      | {item.match.details.join(" · ")}
+                      if item.match.note
+                        |  · {item.match.note}
+                else
+                  p.st__slot-desc the profession matches

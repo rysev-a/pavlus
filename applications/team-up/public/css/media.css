@@ -1,0 +1,468 @@
+
+
+
+
+
+@media screen and (max-width: 1300px) {
+	
+}
+
+@media screen and (max-width: 1250px){
+	
+}
+
+
+/* styles for md devices */
+@media screen and (max-width: 1200px) {
+	
+}	
+
+
+@media screen and (max-width: 1050px) {
+	
+
+  
+}
+
+
+/* styles for sm devices */
+@media screen and (max-width: 1024px) {
+	.header__logo a {
+		font-size: 20px;
+		line-height: 24px;
+	}
+
+	.header__nav ul li a {
+		font-size: 14px;
+	}
+
+	header {
+		padding: 18px 0;
+	}
+
+	.header__wrap {
+		padding: 0 30px;
+	}
+
+	.work {
+		padding: 24px 0 0 0;
+	}
+
+	.work h1 {
+		font-size: 32px;
+		line-height: 40px;
+		margin: 16px 0;
+	}
+
+	.work p {
+		font-size: 16px;
+		line-height: 24px;
+	}
+
+	.work__zindex {
+	    max-width: 348px;
+	}
+
+	.work__list__img {
+		width: 43px;
+		height: 43px;
+	}
+
+	.work__list li {
+		margin: 0 -17px 0 0;
+	}
+
+	.work__img {
+		width: 650px;
+	}
+
+	h2 {
+		font-size: 32px;
+		line-height: 40px;
+	}
+
+	.difficult__border h3 {
+		font-size: 28px;
+		line-height: 34px;
+	}
+
+	.difficult__border p {
+		font-size: 20px;
+		line-height: 32px;
+	}
+
+	.difficult__border {
+		min-height: 350px;
+	}
+
+	.difficult {
+		margin: 40px 0;
+	}
+
+	.difficult__wrap {
+		margin: 8px -8px 0 -8px;
+	}
+
+	.job {
+		margin: 40px 0;
+	}
+
+	.job__border span {
+	    position: absolute;
+	    top: -20px;
+	    right: -16px;
+	    width: 40px;
+	    height: 40px;
+	    border-radius: 50%;
+	    background: #496AFD;
+	    display: flex;
+	    align-items: center;
+	    justify-content: center;
+	    font-weight: 700;
+	    font-size: 28px;
+	    line-height: 34px;
+	    color: #fff;
+	}
+
+	.job__border {
+		width: 165px;
+		height: 175px;
+	}
+
+	.job__card h3 {
+		font-size: 20px;
+		line-height: 24px;
+	}
+
+	.job__card p {
+		margin: 8px 0 0 0;
+		font-size: 14px;
+	}
+
+	.job__block {
+		padding: 35px 8px 0 8px;
+	}
+
+	.job__wrap {
+		margin: 10px -8px 0 -8px;
+	}
+
+	.job__inner__block {
+		padding: 24px 8px 0 8px;
+	}
+
+	.job__inner {
+		margin: 0 -8px;
+	}
+
+	.job__inner__border {
+		padding: 20px 24px;
+	}
+
+	.blog__card h3 {
+		font-size: 28px;
+		line-height: 32px;
+		margin: 8px 0 0 0;
+	}
+
+	.blog__img {
+		height: 230px;
+	}
+
+	.blog {
+		margin: 40px 0;
+	}
+
+	.blog__wrap {
+		margin: 24px -8px 0 -8px;
+	}
+
+	.reviews {
+		margin: 40px 0;
+	}
+
+	.reviews__wrap {
+		margin: 24px -8px 0 -8px;
+	}
+
+	.footer__wrap {
+		padding: 0;
+	}
+
+	footer {
+		margin: 80px 0 0 0;
+		padding: 30px 0 50px 0;
+	}
+
+	.footer__flex h3 {
+		font-size: 20px;
+		line-height: 24px;
+	}
+
+	.footer__flex p {
+		font-size: 14px;
+	}
+
+	.footer__contacts li {
+		font-size: 14px;
+		margin: 0 0 16px 0;
+	}
+  
+}
+
+/* styles for sm devices */
+@media screen and (max-width: 992px) {
+	
+}
+
+
+@media screen and (max-width: 900px) {
+	.about__block {
+		width: 50%;
+	}
+
+	.benefits__wrap .about__block {
+		width: 50%;
+	}
+
+	.difficult__block {
+		width: 50%;
+	}
+
+	.reviews__overflow {
+		overflow: auto;
+		margin: 0 -20px;
+		padding: 0 20px;
+	}
+
+	.reviews__overflow::-webkit-scrollbar {
+	  width: 0px;
+	  height: 0px;
+	}
+
+	.reviews__wrap {
+		width: 1050px;
+	}
+
+	.footer__block:nth-of-type(1) {
+		margin: 0 60px 0 0;
+	}
+
+	.footer__block:nth-of-type(2) {
+		margin: 0 60px 0 0;
+	}
+
+
+}
+
+
+/* Ipad*/ 
+@media screen and (max-width: 768px) {
+	header .header__nav {
+		display: none;
+	}
+
+	.header__right {
+		display: none;
+	}
+
+	.header__wrap {
+		position: relative;
+	}
+
+	.header__burger {
+		display: block;
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		right: 30px;
+	}
+
+	.work__zindex {
+		max-width: 100%;
+	}
+	.about h1 {
+		font-size: 40px;
+		line-height: 50px;
+	}
+
+	.about__lead {
+		font-size: 20px;
+		line-height: 30px;
+	}
+
+	.about__buttons {
+		flex-wrap: wrap;
+	}
+
+	.faq__item {
+		padding: 20px 24px;
+	}
+
+	.faq__item summary {
+		font-size: 20px;
+		line-height: 28px;
+		padding: 0 40px 0 0;
+	}
+
+	.faq__item summary::after {
+		font-size: 28px;
+		line-height: 28px;
+	}
+
+	.work__img {
+		position: relative;
+		width: auto;
+		margin: 30px -20px 0 -85px;
+	}
+
+	.work__bottom {
+		margin: 40px 0 0 0;
+	}
+
+	.job__block {
+		width: 50%;
+	}
+
+	.job__inner__block {
+		width: 100%;
+	}
+
+	.job__inner__block:nth-of-type(1) {
+		order: 2;
+	}
+
+	.job__inner__block:nth-of-type(2) {
+		order: 1;
+	}
+
+	.blog__wrap {
+		overflow: auto;
+		margin: 24px -20px 0 -20px;
+		padding: 0 20px;
+	}
+
+	.blog__wrap::-webkit-scrollbar {
+	  width: 0px;
+	  height: 0px;
+	}
+
+	.blog__block {
+		padding: 0;
+		margin: 0 16px 0 0;
+		width: 100%;
+	}
+
+	.blog__block:last-child {
+		margin: 0;
+	}
+
+	.blog__card {
+		width: 350px;
+	}
+
+	.footer__wrap {
+		flex-wrap: wrap;
+	}
+
+	.footer__block {
+		width: 100%;
+	}
+
+	.footer__block:nth-of-type(1) {
+		margin: 0 0 24px 0;
+	}
+
+	.footer__block:nth-of-type(2) {
+		margin: 0 0 24px 0;
+	}
+
+	.footer__flex {
+		display: flex;
+	}
+
+	.footer__flex__block {
+		width: 35%;
+		margin: 0 10px 0 0;
+	}
+
+	.footer__flex__block:last-child {
+		width: 65%;
+	}
+}
+
+
+/* Ipad mini*/ 
+@media screen and (max-width: 640px) {
+	
+}
+
+@media screen and (max-width: 575px) {
+  	.about__block {
+  		width: 100%;
+  	}
+
+  	.benefits__wrap .about__block {
+  		width: 100%;
+  	}
+
+  	.difficult__block {
+  		width: 100%;
+  	}
+}
+
+/* Galaxy S8+*/ 
+@media screen and (max-width: 480px) {
+  	.job__inner__border {
+  		min-height: 652px;
+  	}
+
+  	.job__inner__img {
+  		bottom: 0;
+  	}
+
+  	.job__inner__violet .job__inner__img {
+  		bottom: 48px;
+  	}
+
+  	.job__inner__img img {
+  		display: none;
+  	}
+
+  	.job__inner__img img + img {
+  		display: block;
+  	}
+
+  	.footer__bottom {
+  		flex-wrap: wrap;
+  		gap: 24px;
+  	}
+
+  	.footer__bottom p {
+  		width: 100%;
+  	}
+}
+
+/* Galaxy*/ 
+@media screen and (max-width: 415px) {
+  	.job__border {
+  		width: 100%;
+  	}
+}
+
+
+/* Iphone 6.7.8 */ 
+@media screen and (max-width: 375px) {
+	.work__btn {
+		font-size: 14px;
+	}
+
+	.blog__card {
+        width: 320px;
+    }
+}
+
+/* Iphone 5.5SE */ 
+@media screen and (max-width: 320px) {
+	
+}

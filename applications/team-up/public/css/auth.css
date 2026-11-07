@@ -1,0 +1,569 @@
+/* Auth pages (login / signup / forgot password / reset) — Figma "Auth" frame:
+   page #F5F7FA, white card (radius 12, soft shadow), primary #4F46E5,
+   brand violet #5F33E1, text #111827 / #64748B, borders #D7DFEA, Inter. */
+
+.auth {
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  background: #f5f7fa;
+  font-family: "Inter", sans-serif;
+  color: #111827;
+  box-sizing: border-box;
+}
+
+.auth__area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px;
+  box-sizing: border-box;
+}
+
+.auth__card {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+/* logo is part of the brand panel on desktop; kept for narrow screens */
+.auth__logo {
+  display: none;
+  text-align: center;
+}
+.auth__logo a {
+  font-weight: 700;
+  font-size: 24px;
+  color: #5f33e1;
+  text-decoration: none;
+}
+
+.auth__title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  color: #111827;
+}
+.auth__subtitle {
+  margin: -16px 0 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.auth__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.auth__label {
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.auth__input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d7dfea;
+  border-radius: 8px;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  color: #111827;
+  background: #fff;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.auth__input::placeholder {
+  color: #94a3b8;
+}
+.auth__input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+/* The problem of one field: the line is always there (empty), so the form does not jump when the message comes. */
+.auth__hint {
+  margin: -4px 0 0;
+  min-height: 16px;
+  font-size: 12px;
+  line-height: 16px;
+  color: #d92d20;
+}
+.auth__input--invalid {
+  border-color: #e5392d;
+  background: #fffbfa;
+}
+.auth__input--invalid:focus {
+  border-color: #d92d20;
+  box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.12);
+}
+
+.auth__options {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.auth__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.auth__btn__blue,
+.auth__btn__violet {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+}
+.auth__btn__blue:hover,
+.auth__btn__violet:hover {
+  background: #4338ca;
+  border-color: #4338ca;
+}
+.auth__btn__blue:active,
+.auth__btn__violet:active {
+  background: #3730a3;
+  border-color: #3730a3;
+}
+.auth__btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.auth__links {
+  margin: 0;
+  text-align: center;
+}
+.auth__alt {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 17px;
+  color: #64748b;
+}
+
+.auth__link {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4f46e5;
+  text-decoration: none;
+}
+.auth__alt .auth__link {
+  font-size: 14px;
+}
+.auth__link:hover {
+  color: #3730a3;
+}
+
+.auth__link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4f46e5;
+  cursor: pointer;
+}
+.auth__link-btn:hover {
+  color: #3730a3;
+}
+
+.auth__status {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+.auth__status__error {
+  color: #d92d20;
+  background: #fef1f0;
+}
+.auth__status__success {
+  color: #12805c;
+  background: #e9f9f1;
+}
+.auth__resend-note {
+  margin-left: 8px;
+  font-size: 13px;
+  color: #12805c;
+}
+
+.header__user {
+  align-self: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #09090c;
+}
+
+/* ---- brand panel (left, 560px) ---- */
+.auth-brand {
+  position: relative;
+  flex: none;
+  width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 48px;
+  background: #fff;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.auth-brand > * {
+  position: relative;
+}
+
+.auth-brand__blob {
+  position: absolute;
+  pointer-events: none;
+}
+.auth-brand__blob img {
+  position: absolute;
+  display: block;
+  max-width: none;
+  width: 100%;
+  height: 100%;
+}
+.auth-brand__blob--tl {
+  left: -72px;
+  top: -56px;
+  width: 220px;
+  height: 220px;
+}
+.auth-brand__blob--tl img {
+  inset: -68.18%;
+  width: auto;
+  height: auto;
+}
+.auth-brand__blob--tr {
+  left: 360px;
+  top: -40px;
+  width: 180px;
+  height: 180px;
+}
+.auth-brand__blob--tr img {
+  inset: -83.33%;
+  width: auto;
+  height: auto;
+}
+.auth-brand__blob--bl {
+  left: -40px;
+  top: 620px;
+  width: 160px;
+  height: 160px;
+}
+.auth-brand__blob--bl img {
+  inset: -93.75%;
+  width: auto;
+  height: auto;
+}
+.auth-brand__blob--br {
+  left: 420px;
+  top: 680px;
+  width: 120px;
+  height: 120px;
+}
+.auth-brand__blob--br img {
+  inset: -108.33%;
+  width: auto;
+  height: auto;
+}
+
+.auth-brand__card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px;
+  background: #fff;
+  border: 1px solid #e7eaf2;
+  border-radius: 28px;
+  box-shadow: 0 12px 16px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+.auth-brand__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.auth-brand__home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+.auth-brand__home:hover .auth-brand__mark {
+  box-shadow: 0 12px 14px rgba(95, 51, 225, 0.3);
+}
+.auth-brand__mark {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 8px;
+  border-radius: 18px;
+  background: #5f33e1;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+  box-shadow: 0 10px 10px rgba(95, 51, 225, 0.2);
+}
+.auth-brand__name {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+}
+.auth-brand__tag {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7c5cff;
+  text-transform: uppercase;
+}
+.auth-brand__message {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.auth-brand__headline {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.12;
+  font-weight: 700;
+  color: #111827;
+}
+.auth-brand__text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #6e6a7c;
+}
+
+.auth-brand__groups {
+  display: flex;
+  gap: 12px;
+}
+.auth-brand__group {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+}
+.auth-brand__group--blue {
+  background: #e7f3ff;
+}
+.auth-brand__group--orange {
+  background: #ffe9e1;
+}
+.auth-brand__group-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.auth-brand__chip {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.auth-brand__chip--pink {
+  background: #ffe4f2;
+}
+.auth-brand__chip--violet {
+  background: #ede4ff;
+}
+.auth-brand__count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  background: #eee9ff;
+  color: #5f33e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+.auth-brand__group-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+.auth-brand__group-text {
+  margin: 0;
+  font-size: 11px;
+  color: #6e6a7c;
+}
+.auth-brand__bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #fff;
+  overflow: hidden;
+}
+.auth-brand__bar span {
+  display: block;
+  height: 6px;
+  max-width: 100%;
+  border-radius: 3px;
+}
+
+.auth-brand__trust {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e7eaf2;
+  border-radius: 24px;
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
+}
+.auth-brand__trust-icon {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #ede8ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.auth-brand__trust-dot {
+  position: absolute;
+  left: 22px;
+  top: 10px;
+}
+.auth-brand__trust-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+.auth-brand__trust-text {
+  margin: 0;
+  font-size: 12px;
+  color: #6e6a7c;
+}
+
+/* ---- narrower screens: drop the brand panel ---- */
+@media screen and (max-width: 1100px) {
+  .auth-brand {
+    width: 440px;
+    padding: 32px;
+  }
+  .auth-brand__headline {
+    font-size: 28px;
+  }
+  .auth-brand__blob--tr {
+    left: 260px;
+  }
+  .auth-brand__blob--br {
+    left: 320px;
+  }
+}
+@media screen and (max-width: 900px) {
+  .auth-brand {
+    display: none;
+  }
+  .auth__area {
+    padding: 24px 16px;
+  }
+  .auth__logo {
+    display: block;
+  }
+}
+
+/* ---- mobile: nothing scrolls, everything fits the visible screen ---- */
+@media screen and (max-width: 520px) {
+  .auth {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .auth__area {
+    padding: 12px 16px;
+  }
+  .auth__card {
+    gap: 12px;
+    padding: 20px 16px;
+  }
+  .auth__logo a {
+    font-size: 22px;
+  }
+  .auth__title {
+    font-size: 24px;
+    line-height: 28px;
+  }
+  .auth__subtitle {
+    margin-top: -8px;
+    font-size: 13px;
+  }
+  .auth__form {
+    gap: 10px;
+  }
+  .auth__field {
+    gap: 4px;
+  }
+  .auth__input,
+  .auth__btn {
+    height: 38px;
+  }
+  .auth__status {
+    padding: 6px 12px;
+  }
+}
+@media screen and (max-width: 520px) and (max-height: 700px) {
+  .auth__subtitle {
+    display: none;
+  }
+  .auth__title {
+    margin-bottom: 4px;
+  }
+}

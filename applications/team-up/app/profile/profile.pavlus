@@ -1,29 +1,42 @@
-// The public profile: the name, the city, the status; the professions with
-// their grades; the skills with their ratings.
-div.profile
-  if data
-    div.profile-head
-      h1 {data.name}
-      p.meta
+// The public profile, in the original teamUP look: the head card (avatar,
+// name, meta), then About, the professions as pe__tags, the skills as meters
+// of ten segments colored by zone (junior 1-3, middle 4-6, senior 7-8,
+// lead 9-10).
+if data
+  div.pe
+    section.shell__card.pe__head
+      div.pe__avatar.pe__avatar--blank {(data.name.split(" ")[0][0] || "?").toUpperCase()}
+      div.pe__who
+        h1.pe__name {data.name}
         if data.city
-          span {data.city}
-        span.status {data.status}
+          span.pe__meta {data.city}
+        if data.status
+          span.pe__meta {data.status}
+    if data.bio
+      section.shell__card
+        h2.shell__h2 About
+        p.pe__bio {data.bio}
     if data.professions.length
-      h2 professions
-      div.profs
-        for profession in data.professions key profession.slug
-          span.prof
-            | {profession.name}
-            if profession.bucket
-              span.bucket {profession.bucket}
+      section.shell__card
+        h2.shell__h2 Professions and areas
+        div.pe__tags
+          for profession in data.professions key profession.slug
+            span.pe__tag.pe__tag--prof
+              | {profession.name}
+              if profession.bucket
+                |  · {profession.bucket}
     if data.skills.length
-      h2 skills
-      div.skills
-        for skill in data.skills key skill.slug
-          div.skill
-            span.skill-name {skill.name}
-            span.skill-dots
-              | {"●".repeat(skill.level ?? 0)}{"○".repeat(10 - (skill.level ?? 0))}
-            span.skill-num {skill.level ?? "—"}/10
-  else
-    p.state loading...
+      section.shell__card
+        h2.shell__h2 Skills
+        div.pe__skills
+          for skill in data.skills key skill.slug
+            div.pe__skill
+              span.pe__skill-name {skill.name}
+              div.pf__meter
+                for i in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] key i
+                  span.pf__seg.pe__seg(class:is-on={i <= (skill.level ?? 0)} class:is-junior={i <= 3} class:is-middle={i >= 4 && i <= 6} class:is-senior={i >= 7 && i <= 8} class:is-lead={i >= 9})
+              span.pf__skill-level
+                | {(skill.level ?? 0) <= 0 ? "—" : (skill.level ?? 0) + " · " + ((skill.level ?? 0) <= 3 ? "junior" : (skill.level ?? 0) <= 6 ? "middle" : (skill.level ?? 0) <= 8 ? "senior" : "lead")}
+else
+  div.shell__card
+    p.shell__muted Loading…

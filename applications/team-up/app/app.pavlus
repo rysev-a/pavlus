@@ -1,17 +1,28 @@
-// The shell: a top bar (who is signed in, the nav, sign out) and whichever
-// page the route selects. A guest sees the pages too, but every page but the
-// login one bounces to /login (the backend answers 401 anyway).
-div.tu-shell
-  header.tu-bar
-    span.tu-brand team-up
-    if me
-      nav.tu-nav
-        a(href="/" data-active={route.path == "/" ? "true" : null}) feed
-        a(href="/chat" data-active={route.path == "/chat" ? "true" : null}) chat
-        span.tu-me
-          | {me.name}
-          button.out.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=signOut) sign out
-    else
-      span.tu-me guest
-  main.tu-body
+// The shell, in the original teamUP look: the brand and the nav on the left
+// (Projects, Messages), the avatar with a dropdown at the bottom, the page on
+// the right. A guest sees only the page — the login one fills the viewport.
+// The icons are masks (port.css): the dom runtime cannot make svg nodes.
+div.shell
+  if me
+    aside.shell__side
+      div.shell__top
+        a.shell__brand(href="/")
+          span.shell__mark T
+          span.shell__brand-name teamUP
+        nav.shell__nav
+          a.shell__link(href="/" class:is-active={route.path == "/"} title="Projects")
+            span.shell__icon.shell__icon--startups
+            span.shell__label Projects
+          a.shell__link(href="/chat" class:is-active={route.path == "/chat"} title="Messages")
+            span.shell__icon.shell__icon--messages
+            span.shell__label Messages
+      div.shell__profile
+        if shell.menu
+          div.shell__panel(role="menu")
+            a.shell__panel-item(href="/people/{me.slug}" role="menuitem") Profile
+            button.shell__panel-item.shell__panel-item--danger(type="button" role="menuitem" @click=signOut) Log out
+        button.shell__avatar-btn(type="button" aria-expanded={shell.menu ? "true" : "false"} @click=toggleMenu)
+          span.shell__avatar {(me.name.split(" ")[0][0] || "?").toUpperCase()}
+          span.shell__email {me.email}
+  main.shell__main(class:bare={!me})
     +outlet

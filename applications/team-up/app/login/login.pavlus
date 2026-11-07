@@ -1,23 +1,61 @@
-// The login page: one card, the demo accounts underneath. The demo world's
-// password is teamup123 for everyone.
-div.login-wrap
-  form.card(@submit.prevent=submit)
-    h1 team-up
-    p.sub the pavlus port — profiles, projects, a computed match, live chat
-    if error
-      p.error {error}
-    div.fields
-      input.email(type="email" value=email placeholder="email" @input=setEmail autocomplete="username")
-      input.pass(type="password" value=password placeholder="password" @input=setPassword autocomplete="current-password")
-    button.go(type="submit" disabled=busy) {busy ? "signing in..." : "sign in"}
-  div.demo
-    p demo accounts (password teamup123):
-    button.demo-one(type="button" @click=pick("ann@team.up"))
-      strong ann@team.up
-      span Anna Founder — the owner
-    button.demo-one(type="button" @click=pick("bob@team.up"))
-      strong bob@team.up
-      span Bob Backend — the applicant
-    button.demo-one(type="button" @click=pick("clara@team.up"))
-      strong clara@team.up
-      span Clara Front — the frontend
+// The login page, in the original teamUP look: the brand panel on the left
+// (blobs, the mark, the pitch), the form card on the right. The demo accounts
+// under the form are the port's (there is no signup — the demo world is the
+// way in; the password is teamup123 for everyone).
+div.auth
+  aside.auth-brand
+    span.auth-brand__blob.auth-brand__blob--tl(aria-hidden="true")
+      img(src="/images/auth/blob-tl.svg" alt="")
+    span.auth-brand__blob.auth-brand__blob--tr(aria-hidden="true")
+      img(src="/images/auth/blob-tr.svg" alt="")
+    span.auth-brand__blob.auth-brand__blob--bl(aria-hidden="true")
+      img(src="/images/auth/blob-bl.svg" alt="")
+    span.auth-brand__blob.auth-brand__blob--br(aria-hidden="true")
+      img(src="/images/auth/blob-br.svg" alt="")
+    div.auth-brand__card
+      div.auth-brand__head
+        a.auth-brand__home(href="/")
+          div.auth-brand__mark T
+          p.auth-brand__name teamUP
+        p.auth-brand__tag a community of startup founders
+      div.auth-brand__message
+        p.auth-brand__headline Find your people. Build the future.
+        p.auth-brand__text
+          | Meet friends, like-minded people and future co-founders who want
+          | to turn startup ideas into reality.
+    div.auth-brand__trust
+      span.auth-brand__trust-icon
+        img(src="/images/auth/notification.svg" alt="" width="20" height="20")
+        img.auth-brand__trust-dot(src="/images/auth/notification-dot.svg" alt="" width="8" height="8")
+      div
+        p.auth-brand__trust-title Start with the right people
+        p.auth-brand__trust-text
+          | Meet friends, like-minded people and future co-founders who want
+          | to turn startup ideas into reality.
+  div.auth__area
+    div.auth__card
+      div.auth__logo
+        a(href="/") teamUP
+      h1.auth__title Welcome back
+      p.auth__subtitle Log in to continue in teamUP.
+      if error
+        p.auth__hint(role="alert") {error}
+      form.auth__form(@submit.prevent=submit)
+        div.auth__field
+          label.auth__label(for="email") Email
+          input.auth__input#email(type="email" value=email placeholder="you@example.com" autocomplete="username" @input=setEmail)
+        div.auth__field
+          label.auth__label(for="password") Password
+          input.auth__input#password(type="password" value=password placeholder="your password" autocomplete="current-password" @input=setPassword)
+        button.auth__btn.auth__btn__blue(type="submit" disabled=busy) {busy ? "Signing in…" : "Log in"}
+      div.auth__demo
+        p.auth__demo-title demo accounts · teamup123
+        button.auth__demo-one(type="button" @click=pick("ann@team.up"))
+          strong ann@team.up
+          span Anna Founder — the owner
+        button.auth__demo-one(type="button" @click=pick("bob@team.up"))
+          strong bob@team.up
+          span Bob Backend — the applicant
+        button.auth__demo-one(type="button" @click=pick("clara@team.up"))
+          strong clara@team.up
+          span Clara Front — the frontend

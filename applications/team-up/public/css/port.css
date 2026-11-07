@@ -1,0 +1,109 @@
+/* team-up port: the styles the original does not have. Everything else is
+   the original teamUP css, copied as-is. */
+
+/* The nav icons: the original draws them inline with currentColor; the pavlus
+   dom runtime creates elements without an svg namespace, so inline <svg> would
+   not render in the browser. A mask keeps them following currentColor — the
+   active link recolors its icon for free. */
+.shell__icon {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: inline-block;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / contain;
+  mask: no-repeat center / contain;
+}
+.shell__icon--friends {
+  -webkit-mask-image: url(/icons/friends.svg);
+  mask-image: url(/icons/friends.svg);
+}
+.shell__icon--startups {
+  -webkit-mask-image: url(/icons/startups.svg);
+  mask-image: url(/icons/startups.svg);
+}
+.shell__icon--messages {
+  -webkit-mask-image: url(/icons/messages.svg);
+  mask-image: url(/icons/messages.svg);
+}
+.shell__icon--settings {
+  -webkit-mask-image: url(/icons/settings.svg);
+  mask-image: url(/icons/settings.svg);
+}
+
+/* The login page renders through the same shell root; without a session there
+   is no sidebar, and the auth layout takes the whole width. */
+.shell__main.bare {
+  padding: 0;
+}
+
+/* The demo accounts under the login form (the port has no signup — the demo
+   world is the way in). */
+.auth__demo {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e7eaf2;
+}
+.auth__demo-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #98a2b3;
+}
+.auth__demo-one {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 9px 12px;
+  margin: 0 0 8px;
+  border: 1px solid #d7dfea;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.auth__demo-one:hover {
+  border-color: #5f33e1;
+  background: #f9f7ff;
+}
+.auth__demo-one strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+.auth__demo-one span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* The ws status line of the chat inbox (the original talks to a live server
+   too, but never shows it; the port is honest about being offline). */
+.msg__live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -12px 0 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #98a2b3;
+}
+.msg__live::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d0d5dd;
+}
+.msg__live.is-live {
+  color: #067647;
+}
+.msg__live.is-live::before {
+  background: #12b76a;
+}

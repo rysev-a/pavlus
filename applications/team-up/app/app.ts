@@ -98,6 +98,12 @@ export class App extends Component<AppState> {
     ];
   }
 
+  /** The avatar button: the dropdown opens and closes. */
+  toggleMenu(msg: Message, s: AppState): Effect[] {
+    void msg;
+    return [store.set("shell.menu", !s.shell.menu, { onSuccess: "paint" })];
+  }
+
   /** The nav's sign-out: back to the login page. */
   signOut(): Effect[] {
     return [

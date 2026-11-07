@@ -1,40 +1,45 @@
-// The project: the header (name, tagline, owner), the slots — filled ones
-// show who sits in them, open ones the requirements and the apply button.
-div.project
+// The project, in the original teamUP look: the header card (chips, tagline,
+// founder), then the slots as st__slot rows — a filled one says who sits in
+// it, an open one the requirements and the apply button.
+div
+  a.auth__link(href="/") ← the feed
   if data
-    div.project-head
-      h1 {data.name}
-      p.tagline {data.tagline}
-      p.meta
-        span.kind {data.kind}
-        span.owner by {data.owner}
+    h1.shell__h1 {data.name}
+    div.shell__card.st__card
+      div.st__card-top
+        if data.kind != "startup"
+          span.st__chip.st__chip--kind {data.kind}
+      if data.tagline
+        p.st__tagline {data.tagline}
+      p.st__owner by {data.owner}
       if data.description
-        p.desc {data.description}
-    div.slots
-      h2 slots
+        p.st__slot-desc {data.description}
+    ul.st__slots
       for slot in data.slots key slot.id
-        div.slot data-filled={slot.userId ? "true" : null}
-          div.slot-head
-            span.prof {slot.profession}
-            span.bucket {slot.bucket}
+        li.st__slot(data-status={slot.userId ? "joined" : null})
+          div.st__slot-main
+            p.st__slot-title {slot.profession} · {slot.bucket}
             if slot.pay
-              span.pay {slot.pay}
-          if slot.description
-            p.slot-desc {slot.description}
-          if slot.skills.length
-            p.slot-skills
-              for skill in slot.skills key skill.name
-                span.skill
-                  | {skill.name} {skill.level}/10
-          if slot.userId
-            span.sitting {slot.userName} is in this seat
-          else
-            if applied
-              span.applied applied — wait for the owner's call
+              p.st__slot-pay {slot.pay}
+            if slot.description
+              p.st__slot-desc {slot.description}
+            if slot.skills.length
+              div.pe__tags
+                for skill in slot.skills key skill.name
+                  span.pe__tag {skill.name} {skill.level}+
+          div.st__slot-side
+            if slot.userId
+              span.st__chip {slot.userName}
             else
-              button.apply(type="button" @click=apply(slot.id)) apply
+              if applied
+                span.st__chip.st__chip--looking Application sent
+              else
+                div.st__join
+                  button.shell__btn(type="button" @click=apply(slot.id)) Apply
   else
     if status == "failed"
-      p.state.err no such project
+      div.shell__card
+        p.pf__notice.is-err No such project.
     else
-      p.state loading...
+      div.shell__card
+        p.shell__muted Loading…

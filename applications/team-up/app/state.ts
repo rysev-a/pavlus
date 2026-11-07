@@ -97,6 +97,8 @@ export interface AppState {
   route: Route | null;
   /** Who is signed in; null until asked, `false` while asking. */
   me: Me | null | false;
+  /** The shell: the avatar dropdown's open flag. */
+  shell: { menu: boolean };
   /** The login page (`/login`): the form's values and its last error. */
   login: {
     email: string;
@@ -123,6 +125,8 @@ export interface AppState {
     messages: ChatMessage[];
     /** The open thread's id (0: the inbox list only). */
     open: number;
+    /** The open thread's title (the chat header shows it). */
+    openTitle: string;
     /** The ws connection: "" down, "connecting", "live". */
     live: "" | "connecting" | "live";
     /** What the composer holds. */
@@ -138,6 +142,7 @@ export interface AppState {
 export const initialState: AppState = {
   route: null,
   me: false,
+  shell: { menu: false },
   login: {
     email: "bob@team.up",
     password: "teamup123",
@@ -146,6 +151,13 @@ export const initialState: AppState = {
   },
   feed: { items: [], status: "idle" },
   project: { slug: "", data: null, status: "idle", applied: false },
-  chat: { threads: [], messages: [], open: 0, live: "", draft: "" },
+  chat: {
+    threads: [],
+    messages: [],
+    open: 0,
+    openTitle: "",
+    live: "",
+    draft: "",
+  },
   profile: { slug: "", data: null },
 };
