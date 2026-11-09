@@ -283,6 +283,7 @@ describe("respond", () => {
                   maxAge: 60,
                   httpOnly: false,
                   sameSite: "Strict",
+                  secure: true, // explicit wins over the request-derived default
                 },
               },
             }),
@@ -315,14 +316,58 @@ describe("respond", () => {
     expect((await request(http, { path: "/empty" })).body.length).toBe(0);
     const c = await request(http, { path: "/cookie" });
     expect(c.headers["x-pre"]).toBe("1");
+    // plain http: no Secure unless explicit (Safari drops Secure over http,
+    // even on localhost)
     expect(c.headers["set-cookie"]).toEqual([
-      "sid=a%20b; Path=/; HttpOnly; Secure; SameSite=Lax",
+      "sid=a%20b; Path=/; HttpOnly; SameSite=Lax",
       "pref=1; Path=/; Max-Age=60; Secure; SameSite=Strict",
     ]);
     // header injection becomes a 500 (request.error), not a split response
     const bad = await request(http, { path: "/inject" });
     expect(bad.status).toBe(500);
     expect(bad.headers["set-cookie"]).toBeUndefined();
+  });
+
+  it("cookie Secure follows the request: https proxies yes, plain http no", async () => {
+    const { http } = await boot(
+      (m) =>
+        m.id === "http.request"
+          ? [
+              respond({
+                text: "c",
+                cookies: {
+                  sid: "1",
+                  forced: { value: "1", secure: true },
+                },
+              }),
+            ]
+          : [],
+      { trustProxy: true },
+    );
+    const plain = await request(http, { path: "/" });
+    expect(plain.headers["set-cookie"]).toEqual([
+      "sid=1; Path=/; HttpOnly; SameSite=Lax",
+      "forced=1; Path=/; HttpOnly; Secure; SameSite=Lax",
+    ]);
+    const proxied = await request(http, {
+      path: "/",
+      headers: { "x-forwarded-proto": "https" },
+    });
+    expect(proxied.headers["set-cookie"]).toEqual([
+      "sid=1; Path=/; HttpOnly; Secure; SameSite=Lax",
+      "forced=1; Path=/; HttpOnly; Secure; SameSite=Lax",
+    ]);
+    // without trustProxy the header is just a client lie
+    const { http: strict } = await boot((m) =>
+      m.id === "http.request"
+        ? [respond({ text: "c", cookies: { sid: "1" } })]
+        : [],
+    );
+    const lied = await request(strict, {
+      path: "/",
+      headers: { "x-forwarded-proto": "https" },
+    });
+    expect(String(lied.headers["set-cookie"])).not.toContain("Secure");
   });
 
   it("HEAD has headers and no body; ETag gives 304", async () => {

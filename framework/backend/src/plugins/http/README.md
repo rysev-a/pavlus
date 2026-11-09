@@ -32,4 +32,4 @@
 
 `x-request-id`: an incoming value matching `[A-Za-z0-9._-]{1,128}` is echoed and kept in `ctx.requestId`; otherwise the rid is used. The `rid` itself is always server-minted (unguessable), a client can never pick or collide with it.
 
-Cookies helpers: `parseCookies(header)`, `serializeCookie(name, value, opts)` (defaults `Path=/; HttpOnly; Secure; SameSite=Lax`; `SameSite=None` forces `Secure`; invalid names/attributes throw), `clearCookie(name)`.
+Cookies helpers: `parseCookies(header)`, `serializeCookie(name, value, opts)` (defaults `Path=/; HttpOnly; Secure; SameSite=Lax`; `SameSite=None` forces `Secure`; invalid names/attributes throw), `clearCookie(name)`. In `http.respond` the `Secure` default is not fixed — it follows the request: set for a TLS socket or a trusted `X-Forwarded-Proto: https` (see `trustProxy`), absent over plain http (Safari drops `Secure` cookies on plain http, even localhost). A cookie with an explicit `secure` always keeps it.

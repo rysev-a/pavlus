@@ -440,10 +440,19 @@ export function createHttpServerPlugin(
       st.doubleResponses++;
       return;
     }
+    const fwd = conn.req.headers["x-forwarded-proto"];
+    const fwdProto = trust
+      ? String(Array.isArray(fwd) ? fwd[0] : (fwd ?? ""))
+          .split(",")[0]
+          ?.trim()
+      : "";
     const r = normalizeRespond(e, conn.headers, {
       method: conn.method,
       etag: o.etag,
       ifNoneMatch: conn.req.headers["if-none-match"],
+      secureCookies:
+        (conn.req.socket as { encrypted?: boolean }).encrypted === true ||
+        fwdProto === "https",
     });
     conn.state = "done";
     writeHeadFor(conn, r.status, r.headers);

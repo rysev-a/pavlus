@@ -243,10 +243,14 @@ export function fakeHttp(
         case "respond": {
           if (c.state !== "open") return;
           const { plugin: _p, type: _t, ctx: _c, ...rest } = effect;
+          const fwd = c.headers["x-forwarded-proto"];
           const r = normalizeRespond(rest as RespondEffect, c.pendingHeaders, {
             method: c.method,
             etag: o.etag,
             ifNoneMatch: c.headers["if-none-match"] as string | undefined,
+            // tests simulate proxies through the header (no socket here)
+            secureCookies:
+              String(Array.isArray(fwd) ? fwd[0] : (fwd ?? "")) === "https",
           });
           fill(
             c.res,

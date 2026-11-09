@@ -32,6 +32,13 @@ export interface NormalizeOptions {
   method?: string;
   etag?: boolean;
   ifNoneMatch?: string;
+  /**
+   * Default for the cookie `Secure` attribute when the handler did not set it
+   * explicitly. Derived from the request (TLS socket or a trusted
+   * `X-Forwarded-Proto`): a cookie set over plain http must not carry Secure
+   * (Safari drops it), one set over https must.
+   */
+  secureCookies?: boolean;
 }
 
 const NAME = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
@@ -117,21 +124,25 @@ export function normalizeRespond(
     headers["content-disposition"] = contentDisposition(e.download);
 
   if (e.cookies) {
+    const base =
+      o.secureCookies === undefined ? undefined : { secure: o.secureCookies };
     const list: string[] = Array.isArray(e.cookies)
       ? (e.cookies as readonly string[]).map((c) => {
           if (BAD_VALUE.test(c)) throw new Error("http: invalid Set-Cookie");
           return c;
         })
-      : Object.entries(e.cookies as Record<string, unknown>).map(([n, v]) =>
-          typeof v === "string"
-            ? serializeCookie(n, v)
-            : (() => {
-                const { value, ...rest } = v as {
-                  value: string;
-                } & CookieOptions;
-                return serializeCookie(n, value, rest);
-              })(),
-        );
+      : Object.entries(e.cookies as Record<string, unknown>).map(([n, v]) => {
+          if (typeof v === "string") return serializeCookie(n, v, base);
+          const { value, secure, ...rest } = v as {
+            value: string;
+            secure?: boolean;
+          } & CookieOptions;
+          // an explicit secure wins; otherwise the request decides
+          const opts: CookieOptions = { ...rest };
+          if (secure !== undefined) opts.secure = secure;
+          else if (base !== undefined) opts.secure = base.secure;
+          return serializeCookie(n, value, opts);
+        });
     const prev = headers["set-cookie"];
     headers["set-cookie"] = [
       ...(prev === undefined ? [] : Array.isArray(prev) ? prev : [prev]),

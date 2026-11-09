@@ -453,6 +453,11 @@ export function createRawHttpServerPlugin(
     r.responded = true;
     let norm;
     try {
+      const fwdProto = trust
+        ? (headerOf(r.reqHeaders, "x-forwarded-proto") ?? "")
+            .split(",")[0]
+            ?.trim()
+        : "";
       norm = normalizeRespond(
         e,
         { ...r.headers },
@@ -460,6 +465,7 @@ export function createRawHttpServerPlugin(
           method: r.method,
           etag: o.etag,
           ifNoneMatch: headerOf(r.reqHeaders, "if-none-match"),
+          secureCookies: fwdProto === "https", // plain socket: a proxy is the only https
         },
       );
     } catch {
