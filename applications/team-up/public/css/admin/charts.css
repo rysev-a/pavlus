@@ -1,0 +1,77 @@
+/* Visualisations: calendar, carousel, charts, slider, resizable panels, scroll area. */
+.ui-calendar { width: min(100%, 20rem); padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--background); color: var(--foreground); }
+.ui-calendar-header, .ui-carousel-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ui-calendar-title { margin: 0; font-size: 14px; font-weight: 500; }
+.ui-calendar-nav, .ui-carousel-control {
+  display: inline-grid; place-items: center; height: 28px; min-width: 28px; padding: 0 8px; border: 1px solid var(--border);
+  border-radius: var(--radius-md); background: transparent; color: inherit; font: inherit; font-size: 13px; cursor: pointer; transition: background-color .15s;
+}
+.ui-calendar-nav:hover, .ui-carousel-control:hover:not(:disabled) { background: var(--accent); color: var(--accent-foreground); }
+.ui-carousel-control:disabled { cursor: not-allowed; opacity: .5; }
+.ui-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: 12px; }
+.ui-calendar-weekday { padding: 6px 0; font-size: 12px; font-weight: 400; color: var(--muted-foreground); text-align: center; }
+.ui-calendar-empty, .ui-calendar-day { min-width: 0; min-height: 36px; }
+.ui-calendar-day { border: 0; border-radius: var(--radius-md); background: transparent; color: inherit; font: inherit; font-size: 14px; cursor: pointer; transition: background-color .15s; }
+.ui-calendar-day:hover { background: var(--accent); color: var(--accent-foreground); }
+.ui-calendar-day-selected, .ui-calendar-day-selected:hover { background: var(--primary); color: var(--primary-foreground); }
+.ui-calendar-title-button { padding: 4px 8px; border: 0; border-radius: var(--radius-md); background: transparent; color: inherit; font: inherit; cursor: pointer; transition: background-color .15s; }
+.ui-calendar-title-button:hover { background: var(--accent); color: var(--accent-foreground); }
+.ui-calendar-years { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-top: 12px; }
+.ui-calendar-year { min-width: 0; min-height: 48px; border: 0; border-radius: var(--radius-md); background: transparent; color: inherit; font: inherit; font-size: 14px; cursor: pointer; transition: background-color .15s; }
+.ui-calendar-year:hover { background: var(--accent); color: var(--accent-foreground); }
+.ui-calendar-year-current, .ui-calendar-year-current:hover { background: var(--primary); color: var(--primary-foreground); }
+/* Range calendar: two months side by side, stacked on narrow screens. */
+.ui-calendar.ui-calendar-range { width: min(100%, 40rem); }
+.ui-calendar-range-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.ui-calendar-range-month { min-width: 0; }
+.ui-calendar-range .ui-calendar-grid { column-gap: 0; }
+.ui-calendar-day-in-range { border-radius: 0; background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.ui-calendar-day-in-range:hover { background: color-mix(in srgb, var(--primary) 26%, transparent); color: inherit; }
+.ui-calendar-day-range-start { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+.ui-calendar-day-range-end { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+/* Hover preview of the range being picked: lighter than a chosen range. */
+.ui-calendar-day-preview, .ui-calendar-day-preview:hover { border-radius: 0; background: color-mix(in srgb, var(--primary) 10%, transparent); color: inherit; }
+.ui-calendar-day-preview-edge, .ui-calendar-day-preview-edge:hover { background: color-mix(in srgb, var(--primary) 22%, transparent); color: inherit; }
+.ui-calendar-nav-inner { visibility: hidden; }
+@media (max-width: 640px) {
+  .ui-calendar-range-panels { grid-template-columns: minmax(0, 1fr); }
+  .ui-calendar-nav-inner { visibility: visible; }
+}
+.ui-calendar :focus-visible, .ui-carousel :focus-visible, .ui-slider-input:focus-visible, .ui-resizable-divider:focus-visible, .ui-scroll-area:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+
+.ui-viz-progress { width: 100%; height: 8px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--primary) 20%, transparent); }
+.ui-viz-progress-value { display: block; height: 100%; border-radius: inherit; background: var(--primary); transition: width .3s ease; }
+
+.ui-slider { display: grid; gap: 12px; }
+.ui-slider-label { font-size: 14px; font-weight: 500; }
+.ui-slider-input { width: 100%; accent-color: var(--primary); }
+
+.ui-carousel { display: grid; gap: 12px; }
+.ui-carousel-slide { min-height: 96px; padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); box-shadow: var(--shadow-sm); }
+.ui-carousel-controls { justify-content: center; }
+.ui-carousel-position { min-width: 56px; font-size: 13px; color: var(--muted-foreground); text-align: center; }
+
+.ui-chart { width: 100%; min-width: 0; margin: 0; }
+.ui-chart-svg { display: block; width: 100%; overflow: visible; }
+.ui-chart-axis { stroke: var(--border); stroke-width: 1; }
+.ui-chart-label { fill: var(--muted-foreground); font-size: 12px; }
+.ui-chart-bar { fill: var(--chart-1); rx: 4px; transition: opacity .15s; }
+.ui-chart-bar:hover { opacity: .8; }
+.ui-chart-line { fill: none; stroke: var(--chart-2); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+.ui-chart-point { fill: var(--background); stroke: var(--chart-2); stroke-width: 2; }
+
+.ui-resizable-panels { display: grid; grid-template-columns: minmax(0, var(--ui-panel-first)) 12px minmax(0, var(--ui-panel-second)); align-items: stretch; min-width: 0; min-height: 128px; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.ui-resizable-panel { min-width: 0; padding: 16px; overflow: auto; }
+.ui-resizable-divider { width: 12px; height: 100%; justify-self: center; margin: 0; appearance: none; background: transparent; cursor: col-resize; writing-mode: vertical-lr; direction: rtl; }
+.ui-resizable-divider::-webkit-slider-thumb { width: 4px; height: 32px; appearance: none; border: 0; border-radius: 999px; background: var(--border); }
+.ui-resizable-divider::-moz-range-thumb { width: 4px; height: 32px; border: 0; border-radius: 999px; background: var(--border); }
+
+.ui-scroll-area { display: block; max-width: 100%; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.ui-scroll-area-horizontal { height: auto; max-height: none !important; overflow-x: auto; overflow-y: hidden; white-space: nowrap; }
+
+@media (max-width: 40rem) {
+  .ui-resizable-panels { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .ui-resizable-divider { width: 100%; height: 12px; justify-self: stretch; cursor: row-resize; writing-mode: horizontal-tb; direction: ltr; }
+  .ui-resizable-divider::-webkit-slider-thumb { width: 32px; height: 4px; }
+  .ui-resizable-divider::-moz-range-thumb { width: 32px; height: 4px; }
+}

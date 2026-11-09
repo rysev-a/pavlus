@@ -1,0 +1,69 @@
+// The moderation queue: the reports the members sent (with the answer of the
+// moderator) and the suspended members below.
+h1.shell__h1 {strings.title}
+if notice
+  div.shell__card
+    p.pf__notice.is-err {notice}
+div.pf(data-testid="moderation-page")
+  section.shell__card.pf__section
+    div.pf__panel-head
+      h2.shell__h2 {strings.reports}
+      select.pf__input(data-testid="moderation-status" aria-label={strings.show} @change=setStatus)
+        for item in statuses
+          option(value=item.value selected={item.value == status}) {item.label}
+    if reports.length == 0
+      p.shell__muted(data-testid="moderation-empty") {strings.empty}
+    for report in reports key report.id
+      article.pf__report(data-testid="report-item" data-id=report.id data-kind=report.kind data-status=report.status)
+        header
+          strong {report.kindLabel}
+          | " "
+          if report.kind == "person"
+            a.auth__link(href={"/app/people/" + report.target}) {report.targetLabel}
+          else
+            if report.kind == "project"
+              a.auth__link(href={"/app/projects/" + report.target}) {report.targetLabel}
+            else
+              span {report.targetLabel}
+          | " "
+          span.st__chip(data-testid="report-reason-chip") {report.reasonLabel}
+          span.shell__muted
+            |  · {strings.from} {report.reporterName} · {report.createdAt.slice(0, 16)}
+        if report.details
+          p(data-testid="report-text") {report.details}
+        if report.excerpt
+          blockquote.pf__quote(data-testid="report-excerpt") {report.excerpt}
+        if report.subjectName
+          p.shell__muted
+            | {strings.answers}
+            | " "
+            a.auth__link(href={"/app/people/" + report.subjectSlug}) {report.subjectName}
+            if report.subjectSuspended
+              |  · {strings.suspendedShort}
+        if report.status != "open"
+          p.shell__muted(data-testid="report-handled")
+            | {report.actionLabel} · {report.handledByName}
+            if report.note
+              |  · {report.note}
+        if report.status == "open"
+          div.pf__field
+            input.pf__input(type="text" maxlength="500" placeholder={strings.note} data-testid="report-note" value=note @input=setNote)
+          div.pf__actions
+            button.shell__btn.shell__btn--ghost(type="button" data-testid="resolve-dismiss" disabled=busy @click=resolve(report.id, "dismiss")) {strings.dismiss}
+            if report.kind == "project"
+              button.shell__btn(type="button" data-testid="resolve-cancel_project" disabled=busy @click=resolve(report.id, "cancel_project")) {strings.cancelProject}
+            if report.kind == "message"
+              button.shell__btn(type="button" data-testid="resolve-remove_message" disabled=busy @click=resolve(report.id, "remove_message")) {strings.removeMessage}
+            if report.subjectName
+              if !report.subjectSuspended
+                button.shell__delete(type="button" data-testid="resolve-suspend_user" disabled=busy @click=resolve(report.id, "suspend_user")) {strings.suspendMember}
+  section.shell__card.pf__section(data-testid="suspended-section")
+    h2.shell__h2 {strings.suspended}
+    if suspended.length == 0
+      p.shell__muted(data-testid="suspended-empty") {strings.nobody}
+    for member in suspended key member.slug
+      div.pf__row(data-testid="suspended-item" data-slug=member.slug)
+        a.auth__link(href={"/app/people/" + member.slug}) {member.name}
+        span.shell__muted {member.at}
+        |  · {member.reason}
+        button.pf__link-btn(type="button" data-testid={"lift-" + member.slug} @click=lift(member.slug)) {strings.letBack}

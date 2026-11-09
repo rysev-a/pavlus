@@ -1,28 +1,61 @@
-// The shell, in the original teamUP look: the brand and the nav on the left
-// (Projects, Messages), the avatar with a dropdown at the bottom, the page on
-// the right. A guest sees only the page — the login one fills the viewport.
-// The icons are masks (port.css): the dom runtime cannot make svg nodes.
-div.shell
-  if me
-    aside.shell__side
-      div.shell__top
-        a.shell__brand(href="/")
-          span.shell__mark T
-          span.shell__brand-name teamUP
-        nav.shell__nav
-          a.shell__link(href="/" class:is-active={route.path == "/"} title="Projects")
-            span.shell__icon.shell__icon--startups
-            span.shell__label Projects
-          a.shell__link(href="/chat" class:is-active={route.path == "/chat"} title="Messages")
-            span.shell__icon.shell__icon--messages
-            span.shell__label Messages
-      div.shell__profile
-        if shell.menu
-          div.shell__panel(role="menu")
-            a.shell__panel-item(href="/people/{me.slug}" role="menuitem") Profile
-            button.shell__panel-item.shell__panel-item--danger(type="button" role="menuitem" @click=signOut) Log out
-        button.shell__avatar-btn(type="button" aria-expanded={shell.menu ? "true" : "false"} @click=toggleMenu)
-          span.shell__avatar {(me.name.split(" ")[0][0] || "?").toUpperCase()}
-          span.shell__email {me.email}
-  main.shell__main(class:bare={!me})
+// The shell: two layouts in one root. The public site (the original teamUP's
+// marketing pages) wears the header and the footer of the original; the
+// signed-in app (`/app/...`) wears the app shell of the port (the nav on the
+// left, the page on the right). `shell.app` tells them apart — the root
+// writes it when the route changes.
+//
+// The shell closes the burger menu of the header when the visitor clicks
+// outside it (the header's own button stops the click, so it does not).
+import Header from "./site/header.pavlus"
+import Footer from "./site/footer.pavlus"
+
+div.shell(class:is-site={!shell.app} @click=closeMenu)
+  if shell.app
+    if me
+      aside.shell__side
+        div.shell__top
+          a.shell__brand(href="/")
+            span.shell__mark T
+            span.shell__brand-name teamUP
+          nav.shell__nav(aria-label="Main navigation")
+            a.shell__link(href="/app/friends" class:is-active={route.path == "/app/friends"} title="Friends")
+              span.shell__icon.shell__icon--friends
+              span.shell__label Friends
+            a.shell__link(href="/app/projects" class:is-active={route.path.startsWith("/app/projects")} title="Projects")
+              span.shell__icon.shell__icon--startups
+              span.shell__label Projects
+            a.shell__link(href="/app/messages" class:is-active={route.path == "/app/messages"} title="Messages")
+              span.shell__icon.shell__icon--messages
+              span.shell__label Messages
+              if shell.unread > 0
+                span.shell__badge(data-testid="nav-unread") {shell.unread}
+            a.shell__link(href="/app/professions" class:is-active={route.path == "/app/professions"} title="Professions")
+              span.shell__icon.shell__icon--professions
+              span.shell__label Professions
+            a.shell__link(href="/app/settings" class:is-active={route.path == "/app/settings"} title="Settings")
+              span.shell__icon.shell__icon--settings
+              span.shell__label Settings
+            if me.isAdmin
+              a.shell__link(href="/app/moderation" class:is-active={route.path == "/app/moderation"} title="Moderation")
+                span.shell__icon.shell__icon--settings
+                span.shell__label Moderation
+        div.shell__profile
+          if shell.menu
+            div.shell__panel(role="menu")
+              a.shell__panel-item(href="/app/profile" role="menuitem") Profile
+              a.shell__panel-item(href="/app/settings" role="menuitem") Settings
+              button.shell__panel-item.shell__panel-item--danger(type="button" role="menuitem" @click=signOut) Log out
+          button.shell__avatar-btn(type="button" aria-expanded={shell.menu ? "true" : "false"} @click=toggleMenu)
+            span.shell__avatar {(me.name.split(" ")[0][0] || "?").toUpperCase()}
+            span.shell__email {me.email}
+  main.shell__main(class:bare={!shell.app && !me} class:is-site={!shell.app})
+    if shell.app
+      div.shell__topbar
+        div.lang-switch(role="group" aria-label="Language" data-testid="lang-switch")
+          for locale in site.locales
+            a.lang-switch__btn(href={"/api/lang/" + locale.code + "?next=" + (route.path || "/")} aria-pressed={locale.active ? "true" : "false"} title={locale.name}) {locale.code.toUpperCase()}
+    if !shell.app
+      +Header#header(...site path={route.path || "/"})
     +outlet
+    if !shell.app
+      +Footer#footer(site=site)

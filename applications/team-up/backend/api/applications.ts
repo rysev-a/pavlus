@@ -14,6 +14,7 @@ import {
 import type { Effect, Message } from "@pavlus/core";
 import { ApplicationService } from "../db/services/application-service.ts";
 import { ProjectService } from "../db/services/project-service.ts";
+import { localeOf, trOf } from "../i18n/mod.ts";
 import { sessionEffect, sessionUserOf, unauthorized } from "./session.ts";
 
 const parked = (
@@ -29,9 +30,16 @@ export class ApplicationsAPI {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const note =
       typeof body.message === "string" ? body.message.trim().slice(0, 500) : "";
+    // the profession the member applies with (the apply dialog's choice)
+    const professionId =
+      body.professionId === null || body.professionId === undefined
+        ? null
+        : Number(body.professionId);
+    const bucket =
+      typeof body.bucket === "string" && body.bucket ? body.bucket : null;
     if (!Number.isInteger(slotId)) return invalid("slotId", "a slot");
     return [
-      requestsEffector.merge({ slotId, note }),
+      requestsEffector.merge({ slotId, note, professionId, bucket }),
       ...sessionEffect(req, "apps.apply"),
     ];
   }
@@ -42,11 +50,15 @@ export class ApplicationsAPI {
   ): Effect[] {
     const user = sessionUserOf(message);
     if (!user) return [unauthorized()];
-    const { slotId, note } = parked(message, state) as {
+    const { slotId, note, professionId, bucket } = parked(message, state) as {
       slotId: number;
       note: string;
+      professionId: number | null;
+      bucket: string | null;
     };
-    return [ApplicationService.apply(slotId, user.id, note, null, null)];
+    return [
+      ApplicationService.apply(slotId, user.id, note, professionId, bucket),
+    ];
   }
 
   "apps.applied.onSuccess"(message: Message): Effect[] {
@@ -75,6 +87,7 @@ export class ApplicationsAPI {
     const slug = req.params.slug ?? "";
     return [
       requestsEffector.set("slug", slug),
+      requestsEffector.merge({ locale: localeOf(req) }),
       ...sessionEffect(req, "apps.byProject"),
     ];
   }
@@ -102,8 +115,51 @@ export class ApplicationsAPI {
     return [ApplicationService.byProject(project.id)];
   }
 
-  "apps.byProject.onSuccess"(message: Message): Effect[] {
-    return [httpEffector.makeResponse(200, rowsOf(message))];
+  "apps.byProject.onSuccess"(message: Message, state: ServerState): Effect[] {
+    const tr = trOf({
+      cookies: {
+        lang: (parked(message, state) as { locale?: string }).locale ?? "en",
+      },
+    });
+    const rows = rowsOf<{
+      id: number;
+      slotId: number;
+      userId: number;
+      userName: string;
+      userSlug: string;
+      message: string;
+      bucket: string | null;
+      status: string;
+      profession: string;
+      appliedProfession: string | null;
+    }>(message);
+    const grade = (bucket: string | null, name: string | null): string => {
+      if (!name) return "";
+      const g = tr.tr(bucket ?? "");
+      return `${g ? `${g.charAt(0).toUpperCase()}${g.slice(1)} ` : ""}${tr.tr(name)}`;
+    };
+    return [
+      httpEffector.makeResponse(
+        200,
+        rows.map((r) => {
+          const asProfession = grade(r.bucket, r.appliedProfession);
+          const slotTitle = `${tr.tr(r.profession)} · ${tr.tr(r.bucket ?? "")}`;
+          return {
+            ...r,
+            slotTitle,
+            asProfession,
+            forTheSlot: tr.trArgs("For the slot: {title}", {
+              title: slotTitle,
+            }),
+            appliedAs: asProfession
+              ? tr.trArgs("Applied as: {profession}", {
+                  profession: asProfession,
+                })
+              : "",
+          };
+        }),
+      ),
+    ];
   }
 
   /** POST /api/applications/:id/accept — the owner's yes. */

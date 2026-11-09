@@ -37,6 +37,7 @@ import type { Frontend } from "@pavlus/backend/ssr";
 import { renderDocument, renderPage } from "@pavlus/backend/ssr";
 import { createTeamUpApp } from "./app.ts";
 import { resetDatabase } from "./db/init/reset.ts";
+import { seedRbac } from "./db/init/seed-rbac.ts";
 import { seedWorld } from "./db/init/seed.ts";
 import { createPool, DEFAULT_REDIS_URL } from "./db/pool.ts";
 import { routes } from "./routes.ts";
@@ -113,16 +114,33 @@ export function startServer(
     // admin dev keeps Vite's default (24678); team-up gets its own so the two
     // dev servers run side by side.
     hmrPort: 24679,
-    document: async ({ template, frontend, path, search, cookies }) =>
-      renderDocument(
-        template,
-        await renderPage((await frontend()) as Frontend, ssrFetch(cookies), {
+    document: async ({ template, frontend, path, search, cookies }) => {
+      const html = await renderPage(
+        (await frontend()) as Frontend,
+        ssrFetch(cookies),
+        {
           at: { path, search },
           inert: ["ws"],
-        }),
-      ),
+        },
+      );
+      // The language of the page: the `lang` cookie (the switch writes it),
+      // English otherwise. The original teamUP stamped the same attribute on
+      // its <html> through a middleware.
+      const lang = cookies.lang === "ru" ? "ru" : "en";
+      return renderDocument(template, html).replace(
+        '<html lang="en"',
+        `<html lang="${lang}"`,
+      );
+    },
   });
   const http = createHttpServerPlugin({ port });
+  // The port of the socket is captured when the server starts listening: the
+  // plugin's own `port` is 0 once the server is closed, and the tests read it
+  // after the shutdown.
+  let boundPort = 0;
+  http.server?.once("listening", () => {
+    boundPort = http.port;
+  });
   const ws = createWsServerPlugin({ http, path: "/ws" });
   const redis: RedisPlugin = createRedisPlugin({
     url: opts.redisUrl ?? process.env.REDIS_URL ?? DEFAULT_REDIS_URL,
@@ -165,7 +183,7 @@ export function startServer(
   return {
     app: serverApp,
     server: node,
-    port: () => http.port,
+    port: () => boundPort || http.port,
     listening: () => http.listening().then(() => {}),
     subscribed: () => redis.ready(),
     drainNotifications: async () => {
@@ -183,7 +201,8 @@ export function startServer(
   };
 }
 
-/** The test reseed: the tables, the directory, the demo world. */
+/** The test reseed: the tables, the directory, the demo world, the access
+ * model of the back office. */
 export async function reseedDatabase(): Promise<void> {
   const pool = createPool();
   try {
@@ -191,6 +210,7 @@ export async function reseedDatabase(): Promise<void> {
     const query = <Row>(sql: string, params?: unknown[]) =>
       pool.query(sql, params).then((r) => r.rows as Row[]);
     await seedWorld(query);
+    await seedRbac(query);
   } finally {
     await pool.end();
   }

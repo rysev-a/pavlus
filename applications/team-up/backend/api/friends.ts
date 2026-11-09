@@ -10,6 +10,8 @@ import {
 } from "@pavlus/backend";
 import type { Effect, Message } from "@pavlus/core";
 import { FriendService } from "../db/services/friend-service.ts";
+import { initialsOf } from "../lib/views.ts";
+import { localeOf, trOf } from "../i18n/mod.ts";
 import { sessionEffect, sessionUserOf, unauthorized } from "./session.ts";
 
 const parked = (
@@ -25,10 +27,20 @@ const slugOr404 = (message: Message): Effect[] | string => {
   return slug;
 };
 
+/** The language the request parked (the db reply carries the rows). */
+const parkedLocale = (message: Message, state: ServerState): string => {
+  const slice = parked(message, state) as { locale?: string };
+  return slice.locale ?? "en";
+};
+
 export class FriendsAPI {
   /** GET /api/friends */
   "friends.list"(message: Message): Effect[] {
-    return sessionEffect(message.payload as HttpReq, "friends.list");
+    const req = message.payload as HttpReq;
+    return [
+      requestsEffector.merge({ locale: localeOf(req) }),
+      ...sessionEffect(req, "friends.list"),
+    ];
   }
 
   "friends.list.sessionUser.onSuccess"(message: Message): Effect[] {
@@ -37,8 +49,49 @@ export class FriendsAPI {
     return [FriendService.list(user.id)];
   }
 
-  "friends.list.onSuccess"(message: Message): Effect[] {
-    return [httpEffector.makeResponse(200, rowsOf(message))];
+  "friends.list.onSuccess"(message: Message, state: ServerState): Effect[] {
+    // the db reply carries the rows: the translator comes from the parked
+    // language of the request
+    const tr = trOf({ cookies: { lang: parkedLocale(message, state) } });
+    const rows = rowsOf<{
+      userId: number;
+      slug: string;
+      name: string;
+      status: string;
+      city: string;
+      role: string;
+    }>(message);
+    const card = (r: (typeof rows)[number]) => ({
+      userId: r.userId,
+      slug: r.slug,
+      name: r.name,
+      city: r.city,
+      role: r.role,
+      initials: initialsOf(r.name),
+    });
+    return [
+      httpEffector.makeResponse(200, {
+        incoming: rows.filter((r) => r.status === "incoming").map(card),
+        friends: rows.filter((r) => r.status === "friends").map(card),
+        outgoing: rows.filter((r) => r.status === "waiting").map(card),
+        strings: {
+          title: tr.tr("Friends"),
+          loading: tr.tr("Loading…"),
+          incoming: tr.tr("Incoming requests"),
+          myFriends: tr.tr("My friends"),
+          outgoing: tr.tr("Sent requests"),
+          emptyIncoming: tr.tr("No new requests."),
+          emptyFriends: tr.tr(
+            "Nobody yet. Find people in the members catalog and send a request.",
+          ),
+          emptyOutgoing: tr.tr("No outgoing requests."),
+          accept: tr.tr("Accept"),
+          decline: tr.tr("Decline"),
+          remove: tr.tr("Remove from friends"),
+          cancel: tr.tr("Cancel the request"),
+        },
+      }),
+    ];
   }
 
   /** POST /api/friends/:slug — ask. */

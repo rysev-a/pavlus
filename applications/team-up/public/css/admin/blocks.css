@@ -1,0 +1,51 @@
+/* Blocks: authentication (login / signup / frame) and dashboard. */
+.auth-page { display: grid; min-height: 100vh; place-items: center; padding: 40px 20px; background: var(--muted); color: var(--foreground); }
+.auth-layout { width: min(100%, 420px); }
+.auth-brand { display: flex; width: fit-content; align-items: center; gap: 10px; margin: 0 auto 24px; font-size: 18px; font-weight: 600; }
+.auth-brand-mark { display: grid; width: 32px; height: 32px; place-items: center; border-radius: var(--radius-md); background: var(--primary); color: var(--primary-foreground); font-size: 16px; font-weight: 700; }
+.auth-card { padding: 32px; gap: 24px; }
+.auth-heading { display: grid; gap: 6px; text-align: center; }
+.auth-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
+.auth-heading h1 { font-size: 24px; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; }
+.auth-description { font-size: 14px; color: var(--muted-foreground); }
+.auth-form { display: grid; gap: 20px; }
+.auth-field { display: grid; gap: 8px; }
+.auth-label { font-size: 14px; font-weight: 500; line-height: 1; }
+.auth-label-row { display: flex; align-items: center; justify-content: space-between; }
+.auth-input {
+  width: 100%; height: 36px; padding: 4px 12px; border: 1px solid var(--input); border-radius: var(--radius-md); background: transparent; color: var(--foreground);
+  font: inherit; font-size: 14px; box-shadow: var(--shadow-xs); outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.auth-input::placeholder { color: var(--muted-foreground); }
+.auth-input:focus-visible { border-color: var(--ring); box-shadow: var(--ring-shadow); }
+.auth-hint { font-size: 13px; color: var(--muted-foreground); }
+.auth-inline-link { font-size: 14px; font-weight: 500; text-underline-offset: 4px; }
+.auth-inline-link:hover { text-decoration: underline; }
+.auth-options { display: flex; align-items: center; justify-content: space-between; }
+.auth-consent { display: flex; align-items: flex-start; gap: 8px; }
+.auth-consent-label { font-size: 14px; }
+.auth-submit { width: 100%; }
+.auth-alternate { text-align: center; font-size: 14px; color: var(--muted-foreground); }
+.auth-note { padding-top: 16px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--muted-foreground); }
+
+/* Dashboard block */
+.ui-dashboard { display: grid; gap: 24px; }
+.ui-dashboard-header { display: grid; gap: 4px; }
+.ui-dashboard-title { font-size: 24px; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; }
+.ui-dashboard-description { font-size: 14px; color: var(--muted-foreground); }
+.ui-dashboard-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.ui-dashboard-stat { padding: 20px; gap: 0; }
+.ui-dashboard-stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ui-dashboard-stat-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: var(--radius-lg); background: var(--secondary); }
+.ui-dashboard-stat-value { font-size: 24px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.ui-dashboard-stat-label { font-size: 14px; color: var(--muted-foreground); }
+.ui-dashboard-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 500; color: var(--success-fg); }
+.ui-dashboard-delta-negative { color: var(--destructive); }
+.ui-dashboard-main { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+.ui-dashboard-activity { display: grid; margin: 0; padding: 0; list-style: none; }
+.ui-dashboard-activity li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.ui-dashboard-activity li:first-child { padding-top: 0; }
+.ui-dashboard-activity li:last-child { padding-bottom: 0; border-bottom: 0; }
+.ui-dashboard-activity-when { font-size: 12px; color: var(--muted-foreground); white-space: nowrap; }
+@media (max-width: 900px) { .ui-dashboard-main { grid-template-columns: 1fr; } }
+.ui-dashboard-empty { margin: 0; padding: 48px 0; text-align: center; font-size: 14px; color: var(--muted-foreground); }

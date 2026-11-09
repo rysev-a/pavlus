@@ -1,0 +1,18 @@
+// The welcome page of the app: the greeting, the card that asks for the
+// profile while it is blank (and the quiet card that says it is ready), and
+// the "what next" card with the two ways on.
+h1.shell__h1(data-testid="welcome") {greeting}
+div.shell__stack
+  if profileReady
+    div.shell__card(data-testid="profile-ready")
+      p.shell__muted {strings.ready}
+  else
+    div.shell__card.shell__card--accent(data-testid="complete-profile")
+      h2.shell__h2 {strings.completeTitle}
+      p.shell__muted {strings.completeText}
+      a.shell__btn(href="/app/profile" data-testid="go-profile") {strings.goProfile}
+  div.shell__card
+    h2.shell__h2 {strings.whatNext}
+    div.shell__actions
+      a.shell__btn.shell__btn--ghost(href="/projects") {strings.findProject}
+      a.shell__btn.shell__btn--ghost(href="/app/profile") {strings.myProfile}

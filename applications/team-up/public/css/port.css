@@ -1,10 +1,10 @@
 /* team-up port: the styles the original does not have. Everything else is
    the original teamUP css, copied as-is. */
 
-/* The nav icons: the original draws them inline with currentColor; the pavlus
-   dom runtime creates elements without an svg namespace, so inline <svg> would
-   not render in the browser. A mask keeps them following currentColor — the
-   active link recolors its icon for free. */
+/* The nav icons: the original draws them inline with currentColor. They stay
+   masks here — a mask follows currentColor for free, so the active link
+   recolors its icon for free. (The dom runtime knows the svg namespace now, so
+   inline <svg> would render too; the mask was kept as-is.) */
 .shell__icon {
   width: 22px;
   height: 22px;
@@ -26,9 +26,40 @@
   -webkit-mask-image: url(/icons/messages.svg);
   mask-image: url(/icons/messages.svg);
 }
+.shell__icon--professions {
+  -webkit-mask-image: url(/icons/professions.svg);
+  mask-image: url(/icons/professions.svg);
+}
 .shell__icon--settings {
   -webkit-mask-image: url(/icons/settings.svg);
   mask-image: url(/icons/settings.svg);
+}
+
+/* The back office's icons: the ui_kit draws them inline (Lucide); here they
+   are masks — the shape of the icon comes from the file, the colour from the
+   text around it. */
+.ui-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / contain;
+  mask: no-repeat center / contain;
+  -webkit-mask-image: var(--icon);
+  mask-image: var(--icon);
+}
+.ui-sidebar-icon .ui-icon {
+  width: 18px;
+  height: 18px;
+}
+.ui-button .ui-icon {
+  width: 16px;
+  height: 16px;
+}
+.ui-brand-mark .ui-icon {
+  width: 18px;
+  height: 18px;
 }
 
 /* The login page renders through the same shell root; without a session there

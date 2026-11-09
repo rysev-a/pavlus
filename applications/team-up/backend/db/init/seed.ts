@@ -7,6 +7,9 @@
  */
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import type { Query } from "./query.ts";
+import { seedBlog } from "./seed-blog.ts";
+import { seedMembers } from "./seed-members.ts";
+import { seedProjects } from "./seed-projects.ts";
 
 const N = 16384,
   R = 8,
@@ -225,6 +228,12 @@ export async function seedWorld(query: Query): Promise<void> {
     [backendSlot, bob],
   );
 
+  // The contacts of a member: only the friends and the member see them.
+  await query(`update profiles set contacts = $2 where user_id = $1`, [
+    ann,
+    "@anna · telegram: @anna_dev",
+  ]);
+
   // Friendships: ann+bob are friends; clara asked ann.
   await query(
     `insert into friendships values ($1,$2,'friends'), ($2,$1,'friends')`,
@@ -234,6 +243,14 @@ export async function seedWorld(query: Query): Promise<void> {
   await query(
     `insert into friendships values ($1,$2,'waiting'), ($2,$1,'incoming')`,
     [clara, ann],
+  );
+
+  // Anna invited Clara to the console seat: the invitation waits for her
+  // answer (the activity tab of the cabinet shows it).
+  const consoleSlot = slots.find((s) => s.profession_id === 2)!.id;
+  await query(
+    `update slots set user_id = $2, status = 'invited', invited_by = $3 where id = $1`,
+    [consoleSlot, clara, ann],
   );
 
   // Chats: a dm (ann+bob) and Orbit's project thread (ann+bob+dmitry).
@@ -264,4 +281,17 @@ export async function seedWorld(query: Query): Promise<void> {
     `insert into messages (thread_id, user_id, body) values ($1,$2,'Dmitry joined — the design seat is his'), ($1,$3,'Welcome!')`,
     [pt, ann, dmitry],
   );
+
+  // The tasks of the system (the back office's queue).
+  await query(
+    `insert into system_tasks (kind, payload, status, run_at, attempts, finished_at) values
+       ('cleanup.notifications', '{}'::jsonb, 'queued', now(), 0, null),
+       ('cleanup.sessions', '{}'::jsonb, 'done', now(), 1, now())`,
+  );
+
+  // The public site (the original teamUP): the blog, the members directory
+  // and the project catalog.
+  await seedBlog(query);
+  await seedMembers(query);
+  await seedProjects(query);
 }

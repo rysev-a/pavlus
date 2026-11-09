@@ -1,0 +1,11 @@
+// The 404: the page the visitor gets when the address is unknown. The
+// original answered with its own page (and a 404 status); the port's server
+// answers 200 and the page shows the same text.
+main.page
+  section.about
+    div.container
+      h1 {title}
+      p.about__text
+        | {text}
+        for link in links key link.href
+          a(href={link.href}) {link.text}

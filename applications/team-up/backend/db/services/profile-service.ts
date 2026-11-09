@@ -32,9 +32,9 @@ export interface ProfileRow {
 /** One profile by slug, professions and skills aggregated; empty when none. */
 export class ProfileService {
   /** `ownerId` may be null (a stranger reads a public page). */
-  static bySlug(slug: string) {
+  static bySlug(slug: string, ns = "profile.bySlug") {
     return db.select({
-      id: "profile.bySlug",
+      id: ns,
       errorId: "profile.failed",
       query: sql`
         SELECT p.user_id AS "userId", p.slug, u.name, p.city, p.bio, p.status,
@@ -121,9 +121,9 @@ export class ProfileService {
   }
 
   /** My raw skills — the match input. */
-  static mySkills(userId: number) {
+  static mySkills(userId: number, ns = "profile.mySkills") {
     return db.select({
-      id: "profile.mySkills",
+      id: ns,
       errorId: "profile.failed",
       query: sql`SELECT skill_id AS "skillId", level FROM profiles_skills
                  WHERE user_id = ${userId}`,
@@ -131,12 +131,24 @@ export class ProfileService {
   }
 
   /** My raw professions — the match input. */
-  static myProfessions(userId: number) {
+  static myProfessions(userId: number, ns = "profile.myProfessions") {
     return db.select({
-      id: "profile.myProfessions",
+      id: ns,
       errorId: "profile.failed",
       query: sql`SELECT profession_id AS "professionId", bucket
                  FROM profiles_professions WHERE user_id = ${userId}`,
+    });
+  }
+
+  /** My professions with their names (the apply dialog's list). */
+  static myProfessionsWithNames(userId: number, ns = "hub.applyOptions") {
+    return db.select({
+      id: ns,
+      errorId: "profile.failed",
+      query: sql`SELECT pr.id AS "professionId", pr.slug, pr.name, pp.bucket
+                 FROM profiles_professions pp
+                 JOIN professions pr ON pr.id = pp.profession_id
+                 WHERE pp.user_id = ${userId} ORDER BY pr.name`,
     });
   }
 }

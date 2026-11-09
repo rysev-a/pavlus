@@ -179,6 +179,11 @@ export class AuthAPI {
     ];
   }
 
+  /** The db failed: the request answers 500 instead of waiting. */
+  "auth.failed"(): Effect[] {
+    return [httpEffector.makeResponse(500, { error: "database error" })];
+  }
+
   "auth.loggedOut.onSuccess"(message: Message, state: ServerState): Effect[] {
     return [
       httpEffector.respond({

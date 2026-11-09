@@ -1,0 +1,72 @@
+// The members directory (/users): the title and the sort row, the four
+// filter rows (level, labels, city, status) as rows of chips, the grid of the
+// member cards and the pager. The chips are plain links with a
+// server-computed address — a click on a selected chip removes its value
+// (the original's `toggle_href`).
+main.page
+  section.users-list
+    div.container
+      div.users-list__top
+        h1 {strings.title}
+        div.users-list__sort
+          span.users-list__sort-label {strings.sort}
+          for sort in sorts key sort.value
+            a.users-list__sort-btn(class:users-list__sort-btn--active={sort.checked} href={sort.href} data-filter-id="sort={sort.value}")
+              span {sort.label}
+      div.users-list__filters
+        div.users-list__filter-row
+          span.users-list__filter-label {strings.level}
+          div.users-list__filter-chips
+            for level in levels key level.value
+              a.users-list__chip(class:users-list__chip--active={level.checked} href={level.href} data-filter-id="level={level.value}")
+                span {level.label}
+        div.users-list__filter-row
+          span.users-list__filter-label {strings.labels}
+          div.users-list__filter-chips
+            for label in labels key label.value
+              a.users-list__chip(class:users-list__chip--active={label.checked} href={label.href} data-filter-id="labels={label.value}")
+                span {label.label}
+        div.users-list__filter-row
+          span.users-list__filter-label {strings.city}
+          div.users-list__filter-chips
+            for city in cities key city.value
+              a.users-list__chip(class:users-list__chip--active={city.checked} href={city.href} data-filter-id="cities={city.value}")
+                span {city.label}
+        div.users-list__filter-row
+          span.users-list__filter-label {strings.status}
+          div.users-list__filter-chips
+            for status in statuses key status.value
+              a.users-list__chip(class:users-list__chip--active={status.checked} href={status.href} data-filter-id="status={status.value}")
+                span {status.label}
+        div.users-list__reset-row(class:users-list__reset-row--hidden={!filtersActive})
+          a.users-list__reset(href="/users" data-users-reset) {strings.reset}
+      div.users-list__grid(id="users-grid")
+        for user in users key user.slug
+          a.user-card(href="/users/{user.slug}")
+            div.user-card__head
+              div(class={user.avatarClass}) {user.initials}
+              div.user-card__head-info
+                h3.user-card__name {user.name}
+                span.user-card__status(class={"user-card__status--" + user.roleClass}) {user.role}
+            p.user-card__city {user.city}
+            if user.professions.length
+              div.user-card__skills(data-testid="user-card-professions")
+                for profession in user.professions key profession
+                  span.user-card__skill {profession}
+            if user.tags.length
+              div.user-card__tags
+                for tag in user.tags key tag
+                  span.user-card__tag {tag}
+        if users.length == 0
+          div.users-list__empty
+            p {strings.empty}
+            a.users-list__reset.users-list__reset--empty(href="/users" data-users-reset) {strings.reset}
+        if pager.length
+          nav.users-list__pager(aria-label="Pages" data-testid="pager")
+            for link in pager key link.label
+              if link.gap
+                span.users-list__pager-gap {link.label}
+              else if link.current
+                span.users-list__pager-item.is-on(aria-current="page" data-testid="page-current") {link.label}
+              else
+                a.users-list__pager-item(href={link.href} data-testid="page-link") {link.label}

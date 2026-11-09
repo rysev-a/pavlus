@@ -1,0 +1,191 @@
+// The cabinet (`/app/projects`): the bar with the title and the two buttons,
+// the three tabs (the original's) and the panel of the tab.
+//
+// The classes are the original's: st__bar, st__bar-actions, st__tabs, st__tab,
+// st__tab-badge, st__grid, st__card, st__activity, st__slots, st__slot.
+import ApplyDialog from "../apply-dialog/apply-dialog.pavlus"
+div.st
+  div.st__bar
+    h1.shell__h1.st__h1 {strings.title}
+    div.st__bar-actions
+      a.shell__btn.shell__btn--ghost(href="/projects" data-testid="open-catalog") {strings.catalog}
+      a.shell__btn(href="/app/projects/new" data-testid="create-startup") {strings.create}
+  div.st__tabs(role="tablist")
+    a.st__tab(href="/app/projects" role="tab" data-testid="tab-mine" class:is-on={tab == "mine"}) {strings.tabMine}
+    a.st__tab(href="/app/projects/activity" role="tab" data-testid="tab-activity" class:is-on={tab == "activity"})
+      | {strings.tabActivity}
+      if invites.length > 0
+        span.st__tab-badge(data-testid="invites-badge") {invites.length}
+    a.st__tab(href="/app/projects/match" role="tab" data-testid="tab-match" class:is-on={tab == "match"}) {strings.tabMatch}
+  if error
+    div.shell__card
+      p.pf__notice.is-err(data-testid="hub-error") {error}
+  if tab == "mine"
+    if mine.length == 0
+      div.shell__card(data-testid="startups-empty")
+        p.shell__muted {strings.emptyMine}
+    else
+      ul.st__grid
+        for card in mine key card.slug
+          li.shell__card.st__card(data-testid={"startup-card-" + card.slug})
+            div.st__card-top
+              a.st__name(href={"/app/projects/" + card.slug}) {card.name}
+              if card.openSlots > 0
+                span.st__chip.st__chip--looking(data-testid={"looking-" + card.slug}) {card.lookingLabel}
+              if card.kind != "startup"
+                span.st__chip.st__chip--kind(data-testid={"kind-" + card.slug}) {card.kindLabel}
+              if card.status != "active"
+                span.st__chip {card.statusLabel}
+            if card.tagline
+              p.st__tagline {card.tagline}
+            if card.city
+              p.st__owner(data-testid={"city-" + card.slug}) {card.city}
+            if card.deadlineLabel
+              p.st__owner(data-testid={"deadline-" + card.slug}) {card.deadlineLabel}
+            p.st__owner
+              | {card.founderLabel}
+              a.auth__link(href={"/app/people/" + card.ownerSlug}) {card.ownerName}
+              if card.ownerRole
+                span(data-testid={"owner-role-" + card.slug}) {card.ownerRole}
+            if card.tags.length > 0
+              div.pe__tags
+                for tag in card.tags key tag
+                  span.pe__tag {tag}
+  if tab == "activity"
+    div.st__activity(data-testid="activity")
+      section.shell__card
+        h2.shell__h2 {strings.invitations}
+        if invites.length == 0
+          p.shell__muted(data-testid="no-invites") {strings.noInvites}
+        else
+          ul.st__slots
+            for invite in invites key invite.slotId
+              li.st__slot(data-testid="invite")
+                div.st__slot-main
+                  p.st__slot-title
+                    a.auth__link(href={"/app/projects/" + invite.projectSlug}) {invite.projectName}
+                    | {invite.slotLabel}
+                  if invite.invitedByName
+                    p.st__owner
+                      | {invite.invitedByLabel}
+                      a.auth__link(href={"/app/people/" + invite.invitedBySlug}) {invite.invitedByName}
+                div.st__slot-side
+                  div.st__slot-actions
+                    button.shell__btn(type="button" data-testid="activity-accept-invite" disabled=busy @click=answer(invite.slotId, true)) {strings.accept}
+                    button.shell__btn.shell__btn--ghost(type="button" data-testid="activity-decline-invite" disabled=busy @click=answer(invite.slotId, false)) {strings.decline}
+      section.shell__card
+        h2.shell__h2 {strings.myApplications}
+        if applications.length == 0
+          p.shell__muted(data-testid="no-applications") {strings.noApplications}
+        else
+          ul.st__slots
+            for app in applications key app.id
+              li.st__slot(data-testid="my-application" data-status={app.status})
+                div.st__slot-main
+                  p.st__slot-title
+                    a.auth__link(href={"/app/projects/" + app.projectSlug}) {app.projectName}
+                    | {app.slotLabel}
+                  if app.asProfession
+                    p.st__owner(data-testid="application-profession") {app.appliedAsLabel}
+                  if app.message
+                    p.st__slot-desc(data-testid="application-message") {app.message}
+                  if app.status == "accepted"
+                    p.shell__muted(data-testid="application-final") {strings.acceptedFinal}
+                div.st__slot-side
+                  span(class={app.status == "accepted" ? "st__chip st__chip--looking" : "st__chip"}) {app.statusLabel}
+                  if app.canEdit
+                    button.pf__link-btn(type="button" data-testid="activity-edit" @click=edit(app)) {strings.edit}
+                  if app.canDelete
+                    button.pf__link-btn.pf__link-btn--danger(type="button" data-testid="activity-delete" @click=askDelete(app)) {strings.delete}
+  if tab == "match"
+    div.st__feed
+      div.st__filters
+        input.pf__input.st__filter-q(type="text" placeholder={feed.strings.query} data-testid="match-q" value={feed.filters.q} @input=setQuery)
+        select.pf__input(aria-label={feed.strings.profession} data-testid="match-role" @change=setRole)
+          option(value="" selected={feed.filters.role == ""}) {feed.strings.allProfessions}
+          for p in feed.options.professions key p.slug
+            option(value=p.slug selected={feed.filters.role == p.slug}) {p.name}
+        select.pf__input(aria-label={feed.strings.grade} data-testid="match-grade" @change=setGrade)
+          option(value="" selected={feed.filters.grade == ""}) {feed.strings.anyGrade}
+          for b in feed.options.buckets key b.value
+            option(value=b.value selected={feed.filters.grade == b.value}) {b.label}
+        button.shell__btn(type="button" data-testid="match-search" @click=search) {feed.strings.search}
+      if feed.status == "loading"
+        div.shell__card
+          p.shell__muted {feed.strings.loading}
+      if feed.status == "failed"
+        div.shell__card
+          p.pf__notice.is-err {strings.error}
+      if feed.status == "idle"
+        if !feed.canMatch
+          div.shell__card
+            p.shell__muted(data-testid="match-no-profession") {feed.strings.noProfession}
+        else
+          if feed.items.length == 0
+            div.shell__card(data-testid="match-empty")
+              p.shell__muted {feed.strings.empty}
+          div.st__feed-list
+            for item in feed.items key item.slug
+              div.shell__card.st__card(data-testid="match-card")
+                div.st__card-top
+                  a.st__name(href={"/projects/" + item.slug}) {item.name}
+                  if item.kind != "startup"
+                    span.st__chip.st__chip--kind(data-testid={"match-kind-" + item.slug}) {item.kindLabel}
+                  if item.bestPercent != null
+                    span.st__match(class:is-good={item.bestPercent >= 80} class:is-mid={item.bestPercent >= 50 && item.bestPercent < 80} class:is-low={item.bestPercent < 50} data-testid={"match-percent-" + item.slug})
+                      | {item.bestPercent}%
+                if item.city
+                  p.st__owner(data-testid={"match-city-" + item.slug}) {item.city}
+                if item.budgetLabel || item.deadlineLabel
+                  p.st__owner(data-testid={"match-work-" + item.slug})
+                    if item.budgetLabel
+                      span {item.budgetLabel}
+                    if item.budgetLabel && item.deadlineLabel
+                      |  
+                    if item.deadlineLabel
+                      span {item.deadlineLabel}
+                if item.tagline
+                  p.st__tagline {item.tagline}
+                if item.tags.length > 0
+                  div.pe__tags
+                    for tag in item.tags key tag
+                      span.pe__tag {tag}
+                if item.ownerLabel
+                  p.st__owner(data-testid={"match-owner-" + item.slug}) {item.ownerLabel}
+                if item.slots.length > 0
+                  ul.st__slots.st__feed-slots
+                    for slot in item.slots key slot.id
+                      li.st__slot(data-testid={"match-slot-" + slot.id})
+                        div.st__slot-main
+                          p.st__slot-title {slot.title}
+                          if slot.payLabel
+                            p.st__slot-pay(data-testid={"match-pay-" + slot.id}) {slot.payLabel}
+                          if slot.description
+                            p.st__slot-desc {slot.description}
+                          if slot.skills.length > 0
+                            div.pe__tags
+                              for skill in slot.skills key skill.skillId
+                                span.pe__tag {skill.name} {skill.level}+
+                          if slot.match
+                            p.st__matchline
+                              if slot.match.percent != null
+                                span.st__match(class:is-good={slot.match.percent >= 80} class:is-mid={slot.match.percent >= 50 && slot.match.percent < 80} class:is-low={slot.match.percent < 50})
+                                  | {slot.match.percent}%
+                              span.st__why(data-testid={"match-why-" + slot.id}) {slot.why.join(" · ")}
+                div.st__join
+                  if item.allApplied
+                    span.st__chip.st__chip--looking(data-testid={"joined-" + item.slug}) {feed.strings.applied}
+                    a.auth__link(href="/app/projects/activity") {feed.strings.viewApplication}
+                  else
+                    button.shell__btn(type="button" data-testid={"join-" + item.slug} @click=join(item)) {feed.strings.apply}
+          if feed.more
+            p.shell__muted(data-testid="match-more") {feed.more}
+  if confirm.open
+    div.pf__modal-backdrop(data-testid="confirm-modal" @click=closeConfirm)
+      div.pf__modal(role="alertdialog" aria-modal="true" aria-labelledby="confirm-modal-title" @click.stop=noop)
+        h3.pf__modal-title#confirm-modal-title {confirm.title}
+        p.pf__modal-text#confirm-modal-text {confirm.text}
+        div.pf__modal-actions
+          button.shell__btn.shell__btn--ghost(type="button" data-testid="confirm-cancel" @click=closeConfirm) {strings.cancel}
+          button.pf__delete(type="button" data-testid="confirm-ok" @click=confirmDelete) {confirm.confirmLabel}
+  +ApplyDialog#apply

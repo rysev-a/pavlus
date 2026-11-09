@@ -68,11 +68,12 @@ describe("the match", () => {
       projectName: string;
       match: { percent: number; gradeOk: boolean; details: string[] } | null;
     }[];
-    expect(feed[0]).toMatchObject({
-      projectName: "Orbit Labs",
-      slotId: 1,
-    });
-    expect(feed[0].match).toMatchObject({
+    // The public catalog shares the projects table with the app, so the feed
+    // carries the seeded public projects too — the orbit slot is looked up,
+    // not assumed to be the first one.
+    const orbit = feed.find((f) => f.projectName === "Orbit Labs");
+    expect(orbit).toMatchObject({ slotId: 1 });
+    expect(orbit?.match).toMatchObject({
       percent: 50,
       gradeOk: false,
       details: ["0/7", "6/6"],
@@ -149,18 +150,22 @@ describe("friends", () => {
     expect(yes.status).toBe(200);
     expect(await yes.json()).toMatchObject({ status: "friends" });
 
+    // the original's answer: the three lists (the friends, the incoming
+    // requests, the requests I sent)
     const list = await api.as(ann)("/api/friends");
-    const rows = (await list.json()) as { slug: string }[];
-    expect(rows.some((f) => f.slug === "elena")).toBe(true);
+    const rows = (await list.json()) as {
+      friends: { slug: string }[];
+      incoming: { slug: string }[];
+      outgoing: { slug: string }[];
+    };
+    expect(rows.friends.some((f) => f.slug === "elena")).toBe(true);
 
     const bye = await api.as(ann)("/api/friends/elena", { method: "DELETE" });
     expect(bye.status).toBe(200);
-    const after = await api.as(ann)("/api/friends");
-    expect(
-      ((await after.json()) as { slug: string }[]).some(
-        (f) => f.slug === "elena",
-      ),
-    ).toBe(false);
+    const after = (await (await api.as(ann)("/api/friends")).json()) as {
+      friends: { slug: string }[];
+    };
+    expect(after.friends.some((f) => f.slug === "elena")).toBe(false);
   });
 });
 

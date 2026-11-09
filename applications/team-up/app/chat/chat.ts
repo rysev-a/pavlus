@@ -25,6 +25,9 @@ export class ChatPage extends Component<ChatSlice> {
   /** The signed-in user's id (a routing prop): which messages are mine. */
   declare meId: number;
 
+  /** The thread of the address (`/app/messages/:id`), opened when it lands. */
+  private wanted = 0;
+
   paint(msg: Message): Effect[] {
     const { prev, next } = msg.payload as {
       prev: ChatSlice;
@@ -33,7 +36,13 @@ export class ChatPage extends Component<ChatSlice> {
     return [DomPlugin.update(view.diff(prev, next))];
   }
 
-  enter(): Effect[] {
+  enter(msg: Message): Effect[] {
+    // the deep link of the original (`/app/messages/:id`): the thread of the
+    // address opens as soon as the inbox is here
+    this.wanted =
+      Number(
+        (msg.payload as { params?: Record<string, string> }).params?.id ?? 0,
+      ) || 0;
     // the ws url from the page's own origin ("" under the server render —
     // the connect effect is inert there; the browser connects on hydration)
     const origin =
@@ -63,7 +72,27 @@ export class ChatPage extends Component<ChatSlice> {
 
   "threads.loaded"(msg: Message): Effect[] {
     const threads = (msg.payload as { data: Thread[] }).data;
-    return [store.set("threads", threads, { onSuccess: "paint" })];
+    const effects: Effect[] = [
+      store.set("threads", threads, { onSuccess: "paint" }),
+    ];
+    // the deep link: the thread of the address opens with the inbox
+    const wanted = this.wanted;
+    if (wanted) {
+      this.wanted = 0;
+      const title = threads.find((t) => t.id === wanted)?.title ?? "";
+      effects.push(
+        store.set("open", wanted, { onSuccess: "paint" }),
+        store.set("openTitle", title, { onSuccess: "paint" }),
+        store.set("messages", [], { onSuccess: "paint" }),
+        http.request({
+          id: `thread-${wanted}`,
+          url: `/api/chat/threads/${wanted}`,
+          onSuccess: "thread.loaded",
+          onError: "threads.failed",
+        }),
+      );
+    }
+    return effects;
   }
 
   "threads.failed"(): Effect[] {
@@ -98,7 +127,7 @@ export class ChatPage extends Component<ChatSlice> {
 
   /** The inbox' click: open the thread (its history over http), join live. */
   openThread(msg: Message, s: ChatSlice): Effect[] {
-    const id = Number((msg.payload as { id?: number }).id);
+    const id = Number(msg.payload);
     const title = s.threads.find((t) => t.id === id)?.title ?? "";
     const effects: Effect[] = [
       store.set("open", id, { onSuccess: "paint" }),

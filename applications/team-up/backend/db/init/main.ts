@@ -5,6 +5,7 @@
  */
 import { createPool } from "../pool.ts";
 import { resetDatabase } from "./reset.ts";
+import { seedRbac } from "./seed-rbac.ts";
 import { seedWorld } from "./seed.ts";
 
 const pool = createPool();
@@ -13,6 +14,8 @@ try {
   const query = <Row>(sql: string, params?: unknown[]) =>
     pool.query(sql, params).then((r) => r.rows as Row[]);
   await seedWorld(query);
+  // the access model of the back office (the roles and the permissions)
+  await seedRbac(query);
   const { rows } = await pool.query<{
     users: number;
     projects: number;

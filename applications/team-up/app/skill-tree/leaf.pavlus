@@ -1,0 +1,13 @@
+// One rated skill (the original's `LevelRow`): the name, the ten segments of
+// the meter (red → yellow → green), the rating and the "×" that clears it.
+//
+// Clicking a segment sets the level; the pointer previews it (every segment
+// up to the pointer lights up). The classes are the original's (pf__skill,
+// pf__meter, pf__seg, pf__skill-level).
+div.pf__skill(data-testid={"skill-" + skill.slug})
+  span.pf__skill-name {skill.name}
+  div.pf__meter(role="group" aria-label={skill.aria})
+    for seg in segments key seg.n
+      button.pf__seg(type="button" aria-label={seg.label} data-testid={"seg-" + skill.slug + "-" + seg.n} class={(hover.skillId == skill.id && hover.level > 0 ? hover.level : (skill.level == null ? 0 : skill.level)) >= seg.n ? "pf__seg is-on is-" + seg.zone : "pf__seg"} @mouseenter=preview(skill.id, seg.n) @mouseleave=preview(0) @click=rate(skill.id, seg.n))
+  span.pf__skill-level(data-testid={"level-" + skill.slug} class={skill.level == null ? "pf__skill-level" : "pf__skill-level is-" + skill.zone}) {skill.levelLabel}
+  button.pf__link-btn(type="button" aria-label={strings.clearRating} data-testid={"clear-" + skill.slug} @click=clear(skill.id)) ×

@@ -50,6 +50,22 @@ export class ChatService {
     });
   }
 
+  /** How many unread messages the member has (the nav's badge). */
+  static unread(userId: number) {
+    return db.select({
+      id: "chat.unread",
+      errorId: "chat.failed",
+      query: sql`SELECT coalesce(sum(unread), 0)::int AS count FROM (
+                  SELECT (SELECT count(*) FROM messages m
+                           WHERE m.thread_id = t.id
+                             AND m.id > coalesce(tp.last_read_message_id, 0)
+                             AND m.user_id <> ${userId}) AS unread
+                  FROM thread_participants tp
+                  JOIN threads t ON t.id = tp.thread_id
+                  WHERE tp.user_id = ${userId}) s`,
+    });
+  }
+
   /** One thread with its messages — the poller's view (the ws client gets
    * pushes; a reload or a catch-up still works without it). */
   static thread(threadId: number, userId: number) {

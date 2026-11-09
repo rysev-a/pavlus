@@ -1,0 +1,93 @@
+/* Button: shadcn variants (default = primary, secondary, outline, ghost, destructive = danger,
+   link) plus status colours (warning, info, success) and sizes (xs, sm, md = default, lg, icon*).
+   Works on <button> and <a>. Status fills come from the --success / --warning / --info tokens. */
+.ui-button {
+  display: inline-flex; flex: none; align-items: center; justify-content: center; gap: 8px;
+  height: 36px; padding: 8px 16px;
+  border: 1px solid transparent; border-radius: var(--radius-md);
+  background: transparent; color: inherit;
+  font: inherit; font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap;
+  text-decoration: none; cursor: pointer; user-select: none; outline: none;
+  transition: background-color .15s, color .15s, border-color .15s, box-shadow .15s;
+}
+.ui-button svg { flex: none; pointer-events: none; }
+.ui-button:has(> svg:only-child), .ui-button:has(> svg:first-child:not(:only-child)) { padding-inline: 12px; }
+.ui-button:focus-visible { border-color: var(--ring); box-shadow: var(--ring-shadow); }
+.ui-button:disabled, .ui-button[aria-disabled="true"] { pointer-events: none; opacity: .5; }
+
+.ui-button-default { background: var(--primary); color: var(--primary-foreground); }
+.ui-button-default:hover { background: color-mix(in srgb, var(--primary) 90%, transparent); }
+
+.ui-button-secondary { background: var(--secondary); color: var(--secondary-foreground); }
+.ui-button-secondary:hover { background: color-mix(in srgb, var(--secondary) 80%, transparent); }
+
+.ui-button-outline { border-color: var(--border); background: var(--background); color: var(--foreground); box-shadow: var(--shadow-xs); }
+.ui-button-outline:hover { background: var(--accent); color: var(--accent-foreground); }
+
+.ui-button-ghost { color: var(--foreground); }
+.ui-button-ghost:hover { background: var(--accent); color: var(--accent-foreground); }
+
+.ui-button-destructive { background: var(--destructive); color: var(--destructive-foreground); }
+.ui-button-destructive:hover { background: color-mix(in srgb, var(--destructive) 90%, transparent); }
+.ui-button-destructive:focus-visible { border-color: var(--destructive); box-shadow: 0 0 0 3px color-mix(in srgb, var(--destructive) 20%, transparent); }
+
+.ui-button-success { background: var(--success); color: var(--success-foreground); }
+.ui-button-success:hover { background: color-mix(in srgb, var(--success) 90%, transparent); }
+.ui-button-success:focus-visible { border-color: var(--success); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 30%, transparent); }
+
+.ui-button-warning { background: var(--warning); color: var(--warning-foreground); }
+.ui-button-warning:hover { background: color-mix(in srgb, var(--warning) 90%, transparent); }
+.ui-button-warning:focus-visible { border-color: var(--warning); box-shadow: 0 0 0 3px color-mix(in srgb, var(--warning) 30%, transparent); }
+
+.ui-button-info { background: var(--info); color: var(--info-foreground); }
+.ui-button-info:hover { background: color-mix(in srgb, var(--info) 90%, transparent); }
+.ui-button-info:focus-visible { border-color: var(--info); box-shadow: 0 0 0 3px color-mix(in srgb, var(--info) 30%, transparent); }
+
+.ui-button-link { height: auto; padding: 0; color: var(--primary); text-underline-offset: 4px; }
+.ui-button-link:hover { text-decoration: underline; }
+
+/* Loading: spinner before the label, dimmed, not clickable (the component also sets disabled
+   and aria-busy). Lighter than the .5 of plain disabled so the state reads as busy (the :disabled selector
+   outranks .ui-button:disabled). */
+.ui-button-loading, .ui-button.ui-button-loading:disabled { pointer-events: none; opacity: .7; cursor: progress; }
+.ui-button-spinner { flex: none; transform-origin: center; animation: ui-spin .8s linear infinite; will-change: transform; }
+
+.ui-button-xs { height: 24px; gap: 4px; padding: 0 8px; font-size: 12px; line-height: 16px; }
+.ui-button-sm { height: 32px; gap: 6px; padding: 0 12px; }
+.ui-button-md, .ui-button-default-size { height: 36px; }
+.ui-button-lg { height: 40px; padding: 0 24px; }
+.ui-button-icon { width: 36px; padding: 0; }
+.ui-button-icon-xs { width: 24px; height: 24px; padding: 0; }
+.ui-button-icon-sm { width: 32px; height: 32px; padding: 0; }
+.ui-button-icon-lg { width: 40px; height: 40px; padding: 0; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .ui-button-outline { border-color: var(--input); background: color-mix(in srgb, var(--input) 30%, transparent); }
+  :root:not(.light) .ui-button-outline:hover { background: color-mix(in srgb, var(--input) 50%, transparent); }
+  :root:not(.light) .ui-button-ghost:hover { background: color-mix(in srgb, var(--accent) 50%, transparent); }
+  :root:not(.light) .ui-button-destructive { background: color-mix(in srgb, var(--destructive) 60%, transparent); }
+}
+.dark .ui-button-outline { border-color: var(--input); background: color-mix(in srgb, var(--input) 30%, transparent); }
+.dark .ui-button-outline:hover { background: color-mix(in srgb, var(--input) 50%, transparent); }
+.dark .ui-button-ghost:hover { background: color-mix(in srgb, var(--accent) 50%, transparent); }
+.dark .ui-button-destructive { background: color-mix(in srgb, var(--destructive) 60%, transparent); }
+
+/* Button group: buttons share borders and only the outer corners stay round. */
+.ui-button-group { display: flex; align-items: stretch; width: fit-content; }
+.ui-button-group-vertical { flex-direction: column; }
+.ui-button-group > * { flex: none; }
+.ui-button-group-horizontal > :not(:first-child) { border-left-width: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.ui-button-group-horizontal > :not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.ui-button-group-vertical > :not(:first-child) { border-top-width: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+.ui-button-group-vertical > :not(:last-child) { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+/* The focus ring and hover state of a button must not be hidden by its neighbours. */
+.ui-button-group > :hover, .ui-button-group > :focus-visible { position: relative; z-index: 10; }
+.ui-button-group .ui-button-group { gap: 0; }
+.ui-button-group-separator { position: relative; align-self: stretch; flex: none; width: 1px; margin: 0; background: var(--input); }
+.ui-button-group-vertical > .ui-button-group-separator { width: auto; height: 1px; }
+.ui-button-group-text {
+  display: flex; align-items: center; gap: 8px; padding: 0 16px;
+  border: 1px solid var(--input); border-radius: var(--radius-md); background: var(--muted);
+  font-size: 14px; font-weight: 500; box-shadow: var(--shadow-xs);
+}
+.ui-button-group-text svg { flex: none; pointer-events: none; }

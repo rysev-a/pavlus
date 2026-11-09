@@ -1,45 +1,272 @@
-// The project, in the original teamUP look: the header card (chips, tagline,
-// founder), then the slots as st__slot rows — a filled one says who sits in
-// it, an open one the requirements and the apply button.
-div
-  a.auth__link(href="/") ← the feed
-  if data
-    h1.shell__h1 {data.name}
-    div.shell__card.st__card
-      div.st__card-top
-        if data.kind != "startup"
-          span.st__chip.st__chip--kind {data.kind}
-      if data.tagline
-        p.st__tagline {data.tagline}
-      p.st__owner by {data.owner}
-      if data.description
-        p.st__slot-desc {data.description}
-    ul.st__slots
-      for slot in data.slots key slot.id
-        li.st__slot(data-status={slot.userId ? "joined" : null})
-          div.st__slot-main
-            p.st__slot-title {slot.profession} · {slot.bucket}
-            if slot.pay
-              p.st__slot-pay {slot.pay}
-            if slot.description
-              p.st__slot-desc {slot.description}
-            if slot.skills.length
-              div.pe__tags
-                for skill in slot.skills key skill.name
-                  span.pe__tag {skill.name} {skill.level}+
-          div.st__slot-side
-            if slot.userId
-              span.st__chip {slot.userName}
-            else
-              if applied
-                span.st__chip.st__chip--looking Application sent
+// The project page (`/app/projects/:slug`): the head (the title, the chips,
+// the founder, the tags, the description), the owner's inbox (the
+// applications), the team and the openings with their slots — and the owner's
+// controls: the edit of the project, the openings, the invitations, the
+// candidates and the team.
+//
+// The classes are the original's: st__head, st__head-top, st__title,
+// st__chip, st__tagline, st__owner, st__description, st__formcard, st__slots,
+// st__slot, st__slot-main, st__slot-side, st__slot-title, st__slot-actions,
+// st__slots-head, st__team, st__member, st__apply, st__cand, st__invite-*.
+import ApplyDialog from "../apply-dialog/apply-dialog.pavlus"
+import SkillTree from "../skill-tree/skill-tree.pavlus"
+import ReportDialog from "../report/report.pavlus"
+if project
+  div.st
+    section.shell__card.st__head(data-testid="startup-page")
+      div.st__head-top
+        h1.st__title(data-testid="startup-title") {project.name}
+        if project.openCount > 0
+          span.st__chip.st__chip--looking(data-testid="startup-looking") {project.lookingLabel}
+        if project.kind != "startup"
+          span.st__chip.st__chip--kind(data-testid="startup-kind") {project.kindLabel}
+        if project.workMode
+          span.st__chip(data-testid="startup-mode") {project.workModeLabel}
+        span.st__chip(data-testid="startup-status-chip") {project.statusLabel}
+      if project.tagline
+        p.st__tagline {project.tagline}
+      p.st__owner
+        | {project.founderLabel}
+        a.auth__link(href={"/app/people/" + project.ownerSlug}) {project.owner}
+        if project.ownerRole
+          span(data-testid="startup-owner-role") {project.ownerRole}
+      if project.budgetLabel || project.deadlineLabel
+        p.st__owner(data-testid="work-info")
+          if project.budgetLabel
+            span(data-testid="work-budget") {project.budgetLabel}
+          if project.deadlineLabel
+            span(data-testid="work-deadline") {project.deadlineLabel}
+      if project.city || project.website
+        p.st__owner(data-testid="company-info")
+          if project.city
+            span(data-testid="company-city") {project.city}
+          if project.website
+            a.auth__link(href={project.website} target="_blank" rel="nofollow noopener" data-testid="company-website") {project.website}
+      if project.tags.length > 0
+        div.pe__tags
+          for tag in project.tags key tag
+            span.pe__tag {tag}
+      if project.description
+        p.pe__bio.st__description {project.description}
+      if project.teamChatId
+        div.pf__actions
+          a.shell__btn(href={"/app/messages/" + project.teamChatId} data-testid="team-chat") {strings.teamChat}
+          if project.isMember && !project.isOwner
+            button.shell__btn.shell__btn--ghost(type="button" data-testid="leave-startup" disabled=busy @click=leave) {strings.leaveTeam}
+      if !project.isOwner
+        div.pf__actions
+          button.pf__link-btn(type="button" data-testid="report-project" @click=openReport) {strings.reportProject}
+      if project.isOwner
+        div.pf__actions
+          button.shell__btn.shell__btn--ghost(type="button" data-testid="edit-startup" @click=toggleEdit) {strings.editProject}
+    if notice
+      div.shell__card
+        p.pf__notice(data-testid="project-notice") {notice}
+    if error
+      div.shell__card
+        p.pf__notice.is-err(data-testid="project-error") {error}
+    if project.isOwner && editing
+      section.shell__card.st__formcard(data-testid="edit-startup-form")
+        h2.shell__h2 {strings.editing}
+        form.st__form(@submit.prevent=saveProject)
+          div.pf__field
+            label.pf__label(for="st-name") {strings.tagline}
+            input.pf__input#st-name(type="text" value={projectForm.name} @input=setProjectField("name"))
+          div.pf__field
+            label.pf__label(for="st-tagline") {strings.tagline}
+            input.pf__input#st-tagline(type="text" value={projectForm.tagline} @input=setProjectField("tagline"))
+          div.pf__field
+            label.pf__label(for="st-description") {strings.description}
+            textarea.pf__input.pf__textarea#st-description(rows="4" value={projectForm.description} @input=setProjectField("description"))
+          div.pf__field
+            label.pf__label(for="st-kind") {strings.projectType}
+            select.pf__input#st-kind(@change=setProjectField("kind"))
+              option(value="startup" selected={projectForm.kind == "startup"}) {strings.startup}
+              option(value="company" selected={projectForm.kind == "company"}) {strings.company}
+              option(value="part-time" selected={projectForm.kind == "part-time"}) {strings.partTime}
+          div.pf__field
+            label.pf__label(for="st-mode") {strings.workMode}
+            select.pf__input#st-mode(@change=setProjectField("workMode"))
+              option(value="remote" selected={projectForm.workMode == "remote"}) {strings.remote}
+              option(value="office" selected={projectForm.workMode == "office"}) {strings.office}
+              option(value="hybrid" selected={projectForm.workMode == "hybrid"}) {strings.hybrid}
+          div.pf__field
+            label.pf__label(for="st-status") {strings.status}
+            select.pf__input#st-status(@change=setProjectField("status"))
+              option(value="active" selected={projectForm.status == "active"}) {strings.active}
+              option(value="paused" selected={projectForm.status == "paused"}) {strings.paused}
+              option(value="done" selected={projectForm.status == "done"}) {strings.done}
+              option(value="cancelled" selected={projectForm.status == "cancelled"}) {strings.cancelled}
+          div.pf__field
+            label.pf__label(for="st-city") {strings.city}
+            input.pf__input#st-city(type="text" value={projectForm.city} @input=setProjectField("city"))
+          div.pf__field
+            label.pf__label(for="st-website") {strings.website}
+            input.pf__input#st-website(type="text" value={projectForm.website} @input=setProjectField("website"))
+          div.pf__field
+            label.pf__label(for="st-tags") {strings.tags}
+            input.pf__input#st-tags(type="text" value={projectForm.tags} @input=setProjectField("tags"))
+          div.pf__field
+            label.pf__label(for="st-deadline") {strings.deadline}
+            input.pf__input#st-deadline(type="date" value={projectForm.deadline} @input=setProjectField("deadline"))
+          div.pf__field
+            label.pf__label(for="st-budget") {strings.budget}
+            input.pf__input#st-budget(type="number" value={projectForm.budget} @input=setProjectField("budget"))
+          div.pf__actions
+            button.shell__btn(type="submit" disabled=busy) {strings.save}
+            button.shell__btn.shell__btn--ghost(type="button" @click=toggleEdit) {strings.cancel}
+    if project.isOwner && inbox.length > 0
+      section.shell__card(data-testid="inbox")
+        h2.shell__h2 {strings.applications}
+        ul.st__slots
+          for app in inbox key app.id
+            li.st__slot(data-testid="application")
+              div.st__slot-main
+                p.st__slot-title
+                  a.auth__link(href={"/app/people/" + app.userSlug}) {app.userName}
+                p.st__owner(data-testid="application-slot") {app.forTheSlot}
+                if app.appliedAs
+                  p.st__owner(data-testid="application-profession") {app.appliedAs}
+                if app.message
+                  p.st__slot-desc(data-testid="application-message") {app.message}
+              div.st__slot-side
+                div.st__slot-actions
+                  button.shell__btn(type="button" data-testid="accept-application" disabled=busy @click=decide(app.id, true)) {strings.accept}
+                  button.pf__link-btn(type="button" data-testid="decline-application" disabled=busy @click=decide(app.id, false)) {strings.decline}
+    section.shell__card(data-testid="team")
+      h2.shell__h2 {strings.team}
+      ul.st__team
+        for member in team key member.slug
+          li.st__member(data-testid={"team-member-" + member.slug})
+            div.fr__avatar.fr__avatar--blank {member.initials}
+            div.fr__info
+              a.fr__name(href={"/app/people/" + member.slug}) {member.name}
+              span.fr__meta {member.role}
+            if project.isOwner && !member.isOwner
+              button.pf__link-btn(type="button" data-testid={"remove-member-" + member.slug} disabled=busy @click=removeMember(member.slug)) {strings.removeMember}
+    section.shell__card(data-testid="slots")
+      div.st__slots-head
+        h2.shell__h2 {strings.slots}
+        if project.isOwner
+          button.shell__btn.shell__btn--ghost(type="button" data-testid="add-slot" @click=newSlot) {strings.addSlot}
+      if project.isOwner && slotMode != ""
+        section.st__formcard(data-testid="slot-form")
+          h2.shell__h2 {slotMode == "new" ? strings.addOpening : strings.edit}
+          form.st__form(@submit.prevent=saveSlot)
+            div.pf__field
+              label.pf__label(for="sf-profession") {strings.profession}
+              select.pf__input#sf-profession(@change=setSlotField("professionId"))
+                for p in professions key p.id
+                  option(value=p.id selected={slotForm.professionId == p.id}) {p.name}
+            div.pf__field
+              label.pf__label(for="sf-bucket") {strings.grade}
+              select.pf__input#sf-bucket(@change=setSlotField("bucket"))
+                for b in buckets key b.value
+                  option(value=b.value selected={slotForm.bucket == b.value}) {b.label}
+            div.pf__field
+              label.pf__label(for="sf-description") {strings.description}
+              textarea.pf__input.pf__textarea#sf-description(rows="3" value={slotForm.description} @input=setSlotField("description"))
+            div.pf__field
+              label.pf__label(for="sf-pay") {strings.pay}
+              select.pf__input#sf-pay(@change=setSlotField("pay"))
+                option(value="" selected={slotForm.pay == ""}) {strings.notStated}
+                option(value="unpaid" selected={slotForm.pay == "unpaid"}) {strings.unpaid}
+                option(value="equity" selected={slotForm.pay == "equity"}) {strings.equity}
+                option(value="paid" selected={slotForm.pay == "paid"}) {strings.paid}
+            if slotForm.pay == "paid"
+              div.pf__field
+                label.pf__label(for="sf-from") {strings.from}
+                input.pf__input#sf-from(type="number" value={slotForm.payFrom} @input=setSlotField("payFrom"))
+              div.pf__field
+                label.pf__label(for="sf-to") {strings.to}
+                input.pf__input#sf-to(type="number" value={slotForm.payTo} @input=setSlotField("payTo"))
+              div.pf__field
+                label.pf__label(for="sf-currency") {strings.currency}
+                input.pf__input#sf-currency(type="text" value={slotForm.currency} @input=setSlotField("currency"))
+            div.pf__field
+              label.pf__label {strings.skillsOfOpening}
+              if tree.roots.length == 0
+                p.shell__muted {strings.noSkills}
               else
-                div.st__join
-                  button.shell__btn(type="button" @click=apply(slot.id)) Apply
-  else
-    if status == "failed"
-      div.shell__card
-        p.pf__notice.is-err No such project.
-    else
-      div.shell__card
-        p.shell__muted Loading…
+                +SkillTree#tree(tree=tree)
+            div.pf__actions
+              button.shell__btn(type="submit" disabled=busy) {strings.save}
+              button.shell__btn.shell__btn--ghost(type="button" @click=closeSlotForm) {strings.cancel}
+      if project.slots.length == 0
+        p.shell__muted(data-testid="no-slots") {strings.noSlots}
+      else
+        ul.st__slots
+          for slot in project.slots key slot.id
+            li.st__slot(data-testid="slot-card" data-status={slot.status})
+              div.st__slot-main
+                p.st__slot-title {slot.label}
+                if slot.payLabel
+                  p.st__slot-pay(data-testid="slot-pay") {slot.payLabel}
+                if slot.description
+                  p.st__slot-desc {slot.description}
+                if slot.skillsLabel.length > 0
+                  div.pe__tags
+                    for skill in slot.skillsLabel key skill
+                      span.pe__tag {skill}
+                if slot.userName
+                  p.st__owner
+                    | {strings.takenBy}
+                    a.auth__link(href={"/app/people/" + slot.userSlug}) {slot.userName}
+                if slot.invitedByName
+                  p.st__owner(data-testid="slot-invited")
+                    | {strings.invited}
+                    a.auth__link(href={"/app/people/" + slot.invitedBySlug}) {slot.invitedByName}
+                if project.isOwner && invite.open && invite.slotId == slot.id
+                  div.st__apply(data-testid="invite-form")
+                    input.pf__input(type="text" placeholder={strings.inviteSearch} value={invite.who} @input=setInvite)
+                    div.st__invite-list
+                      if friends.length == 0
+                        p.st__invite-empty {strings.noFriends}
+                      else
+                        for friend in friends key friend.slug
+                          button.st__invite-row(class:is-on={invite.who == friend.slug} type="button" data-testid={"invite-option-" + friend.slug} @click=chooseFriend(friend.slug))
+                            span.st__invite-avatar {friend.initials}
+                            span.st__invite-name {friend.name}
+                            span.st__invite-slug {friend.slug}
+                    div.pf__actions
+                      button.shell__btn(type="button" data-testid="invite-send" disabled=busy @click=sendInvite) {strings.invite}
+                      button.shell__btn.shell__btn--ghost(type="button" @click=closeInvite) {strings.cancel}
+                if project.isOwner && candidates[slot.id]
+                  div.st__cand(data-testid={"candidates-list-" + slot.id})
+                    if candidates[slot.id].length == 0
+                      p.st__cand-empty {strings.noCandidates}
+                    else
+                      ul.st__cand-rows
+                        for candidate in candidates[slot.id] key candidate.slug
+                          li.st__cand-row(data-testid={"candidate-" + candidate.slug})
+                            span.st__invite-avatar {candidate.initials}
+                            div.st__cand-main
+                              a.auth__link(href={"/app/people/" + candidate.slug}) {candidate.name}
+                              span.st__cand-meta {candidate.city}
+                              if candidate.why
+                                span.st__why {candidate.why}
+                            span.st__match(class:is-good={candidate.percent >= 80} class:is-mid={candidate.percent >= 50 && candidate.percent < 80} class:is-low={candidate.percent < 50})
+                              | {candidate.percent}%
+              div.st__slot-side
+                span(class={slot.status == "open" ? "st__chip st__chip--looking" : "st__chip"}) {slot.statusLabel}
+                if slot.status == "open" && !project.isMember && !slot.myApplication
+                  button.shell__btn(type="button" data-testid="apply" disabled=busy @click=apply(slot.id)) {strings.apply}
+                if slot.myApplication
+                  a.shell__btn(href="/app/projects/activity" data-testid="view-application") {strings.viewApplication}
+                if slot.invitedMe
+                  div.st__slot-actions
+                    button.shell__btn(type="button" data-testid="accept-invite" disabled=busy @click=answerInvite(slot.id, true)) {strings.acceptInvite}
+                    button.pf__link-btn(type="button" data-testid="decline-invite" disabled=busy @click=answerInvite(slot.id, false)) {strings.decline}
+                if project.isOwner && slot.status == "open"
+                  div.st__slot-actions
+                    button.pf__link-btn(type="button" data-testid={"candidates-" + slot.id} @click=toggleCandidates(slot.id)) {strings.candidates}
+                    button.pf__link-btn(type="button" data-testid="invite-slot" @click=toggleInvite(slot.id)) {strings.invite}
+                    button.pf__link-btn(type="button" data-testid="edit-slot" @click=editSlot(slot.id)) {strings.edit}
+                    button.pf__link-btn(type="button" data-testid="delete-slot" @click=deleteSlot(slot.id)) {strings.delete}
+                if slot.status == "invited" && (project.isOwner || slot.invitedByMe)
+                  button.pf__link-btn(type="button" data-testid="revoke-invite" @click=revokeInvite(slot.id)) {strings.revokeInvite}
+  +ApplyDialog#apply
+  +ReportDialog#report(report=report)
+else
+  div.shell__card
+    p.shell__muted(data-testid="project-loading") {strings.loading}

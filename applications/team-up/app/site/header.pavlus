@@ -1,0 +1,62 @@
+// The header of the public site (the original teamUP's partials/header.html):
+// the brand, the four links, the visitor (an avatar and an email, or a "Sign
+// in" link) and the language switch.
+//
+// The burger menu is the header's own state: the button opens and closes it
+// (`toggle`), a click outside closes it (the shell's `closeMenu`). The
+// language switch is a link to the backend (`/api/lang/:code`): the server
+// writes the cookie, saves the language of the account and sends the visitor
+// back to the page they came from — the original did it with a cookie and a
+// reload, the port does it on the server.
+//
+// The state of this template is the site's shell (`state.site`) and the path
+// of the page (`path`): the shell's strings, the visitor and the burger.
+header
+  div.container
+    div.header__wrap
+      div.header__left
+        div.header__logo
+          a(href="/") TeamUp
+        div.header__nav
+          ul
+            li
+              a(href="/projects") {strings.projects}
+            li
+              a(href="/blog") {strings.blog}
+            li
+              a(href="/users") {strings.members}
+            li
+              a(href="/about") {strings.about}
+      div.header__right
+        if nav.signedIn
+          a.header__user(href="/app" title={strings.myAccount} data-testid="header-user")
+            span(class={nav.avatarClass}) {nav.initials}
+            span.header__email {nav.email}
+        else
+          a.header__signin(href="/app/login" data-testid="header-signin") {strings.signIn}
+        div.lang-switch(data-lang-switch role="group" aria-label={strings.language})
+          for locale in locales
+            a.lang-switch__btn(href={"/api/lang/" + locale.code + "?next=" + path} title={locale.name} aria-pressed={locale.active ? "true" : "false"} data-lang={locale.code}) {locale.code.toUpperCase()}
+      div.header__burger
+        button#menu-toggle(type="button" aria-expanded={burger ? "true" : "false"} aria-label={burger ? strings.closeMenu : strings.openMenu} @click.stop=toggle)
+          img(src="/images/header__burger.svg" alt="")
+    div.open__burger#menu-container(class:open={burger} @click.stop=inside)
+      ul.burger__nav
+        li
+          a(href="/projects") {strings.projects}
+        li
+          a(href="/blog") {strings.blog}
+        li
+          a(href="/users") {strings.members}
+        li
+          a(href="/about") {strings.about}
+      div.burger__btn
+        if nav.signedIn
+          a.header__user(href="/app" title={strings.myAccount} data-testid="header-user")
+            span(class={nav.avatarClass}) {nav.initials}
+            span.header__email {nav.email}
+        else
+          a.header__signin(href="/app/login" data-testid="header-signin") {strings.signIn}
+        div.lang-switch(data-lang-switch role="group" aria-label={strings.language})
+          for locale in locales
+            a.lang-switch__btn(href={"/api/lang/" + locale.code + "?next=" + path} title={locale.name} aria-pressed={locale.active ? "true" : "false"} data-lang={locale.code}) {locale.code.toUpperCase()}

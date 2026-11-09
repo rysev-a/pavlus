@@ -1,0 +1,16 @@
+// The blog post (/blog/:pid): the back link, the date, the title, the tags
+// and the text of the post — one paragraph per block.
+main.page
+  article.blog-post(data-testid="post")
+    div.container.blog-post__container
+      a.blog-post__back(href="/blog" data-testid="post-back") {strings.back}
+      if post
+        span.blog-post__date(data-testid="post-date") {post.date}
+        h1.blog-post__title(data-testid="post-title") {post.title}
+        if post.tags.length
+          div.blog-card__tags.blog-post__tags
+            for tag in post.tags key tag
+              a.blog-card__tag(href="/blog?tag={tag}" data-testid="post-tag") {tag}
+        div.blog-post__text(data-testid="post-text")
+          for paragraph in post.paragraphs key paragraph
+            p {paragraph}

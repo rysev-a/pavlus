@@ -1,4 +1,5 @@
 // @ts-check
+import { configDefaults } from "vitest/config";
 import { pavlus } from "@pavlus/frontend/vite";
 
 // Used by `vite build`, `vite build --ssr` and vitest. The dev server
@@ -16,6 +17,9 @@ export default ({ isSsrBuild }) => ({
   test: {
     // The tests share the one development database: one file at a time.
     fileParallelism: false,
+    // `for-research/` is the original service, cloned for reference only: its
+    // tests are not ours.
+    exclude: [...configDefaults.exclude, "for-research/**"],
   },
   ssr: { external: ["@pavlus/frontend"] },
   build: isSsrBuild ? { rollupOptions: { external: framework } } : {},

@@ -14,7 +14,7 @@ div.auth
       img(src="/images/auth/blob-br.svg" alt="")
     div.auth-brand__card
       div.auth-brand__head
-        a.auth-brand__home(href="/")
+        a.auth-brand__home(href="/app")
           div.auth-brand__mark T
           p.auth-brand__name teamUP
         p.auth-brand__tag a community of startup founders
@@ -35,7 +35,7 @@ div.auth
   div.auth__area
     div.auth__card
       div.auth__logo
-        a(href="/") teamUP
+        a(href="/app") teamUP
       h1.auth__title Welcome back
       p.auth__subtitle Log in to continue in teamUP.
       if error
@@ -48,6 +48,9 @@ div.auth
           label.auth__label(for="password") Password
           input.auth__input#password(type="password" value=password placeholder="your password" autocomplete="current-password" @input=setPassword)
         button.auth__btn.auth__btn__blue(type="submit" disabled=busy) {busy ? "Signing in…" : "Log in"}
+      div.auth__alt
+        span Forgot your password?
+        a.auth__link(href="/app/forgot") Reset it
       div.auth__demo
         p.auth__demo-title demo accounts · teamup123
         button.auth__demo-one(type="button" @click=pick("ann@team.up"))

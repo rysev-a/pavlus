@@ -101,3 +101,15 @@
 .lang-switch__btn[aria-pressed="true"] { background: #EEE9FF; color: #5F33E1; cursor: default; }
 .auth__lang { position: absolute; top: 16px; right: 16px; z-index: 2; }
 .auth__area { position: relative; }
+
+/* The public site (the original teamUP's marketing pages): the white page of
+   the original, without the app's padding — its own .container does that. */
+.shell.is-site {
+    display: block;
+    background: #fff;
+    color: #09090C;
+}
+
+.shell__main.is-site {
+    padding: 0;
+}

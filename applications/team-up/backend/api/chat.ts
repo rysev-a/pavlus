@@ -110,6 +110,22 @@ export class ChatAPI {
     return [httpEffector.makeResponse(200, rowsOf(message))];
   }
 
+  /** GET /api/chat/unread — the nav's badge (the original polls it). */
+  "chat.unread"(message: Message): Effect[] {
+    return sessionEffect(message.payload as HttpReq, "chat.unread");
+  }
+
+  "chat.unread.sessionUser.onSuccess"(message: Message): Effect[] {
+    const user = sessionUserOf(message);
+    if (!user) return [unauthorized()];
+    return [ChatService.unread(user.id)];
+  }
+
+  "chat.unread.onSuccess"(message: Message): Effect[] {
+    const row = oneOf<{ count: number }>(message);
+    return [httpEffector.makeResponse(200, { count: row?.count ?? 0 })];
+  }
+
   /** GET /api/chat/threads/:id — one thread's messages (marks it read). */
   "chat.thread"(message: Message): Effect[] {
     const req = message.payload as HttpReq;
@@ -459,6 +475,71 @@ export class ChatAPI {
 
   "notify.list.onSuccess"(message: Message): Effect[] {
     return [httpEffector.makeResponse(200, rowsOf(message))];
+  }
+
+  /** GET /api/notifications/settings — which letters the member wants. */
+  "notify.settingsGet"(message: Message): Effect[] {
+    return sessionEffect(message.payload as HttpReq, "notify.settingsGet");
+  }
+
+  "notify.settingsGet.sessionUser.onSuccess"(
+    message: Message,
+    state: ServerState,
+  ): Effect[] {
+    const user = sessionUserOf(message);
+    if (!user) return [unauthorized()];
+    return [NotifyService.settings(user.id)];
+  }
+
+  "notify.settings.onSuccess"(message: Message): Effect[] {
+    const row = oneOf<{
+      applications: boolean;
+      friends: boolean;
+      messages: boolean;
+    }>(message);
+    return [
+      httpEffector.makeResponse(200, {
+        applications: row?.applications ?? true,
+        friends: row?.friends ?? true,
+        messages: row?.messages ?? true,
+      }),
+    ];
+  }
+
+  /** PUT /api/notifications/settings — the topics are switched. */
+  "notify.settingsSave"(message: Message): Effect[] {
+    const req = message.payload as HttpReq;
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const topics = {
+      applications:
+        typeof body.applications === "boolean" ? body.applications : undefined,
+      friends: typeof body.friends === "boolean" ? body.friends : undefined,
+      messages: typeof body.messages === "boolean" ? body.messages : undefined,
+    };
+    return [
+      requestsEffector.merge({ topics }),
+      ...sessionEffect(req, "notify.settingsSave"),
+    ];
+  }
+
+  "notify.settingsSave.sessionUser.onSuccess"(
+    message: Message,
+    state: ServerState,
+  ): Effect[] {
+    const user = sessionUserOf(message);
+    if (!user) return [unauthorized()];
+    const { topics } = (state.requests[message.ctx?.rid as string] ?? {}) as {
+      topics: {
+        applications?: boolean;
+        friends?: boolean;
+        messages?: boolean;
+      };
+    };
+    return [NotifyService.saveSettings(user.id, topics)];
+  }
+
+  "notify.settingsSaved.onSuccess"(message: Message): Effect[] {
+    return [httpEffector.makeResponse(200, { ok: true })];
   }
 
   "chat.failed"(message: Message): Effect[] {

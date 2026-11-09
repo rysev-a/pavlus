@@ -1,0 +1,23 @@
+// The skill tree (the original's `render_node`): a branch is a collapsible
+// group of skills, a leaf is a rated row with the ten-segment meter.
+//
+// The tree is three levels deep (the directory's data is two), so the
+// template draws the branches of the first two levels and their leaves.
+import SkillLeaf from "./leaf.pavlus"
+div.pf__group(data-testid="skill-tree")
+  for node in tree.roots key node.id
+    if node.children.length > 0
+      details.pf__branch(open={node.open})
+        summary.pf__branch-title {node.name}
+        div.pf__branch-body
+          for child in node.children key child.id
+            if child.children.length > 0
+              details.pf__branch(open={child.open})
+                summary.pf__branch-title {child.name}
+                div.pf__branch-body
+                  for leaf in child.children key leaf.id
+                    +SkillLeaf#leaf(skill=leaf hover=tree.hover segments=tree.segments strings=tree.strings)
+            else
+              +SkillLeaf#leaf(skill=child hover=tree.hover segments=tree.segments strings=tree.strings)
+    else
+      +SkillLeaf#leaf(skill=node hover=tree.hover segments=tree.segments strings=tree.strings)

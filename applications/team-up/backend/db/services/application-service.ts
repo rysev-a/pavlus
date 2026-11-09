@@ -29,9 +29,16 @@ export class ApplicationService {
       id: "apps.applied",
       errorId: "apps.failed",
       query: sql`INSERT INTO applications (slot_id, user_id, message, profession_id, bucket)
-                 VALUES (${slotId}, ${userId}, ${message}, ${professionId}, ${bucket})
+                 VALUES (${slotId}, ${userId}, ${message}, ${professionId},
+                         COALESCE(${bucket}, (SELECT pp.bucket FROM profiles_professions pp
+                           WHERE pp.user_id = ${userId} AND pp.profession_id = ${professionId})))
                  ON CONFLICT (slot_id, user_id)
-                 DO UPDATE SET status = 'new', message = ${message}
+                 DO UPDATE SET status = 'new', message = ${message},
+                               profession_id = ${professionId},
+                               bucket = COALESCE(${bucket}, (SELECT pp.bucket
+                                 FROM profiles_professions pp
+                                 WHERE pp.user_id = ${userId}
+                                   AND pp.profession_id = ${professionId}))
                  RETURNING id`,
     });
   }
@@ -61,12 +68,14 @@ export class ApplicationService {
       errorId: "apps.failed",
       query: sql`SELECT a.id, a.slot_id AS "slotId", a.user_id AS "userId",
                         u.name AS "userName", pf.slug AS "userSlug",
-                        a.message, a.bucket, a.status, pr2.name AS "profession"
+                        a.message, a.bucket, a.status, pr2.name AS "profession",
+                        ap.name AS "appliedProfession"
                  FROM applications a
                  JOIN users u ON u.id = a.user_id
                  JOIN profiles pf ON pf.user_id = a.user_id
                  JOIN slots s ON s.id = a.slot_id
                  JOIN professions pr2 ON pr2.id = s.profession_id
+                 LEFT JOIN professions ap ON ap.id = a.profession_id
                  WHERE s.project_id = ${projectId} AND a.status = 'new'
                  ORDER BY a.id`,
     });
@@ -86,6 +95,22 @@ export class ApplicationService {
       id: ns,
       errorId: "apps.failed",
       query: sql`UPDATE applications SET status = ${status} WHERE id = ${id}`,
+    });
+  }
+
+  /** The pending application is changed (the profession and the message). */
+  static edit(
+    id: number,
+    message: string,
+    professionId: number | null,
+    ns = "apps.edited",
+  ) {
+    return db.execute({
+      id: ns,
+      errorId: "apps.failed",
+      query: sql`UPDATE applications SET message = ${message},
+                 profession_id = ${professionId}
+                 WHERE id = ${id} AND status = 'new'`,
     });
   }
 

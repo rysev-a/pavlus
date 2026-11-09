@@ -17,10 +17,15 @@ export const SESSION_COOKIE = "teamup_session";
 
 export type { SessionUser };
 
-/** Park the token and look the user up; `${ns}.sessionUser.onSuccess` follows. */
+/**
+ * Park the token and look the user up; `${ns}.sessionUser.onSuccess` follows.
+ *
+ * A guest (no cookie at all) is answered right away with a 401: without it the
+ * request would have no effect to answer with and would hang.
+ */
 export function sessionEffect(req: HttpReq, ns: string): Effect[] {
   const token = req.cookies[SESSION_COOKIE];
-  if (!token) return [];
+  if (!token) return [unauthorized()];
   return [
     requestsEffector.set("token", token),
     AuthService.sessionUser(token, `${ns}.sessionUser`),

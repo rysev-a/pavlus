@@ -290,3 +290,56 @@
     gap: 4px;
   }
 }
+
+/* --- ported from the original teamUP: the rules the port's pages need --- */
+.startup-detail__tagline {
+font-size: 20px; margin: 8px 0 0; color: #3b3f50;
+}
+.startup-detail__actions {
+display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 0;
+}
+.startup-detail__flash {
+margin: 12px 0 0; padding: 10px 14px; border-radius: 10px; background: #fde8e8; color: #9b1c1c;
+}
+.startup-team {
+list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 12px;
+}
+.startup-slot {
+display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 18px 20px; border-radius: 16px; background: #f3f5ff;
+}
+.amodal__card {
+display: flex; flex-direction: column; gap: 16px; padding: 24px;
+}
+.amodal__title {
+margin: 0; font-size: 20px; line-height: 28px; font-weight: 700; color: #111827;
+}
+.amodal__field {
+display: flex; flex-direction: column; gap: 6px;
+}
+.amodal__label {
+font-size: 13px; font-weight: 500; color: #111827;
+}
+.amodal__input {
+width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #D7DFEA; border-radius: 8px; font-family: inherit; font-size: 14px; color: #111827; background: #fff;
+}
+.amodal__input:focus {
+outline: none; border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
+}
+.amodal__textarea {
+resize: vertical; min-height: 96px;
+}
+.amodal__hint {
+font-size: 13px; color: #64748B;
+}
+.amodal__hint a {
+color: #5F33E1;
+}
+.amodal__error {
+margin: 0; font-size: 13px; font-weight: 500; color: #B42318;
+}
+.amodal__error[hidden] {
+display: none;
+}
+.amodal__actions {
+display: flex; justify-content: flex-end; gap: 12px;
+}

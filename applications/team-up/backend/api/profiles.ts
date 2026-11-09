@@ -14,6 +14,8 @@ import {
 } from "@pavlus/backend";
 import type { Effect, Message } from "@pavlus/core";
 import { ProfileService } from "../db/services/profile-service.ts";
+import { roleOf } from "../lib/views.ts";
+import { trOf } from "../i18n/mod.ts";
 import { sessionEffect, sessionUserOf, unauthorized } from "./session.ts";
 
 const STATUSES = ["searching", "open", "not-searching"];
@@ -28,6 +30,62 @@ export class ProfilesAPI {
   /** GET /api/profile/me */
   "profile.me"(message: Message): Effect[] {
     return sessionEffect(message.payload as HttpReq, "profile.me");
+  }
+
+  /**
+   * GET /api/profile/editor — the form of the profile page: the profile, the
+   * statuses the form offers and the texts of the page.
+   */
+  "profile.editor"(message: Message): Effect[] {
+    return sessionEffect(message.payload as HttpReq, "profile.editor");
+  }
+
+  "profile.editor.sessionUser.onSuccess"(
+    message: Message,
+    state: ServerState,
+  ): Effect[] {
+    const user = sessionUserOf(message);
+    if (!user) return [unauthorized()];
+    return [
+      requestsEffector.merge({ slug: user.slug }),
+      ProfileService.bySlug(user.slug, "profile.editor.bySlug"),
+    ];
+  }
+
+  "profile.editor.bySlug.onSuccess"(
+    message: Message,
+    state: ServerState,
+  ): Effect[] {
+    const profile = oneOf<{ slug: string }>(message);
+    if (!profile)
+      return [httpEffector.makeResponse(404, { error: "no such member" })];
+    const tr = trOf(message.payload as HttpReq);
+    return [
+      httpEffector.makeResponse(200, {
+        ...(profile as Record<string, unknown>),
+        avatarUrl: `/api/avatars/${profile.slug}`,
+        statuses: STATUSES.map((value) => ({
+          value,
+          label: roleOf(tr, value),
+        })),
+        strings: {
+          title: tr.tr("Profile"),
+          aboutYou: tr.tr("About you"),
+          name: tr.tr("Name"),
+          city: tr.tr("City"),
+          bio: tr.tr("Bio"),
+          status: tr.tr("Status"),
+          photo: tr.tr("Photo"),
+          publicPage: tr.tr("Public page"),
+          professions: tr.tr("Professions"),
+          skills: tr.tr("Skills"),
+          save: tr.tr("Save"),
+          saved: tr.tr("Saved"),
+          notSelected: tr.tr("not selected"),
+          loading: tr.tr("Loading…"),
+        },
+      }),
+    ];
   }
 
   "profile.me.sessionUser.onSuccess"(message: Message): Effect[] {

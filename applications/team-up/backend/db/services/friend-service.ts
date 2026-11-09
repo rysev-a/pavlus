@@ -15,7 +15,11 @@ export class FriendService {
     return db.select({
       id: "friends.list",
       errorId: "friends.failed",
-      query: sql`SELECT u.id AS "userId", pf.slug, u.name, f.status
+      query: sql`SELECT u.id AS "userId", pf.slug, u.name, f.status,
+                        COALESCE(pf.city, '') AS city,
+                        COALESCE((SELECT pr.name FROM profiles_professions pp
+                                  JOIN professions pr ON pr.id = pp.profession_id
+                                  WHERE pp.user_id = u.id LIMIT 1), '') AS role
                  FROM friendships f
                  JOIN users u ON u.id = f.friend_id
                  JOIN profiles pf ON pf.user_id = u.id

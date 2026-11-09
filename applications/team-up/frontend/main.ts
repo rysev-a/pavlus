@@ -3,6 +3,7 @@ import {
   createHttpPlugin,
   createRouterPlugin,
   createStorePlugin,
+  createTimePlugin,
   createWsPlugin,
   DomPlugin,
 } from "@pavlus/frontend/plugins";
@@ -26,8 +27,10 @@ export const dom = new DomPlugin();
 export const http = createHttpPlugin();
 export const router = createRouterPlugin();
 export const ws = createWsPlugin();
+// the timers of the shell (the poll of the nav's unread badge)
+export const time = createTimePlugin();
 
-const plugins = [store, dom, http, router, ws];
+const plugins = [store, dom, http, router, ws, time];
 
 export const app = createApp<AppState>({
   // `paintOnWrite`: a shell-level write (the route, me) answers "paint" —
@@ -36,6 +39,9 @@ export const app = createApp<AppState>({
   plugins,
   mount: "#app",
 });
+
+// The public site's header is a component of its own (app/site/header.ts):
+// the burger menu is its state, the language switch is a link to the backend.
 
 if (import.meta.env?.DEV) {
   // Poke at it from the browser console: pavlus.app.dispatch({ id: "..." }),
@@ -47,5 +53,6 @@ if (import.meta.env?.DEV) {
     http,
     router,
     ws,
+    time,
   };
 }

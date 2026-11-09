@@ -46,7 +46,7 @@ export class LoginPage extends Component<LoginSlice> {
 
   /** Prefill with a demo account's email (the template's buttons). */
   pick(msg: Message): Effect[] {
-    const email = String((msg.payload as { demo?: string }).demo ?? "");
+    const email = String(msg.payload ?? "");
     return [
       store.set("email", email, { onSuccess: "paint" }),
       store.set("password", "teamup123", { onSuccess: "paint" }),
@@ -71,7 +71,7 @@ export class LoginPage extends Component<LoginSlice> {
 
   "login.ok"(): Effect[] {
     // the cookie is set (the shell asks who it belongs to); land on the feed
-    return [router.navigate("/")];
+    return [router.navigate("/app", { absolute: true })];
   }
 
   "login.no"(msg: Message): Effect[] {
