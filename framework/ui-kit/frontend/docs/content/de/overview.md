@@ -132,7 +132,7 @@ Viele beliebte Frameworks nutzen ein *Virtual DOM*: Bei jedem Update läuft der 
 | Reife | Große Ökosysteme, viele Bibliotheken, viele Entwickler. | Ein junges Framework mit kleiner Oberfläche. Slots, rekursive Templates und typisierte props gibt es noch nicht. |
 
 > [!WARNING] Ein anderer Kompromiss, nicht in jedem Fall ein besserer
-> Kompiliertes Diffing ist schnell für das, was es kennt, aber die Template-Sprache ist kleiner als JavaScript. Ausdrücke sind eine kleine reine Teilmenge, also gibt es in Templates keine Pfeilfunktionen. Abgeleitete Werte, die echten Code brauchen, werden in einem handler berechnet und im State gespeichert. Pavlus verlangt außerdem Disziplin, weil Reinheit eine Konvention ist, die nichts erzwingt.
+> Kompiliertes Diffing ist schnell für das, was es kennt, aber die Template-Sprache ist kleiner als JavaScript. Ausdrücke sind eine kleine reine Teilmenge — Pfeilfunktionen haben nur einen Ausdruckskörper, Objekt-Literale und Template-Strings gibt es nicht. Abgeleitete Werte, die echten Code brauchen, werden in einem handler berechnet und im State gespeichert. Pavlus verlangt außerdem Disziplin, weil Reinheit eine Konvention ist, die nichts erzwingt.
 
 ## Wie diese Dokumentation aufgebaut ist
 

@@ -29,7 +29,7 @@ Der Compiler hält beim ersten Fehler an. Das sind die echten Meldungen, erzeugt
 | `a(href=url` | Unclosed ( | Schließe die Attributliste. |
 | `p Hello {name` | Unclosed { | Schließe den Ausdruck, oder schreibe `\{` für eine wörtliche Klammer. |
 | `p(title="abc) x` | Unterminated string | Schließe das Anführungszeichen. |
-| `p {items.map(x => x)}` | Unexpected character "=" | Keine Pfeilfunktionen. Berechne den Wert im handler. |
+| `p {2 ** 8}` | Unexpected "*" | Es gibt kein `**`. Schreibe `x * x` oder berechne es im handler. |
 | `p {a = 1}` | Unexpected character "=" | Ein Ausdruck liest; er weist nie zu. |
 | Ein Template-Literal in geschweiften Klammern | Unexpected character | Keine Template-Literale. Nutze `"a " + b`. |
 | `button(@click) Go` | "@click" needs an expression value | Schreibe `@click=save`. |
@@ -286,7 +286,7 @@ h.unmount();
 
 ## Fragen und Antworten
 
-- **Kann ich in einem Template eine Pfeilfunktion oder ein Template-Literal benutzen?** Nein, beides sind Kompilierfehler. Die Ausdruckssprache ist eine kleine reine Teilmenge von JavaScript: Pfade (null-sicher), Literale, Operatoren, der Bedingungsoperator, Array-Literale, Indexzugriff (`items[0]`) und Aufrufe. Der Aufruf einer Methode eines Werts funktioniert: `{name.toUpperCase()}` zeigt `ANN` für `ann`. Aufrufe sind ebenfalls null-sicher, und das versteckt Tippfehler: `{fmt(name)}` ruft das State-Feld `fmt` auf, und gibt es kein solches Feld, zeigt es einen leeren Text und keinen Fehler. Alles, was länger ist als ein kurzer Ausdruck, gehört in den handler: Berechne es dort und halte das Ergebnis im State.
+- **Kann ich in einem Template eine Pfeilfunktion benutzen?** Ja, mit Ausdruckskörper: `{items.map(x => x.name)}` und `{items.filter(x => x.on)}` kompilieren und laufen, und die Parameter verdecken gleichnamige State-Felder. Block-Körper (`x => { ... }`) und Template-Strings bleiben Kompilierfehler. Die Ausdruckssprache ist eine kleine reine Teilmenge von JavaScript: Pfade (null-sicher), Literale, Operatoren, der Bedingungsoperator, Array-Literale, Indexzugriff (`items[0]`) und Aufrufe. Der Aufruf einer Methode eines Werts funktioniert: `{name.toUpperCase()}` zeigt `ANN` für `ann`. Aufrufe sind ebenfalls null-sicher, und das versteckt Tippfehler: `{fmt(name)}` ruft das State-Feld `fmt` auf, und gibt es kein solches Feld, zeigt es einen leeren Text und keinen Fehler. Lange Ketten gehören weiterhin in den handler: Berechne es dort und halte das Ergebnis im State.
 - **Wie zeige ich eine gefilterte oder sortierte Liste?** Berechne sie im handler, speichere sie mit `store.set` und iteriere über die gespeicherte Liste. Die [Anleitung](page:guide-todo-app) macht das für einen Filter.
 - **Wohin kommt asynchroner Code?** Nirgends in einen handler. Ein handler gibt Effekte zurück, und ein Plugin erledigt die asynchrone Arbeit und antwortet mit einer Message. Für eine Anfrage nutze `http.request`, für einen Timer `time.setTimeout`.
 - **Wie lese ich, was der Nutzer getippt hat?** `msg.event?.value` bei `@input`, `msg.event?.checked` beim `@change` einer Checkbox und `msg.event?.key` bei Tastatur-Events. Das Eingabefeld behält, was der Nutzer getippt hat; `value=field` setzt nur den Anfangswert und folgt späteren Änderungen des Felds.
@@ -297,7 +297,7 @@ h.unmount();
 - **Können zwei Komponenten eine Message mit demselben Namen haben?** Ja. Kinder haben Namensräume: Das `select` eines Childs ist für seinen Parent `row.select`. Zwei Geschwister mit demselben Instanznamen sind nicht erlaubt.
 - **Wie nenne ich einen handler `users.remove`?** Mit einem Methodennamen in Anführungszeichen: `"users.remove"(msg: Message) { ... }`.
 - **Kann eine Komponente Daten in einem Klassenfeld halten?** Keine Daten, die sich ändern. Die Instanz wird von jeder Message geteilt, sie muss also frei von veränderlichem State sein. Halte Daten im Store.
-- **Kann ich mit SVG zeichnen?** Nicht als Elemente. Das DOM-Plugin erzeugt Elemente ohne XML-Namespace, ein `svg`-Tag würde also nicht gezeichnet. Das ui-kit nutzt CSS-Masken für Icons und Boxen, Verläufe und Emoji für Zeichnungen.
+- **Kann ich mit SVG zeichnen?** Ja, als inline-Elemente. Ein `svg`-Tag (und `math`) wird in seinem eigenen XML-Namespace erzeugt — auch die Elemente, die ein `if` oder `for` darin hinzufügt —, also funktionieren Verläufe und Transformationen. Das ui-kit nutzt weiterhin CSS-Masken für Icons und Boxen, Verläufe und Emoji für Zeichnungen — eine Konvention des Kits, keine Grenze des Frameworks.
 - **Kann ich pavlus ohne Vite benutzen?** Der Compiler ist eine einfache Funktion: `compileTemplate(source)` gibt den Text eines ES-Moduls zurück. Das Vite-Plugin ist die Integration, die es gibt, und alles auf diesen Seiten setzt sie voraus.
 - **Warum ist mein erster Render leer?** Weil `route` gleich `null` ist, bis das Router-Plugin etwas meldet. Mounte zuerst, dann startet `mounted` das `router.listen`. Benutzt du ein eigenes `mounted`, muss es auch `router.listen("routeChanged")` zurückgeben.
 - **Funktioniert der Server-Render mit jedem Plugin?** Nein. Gib dem Server Platzhalter für die Plugins des Browsers; siehe [Server-Side-Rendering](page:concepts-ssr).

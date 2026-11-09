@@ -139,6 +139,14 @@ p {user?.name} is the same as {user.name}
 
 ::demo arrays
 
+## 箭头函数
+
+箭头函数在需要回调的地方可用：作为 `filter`、`map`、`find`、`some`、`sort` 等方法的参数。只支持表达式形式（`x => x.on`、`(a, b) => a - b`）；没有语句，也没有块主体。参数是全新的名字：它们会遮住同名的 state 字段，而变更检查不会把它们算作读取。
+
+::demo arrows
+
+在模板里写一个短的 `filter` 或 `map` 是可以的。当表达式变长时，请在 handler 中计算列表并把结果保存在 state 里 —— 这样模板只需要读取它。
+
 ## 真值判断
 
 在期望条件的地方（`?:`、`&&`、`||`、`!`、`if`、`class:name=...`），pavlus 使用 JavaScript 的规则，因为生成的代码就是 JavaScript。下列值是**假值**：`false`、`0`、`""`、`null`、`undefined` 和 `NaN`。其他一切都是真值。
@@ -233,10 +241,10 @@ text: "" + toText((state.user)?.name) + " wrote " + toText(state.count) + " " + 
 这门语言有意做得很小。这样编译器更容易推理，节点的每个依赖都能在编译期列出，模板也不能运行任意代码。下面是你最先会尝试的写法，以及你会得到的真实错误。
 
 ```pavlus-invalid
-p {items.map(x => x.name)}
+p {2 ** 8}
 ```
 
-箭头函数：`Unexpected character "=" (line 1, col 16)`。
+幂运算：`Unexpected "*" (line 1, col 7)`。没有 `**`；请写 `x * x` 或在 handler 中计算。
 
 ```pavlus-invalid
 p {`Hello ${name}`}
@@ -289,7 +297,7 @@ p {name
 ## 你学到了什么
 
 - `{expr}` 可以出现在文本中、带引号的属性值中，或者作为整个属性值（`alt={x}` 或 `alt=x`）。
-- 这门语言有字面量、名字、`.` 和 `[ ]`（都是 null-safe 的）、调用、一元和二元运算符、`?:` 以及数组。没有赋值，也没有箭头函数或模板字符串。
+- 这门语言有字面量、名字、`.` 和 `[ ]`（都是 null-safe 的）、调用、一元和二元运算符、`?:`、数组以及表达式体的箭头函数。没有赋值，也没有模板字符串或对象字面量。
 - `null`、`undefined` 和 `false` 是空文本和缺失的属性；`true` 是空属性；`0` 和 `""` 是值。
 - 编译器把带洞的字符串变成 `"literal" + toText(expr) + ...`，并比较 `prev` 和 `next` 的结果来决定是否产生 patch。
 

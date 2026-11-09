@@ -29,7 +29,7 @@ The compiler stops at the first error. These are the real messages, produced by 
 | `a(href=url` | Unclosed ( | Close the attribute list. |
 | `p Hello {name` | Unclosed { | Close the expression, or write `\{` for a literal brace. |
 | `p(title="abc) x` | Unterminated string | Close the quote. |
-| `p {items.map(x => x)}` | Unexpected character "=" | No arrow functions. Compute the value in the handler. |
+| `p {2 ** 8}` | Unexpected "*" | There is no `**`. Write `x * x` or compute it in the handler. |
 | `p {a = 1}` | Unexpected character "=" | An expression reads; it never assigns. |
 | A template literal in braces | Unexpected character | No template literals. Use `"a " + b`. |
 | `button(@click) Go` | "@click" needs an expression value | Write `@click=save`. |
@@ -286,7 +286,7 @@ h.unmount();
 
 ## Questions and answers
 
-- **Can I use an arrow function or a template literal in a template?** No, both are compile errors. The expression language is a small pure subset of JavaScript: paths (null safe), literals, operators, the conditional operator, array literals, index access (`items[0]`) and calls. A call of a method of a value works: `{name.toUpperCase()}` shows `ANN` for `ann`. Calls are null safe too, and that hides typos: `{fmt(name)}` calls the state field `fmt`, and when there is no such field it shows an empty text and no error. Anything longer than a short expression belongs in the handler: compute it there and keep the result in the state.
+- **Can I use an arrow function in a template?** Yes, with an expression body: `{items.map(x => x.name)}` and `{items.filter(x => x.on)}` compile and run, and the parameters shadow state fields of the same name. Block bodies (`x => { ... }`) and template strings are still compile errors. The rest of the expression language is a small pure subset of JavaScript: paths (null safe), literals, operators, the conditional operator, array literals, index access (`items[0]`) and calls. A call of a method of a value works: `{name.toUpperCase()}` shows `ANN` for `ann`. Calls are null safe too, and that hides typos: `{fmt(name)}` calls the state field `fmt`, and when there is no such field it shows an empty text and no error. A long chain still belongs in the handler: compute it there and keep the result in the state.
 - **How do I show a filtered or sorted list?** Compute it in the handler, store it with `store.set`, and loop over the stored list. The [guide](page:guide-todo-app) does this for a filter.
 - **Where do I put async code?** Nowhere in a handler. A handler returns effects, and a plugin does the asynchronous work and answers with a message. For a request use `http.request`, for a timer `time.setTimeout`.
 - **How do I read what the user typed?** `msg.event?.value` for `@input`, `msg.event?.checked` for the `@change` of a checkbox, and `msg.event?.key` for keyboard events. The input keeps what the user typed; `value=field` only seeds it and follows later changes of the field.
@@ -297,7 +297,7 @@ h.unmount();
 - **Can two components have a message with the same name?** Yes. Children are namespaced: a child's `select` is `row.select` for its parent. Two siblings with the same instance name are not allowed.
 - **How do I name a handler `users.remove`?** With a quoted method name: `"users.remove"(msg: Message) { ... }`.
 - **Can a component keep data in a class field?** Not data that changes. The instance is shared by every message, so it must be free of mutable state. Keep data in the store.
-- **Can I draw with SVG?** Not as elements. The DOM plugin creates elements without an XML namespace, so an `svg` tag would not be drawn. The ui-kit uses CSS masks for icons and boxes, gradients and emoji for drawings.
+- **Can I draw with SVG?** Yes, as inline elements. An `svg` tag (and `math`) is created in its own XML namespace, also for the elements an `if` or a `for` adds inside it, so gradients and transforms work. The ui-kit still uses CSS masks for icons and boxes, gradients and emoji for its drawings — a kit convention, not a framework limit.
 - **Can I use pavlus without Vite?** The compiler is a plain function: `compileTemplate(source)` returns the text of an ES module. The Vite plugin is the integration that exists, and everything on these pages assumes it.
 - **Why is my first render empty?** Because `route` is `null` until the router plugin reports. Mount first, then `mounted` starts `router.listen`. If you use your own `mounted`, it has to return `router.listen("routeChanged")` too.
 - **Does the server render work with every plugin?** No. Give the server stand-ins for the plugins of the browser; see [server-side rendering](page:concepts-ssr).

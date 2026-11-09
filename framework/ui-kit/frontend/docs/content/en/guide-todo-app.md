@@ -334,7 +334,7 @@ Run `npm test`.
 
 ## Step 3: a filter
 
-The filter shows All, Active or Done. A template cannot filter a list: it has no arrow functions and no calls with callbacks. That is not a gap, it is a design. A value that depends on other values is **computed once, in the handler, and stored**. The template then only displays it.
+The filter shows All, Active or Done. A template can filter a short list in the template itself (`if` inside `for`, or `items.filter(x => x.done)` in an expression), but that is not this app's design. A value that depends on other values is **computed once, in the handler, and stored**. The template then only displays it.
 
 We add three fields to the state: `filter`, `visible` (the list to show) and `left` (the number of active todos). A function `show(items, filter)` returns the four `store.set` effects that keep them consistent, and every handler that changes the list calls it.
 

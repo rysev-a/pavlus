@@ -295,7 +295,7 @@ Aquí van algunos árboles reales. El texto de la izquierda es la expresión, el
 La primera es `a + b * 2`, la segunda es `!ok ? n : -1`.
 
 > [!NOTE] Lo que las expresiones no pueden hacer
-> No hay asignación, ni función flecha, ni template string, ni literal de objeto, ni `typeof`, ni `new`. Cada una de estas cosas da un error claro en el momento del build, por ejemplo `{x = 1}` da `Unexpected character "="`, y `{`a`}` da ``Unexpected character "`"``. Los cambios ocurren enviando un message desde un evento.
+> No hay asignación, ni template string, ni literal de objeto, ni `typeof`, ni `new` (las funciones flecha sí existen, pero solo con cuerpo de expresión). Cada una de estas cosas da un error claro en el momento del build, por ejemplo `{x = 1}` da `Unexpected character "="`, y "{`a`}" da ``Unexpected character "`"``. Los cambios ocurren enviando un message desde un evento.
 
 ## Ids de nodo
 

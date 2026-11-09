@@ -139,6 +139,14 @@ Ein Array-Literal erzeugt ein Array. Es ist vor allem nützlich, um eine Methode
 
 ::demo arrays
 
+## Pfeilfunktionen
+
+Eine Pfeilfunktion funktioniert dort, wo ein Callback gebraucht wird: als Argument von `filter`, `map`, `find`, `some`, `sort` und Freunden. Unterstützt ist nur die Ausdrucksform (`x => x.on`, `(a, b) => a - b`); Anweisungen und Block-Körper gibt es nicht. Die Parameter sind neue Namen: sie verdecken ein State-Feld mit demselben Namen, und die Änderungsprüfungen zählen sie nicht als Lesezugriffe.
+
+::demo arrows
+
+Ein kurzes `filter` oder `map` im Template ist in Ordnung. Wenn der Ausdruck wächst, berechne die Liste in einem handler und halte das Ergebnis im State — das Template liest sie dann nur.
+
 ## Truthiness
 
 Wo eine Bedingung erwartet wird (`?:`, `&&`, `||`, `!`, `if`, `class:name=...`), nutzt pavlus die JavaScript-Regeln, weil der generierte Code JavaScript ist. Diese Werte sind **falsy**: `false`, `0`, `""`, `null`, `undefined` und `NaN`. Alles andere ist truthy.
@@ -233,10 +241,10 @@ Ein literales `{` im Text beginnt ein Loch. Um eine Klammer zu schreiben, setze 
 Die Sprache ist absichtlich klein. Der Compiler ist leichter zu durchdenken, jede Abhängigkeit eines Knotens lässt sich zur Kompilierzeit auflisten, und ein Template kann keinen beliebigen Code ausführen. Hier ist, was du zuerst versuchen wirst, und der echte Fehler, den du bekommst.
 
 ```pavlus-invalid
-p {items.map(x => x.name)}
+p {2 ** 8}
 ```
 
-Eine Pfeilfunktion: `Unexpected character "=" (line 1, col 16)`.
+Potenzierung: `Unexpected "*" (line 1, col 7)`. Es gibt kein `**`; schreibe `x * x` oder berechne es in einem handler.
 
 ```pavlus-invalid
 p {`Hello ${name}`}
@@ -289,7 +297,7 @@ Sowohl `order.customer?.name ?? 'someone'` als auch `order.customer.name ?? 'som
 ## Was du gelernt hast
 
 - `{expr}` kann im Text stehen, in einem Attributwert in Anführungszeichen oder ein ganzer Attributwert sein (`alt={x}` oder `alt=x`).
-- Die Sprache hat Literale, Namen, `.` und `[ ]` (beide null-sicher), Aufrufe, unäre und binäre Operatoren, `?:` und Arrays. Nichts wird zugewiesen, und es gibt keine Pfeilfunktionen oder Template-Strings.
+- Die Sprache hat Literale, Namen, `.` und `[ ]` (beide null-sicher), Aufrufe, unäre und binäre Operatoren, `?:`, Arrays und Pfeilfunktionen mit Ausdruckskörper. Nichts wird zugewiesen, und es gibt keine Template-Strings oder Objekt-Literale.
 - `null`, `undefined` und `false` sind leerer Text und ein fehlendes Attribut; `true` ist ein leeres Attribut; `0` und `""` sind Werte.
 - Der Compiler macht aus einem String mit Löchern `"literal" + toText(expr) + ...` und vergleicht das Ergebnis von `prev` und `next`, um über einen Patch zu entscheiden.
 

@@ -139,6 +139,14 @@ Un literal de array crea un array. Sirve sobre todo para alimentar un método o 
 
 ::demo arrays
 
+## Funciones flecha
+
+Una función flecha funciona donde se necesita un callback: como argumento de `filter`, `map`, `find`, `some`, `sort` y compañía. Solo se admite la forma de expresión (`x => x.on`, `(a, b) => a - b`); no hay instrucciones ni cuerpos de bloque. Los parámetros son nombres nuevos: ocultan a un campo del state con el mismo nombre, y las comprobaciones de cambios no los cuentan como lecturas.
+
+::demo arrows
+
+Un `filter` o un `map` corto en el template está bien. Cuando la expresión crece, calcula la lista en un handler y guarda el resultado en el state — el template entonces solo la lee.
+
 ## Truthiness
 
 Donde se espera una condición (`?:`, `&&`, `||`, `!`, `if`, `class:name=...`), pavlus usa las reglas de JavaScript, porque el código generado es JavaScript. Estos valores son **falsy**: `false`, `0`, `""`, `null`, `undefined` y `NaN`. Todo lo demás es truthy.
@@ -233,10 +241,10 @@ Una `{` literal en el texto inicia un hueco. Para escribir una llave, pon una ba
 El lenguaje es pequeño a propósito. El compilador es más fácil de razonar, cada dependencia de un nodo se puede listar en tiempo de compilación, y un template no puede ejecutar código arbitrario. Esto es lo que probarás primero, y el error real que obtienes.
 
 ```pavlus-invalid
-p {items.map(x => x.name)}
+p {2 ** 8}
 ```
 
-Una función flecha: `Unexpected character "=" (line 1, col 16)`.
+Exponenciación: `Unexpected "*" (line 1, col 7)`. No existe `**`; escribe `x * x` o calcula en un handler.
 
 ```pavlus-invalid
 p {`Hello ${name}`}
@@ -289,7 +297,7 @@ Tanto `order.customer?.name ?? 'someone'` como `order.customer.name ?? 'someone'
 ## Lo que aprendiste
 
 - `{expr}` puede estar en el texto, en un valor de atributo entre comillas, o ser el valor completo de un atributo (`alt={x}` o `alt=x`).
-- El lenguaje tiene literales, nombres, `.` y `[ ]` (ambos seguros frente a null), llamadas, operadores unarios y binarios, `?:` y arrays. No se asigna nada, y no hay funciones flecha ni cadenas de plantilla.
+- El lenguaje tiene literales, nombres, `.` y `[ ]` (ambos seguros frente a null), llamadas, operadores unarios y binarios, `?:`, arrays y funciones flecha con cuerpo de expresión. No se asigna nada, y no hay cadenas de plantilla ni literales de objeto.
 - `null`, `undefined` y `false` son texto vacío y un atributo ausente; `true` es un atributo vacío; `0` y `""` son valores.
 - El compilador convierte una cadena con huecos en `"literal" + toText(expr) + ...` y compara el resultado de `prev` y `next` para decidir un patch.
 

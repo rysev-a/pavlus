@@ -87,7 +87,7 @@ Todo lo que va dentro de `{ }`, y cada valor de atributo sin comillas, se parsea
 | ternario | `a ? b : c`, se anida hacia la derecha |
 | agrupación | `( )` |
 
-No soportado: literales de objeto, funciones flecha, template strings, expresiones regulares, asignación, `++`, `typeof`, `in`, `new`, `**`, operadores bit a bit, el operador coma, `?.[ ]` y `?.( )`. Los nombres se buscan solo en el state: no hay globales.
+No soportado: literales de objeto, template strings, expresiones regulares, asignación, `++`, `typeof`, `in`, `new`, `**`, operadores bit a bit, el operador coma, `?.[ ]` y `?.( )`. Las funciones flecha sí existen, pero solo con cuerpo de expresión (`x => x.on`). Los nombres se buscan solo en el state: no hay globales.
 
 La truthiness es la de JavaScript: `false`, `0`, `""`, `null`, `undefined` y `NaN` son falsy; un array vacío y un objeto vacío son truthy.
 

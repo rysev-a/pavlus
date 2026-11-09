@@ -334,7 +334,7 @@ test("toggle flips one todo and remove drops it", () => {
 
 ## 步骤 3：过滤
 
-过滤器显示全部、未完成或已完成。模板无法过滤列表：它没有箭头函数，也没有带回调的调用。这不是缺陷，而是设计。依赖其他值的值**在 handler 中计算一次，并被存储**。模板只负责显示它。
+过滤器显示全部、未完成或已完成。短列表可以在模板里直接过滤（`for` 里的 `if`，或表达式中的 `items.filter(x => x.done)`），但这不是这个应用的设计。依赖其他值的值**在 handler 中计算一次，并被存储**。模板只负责显示它。
 
 我们向 state 添加三个字段：`filter`、`visible`（要显示的列表）和 `left`（未完成待办事项的数量）。函数 `show(items, filter)` 返回让它们保持一致的四个 `store.set` effect，每个改变列表的 handler 都会调用它。
 

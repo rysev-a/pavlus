@@ -295,7 +295,7 @@ Hier ein paar echte Bäume. Links steht der Ausdruck als Text, das JSON ist das,
 Der erste ist `a + b * 2`, der zweite ist `!ok ? n : -1`.
 
 > [!NOTE] Was Ausdrücke nicht können
-> Es gibt keine Zuweisung, keine Arrow Function, keinen Template String, kein Objektliteral, kein `typeof`, kein `new`. Ein Template liest den State, es ändert ihn nicht. Jedes davon ergibt beim Build einen klaren Fehler, zum Beispiel ergibt `{x = 1}` `Unexpected character "="`, und `{`a`}` ergibt ``Unexpected character "`"``. Änderungen passieren, indem ein Event eine Nachricht sendet.
+> Es gibt keine Zuweisung, keinen Template String, kein Objektliteral, kein `typeof`, kein `new` (Pfeilfunktionen gibt es, aber nur mit Ausdruckskörper). Ein Template liest den State, es ändert ihn nicht. Jedes davon ergibt beim Build einen klaren Fehler, zum Beispiel ergibt `{x = 1}` `Unexpected character "="`, und "{`a`}" ergibt ``Unexpected character "`"``. Änderungen passieren, indem ein Event eine Nachricht sendet.
 
 ## Knoten-ids
 

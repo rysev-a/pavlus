@@ -1,5 +1,6 @@
-// Charts without SVG: the DOM plugin has no SVG namespace yet, so bars are boxes
-// and the area is a box clipped by a polygon. Colors are the theme's chart tokens.
+// Charts without SVG: bars are boxes and the area is a box clipped by a
+// polygon (the dom plugin knows the svg namespace now, but the kit keeps its
+// box-built charts). Colors are the theme's chart tokens.
 section.k-page
   section.k-demo
     h2.k-demo__title Bar chart

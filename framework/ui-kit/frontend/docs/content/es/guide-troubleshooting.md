@@ -29,7 +29,7 @@ El compilador se detiene en el primer error. Estos son los mensajes reales, prod
 | `a(href=url` | Unclosed ( | Cierra la lista de atributos. |
 | `p Hello {name` | Unclosed { | Cierra la expresión, o escribe `\{` para una llave literal. |
 | `p(title="abc) x` | Unterminated string | Cierra la comilla. |
-| `p {items.map(x => x)}` | Unexpected character "=" | Sin funciones flecha. Calcula el valor en el handler. |
+| `p {2 ** 8}` | Unexpected "*" | No existe `**`. Escribe `x * x` o calcula en el handler. |
 | `p {a = 1}` | Unexpected character "=" | Una expresión lee; nunca asigna. |
 | Un template literal entre llaves | Unexpected character | Sin template literals. Usa `"a " + b`. |
 | `button(@click) Go` | "@click" needs an expression value | Escribe `@click=save`. |
@@ -286,7 +286,7 @@ h.unmount();
 
 ## Preguntas y respuestas
 
-- **¿Puedo usar una función flecha o un template literal en un template?** No, ambos son errores de compilación. El lenguaje de expresiones es un subconjunto pequeño y puro de JavaScript: paths (seguros frente a null), literales, operadores, el operador condicional, literales de array, acceso por índice (`items[0]`) y llamadas. Una llamada a un método de un valor funciona: `{name.toUpperCase()}` muestra `ANN` para `ann`. Las llamadas también son seguras frente a null, y eso oculta errores tipográficos: `{fmt(name)}` llama al campo `fmt` del state, y cuando no existe ese campo muestra un texto vacío y ningún error. Todo lo que sea más largo que una expresión corta pertenece al handler: calcúlalo allí y guarda el resultado en el state.
+- **¿Puedo usar una función flecha en un template?** Sí, con cuerpo de expresión: `{items.map(x => x.name)}` y `{items.filter(x => x.on)}` compilan y funcionan, y los parámetros ocultan campos del state con el mismo nombre. Los cuerpos de bloque (`x => { ... }`) y las template strings siguen siendo errores de compilación. El lenguaje de expresiones es un subconjunto pequeño y puro de JavaScript: paths (seguros frente a null), literales, operadores, el operador condicional, literales de array, acceso por índice (`items[0]`) y llamadas. Una llamada a un método de un valor funciona: `{name.toUpperCase()}` muestra `ANN` para `ann`. Las llamadas también son seguras frente a null, y eso oculta errores tipográficos: `{fmt(name)}` llama al campo `fmt` del state, y cuando no existe ese campo muestra un texto vacío y ningún error. Una cadena larga sigue perteneciendo al handler: calcúlalo allí y guarda el resultado en el state.
 - **¿Cómo muestro una lista filtrada u ordenada?** Calcúlala en el handler, guárdala con `store.set` y recorre la lista guardada con un bucle. La [guía](page:guide-todo-app) lo hace para un filtro.
 - **¿Dónde pongo el código asíncrono?** En ningún sitio de un handler. Un handler devuelve effects, y un plugin hace el trabajo asíncrono y responde con un message. Para una petición usa `http.request`, para un temporizador `time.setTimeout`.
 - **¿Cómo leo lo que escribió el usuario?** `msg.event?.value` para `@input`, `msg.event?.checked` para el `@change` de un checkbox y `msg.event?.key` para los eventos de teclado. El input conserva lo que el usuario escribió; `value=field` solo lo inicializa y sigue los cambios posteriores del campo.
@@ -297,7 +297,7 @@ h.unmount();
 - **¿Pueden dos componentes tener un message con el mismo nombre?** Sí. Los hijos tienen su propio espacio de nombres: el `select` de un hijo es `row.select` para su padre. No se permiten dos hermanos con el mismo nombre de instancia.
 - **¿Cómo llamo a un handler `users.remove`?** Con un nombre de método entre comillas: `"users.remove"(msg: Message) { ... }`.
 - **¿Puede un componente guardar datos en un campo de la clase?** No datos que cambian. La instancia la comparten todos los messages, así que debe estar libre de state mutable. Guarda los datos en el store.
-- **¿Puedo dibujar con SVG?** No como elementos. El plugin dom crea elementos sin un espacio de nombres XML, así que una etiqueta `svg` no se dibujaría. El ui-kit usa máscaras CSS para los iconos, y cajas, degradados y emoji para los dibujos.
+- **¿Puedo dibujar con SVG?** Sí, como elementos inline. Una etiqueta `svg` (y `math`) se crea en su propio espacio de nombres XML — también los elementos que un `if` o un `for` añade dentro —, así que los degradados y las transformaciones funcionan. El ui-kit sigue usando máscaras CSS para los iconos, y cajas, degradados y emoji para sus dibujos — una convención del kit, no un límite del framework.
 - **¿Puedo usar pavlus sin Vite?** El compilador es una función simple: `compileTemplate(source)` devuelve el texto de un módulo ES. El plugin de Vite es la integración que existe, y todo lo de estas páginas la da por supuesta.
 - **¿Por qué mi primer render está vacío?** Porque `route` es `null` hasta que el plugin router informa. Monta primero, luego `mounted` inicia `router.listen`. Si usas tu propio `mounted`, también tiene que devolver `router.listen("routeChanged")`.
 - **¿Funciona el renderizado en servidor con todos los plugins?** No. Dale al servidor sustitutos para los plugins del navegador; mira [Renderizado en servidor](page:concepts-ssr).

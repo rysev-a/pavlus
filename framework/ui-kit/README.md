@@ -123,8 +123,9 @@ GitHub Actions**.
 
 ## Known limits
 
-- The framework's DOM plugin creates elements with `createElement`, so there is
-  no inline SVG. Icons are CSS masks over `currentColor` (`.k-icon-*`) and the
-  charts are boxes (bars) and a clipped box (area).
+- The framework's DOM plugin creates `svg`/`math` elements in their namespace, so
+  inline SVG works; the kit still draws icons as CSS masks over `currentColor`
+  (`.k-icon-*`) and the charts as boxes (bars) and a clipped box (area) — a kit
+  convention, kept for its zero-dependency look.
 - Overlays (dialog, sheet, drawer, popovers) are state-driven markup and native
   `<details>`: no focus trap and no `Escape` to close.

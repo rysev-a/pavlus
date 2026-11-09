@@ -148,7 +148,7 @@ Sieh dir die zwei Schritte an. Wenn `currentId` von 2 auf 3 wechselt, wird die K
 
 ## Filtern mit if in for
 
-In der Template-Sprache gibt es kein `filter` (es bräuchte eine Pfeilfunktion). Aber ein `if` kann das einzige Child eines `for` sein: Dann wird jeder Eintrag nur gezeigt, wenn seine Bedingung gilt. Das ist ein guter Weg, eine kurze Liste zu filtern.
+Eine kurze Liste lässt sich direkt im Ausdruck filtern (`items.filter(x => x.done)`)); ein `if` als einziges Child eines `for` ist ein anderer Weg: Jeder Eintrag wird nur gezeigt, wenn seine Bedingung gilt. Ein guter Weg, eine kurze Liste zu filtern, ohne ein neues Array zu bauen.
 
 ::demo filtered open=ast
 

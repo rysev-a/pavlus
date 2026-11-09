@@ -295,7 +295,7 @@ Here are a few real trees. The text on the left is the expression, the JSON is w
 The first is `a + b * 2`, the second is `!ok ? n : -1`.
 
 > [!NOTE] What expressions cannot do
-> There is no assignment, no arrow function, no template string, no object literal, no `typeof`, no `new`. A template reads the state, it does not change it. Each of these gives a clear error at build time, for example `{x = 1}` gives `Unexpected character "="`, and `{`a`}` gives ``Unexpected character "`"``. Changes happen by sending a message from an event.
+> There is no assignment, no template string, no object literal, no `typeof`, no `new` (arrow functions exist, with an expression body only). A template reads the state, it does not change it. Each of these gives a clear error at build time, for example `{x = 1}` gives `Unexpected character "="`, and "{`a`}" gives ``Unexpected character "`"``. Changes happen by sending a message from an event.
 
 ## Node ids
 

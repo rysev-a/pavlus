@@ -15,9 +15,11 @@ significant step; keep it terse. Full history is in git + the conversation.
 - After editing `.pavlus` templates, a stale vitest/vite cache can cause
   phantom e2e failures → `rm -rf ../node_modules/.vitest-cache ../node_modules/.vite*`
   at root and re-run.
-- Template expression limits: NO arrow functions (`=>` → parser error
-  "Unexpected character ="). Ternaries, `.includes`, method calls, string-literal
+- Template expressions: arrow functions with expression bodies work
+  (`xs.filter(x => x.on)`; params shadow state names). No object literals, no
+  template strings. Ternaries, `.includes`, method calls, string-literal
   event args (`@click=sort("id")`), boolean attrs (`disabled=(...)`) all work.
+  Inline `<svg>`/`<math>` render in their namespace (also inside `if`/`for`).
 - User language: Russian.
 
 ## Architecture snapshot (post slot-removal PoC)

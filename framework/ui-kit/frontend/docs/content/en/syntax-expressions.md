@@ -139,6 +139,14 @@ An array literal makes an array. It is mostly useful to feed a method or to pick
 
 ::demo arrays
 
+## Arrow functions
+
+An arrow function works where a callback does: as the argument of `filter`, `map`, `find`, `some`, `sort` and friends. Only the expression form is supported (`x => x.on`, `(a, b) => a - b`); there are no statements and no block bodies. The parameters are fresh names: they shadow a state field of the same name, and the change checks do not count them as reads.
+
+::demo arrows
+
+A short `filter` or `map` in the template is fine. When the expression grows, compute the list in a handler and keep the result in the state — then the template only reads it.
+
 ## Truthiness
 
 Where a condition is expected (`?:`, `&&`, `||`, `!`, `if`, `class:name=...`), pavlus uses the JavaScript rules, because the generated code is JavaScript. These values are **falsy**: `false`, `0`, `""`, `null`, `undefined` and `NaN`. Everything else is truthy.
@@ -233,10 +241,10 @@ A literal `{` in text starts a hole. To write a brace, put a backslash before it
 The language is small on purpose. The compiler is easier to reason about, every dependency of a node can be listed at compile time, and a template cannot run arbitrary code. Here is what you will try first, and the real error you get.
 
 ```pavlus-invalid
-p {items.map(x => x.name)}
+p {2 ** 8}
 ```
 
-An arrow function: `Unexpected character "=" (line 1, col 16)`.
+Exponentiation: `Unexpected "*" (line 1, col 7)`. There is no `**`; write `x * x` or compute it in a handler.
 
 ```pavlus-invalid
 p {`Hello ${name}`}
@@ -289,7 +297,7 @@ Both `order.customer?.name ?? 'someone'` and `order.customer.name ?? 'someone'` 
 ## What you learned
 
 - `{expr}` can be in text, in a quoted attribute value, or be a whole attribute value (`alt={x}` or `alt=x`).
-- The language has literals, names, `.` and `[ ]` (both null-safe), calls, unary and binary operators, `?:` and arrays. Nothing is assigned, and there are no arrow functions or template strings.
+- The language has literals, names, `.` and `[ ]` (both null-safe), calls, unary and binary operators, `?:`, arrays and arrow functions with an expression body. Nothing is assigned, and there are no template strings or object literals.
 - `null`, `undefined` and `false` are empty text and a missing attribute; `true` is an empty attribute; `0` and `""` are values.
 - The compiler turns a string with holes into `"literal" + toText(expr) + ...` and compares the result of `prev` and `next` to decide on a patch.
 

@@ -132,7 +132,7 @@ Many popular frameworks use a *virtual DOM*: on each update the component code r
 | Maturity | Large ecosystems, many libraries, many developers. | A young framework with a small surface. Slots, recursive templates and typed props are not built yet. |
 
 > [!WARNING] A different trade, not a better one in every case
-> Compiled diffing is fast for what it knows, but the template language is smaller than JavaScript. Expressions are a small pure subset, so there are no arrow functions in templates. Derived values that need real code are computed in a handler and stored in the state. Pavlus also asks for discipline, because purity is a convention that nothing enforces.
+> Compiled diffing is fast for what it knows, but the template language is smaller than JavaScript. Expressions are a small pure subset — arrow functions have expression bodies only, and there are no object literals or template strings. Derived values that need real code are computed in a handler and stored in the state. Pavlus also asks for discipline, because purity is a convention that nothing enforces.
 
 ## How this documentation is organized
 

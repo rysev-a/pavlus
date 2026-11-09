@@ -29,7 +29,7 @@ pavlus 应用中的问题来自三个地方，每个地方的表现方式都不�
 | `a(href=url` | Unclosed ( | 闭合属性列表。 |
 | `p Hello {name` | Unclosed { | 闭合表达式，或者写 `\{` 表示字面的花括号。 |
 | `p(title="abc) x` | Unterminated string | 闭合引号。 |
-| `p {items.map(x => x)}` | Unexpected character "=" | 不能用箭头函数。在 handler 中计算这个值。 |
+| `p {2 ** 8}` | Unexpected "*" | 没有 `**`。请写 `x * x` 或在 handler 中计算。 |
 | `p {a = 1}` | Unexpected character "=" | 表达式只读取，从不赋值。 |
 | 花括号中的模板字面量 | Unexpected character | 不能用模板字面量。使用 `"a " + b`。 |
 | `button(@click) Go` | "@click" needs an expression value | 写 `@click=save`。 |
@@ -286,7 +286,7 @@ h.unmount();
 
 ## 问答
 
-- **我能在模板中使用箭头函数或模板字面量吗？** 不能，两者都是编译错误。表达式语言是 JavaScript 的一个小型纯子集：路径（null 安全）、字面量、运算符、条件运算符、数组字面量、索引访问（`items[0]`）和调用。值的方法调用是可以的：对于 `ann`，`{name.toUpperCase()}` 显示 `ANN`。调用同样是 null 安全的，这会掩盖拼写错误：`{fmt(name)}` 调用的是 state 字段 `fmt`，如果没有这样的字段，它显示空文本，也没有错误。任何比简短表达式更长的东西都属于 handler：在那里计算它，并把结果保存在 state 中。
+- **我能在模板中使用箭头函数吗？** 能，用表达式体：`{items.map(x => x.name)}` 和 `{items.filter(x => x.on)}` 都能编译运行，参数会遮住同名的 state 字段。块主体（`x => { ... }`）和模板字符串仍然是编译错误。表达式语言的其余部分是 JavaScript 的一个小型纯子集：路径（null 安全）、字面量、运算符、条件运算符、数组字面量、索引访问（`items[0]`）和调用。值的方法调用是可以的：对于 `ann`，`{name.toUpperCase()}` 显示 `ANN`。调用同样是 null 安全的，这会掩盖拼写错误：`{fmt(name)}` 调用的是 state 字段 `fmt`，如果没有这样的字段，它显示空文本，也没有错误。长链条仍然属于 handler：在那里计算它，并把结果保存在 state 中。
 - **如何显示过滤后或排序后的列表？** 在 handler 中计算它，用 `store.set` 存储，然后遍历存储的列表。[指南](page:guide-todo-app) 为过滤器做了这件事。
 - **异步代码放在哪里？** 绝不放在 handler 中。handler 返回 effect，由 plugin 完成异步工作并用 message 作答。请求使用 `http.request`，定时器使用 `time.setTimeout`。
 - **如何读取用户输入的内容？** `@input` 用 `msg.event?.value`，复选框的 `@change` 用 `msg.event?.checked`，键盘事件用 `msg.event?.key`。输入框会保留用户输入的内容；`value=field` 只是给它设定初始值，并跟随该字段之后的变化。
@@ -297,7 +297,7 @@ h.unmount();
 - **两个组件可以有同名的 message 吗？** 可以。子组件有命名空间：对它的父组件来说，子组件的 `select` 是 `row.select`。两个实例名相同的同级组件是不允许的。
 - **如何把 handler 命名为 `users.remove`？** 用带引号的方法名：`"users.remove"(msg: Message) { ... }`。
 - **组件可以把数据保存在类字段中吗？** 会变化的数据不行。实例被每条 message 共享，所以它必须没有可变的 state。请把数据保存在 store 中。
-- **我能用 SVG 绘图吗？** 不能作为元素使用。DOM plugin 创建的元素没有 XML 命名空间，所以 `svg` 标签不会被绘制。ui-kit 用 CSS mask 做图标，用方框、渐变和 emoji 做图画。
+- **我能用 SVG 绘图吗？** 能，作为内联元素。`svg` 标签（以及 `math`）会用自己的 XML 命名空间创建 —— 包括 `if` 或 `for` 在里面添加的元素 —— 因此渐变和变换都能工作。ui-kit 仍然用 CSS mask 做图标，用方框、渐变和 emoji 做图画 —— 这是 kit 的约定，不是框架的限制。
 - **我能不用 Vite 来使用 pavlus 吗？** 编译器是一个普通函数：`compileTemplate(source)` 返回 ES 模块的文本。Vite plugin 是现有的集成，这些页面上的一切都以它为前提。
 - **为什么我的首次 render 是空的？** 因为在 router plugin 报告之前，`route` 是 `null`。先挂载，然后 `mounted` 启动 `router.listen`。如果你使用自己的 `mounted`，它也必须返回 `router.listen("routeChanged")`。
 - **服务端渲染对所有 plugin 都有效吗？** 不是。请给服务器提供浏览器 plugin 的替身；见 [服务端渲染](page:concepts-ssr)。

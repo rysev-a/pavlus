@@ -148,7 +148,7 @@ Look at the two steps. When `currentId` moves from 2 to 3, the class of one item
 
 ## Filtering with if inside for
 
-There is no `filter` in the template language (it would need an arrow function). But an `if` can be the only child of a `for`: then each item is shown only when its condition holds. This is a good way to filter a list that is short.
+A short list can be filtered right in the expression (`items.filter(x => x.done)`); `if` as the only child of a `for` is another way: each item is shown only when its condition holds. This is a good way to filter a list that is short, without building a new array.
 
 ::demo filtered open=ast
 

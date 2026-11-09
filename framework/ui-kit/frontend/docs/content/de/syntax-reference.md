@@ -87,7 +87,7 @@ Alles innerhalb von `{ }` und jeder Attributwert ohne Anführungszeichen wird al
 | ternär | `a ? b : c`, verschachtelt nach rechts |
 | Gruppierung | `( )` |
 
-Nicht unterstützt: Objektliterale, Arrow Functions, Template Strings, reguläre Ausdrücke, Zuweisungen, `++`, `typeof`, `in`, `new`, `**`, bitweise Operatoren, der Komma-Operator, `?.[ ]` und `?.( )`. Namen werden nur im State nachgeschlagen: Es gibt keine Globals.
+Nicht unterstützt: Objektliterale, Template Strings, reguläre Ausdrücke, Zuweisungen, `++`, `typeof`, `in`, `new`, `**`, bitweise Operatoren, der Komma-Operator, `?.[ ]` und `?.( )`. Pfeilfunktionen gibt es, aber nur mit Ausdruckskörper (`x => x.on`). Namen werden nur im State nachgeschlagen: Es gibt keine Globals.
 
 Truthiness funktioniert wie in JavaScript: `false`, `0`, `""`, `null`, `undefined` und `NaN` sind falsy; ein leeres Array und ein leeres Objekt sind truthy.
 

@@ -334,7 +334,7 @@ Ejecuta `npm test`.
 
 ## Paso 3: un filtro
 
-El filtro muestra Todas, Activas o Hechas. Un template no puede filtrar una lista: no tiene funciones flecha ni llamadas con callbacks. Eso no es una carencia, es un diseño. Un valor que depende de otros valores se **calcula una vez, en el handler, y se guarda**. El template solo lo muestra.
+El filtro muestra Todas, Activas o Hechas. Una lista corta puede filtrarse en el propio template (`if` dentro de `for`, o `items.filter(x => x.done)` en una expresión), pero ese no es el diseño de esta app. Un valor que depende de otros valores se **calcula una vez, en el handler, y se guarda**. El template solo lo muestra.
 
 Añadimos tres campos al state: `filter`, `visible` (la lista que se muestra) y `left` (el número de tareas activas). Una función `show(items, filter)` devuelve los cuatro effects `store.set` que los mantienen coherentes, y cada handler que cambia la lista la llama.
 

@@ -334,7 +334,7 @@ Starte `npm test`.
 
 ## Schritt 3: ein Filter
 
-Der Filter zeigt Alle, Aktive oder Erledigte. Ein Template kann eine Liste nicht filtern: Es hat keine Pfeilfunktionen und keine Aufrufe mit Callbacks. Das ist keine Lücke, sondern Absicht. Ein Wert, der von anderen Werten abhängt, wird **einmal im handler berechnet und gespeichert**. Das Template zeigt ihn dann nur an.
+Der Filter zeigt Alle, Aktive oder Erledigte. Ein kurze Liste kann ein Template auch selbst filtern (`if` in `for` oder `items.filter(x => x.done)` in einem Ausdruck), aber das ist nicht das Design dieser App. Ein Wert, der von anderen Werten abhängt, wird **einmal im handler berechnet und gespeichert**. Das Template zeigt ihn dann nur an.
 
 Wir fügen dem State drei Felder hinzu: `filter`, `visible` (die Liste, die gezeigt wird) und `left` (die Anzahl der aktiven Todos). Eine Funktion `show(items, filter)` gibt die vier `store.set`-Effekte zurück, die sie konsistent halten, und jeder handler, der die Liste ändert, ruft sie auf.
 

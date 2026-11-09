@@ -3,8 +3,8 @@
    the admin-app has no use for (kbd, spinner, typography, item, input group,
    chart bars) and the icons.
 
-   The pavlus DOM plugin does not create SVG elements (no namespace yet), so
-   an icon is a mask over `currentColor`: <span class="k-icon k-icon-check">. */
+   An icon is a mask over `currentColor` — <span class="k-icon k-icon-check">
+   — a kit convention from before the dom plugin learned the svg namespace. */
 
 /* ---- icons ---- */
 .k-icon {

@@ -132,7 +132,7 @@ Muchos frameworks populares usan un *DOM virtual*: en cada actualización el có
 | Madurez | Ecosistemas grandes, muchas librerías, muchos desarrolladores. | Un framework joven con una superficie pequeña. Los slots, los templates recursivos y los props tipados aún no están construidos. |
 
 > [!WARNING] Un intercambio distinto, no mejor en todos los casos
-> El diffing compilado es rápido para lo que conoce, pero el lenguaje de templates es más pequeño que JavaScript. Las expresiones son un subconjunto pequeño y puro, así que no hay funciones flecha en los templates. Los valores derivados que necesitan código real se calculan en un handler y se guardan en el state. Pavlus también exige disciplina, porque la pureza es una convención que nada hace cumplir.
+> El diffing compilado es rápido para lo que conoce, pero el lenguaje de templates es más pequeño que JavaScript. Las expresiones son un subconjunto pequeño y puro — las funciones flecha solo tienen cuerpo de expresión, y no hay literales de objeto ni template strings. Los valores derivados que necesitan código real se calculan en un handler y se guardan en el state. Pavlus también exige disciplina, porque la pureza es una convención que nada hace cumplir.
 
 ## Cómo está organizada esta documentación
 

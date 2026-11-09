@@ -51,8 +51,9 @@ most, and the traps:
 
 - Indentation-based. `tag.class#id(attr=expr other="text {expr}" flag) text`.
   A line of text is `| text`. `{expr}` interpolates; `\{` is a literal brace.
-- Expressions are a small pure subset of JS. **No bracket access** (`a[b]`), no
-  arrow functions, no template literals. Compute what you need in the handler
+- Expressions are a small pure subset of JS. Index access (`a[0]`) and arrow
+  functions with an expression body (`xs.filter(x => x.on)`) work; object
+  literals and template literals do not. Compute what you need in the handler
   and keep it in the state (a `title`, a `total`, a list already filtered).
 - `for item in list key item.id` and `if` / `else if` / `else`. A boolean attribute
   is a flag (`disabled`) or `disabled={cond}`; `null` removes an attribute, a
@@ -64,8 +65,9 @@ most, and the traps:
   `msg.event?.checked` for `@change` on a checkbox. Modifiers: `.prevent`, `.stop`.
 - Inputs: `value=state.field`, `checked={state.flag}`. The browser keeps what the
   user typed; the state only seeds it.
-- **No SVG elements** (the DOM plugin creates elements without a namespace).
-  Icons are `span.k-icon.k-icon-<name>` (CSS masks, see `kit.css`); drawings are
+- Inline `<svg>` works (svg/math elements are created in their own namespace,
+  including what an `if`/`for` adds inside), but the kit's own icons stay
+  `span.k-icon.k-icon-<name>` (CSS masks, see `kit.css`); drawings are
   built from boxes, gradients, `clip-path` and emoji.
 - Embedding: `import X from "../hero/view.pavlus"` at the top, then
   `+X#name(title="Hi" list=items ...stateObject)` (static) or `+{expr}#name(...)`

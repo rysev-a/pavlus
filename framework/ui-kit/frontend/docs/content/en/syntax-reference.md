@@ -87,7 +87,7 @@ Everything inside `{ }`, and every unquoted attribute value, is parsed as an exp
 | ternary | `a ? b : c`, nests to the right |
 | grouping | `( )` |
 
-Not supported: object literals, arrow functions, template strings, regular expressions, assignment, `++`, `typeof`, `in`, `new`, `**`, bitwise operators, the comma operator, `?.[ ]` and `?.( )`. Names are looked up in the state only: there are no globals.
+Not supported: object literals, template strings, regular expressions, assignment, `++`, `typeof`, `in`, `new`, `**`, bitwise operators, the comma operator, `?.[ ]` and `?.( )`. Arrow functions exist with an expression body only (`x => x.on`). Names are looked up in the state only: there are no globals.
 
 Truthiness is the one of JavaScript: `false`, `0`, `""`, `null`, `undefined` and `NaN` are falsy; an empty array and an empty object are truthy.
 

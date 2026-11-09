@@ -90,6 +90,43 @@ p {[1, 2, 3].length} numbers
 p {[a, b][which]}`,
     state: { first: "start", last: "end", a: "A", b: "B", which: 1 },
   },
+  arrows: {
+    template: `p {items.filter(x => x.on).length} of {items.length} on
+p {items.map(x => x.name.toUpperCase()).join(", ")}
+p {names.find(n => n.startsWith(prefix)) ?? "none"}`,
+    state: {
+      items: [
+        { name: "ann", on: true },
+        { name: "bob", on: false },
+        { name: "cid", on: true },
+      ],
+      names: ["alpha", "beta", "gamma"],
+      prefix: "b",
+    },
+    steps: [
+      {
+        label: "bob on false → true",
+        prev: {
+          items: [
+            { name: "ann", on: true },
+            { name: "bob", on: false },
+            { name: "cid", on: true },
+          ],
+          names: ["alpha", "beta", "gamma"],
+          prefix: "b",
+        },
+        next: {
+          items: [
+            { name: "ann", on: true },
+            { name: "bob", on: true },
+            { name: "cid", on: true },
+          ],
+          names: ["alpha", "beta", "gamma"],
+          prefix: "b",
+        },
+      },
+    ],
+  },
   precedence: {
     template: `p {1 + 2 * 3}
 p {(1 + 2) * 3}

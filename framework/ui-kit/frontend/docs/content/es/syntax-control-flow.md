@@ -148,7 +148,7 @@ Mira los dos pasos. Cuando `currentId` pasa de 2 a 3, se quita la clase de un el
 
 ## Filtrar con if dentro de for
 
-No hay `filter` en el lenguaje de templates (necesitaría una función flecha). Pero un `if` puede ser el único hijo de un `for`: entonces cada elemento se muestra solo cuando se cumple su condición. Es una buena forma de filtrar una lista corta.
+Una lista corta se puede filtrar directamente en la expresión (`items.filter(x => x.done)`)); un `if` como único hijo de un `for` es otra manera: cada elemento se muestra solo cuando se cumple su condición. Es una buena forma de filtrar una lista corta sin construir un array nuevo.
 
 ::demo filtered open=ast
 
