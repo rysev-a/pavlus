@@ -9,7 +9,7 @@
 
 import type { TemplateAst } from "../template/ast.ts";
 import { TemplateError } from "../template/errors.ts";
-import { parse } from "../template/parser.ts";
+import { parse, type Warn } from "../template/parser.ts";
 import { generateDirect, HELPERS } from "./generate.ts";
 import type { DirectView } from "./runtime.ts";
 import * as runtime from "./runtime.ts";
@@ -21,16 +21,18 @@ export const DIRECT_RUNTIME = "@pavlus/frontend/direct/runtime";
 
 export interface DirectCompileOptions {
   /** Template syntax: text to AST. Default: the native indentation syntax. */
-  parser?: (source: string) => TemplateAst;
+  parser?: (source: string, opts?: { warn?: Warn }) => TemplateAst;
   /** Used in error messages and in the header of the generated module. */
   filename?: string;
   /** Module the helpers are imported from. Default: {@link DIRECT_RUNTIME}. */
   runtime?: string;
+  /** Compiler warnings (philosophy checks); see template/parser.ts. */
+  warn?: Warn;
 }
 
 function build(source: string, opts: DirectCompileOptions) {
   try {
-    const ast = (opts.parser ?? parse)(source);
+    const ast = (opts.parser ?? parse)(source, { warn: opts.warn });
     return { ast, ...generateDirect(ast) };
   } catch (e) {
     if (e instanceof TemplateError && opts.filename) {
@@ -86,10 +88,11 @@ export function compileDirectToView<S = any>(
   source: string,
   opts: {
     components?: Record<string, ViewSource>;
-    parser?: (source: string) => TemplateAst;
+    parser?: (source: string, opts?: { warn?: Warn }) => TemplateAst;
+    warn?: Warn;
   } = {},
 ): DirectView<S> {
-  const { ast, code } = build(source, { parser: opts.parser });
+  const { ast, code } = build(source, { parser: opts.parser, warn: opts.warn });
   const components = opts.components ?? {};
   const names = ast.imports.map((i) => i.local);
   const views = names.map((n) => {

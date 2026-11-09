@@ -140,10 +140,10 @@ describe("elements, text, attributes", () => {
     );
   });
 
-  test("{{ in strings and < in expressions are handled", () => {
-    same(`<p>{{ a < b ? '}}' : "<i>" }}</p>`, `p {a < b ? "}}" : "<i>"}`, [
-      { a: 1, b: 2 },
-      { a: 3, b: 2 },
+  test("{{ in strings and < in string literals are handled", () => {
+    same(`<p>x {{"<i>{{"}} y {{ s }}</p>`, `p x {"<i>{{"} y {s}`, [
+      { s: "}}" },
+      { s: "z" },
     ]);
   });
 
@@ -174,11 +174,11 @@ describe("elements, text, attributes", () => {
 describe("class toggles and events", () => {
   test("[class.name] toggles", () => {
     same(
-      `<li class="item" [class.active]="on" [class.big]="n > 1">{{ n }}</li>`,
-      `li.item(class:active=on class:big=n>1) {n}`,
+      `<li class="item" [class.active]="on" [class.big]="many">{{ n }}</li>`,
+      `li.item(class:active=on class:big=many) {n}`,
       [
-        { on: true, n: 1 },
-        { on: false, n: 2 },
+        { on: true, n: 1, many: true },
+        { on: false, n: 2, many: false },
       ],
     );
   });
@@ -204,7 +204,7 @@ describe("control flow", () => {
     same(
       `@if (a) {
   <p>A</p>
-} @else if (b > 1) {
+} @else if (many) {
   <p>B {{ b }}</p>
 } @else {
   <p>none</p>
@@ -212,15 +212,15 @@ describe("control flow", () => {
 <footer>f</footer>`,
       `if a
   p A
-else if b > 1
+else if many
   p B {b}
 else
   p none
 footer f`,
       [
-        { a: true, b: 0 },
-        { a: false, b: 2 },
-        { a: false, b: 0 },
+        { a: true, b: 0, many: false },
+        { a: false, b: 2, many: true },
+        { a: false, b: 0, many: false },
       ],
     );
   });
@@ -238,30 +238,32 @@ else
     );
   });
 
-  test("@for with track, index and @empty", () => {
+  test("@for with track and index, empty list via a flag", () => {
     const states = [
-      { items: [] },
-      { items: [{ id: 1, t: "a" }] },
+      { items: [], empty: true },
+      { items: [{ id: 1, t: "a" }], empty: false },
       {
         items: [
           { id: 2, t: "b" },
           { id: 1, t: "a" },
           { id: 3, t: "c" },
         ],
+        empty: false,
       },
     ];
     same(
       `<ul>
   @for (item of items; track item.id; let i = $index) {
     <li>{{ i }}: {{ item.t }}</li>
-  } @empty {
+  }
+  @if (empty) {
     <li>Nothing</li>
   }
 </ul>`,
       `ul
   for item, i in items key item.id
     li {i}: {item.t}
-  if !items.length
+  if empty
     li Nothing`,
       states,
     );
@@ -425,7 +427,7 @@ describe("node ids follow the native numbering", () => {
   test("a big template parses to the same AST shape", () => {
     const ng = parseAngular(`<div>
   @if (a) {<p>{{ x }}</p>} @else {<i>y</i>}
-  @for (i of is; track i) {<b>{{ i }}</b>} @empty {<u>z</u>}
+  @for (i of is; track i) {<b>{{ i }}</b>} @if (none) {<u>z</u>}
   <router-outlet />
 </div>`);
     const nids: number[] = [];
@@ -451,12 +453,20 @@ describe("errors point into the original HTML", () => {
   });
 
   test("expression errors are mapped to the expression", () => {
-    expectErrorAt(`<p>\n  {{ a + }}\n</p>`, "}}\n", /Unexpected/);
+    expectErrorAt(
+      `<p>\n  {{ a + }}\n</p>`,
+      "+",
+      /the "\+" operator is not allowed in a template expression/,
+    );
     expectErrorAt(`<p title="x {{ 1 @ 2 }}">`, "@ 2", /Unexpected character/);
-    expectErrorAt(`<p [x]="a.">t</p>`, '">t', /property name/);
-    expectErrorAt(`<p>\n{{ a\n   + (b }}</p>`, "}}", /Expected|Unexpected/);
+    expectErrorAt(`<p [x]="a.">t</p>`, '">t', /Unexpected end of expression/);
+    expectErrorAt(
+      `<p>{{ a < b }}</p>`,
+      "< b",
+      /the "<" operator is not allowed in a template expression/,
+    );
     expectErrorAt(`<p>{{ }}</p>`, " }}", /Empty expression/);
-    expectErrorAt(`<p>{{ a | upper }}</p>`, "| upper", /Unexpected/);
+    expectErrorAt(`<p>{{ a | upper }}</p>`, "| upper", /Unexpected character/);
   });
 
   test("interpolation", () => {
@@ -479,6 +489,11 @@ describe("errors point into the original HTML", () => {
     expectErrorAt(`<p>@if (a) { x </p> }</p>`, "</p> }", /still open/);
     expectErrorAt(`@if (a) { <p> } </p>`, "} </p>", /still open/);
     expectErrorAt(`@empty { x }`, "@empty", /without a matching @for/);
+    expectErrorAt(
+      `@for (x of xs) { } @empty { x }`,
+      "@empty",
+      /needs `!list\.length`, which the template language no longer expresses/,
+    );
     expectErrorAt(`@switch (a) { }`, "@switch", /not supported/);
     expectErrorAt(`@for (x in xs; track x) { }`, "x in xs", /item of items/);
     expectErrorAt(
@@ -492,7 +507,11 @@ describe("errors point into the original HTML", () => {
       " $index",
       /only available inside @for/,
     );
-    expectErrorAt(`@for (x of xs; track x.) { }`, ") {", /property name/);
+    expectErrorAt(
+      `@for (x of xs; track x.) { }`,
+      ") {",
+      /Unexpected end of expression/,
+    );
   });
 
   test("legacy directives", () => {
@@ -514,7 +533,11 @@ describe("errors point into the original HTML", () => {
 
   test("attributes", () => {
     expectErrorAt(`<p (click)="a = 1"></p>`, "= 1", /Unexpected character/);
-    expectErrorAt(`<p (click)="a + b"></p>`, "a + b", /message id/);
+    expectErrorAt(
+      `<p (click)="a + b"></p>`,
+      "+ b",
+      /the "\+" operator is not allowed in an event binding/,
+    );
     expectErrorAt(`<p (click.foo)="a"></p>`, "(click.foo)", /modifier/);
     expectErrorAt(`<p [(x)]="a"></p>`, "[(x)]", /Two-way/);
     expectErrorAt(
@@ -590,7 +613,7 @@ describe("errors point into the original HTML", () => {
         parser: parseAngular,
         filename: "x.ng.html",
       }),
-    ).toThrow(/x\.ng\.html: Unexpected/);
+    ).toThrow(/x\.ng\.html: the "\+" operator is not allowed/);
   });
 });
 
@@ -599,7 +622,7 @@ describe("DOM", () => {
 <section class="todo">
   <form (submit.prevent)="add">
     <input type="text" [value]="draft" />
-    <button type="submit" [disabled]="!draft">Add</button>
+    <button type="submit" [disabled]="emptyDraft">Add</button>
   </form>
   <ul>
     @for (t of todos; track t.id) {
@@ -607,21 +630,30 @@ describe("DOM", () => {
         <span (click)="toggle(t.id)">{{ t.title }}</span>
         <button (click.stop)="remove(t.id)">x</button>
       </li>
-    } @empty {
+    } @if (noTodos) {
       <li class="empty">Nothing to do</li>
     }
   </ul>
-  <p *ngIf="todos.length">{{ todos.length }} left</p>
+  <p *ngIf="left">{{ left }} left</p>
 </section>`;
 
   interface S {
     draft: string;
+    emptyDraft: boolean;
+    noTodos: boolean;
+    left: number;
     todos: { id: number; title: string; done: boolean }[];
   }
 
   test("mounts, handles clicks and patches on updates", () => {
     const view = compileToView<S>(TODO, { parser: parseAngular });
-    const h = mountView(view, { draft: "", todos: [] });
+    const h = mountView(view, {
+      draft: "",
+      emptyDraft: true,
+      noTodos: true,
+      left: 0,
+      todos: [],
+    });
     expect(h.root.querySelector(".empty")).not.toBeNull();
     expect(
       h.root.querySelector("button[type=submit]")!.hasAttribute("disabled"),
@@ -630,6 +662,9 @@ describe("DOM", () => {
 
     h.set({
       draft: "x",
+      emptyDraft: false,
+      noTodos: false,
+      left: 2,
       todos: [
         { id: 1, title: "milk", done: false },
         { id: 2, title: "eggs", done: true },
@@ -650,7 +685,13 @@ describe("DOM", () => {
       ["remove", 2],
     ]);
 
-    h.set({ draft: "", todos: [{ id: 2, title: "eggs", done: false }] });
+    h.set({
+      draft: "",
+      emptyDraft: true,
+      noTodos: false,
+      left: 1,
+      todos: [{ id: 2, title: "eggs", done: false }],
+    });
     expect(h.root.querySelectorAll("li")).toHaveLength(1);
     expect(h.root.querySelector("li.done")).toBeNull();
     h.unmount();

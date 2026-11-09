@@ -10,7 +10,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   const sectionChildren = [];
   // line 3: if
   sectionChildren.push({ t: "marker", id: idSuffix + "1s" });
-  if ((state.status === "loading")) {
+  if (state.isLoading) {
     // line 4: <p.status>
     const pChildren = [];
     pChildren.push({ t: "text", text: "Loading..." });
@@ -22,7 +22,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
       events: {},
       children: pChildren,
     });
-  } else if ((state.status === "failed")) {
+  } else if (state.isFailed) {
     // line 6: <p.status.status--error>
     const pChildren = [];
     pChildren.push({ t: "text", id: idSuffix + "5", text: "" + toText(state.error) });
@@ -114,12 +114,12 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
 function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
   const patches = [];
   if (prev === next) return patches;
-  // line 2: <section> (reads: status, error, items, footer)
-  if (prev.status !== next.status || prev.error !== next.error || prev.items !== next.items || prev.footer !== next.footer) {
-    // line 3: if (reads: status, error, items)
-    if (prev.status !== next.status || prev.error !== next.error || prev.items !== next.items) {
-      const prevBranch = (prev.status === "loading") ? 0 : (prev.status === "failed") ? 1 : 2;
-      const nextBranch = (next.status === "loading") ? 0 : (next.status === "failed") ? 1 : 2;
+  // line 2: <section> (reads: isLoading, isFailed, error, items, footer)
+  if (prev.isLoading !== next.isLoading || prev.isFailed !== next.isFailed || prev.error !== next.error || prev.items !== next.items || prev.footer !== next.footer) {
+    // line 3: if (reads: isLoading, isFailed, error, items)
+    if (prev.isLoading !== next.isLoading || prev.isFailed !== next.isFailed || prev.error !== next.error || prev.items !== next.items) {
+      const prevBranch = prev.isLoading ? 0 : prev.isFailed ? 1 : 2;
+      const nextBranch = next.isLoading ? 0 : next.isFailed ? 1 : 2;
       if (prevBranch !== nextBranch) {
         // another branch: replace what is between the markers
         if (prevBranch !== -1) patches.push({ op: "clear", from: idSuffix + "1s", to: idSuffix + "1e" });

@@ -20,7 +20,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
     ulChildren.push({ t: "marker", id: itemSuffix + "1[" });
     // line 7: +Row#row
     ulChildren.push(...Row.render(
-      { ...(item), "selected": (state.selected === (item)?.id), "label": "Item " + toText((item)?.id) },
+      { ...(item), "selected": (item)?.isSelected, "label": "Item " + toText((item)?.id) },
       itemSuffix + "/2",
       messagePrefix + "row.",
       childEnv(env, "row", state),
@@ -30,7 +30,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   ulChildren.push({ t: "marker", id: idSuffix + "1e" });
   // line 8: +Badge#badge
   ulChildren.push(...Badge.render(
-    { "count": (state.items)?.length },
+    { "count": state.itemCount },
     idSuffix + "/3",
     messagePrefix + "badge.",
     childEnv(env, "badge", state),
@@ -50,55 +50,57 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
 function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
   const patches = [];
   if (prev === next) return patches;
-  // line 5: <ul.rows> (reads: selected, items)
-  if (prev.selected !== next.selected || prev.items !== next.items) {
-    // line 6: for item
-    const prevItemList = (prev.items) || [];
-    const nextItemList = (next.items) || [];
-    const prevItemKeys = prevItemList.map((item, itemIndex) => String((item)?.id));
-    const nextItemKeys = nextItemList.map((item, itemIndex) => String((item)?.id));
-    const itemStartId = (key) => idSuffix + "#" + key + "1[";
-    const itemEndId = (key) => idSuffix + "#" + key + "1]";
-    diffKeyedList(prevItemKeys, nextItemKeys, itemStartId, idSuffix + "1e", {
-      remove(key) { patches.push({ op: "remove", from: itemStartId(key), to: itemEndId(key) }); },
-      insert(index, beforeId) {
-        const item = nextItemList[index];
-        const itemKey = nextItemKeys[index];
-        const itemSuffix = idSuffix + "#" + itemKey;
-        const itemNodes = [];
-        itemNodes.push({ t: "marker", id: itemStartId(itemKey) });
-        // line 7: +Row#row
-        itemNodes.push(...Row.render(
-          { ...(item), "selected": (next.selected === (item)?.id), "label": "Item " + toText((item)?.id) },
-          itemSuffix + "/2",
-          messagePrefix + "row.",
-          childEnv(env, "row", next),
-        ));
-        itemNodes.push({ t: "marker", id: itemEndId(itemKey) });
-        patches.push({ op: "insert", before: beforeId, nodes: itemNodes });
-      },
-      move(key, beforeId) { patches.push({ op: "move", from: itemStartId(key), to: itemEndId(key), before: beforeId }); },
-      common(prevIndex, nextIndex) {
-        const prevItem = prevItemList[prevIndex];
-        const nextItem = nextItemList[nextIndex];
-        const itemSuffix = idSuffix + "#" + nextItemKeys[nextIndex];
-        // line 7: +Row#row (reads: item, selected)
-        if (prevItem !== nextItem || prev.selected !== next.selected) {
-          patches.push(...Row.diff(
-            { ...(prevItem), "selected": (prev.selected === (prevItem)?.id), "label": "Item " + toText((prevItem)?.id) },
-            { ...(nextItem), "selected": (next.selected === (nextItem)?.id), "label": "Item " + toText((nextItem)?.id) },
+  // line 5: <ul.rows> (reads: items, itemCount)
+  if (prev.items !== next.items || prev.itemCount !== next.itemCount) {
+    // line 6: for item (reads: items)
+    if (prev.items !== next.items) {
+      const prevItemList = (prev.items) || [];
+      const nextItemList = (next.items) || [];
+      const prevItemKeys = prevItemList.map((item, itemIndex) => String((item)?.id));
+      const nextItemKeys = nextItemList.map((item, itemIndex) => String((item)?.id));
+      const itemStartId = (key) => idSuffix + "#" + key + "1[";
+      const itemEndId = (key) => idSuffix + "#" + key + "1]";
+      diffKeyedList(prevItemKeys, nextItemKeys, itemStartId, idSuffix + "1e", {
+        remove(key) { patches.push({ op: "remove", from: itemStartId(key), to: itemEndId(key) }); },
+        insert(index, beforeId) {
+          const item = nextItemList[index];
+          const itemKey = nextItemKeys[index];
+          const itemSuffix = idSuffix + "#" + itemKey;
+          const itemNodes = [];
+          itemNodes.push({ t: "marker", id: itemStartId(itemKey) });
+          // line 7: +Row#row
+          itemNodes.push(...Row.render(
+            { ...(item), "selected": (item)?.isSelected, "label": "Item " + toText((item)?.id) },
             itemSuffix + "/2",
             messagePrefix + "row.",
             childEnv(env, "row", next),
           ));
-        }
-      },
-    });
-    // line 8: +Badge#badge (reads: items)
-    if (prev.items !== next.items) {
+          itemNodes.push({ t: "marker", id: itemEndId(itemKey) });
+          patches.push({ op: "insert", before: beforeId, nodes: itemNodes });
+        },
+        move(key, beforeId) { patches.push({ op: "move", from: itemStartId(key), to: itemEndId(key), before: beforeId }); },
+        common(prevIndex, nextIndex) {
+          const prevItem = prevItemList[prevIndex];
+          const nextItem = nextItemList[nextIndex];
+          const itemSuffix = idSuffix + "#" + nextItemKeys[nextIndex];
+          // line 7: +Row#row (reads: item)
+          if (prevItem !== nextItem) {
+            patches.push(...Row.diff(
+              { ...(prevItem), "selected": (prevItem)?.isSelected, "label": "Item " + toText((prevItem)?.id) },
+              { ...(nextItem), "selected": (nextItem)?.isSelected, "label": "Item " + toText((nextItem)?.id) },
+              itemSuffix + "/2",
+              messagePrefix + "row.",
+              childEnv(env, "row", next),
+            ));
+          }
+        },
+      });
+    }
+    // line 8: +Badge#badge (reads: itemCount)
+    if (prev.itemCount !== next.itemCount) {
       patches.push(...Badge.diff(
-        { "count": (prev.items)?.length },
-        { "count": (next.items)?.length },
+        { "count": prev.itemCount },
+        { "count": next.itemCount },
         idSuffix + "/3",
         messagePrefix + "badge.",
         childEnv(env, "badge", next),

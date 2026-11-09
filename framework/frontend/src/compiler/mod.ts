@@ -2,7 +2,7 @@ import * as runtime from "../runtime/helpers.ts";
 import type { View } from "../runtime/vnode.ts";
 import type { TemplateAst } from "../template/ast.ts";
 import { TemplateError } from "../template/errors.ts";
-import { parse } from "../template/parser.ts";
+import { parse, type Warn } from "../template/parser.ts";
 import { generate } from "./codegen.ts";
 
 /** Where compiled templates import their runtime helpers from. */
@@ -19,6 +19,8 @@ export interface CompileOptions {
   filename?: string;
   /** Module the helpers are imported from. Default: {@link DEFAULT_RUNTIME}. */
   runtime?: string;
+  /** Compiler warnings (philosophy checks); see template/parser.ts. */
+  warn?: Warn;
 }
 
 interface Built {
@@ -28,7 +30,9 @@ interface Built {
 }
 
 /** Turns source text into the template AST: the one thing a syntax provides. */
-export type Parser = (source: string) => TemplateAst;
+export type Parser = (source: string, opts?: { warn?: Warn }) => TemplateAst;
+
+export type { Warn } from "../template/parser.ts";
 
 function build(
   source: string,
@@ -36,7 +40,7 @@ function build(
   parser: Parser = parse,
 ): Built {
   try {
-    const ast = parser(source);
+    const ast = parser(source, { warn: opts.warn });
     return { ast, ...generate(ast) };
   } catch (e) {
     if (e instanceof TemplateError && opts.filename) {
@@ -93,9 +97,13 @@ type ViewSource = View | { view?: View };
  */
 export function compileToView<S = any>(
   source: string,
-  opts: { components?: Record<string, ViewSource>; parser?: Parser } = {},
+  opts: {
+    components?: Record<string, ViewSource>;
+    parser?: Parser;
+    warn?: Warn;
+  } = {},
 ): View<S> {
-  const { ast, code } = build(source, {}, opts.parser);
+  const { ast, code } = build(source, { warn: opts.warn }, opts.parser);
   const components = opts.components ?? {};
   const names = ast.imports.map((i) => i.local);
   const views = names.map((n) => {

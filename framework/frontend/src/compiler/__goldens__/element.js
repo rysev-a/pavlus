@@ -42,7 +42,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
   });
   // line 5: <button.go>
   const buttonChildren = [];
-  buttonChildren.push({ t: "text", id: idSuffix + "5", text: "" + toText((state.busy ? "Saving..." : "Save")) });
+  buttonChildren.push({ t: "text", id: idSuffix + "5", text: "" + toText(state.saveLabel) });
   const buttonAttrs = { "type": "submit" };
   setAttr(buttonAttrs, "class", joinClasses(["go", (state.busy ? "busy" : "")]));
   formChildren.push({
@@ -89,8 +89,8 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
 function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
   const patches = [];
   if (prev === next) return patches;
-  // line 2: <form.login> (reads: url, inputId, extra, label, name, busy, error, user)
-  if (prev.url !== next.url || prev.inputId !== next.inputId || prev.extra !== next.extra || prev.label !== next.label || prev.name !== next.name || prev.busy !== next.busy || prev.error !== next.error || prev.user !== next.user) {
+  // line 2: <form.login> (reads: url, inputId, extra, label, name, busy, error, saveLabel, user)
+  if (prev.url !== next.url || prev.inputId !== next.inputId || prev.extra !== next.extra || prev.label !== next.label || prev.name !== next.name || prev.busy !== next.busy || prev.error !== next.error || prev.saveLabel !== next.saveLabel || prev.user !== next.user) {
     const prevAction = toAttr(prev.url);
     const nextAction = toAttr(next.url);
     if (prevAction !== nextAction) {
@@ -150,8 +150,8 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
         patches.push({ op: "handler", id: idSuffix + "3", event: "keydown", msg: { id: messagePrefix + "key", payload: nextKeydownPayload, stop: true } });
       }
     }
-    // line 5: <button.go> (reads: busy)
-    if (prev.busy !== next.busy) {
+    // line 5: <button.go> (reads: busy, saveLabel)
+    if (prev.busy !== next.busy || prev.saveLabel !== next.saveLabel) {
       const prevClass = joinClasses(["go", (prev.busy ? "busy" : "")]);
       const nextClass = joinClasses(["go", (next.busy ? "busy" : "")]);
       if (prevClass !== nextClass) {
@@ -159,10 +159,12 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
           ? { op: "rmAttr", id: idSuffix + "4", name: "class" }
           : { op: "attr", id: idSuffix + "4", name: "class", value: nextClass });
       }
-      // line 5: text
-      const prevText = "" + toText((prev.busy ? "Saving..." : "Save"));
-      const nextText = "" + toText((next.busy ? "Saving..." : "Save"));
-      if (prevText !== nextText) patches.push({ op: "text", id: idSuffix + "5", text: nextText });
+      // line 5: text (reads: saveLabel)
+      if (prev.saveLabel !== next.saveLabel) {
+        const prevText = "" + toText(prev.saveLabel);
+        const nextText = "" + toText(next.saveLabel);
+        if (prevText !== nextText) patches.push({ op: "text", id: idSuffix + "5", text: nextText });
+      }
     }
     // line 6: <a> (reads: user)
     if (prev.user !== next.user) {

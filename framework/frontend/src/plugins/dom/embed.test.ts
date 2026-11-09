@@ -15,7 +15,7 @@ const List = compileToView(
   `import Row from "./row.pavlus"
 ul.list
   for it in items key it.id
-    +Row#row(id=it.id label=it.label on={it.id === sel})`,
+    +Row#row(id=it.id label=it.label on=it.on)`,
   { components: { Row } },
 );
 
@@ -45,6 +45,8 @@ div.page
 interface Item {
   id: number;
   label: string;
+  /** Ready flag: `id === sel`, computed where the state is built. */
+  on: boolean;
 }
 interface State {
   title: string;
@@ -63,26 +65,27 @@ function rng(seed: number): () => number {
 
 function randomState(r: () => number, prev?: State): State {
   const pick = <T>(xs: T[]): T => xs[Math.floor(r() * xs.length)];
-  let items: Item[] =
+  const sel = Math.floor(r() * 10);
+  let base: { id: number; label: string }[] =
     prev && r() < 0.8
       ? prev.items
           .filter(() => r() < 0.8)
-          .map((i) => (r() < 0.8 ? i : { ...i, label: pick(["a", "b"]) }))
+          .map((i) => (r() < 0.8 ? i : { id: i.id, label: pick(["a", "b"]) }))
       : [];
   for (let k = 0; k < Math.floor(r() * 3); k++) {
     const id = Math.floor(r() * 10);
-    if (!items.some((i) => i.id === id))
-      items.splice(Math.floor(r() * (items.length + 1)), 0, {
+    if (!base.some((i) => i.id === id))
+      base.splice(Math.floor(r() * (base.length + 1)), 0, {
         id,
         label: pick(["x", "y"]),
       });
   }
-  if (r() < 0.2) items = [...items].sort(() => r() - 0.5);
+  if (r() < 0.2) base = [...base].sort(() => r() - 0.5);
   return {
     title: prev && r() < 0.7 ? prev.title : pick(["T1", "T2"]),
     show: r() < 0.6,
-    sel: Math.floor(r() * 10),
-    items,
+    sel,
+    items: base.map((i) => ({ ...i, on: i.id === sel })),
     // a view, a component that has a view, or nothing
     Alt: pick<unknown>([
       Plain,
@@ -145,7 +148,7 @@ describe("embedded children: diff equals fresh render", () => {
       title: "T",
       show: false,
       sel: 0,
-      items: [{ id: 1, label: "a" }],
+      items: [{ id: 1, label: "a", on: true }],
       Alt: Plain,
     };
     // different template: clear + insert, nothing diffed across templates
@@ -165,7 +168,7 @@ describe("embedded children: diff equals fresh render", () => {
     expect(
       Page.diff(base, {
         ...base,
-        items: [...base.items, { id: 2, label: "b" }],
+        items: [...base.items, { id: 2, label: "b", on: false }],
       }).map((p) => p.op),
     ).toContain("text");
   });
@@ -175,14 +178,17 @@ describe("embedded children: diff equals fresh render", () => {
       title: "T",
       show: true,
       sel: 1,
-      items: [{ id: 1, label: "a" }],
+      items: [{ id: 1, label: "a", on: true }],
       Alt: null,
     };
     expect(Page.diff(s, { ...s, items: s.items })).toEqual([]);
     // selecting another row touches only the two rows' class attributes
     const patches = Page.diff(s, {
       ...s,
-      items: [...s.items, { id: 2, label: "b" }],
+      items: [
+        { id: 1, label: "a", on: false },
+        { id: 2, label: "b", on: true },
+      ],
       sel: 2,
     });
     expect(patches.map((p) => p.op)).toEqual(

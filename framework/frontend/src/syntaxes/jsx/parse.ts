@@ -15,7 +15,7 @@ import type {
   TemplateAst,
 } from "../../template/ast.ts";
 import { TemplateError } from "../../template/errors.ts";
-import { parseExpr } from "../../template/expr.ts";
+import { parseEvent, parseExpr } from "../../template/expr.ts";
 
 /**
  * The JSX syntax (`.view.jsx`). A file is import lines followed by ONE JSX
@@ -145,21 +145,7 @@ function collapseText(s: string): string {
   return out;
 }
 
-/** Turns `removeUser(user)` / `users.remove` into a message binding. */
-function toMessage(e: Expr, fail: () => never): { msg: string; args: Expr[] } {
-  const name = (x: Expr): string | null =>
-    x.k === "id"
-      ? x.name
-      : x.k === "member"
-        ? name(x.obj) === null
-          ? null
-          : `${name(x.obj)}.${x.prop}`
-        : null;
-  const callee = e.k === "call" ? e.callee : e;
-  const msg = name(callee);
-  if (msg === null) fail();
-  return { msg: msg!, args: e.k === "call" ? e.args : [] };
-}
+
 
 /** A parsed element or fragment: its nodes and its `key` attribute. */
 interface Parsed {
@@ -182,6 +168,18 @@ interface Container {
 type Raw =
   | { kind: "spread"; off: number; expr: Expr }
   | {
+      /** `onClick={save}`: the value stays raw — `parseEvent` reads it later. */
+      kind: "event";
+      name: string;
+      off: number;
+      /** Offset of the value (for errors). */
+      voff: number;
+      /** The unparsed source of the handler value. */
+      raw: string;
+      /** Offset of `raw` in the file (for error positions). */
+      roff: number;
+    }
+  | {
       kind: "bool" | "str" | "expr";
       name: string;
       off: number;
@@ -190,6 +188,9 @@ type Raw =
       str: string;
       expr: Expr | null;
     };
+
+/** `onClick` / `onClickPrevent` / `onInput` — an event handler attribute. */
+const EVENT_ATTR = /^on([A-Z][A-Za-z0-9]*)$/;
 
 /** A trimmed range inside a container's masked text. */
 type Range = [number, number];
@@ -235,6 +236,19 @@ class JsxParser {
       const raw = e.message.replace(/ \(line \d+, col \d+\)$/, "");
       const delta = e.line === at.line ? e.col - at.col : 0;
       return this.fail(raw, off + delta);
+    }
+  }
+
+  /** `parseEvent` for a raw event value, with the error moved to its place. */
+  private parseEventAt(raw: string, off: number): { msg: string; args: Expr[] } {
+    const at = this.pos(off);
+    try {
+      return parseEvent(raw, at);
+    } catch (e) {
+      if (!(e instanceof TemplateError)) throw e;
+      const text = e.message.replace(/ \(line \d+, col \d+\)$/, "");
+      const delta = e.line === at.line ? e.col - at.col : 0;
+      return this.fail(text, off + delta);
     }
   }
 
@@ -438,6 +452,19 @@ class JsxParser {
         this.p = box.close + 1;
         this.noHoles(box);
         const [a, b] = trimRange(box.m, 0, box.m.length);
+        if (EVENT_ATTR.test(name)) {
+          // an event handler is a message binding, not an expression: keep
+          // the source raw (`onClick={remove(item.id)}`), parseEvent reads it
+          raws.push({
+            kind: "event",
+            name,
+            off,
+            voff,
+            raw: box.m.slice(a, b),
+            roff: box.base + a,
+          });
+          continue;
+        }
         if (box.m[a] === "{") {
           this.fail(
             "Object expressions are not supported (`style` must be a string)",
@@ -483,7 +510,7 @@ class JsxParser {
     let key: Expr | null = null;
     const rest: Raw[] = [];
     for (const r of raws) {
-      if (r.kind !== "spread" && r.name === "key") {
+      if (r.kind !== "spread" && r.kind !== "event" && r.name === "key") {
         key = r.kind === "expr" ? r.expr : { k: "lit", value: r.str };
       } else rest.push(r);
     }
@@ -527,7 +554,13 @@ class JsxParser {
       return r.expr!;
     };
     const parts = (): Part[] | null =>
-      r.kind === "bool" ? null : r.kind === "str" ? str(r.str) : [r.expr!];
+      r.kind === "bool"
+        ? null
+        : r.kind === "str"
+          ? str(r.str)
+          : r.kind === "expr"
+            ? [r.expr!]
+            : this.fail(`"${r.name}" needs an {expression} value`, r.voff);
 
     if (r.name === "class" || r.name === "className") {
       if (r.kind === "str") {
@@ -542,7 +575,7 @@ class JsxParser {
       el.toggles.push(t);
       return;
     }
-    const ev = /^on([A-Z][A-Za-z0-9]*)$/.exec(r.name);
+    const ev = EVENT_ATTR.exec(r.name);
     if (ev) {
       let name = ev[1];
       let prevent = false;
@@ -556,12 +589,10 @@ class JsxParser {
           name = name.slice(0, -4);
         } else break;
       }
-      const { msg, args } = toMessage(value(), () =>
-        this.fail(
-          "Event handler must be a message id like `save` or `remove(item)`",
-          r.voff,
-        ),
-      );
+      if (r.kind !== "event") {
+        this.fail(`"${r.name}" needs an {expression} value`, r.voff);
+      }
+      const { msg, args } = this.parseEventAt(r.raw, r.roff);
       const binding: EventBinding = {
         name: name.toLowerCase(),
         msg,
@@ -600,6 +631,11 @@ class JsxParser {
     for (const r of raws) {
       if (r.kind === "spread") {
         props.push({ spread: r.expr });
+      } else if (r.kind === "event") {
+        this.fail(
+          `Events are not allowed on components: <${tag} ${r.name}={...} />`,
+          r.off,
+        );
       } else if (r.name === "name") {
         if (r.kind !== "str" || !/^[A-Za-z_$][\w$]*$/.test(r.str)) {
           this.fail("Instance name must be a plain identifier string", r.voff);
@@ -889,19 +925,19 @@ class JsxParser {
       else if (!isNull(tern.alt)) out.push(...this.chain(box, tern.alt));
       return out;
     }
-    // `cond ? null : <B/>` shows B when the condition is false.
+    // `cond ? null : <X/>` used to build a negated test (`!cond`); an
+    // inverted flag must come from component code instead
+    // (framework/docs/philosophy.md)
     if (!alt) {
       this.fail(
         "A conditional needs at least one JSX branch",
         box.base + range[0],
       );
     }
-    return [
-      {
-        test: { k: "unary", op: "!", arg: test },
-        children: alt!.parsed.nodes,
-      },
-    ];
+    return this.fail(
+      "`cond ? null : <X/>` is not allowed — pass an inverted flag from component code (framework/docs/philosophy.md)",
+      box.base + range[0],
+    );
   }
 
   /** `list.map((item, i) => <li key={item.id}>...</li>)` as a `for`. */

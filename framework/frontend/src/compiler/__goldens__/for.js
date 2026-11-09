@@ -33,7 +33,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
       if ((cell)?.link) {
         // line 8: <a>
         const aChildren = [];
-        aChildren.push({ t: "text", id: cellSuffix + "7", text: "" + toText((cell)?.text) });
+        aChildren.push({ t: "text", id: cellSuffix + "7", text: "" + toText(r) + "-" + toText(c) + " " + toText((cell)?.text) });
         const aAttrs = {};
         setAttr(aAttrs, "href", toAttr((cell)?.link));
         tdChildren.push({
@@ -60,7 +60,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
     }
     trChildren.push({ t: "marker", id: rowSuffix + "3e" });
     const trAttrs = {};
-    setAttr(trAttrs, "class", joinClasses([(((r % 2) === 1) ? "odd" : "")]));
+    setAttr(trAttrs, "class", joinClasses([((row)?.isOdd ? "odd" : "")]));
     tableChildren.push({
       t: "el",
       id: rowSuffix + "2",
@@ -121,7 +121,7 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
           if ((cell)?.link) {
             // line 8: <a>
             const aChildren = [];
-            aChildren.push({ t: "text", id: cellSuffix + "7", text: "" + toText((cell)?.text) });
+            aChildren.push({ t: "text", id: cellSuffix + "7", text: "" + toText(index) + "-" + toText(c) + " " + toText((cell)?.text) });
             const aAttrs = {};
             setAttr(aAttrs, "href", toAttr((cell)?.link));
             tdChildren.push({
@@ -148,7 +148,7 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
         }
         trChildren.push({ t: "marker", id: rowSuffix + "3e" });
         const trAttrs = {};
-        setAttr(trAttrs, "class", joinClasses([(((index % 2) === 1) ? "odd" : "")]));
+        setAttr(trAttrs, "class", joinClasses([((row)?.isOdd ? "odd" : "")]));
         rowNodes.push({
           t: "el",
           id: rowSuffix + "2",
@@ -165,125 +165,125 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
         const prevRow = prevRowList[prevIndex];
         const nextRow = nextRowList[nextIndex];
         const rowSuffix = idSuffix + "#" + nextRowKeys[nextIndex];
-        // line 4: <tr> (reads: r, row)
-        if (prevIndex !== nextIndex || prevRow !== nextRow) {
-          const prevClass = joinClasses([(((prevIndex % 2) === 1) ? "odd" : "")]);
-          const nextClass = joinClasses([(((nextIndex % 2) === 1) ? "odd" : "")]);
+        // line 4: <tr> (reads: row, r)
+        if (prevRow !== nextRow || prevIndex !== nextIndex) {
+          const prevClass = joinClasses([((prevRow)?.isOdd ? "odd" : "")]);
+          const nextClass = joinClasses([((nextRow)?.isOdd ? "odd" : "")]);
           if (prevClass !== nextClass) {
             patches.push(nextClass === null
               ? { op: "rmAttr", id: rowSuffix + "2", name: "class" }
               : { op: "attr", id: rowSuffix + "2", name: "class", value: nextClass });
           }
-          // line 5: for cell, c (reads: row)
-          if (prevRow !== nextRow) {
-            const prevCellList = ((prevRow)?.cells) || [];
-            const nextCellList = ((nextRow)?.cells) || [];
-            const prevCellKeys = prevCellList.map((cell, c) => String((cell)?.id));
-            const nextCellKeys = nextCellList.map((cell, c) => String((cell)?.id));
-            const cellStartId = (key) => rowSuffix + "#" + key + "3[";
-            const cellEndId = (key) => rowSuffix + "#" + key + "3]";
-            diffKeyedList(prevCellKeys, nextCellKeys, cellStartId, rowSuffix + "3e", {
-              remove(key) { patches.push({ op: "remove", from: cellStartId(key), to: cellEndId(key) }); },
-              insert(index, beforeId) {
-                const cell = nextCellList[index];
-                const cellKey = nextCellKeys[index];
-                const cellSuffix = rowSuffix + "#" + cellKey;
-                const cellNodes = [];
-                cellNodes.push({ t: "marker", id: cellStartId(cellKey) });
-                // line 6: <td>
-                const tdChildren = [];
-                // line 7: if
-                tdChildren.push({ t: "marker", id: cellSuffix + "5s" });
-                if ((cell)?.link) {
-                  // line 8: <a>
-                  const aChildren = [];
-                  aChildren.push({ t: "text", id: cellSuffix + "7", text: "" + toText((cell)?.text) });
-                  const aAttrs = {};
-                  setAttr(aAttrs, "href", toAttr((cell)?.link));
-                  tdChildren.push({
-                    t: "el",
-                    id: cellSuffix + "6",
-                    tag: "a",
-                    attrs: aAttrs,
-                    events: {},
-                    children: aChildren,
-                  });
-                } else {
-                  tdChildren.push({ t: "text", id: cellSuffix + "8", text: "" + toText((cell)?.text) });
-                }
-                tdChildren.push({ t: "marker", id: cellSuffix + "5e" });
-                const tdAttrs = {};
-                cellNodes.push({
+          // line 5: for cell, c
+          const prevCellList = ((prevRow)?.cells) || [];
+          const nextCellList = ((nextRow)?.cells) || [];
+          const prevCellKeys = prevCellList.map((cell, c) => String((cell)?.id));
+          const nextCellKeys = nextCellList.map((cell, c) => String((cell)?.id));
+          const cellStartId = (key) => rowSuffix + "#" + key + "3[";
+          const cellEndId = (key) => rowSuffix + "#" + key + "3]";
+          diffKeyedList(prevCellKeys, nextCellKeys, cellStartId, rowSuffix + "3e", {
+            remove(key) { patches.push({ op: "remove", from: cellStartId(key), to: cellEndId(key) }); },
+            insert(index, beforeId) {
+              const cell = nextCellList[index];
+              const cellKey = nextCellKeys[index];
+              const cellSuffix = rowSuffix + "#" + cellKey;
+              const cellNodes = [];
+              cellNodes.push({ t: "marker", id: cellStartId(cellKey) });
+              // line 6: <td>
+              const tdChildren = [];
+              // line 7: if
+              tdChildren.push({ t: "marker", id: cellSuffix + "5s" });
+              if ((cell)?.link) {
+                // line 8: <a>
+                const aChildren = [];
+                aChildren.push({ t: "text", id: cellSuffix + "7", text: "" + toText(nextIndex) + "-" + toText(index) + " " + toText((cell)?.text) });
+                const aAttrs = {};
+                setAttr(aAttrs, "href", toAttr((cell)?.link));
+                tdChildren.push({
                   t: "el",
-                  tag: "td",
-                  attrs: tdAttrs,
+                  id: cellSuffix + "6",
+                  tag: "a",
+                  attrs: aAttrs,
                   events: {},
-                  children: tdChildren,
+                  children: aChildren,
                 });
-                cellNodes.push({ t: "marker", id: cellEndId(cellKey) });
-                patches.push({ op: "insert", before: beforeId, nodes: cellNodes });
-              },
-              move(key, beforeId) { patches.push({ op: "move", from: cellStartId(key), to: cellEndId(key), before: beforeId }); },
-              common(prevIndex, nextIndex) {
-                const prevCell = prevCellList[prevIndex];
-                const nextCell = nextCellList[nextIndex];
-                const cellSuffix = rowSuffix + "#" + nextCellKeys[nextIndex];
-                // line 6: <td> (reads: cell)
-                if (prevCell !== nextCell) {
-                  // line 7: if
-                  const prevBranch = (prevCell)?.link ? 0 : 1;
-                  const nextBranch = (nextCell)?.link ? 0 : 1;
-                  if (prevBranch !== nextBranch) {
-                    // another branch: replace what is between the markers
-                    if (prevBranch !== -1) patches.push({ op: "clear", from: cellSuffix + "5s", to: cellSuffix + "5e" });
-                    if (nextBranch !== -1) {
-                      const branchNodes = [];
-                      if (nextBranch === 0) {
-                        // line 8: <a>
-                        const aChildren = [];
-                        aChildren.push({ t: "text", id: cellSuffix + "7", text: "" + toText((nextCell)?.text) });
-                        const aAttrs = {};
-                        setAttr(aAttrs, "href", toAttr((nextCell)?.link));
-                        branchNodes.push({
-                          t: "el",
-                          id: cellSuffix + "6",
-                          tag: "a",
-                          attrs: aAttrs,
-                          events: {},
-                          children: aChildren,
-                        });
-                      } else if (nextBranch === 1) {
-                        branchNodes.push({ t: "text", id: cellSuffix + "8", text: "" + toText((nextCell)?.text) });
-                      }
-                      patches.push({ op: "insert", before: cellSuffix + "5e", nodes: branchNodes });
-                    }
-                  } else {
-                    // the same branch: diff inside it
+              } else {
+                tdChildren.push({ t: "text", id: cellSuffix + "8", text: "" + toText((cell)?.text) });
+              }
+              tdChildren.push({ t: "marker", id: cellSuffix + "5e" });
+              const tdAttrs = {};
+              cellNodes.push({
+                t: "el",
+                tag: "td",
+                attrs: tdAttrs,
+                events: {},
+                children: tdChildren,
+              });
+              cellNodes.push({ t: "marker", id: cellEndId(cellKey) });
+              patches.push({ op: "insert", before: beforeId, nodes: cellNodes });
+            },
+            move(key, beforeId) { patches.push({ op: "move", from: cellStartId(key), to: cellEndId(key), before: beforeId }); },
+            common(prevIndex, nextIndex) {
+              const prevCell = prevCellList[prevIndex];
+              const nextCell = nextCellList[nextIndex];
+              const cellSuffix = rowSuffix + "#" + nextCellKeys[nextIndex];
+              // line 6: <td> (reads: cell, r, c)
+              if (prevCell !== nextCell || prevIndex !== nextIndex || prevIndex !== nextIndex) {
+                // line 7: if
+                const prevBranch = (prevCell)?.link ? 0 : 1;
+                const nextBranch = (nextCell)?.link ? 0 : 1;
+                if (prevBranch !== nextBranch) {
+                  // another branch: replace what is between the markers
+                  if (prevBranch !== -1) patches.push({ op: "clear", from: cellSuffix + "5s", to: cellSuffix + "5e" });
+                  if (nextBranch !== -1) {
+                    const branchNodes = [];
                     if (nextBranch === 0) {
                       // line 8: <a>
-                      const prevHref = toAttr((prevCell)?.link);
-                      const nextHref = toAttr((nextCell)?.link);
-                      if (prevHref !== nextHref) {
-                        patches.push(nextHref === null
-                          ? { op: "rmAttr", id: cellSuffix + "6", name: "href" }
-                          : { op: "attr", id: cellSuffix + "6", name: "href", value: nextHref });
-                      }
-                      // line 8: text
-                      const prevText = "" + toText((prevCell)?.text);
-                      const nextText = "" + toText((nextCell)?.text);
-                      if (prevText !== nextText) patches.push({ op: "text", id: cellSuffix + "7", text: nextText });
+                      const aChildren = [];
+                      aChildren.push({ t: "text", id: cellSuffix + "7", text: "" + toText(nextIndex) + "-" + toText(nextIndex) + " " + toText((nextCell)?.text) });
+                      const aAttrs = {};
+                      setAttr(aAttrs, "href", toAttr((nextCell)?.link));
+                      branchNodes.push({
+                        t: "el",
+                        id: cellSuffix + "6",
+                        tag: "a",
+                        attrs: aAttrs,
+                        events: {},
+                        children: aChildren,
+                      });
+                    } else if (nextBranch === 1) {
+                      branchNodes.push({ t: "text", id: cellSuffix + "8", text: "" + toText((nextCell)?.text) });
                     }
-                    if (nextBranch === 1) {
-                      // line 10: text
+                    patches.push({ op: "insert", before: cellSuffix + "5e", nodes: branchNodes });
+                  }
+                } else {
+                  // the same branch: diff inside it
+                  if (nextBranch === 0) {
+                    // line 8: <a>
+                    const prevHref = toAttr((prevCell)?.link);
+                    const nextHref = toAttr((nextCell)?.link);
+                    if (prevHref !== nextHref) {
+                      patches.push(nextHref === null
+                        ? { op: "rmAttr", id: cellSuffix + "6", name: "href" }
+                        : { op: "attr", id: cellSuffix + "6", name: "href", value: nextHref });
+                    }
+                    // line 8: text
+                    const prevText = "" + toText(prevIndex) + "-" + toText(prevIndex) + " " + toText((prevCell)?.text);
+                    const nextText = "" + toText(nextIndex) + "-" + toText(nextIndex) + " " + toText((nextCell)?.text);
+                    if (prevText !== nextText) patches.push({ op: "text", id: cellSuffix + "7", text: nextText });
+                  }
+                  if (nextBranch === 1) {
+                    // line 10: text (reads: cell)
+                    if (prevCell !== nextCell) {
                       const prevText = "" + toText((prevCell)?.text);
                       const nextText = "" + toText((nextCell)?.text);
                       if (prevText !== nextText) patches.push({ op: "text", id: cellSuffix + "8", text: nextText });
                     }
                   }
                 }
-              },
-            });
-          }
+              }
+            },
+          });
         }
       },
     });

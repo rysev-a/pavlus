@@ -76,15 +76,15 @@ describe("render", () => {
   });
 
   test("if / else if / else", () => {
-    const src = `if n > 1
+    const src = `if many
   | many
-else if n === 1
+else if one
   | one
 else
   | none`;
-    expect(html(src, { n: 3 })).toBe("many");
-    expect(html(src, { n: 1 })).toBe("one");
-    expect(html(src, { n: 0 })).toBe("none");
+    expect(html(src, { many: true })).toBe("many");
+    expect(html(src, { one: true })).toBe("one");
+    expect(html(src, {})).toBe("none");
   });
 
   test("for with index and key", () => {
@@ -101,47 +101,25 @@ else
     ).toBe(`<ul><li>0:a</li><li>1:b</li></ul>`);
   });
 
-  test("arrow functions: filter/map, params, zero params, shadowing", () => {
-    expect(
-      html(`ul
+  test("operators, arrows and calls are not template expressions", () => {
+    // logic lives in component code; the template only reads ready fields
+    expect(() => parse(`p {n > 1}`)).toThrow(/the ">" operator.*philosophy/);
+    expect(() => parse(`p {a && b}`)).toThrow(/the "&&" operator.*philosophy/);
+    expect(() => parse(`p {a ? b : c}`)).toThrow(/a ternary.*philosophy/);
+    expect(() => parse(`p {!a}`)).toThrow(/negation.*philosophy/);
+    expect(() => parse(`p {a ?? b}`)).toThrow(/nullish operator.*philosophy/);
+    expect(() => parse(`ul
   for u in users.filter(u => u.active)
-    li {u.name}`, {
-        users: [
-          { name: "a", active: true },
-          { name: "b", active: false },
-          { name: "c", active: true },
-        ],
-      }),
-    ).toBe(`<ul><li>a</li><li>c</li></ul>`);
-    // several parameters, parentheses, nested arrows, a parameter shadowing state
-    expect(
-      html(
-        `p {pick((a, b) => a + b + n)} {call(() => 7)} {xs.map(x => xs.map(y => x * y).join(",")).join(";")}`,
-        {
-          pick: (f: (a: number, b: number) => number) => f(1, 2),
-          call: (f: () => number) => f(),
-          xs: [1, 2],
-          n: 10,
-        },
-      ),
-    ).toBe(`<p>13 7 1,2;2,4</p>`);
-  });
-
-  test("arrows: a parenthesized expression is still an expression", () => {
-    expect(html(`p {(a.b)}`, { a: { b: 5 } })).toBe(`<p>5</p>`);
-    expect(html(`p {((a.b))}`, { a: { b: 5 } })).toBe(`<p>5</p>`);
-  });
-
-  test("arrows: parse errors keep their kind", () => {
-    expect(() => parse("p {a =>}")).toThrow(TemplateError);
-    // `a.b` is not a parameter list: rolls back, then the stray `=>` errors
-    expect(() => parse("p {(a.b) => 1}")).toThrow(TemplateError);
-    try {
-      parse("p {(a, a) => 1}");
-      expect.unreachable();
-    } catch (e) {
-      expect((e as TemplateError).message).toMatch(/duplicate/u);
-    }
+    li {u.name}`)).toThrow(/a call.*philosophy/);
+    expect(() => parse(`p {u => u.active}`)).toThrow(
+      /arrow function.*philosophy/,
+    );
+    expect(() => parse(`p {pick((a, b) => a + b + n)}`)).toThrow(
+      /a call.*philosophy/,
+    );
+    expect(() => parse(`p {name.toUpperCase()}`)).toThrow(
+      /a call.*philosophy/,
+    );
   });
 
   test("html is escaped, expressions are null safe", () => {

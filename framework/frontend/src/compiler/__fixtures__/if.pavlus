@@ -1,8 +1,8 @@
 // if / else if / else with nested content, a loop without a key, and a second if.
 section
-  if status === "loading"
+  if isLoading
     p.status Loading...
-  else if status === "failed"
+  else if isFailed
     p.status.status--error {error}
     button(@click=retry) Retry
   else

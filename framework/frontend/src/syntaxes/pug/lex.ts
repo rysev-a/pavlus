@@ -34,7 +34,7 @@ export function isInline(p: Piece): p is InlineTag {
 export interface RawAttr {
   name: string;
   pos: Pos;
-  form: "bool" | "string" | "expr";
+  form: "bool" | "string" | "expr" | "event";
   /** `null` for a bare attribute; the interpolated string; or `[expr]`. */
   parts: Part[] | null;
   /**
@@ -112,7 +112,6 @@ export type Stmt = Base &
         of: Expr;
         key: Expr | null;
       }
-    | { kind: "case"; subject: Expr }
     | { kind: "when"; test: Expr; inline: Chain | null }
     | { kind: "default"; inline: Chain | null }
     | { kind: "chain"; chain: Chain }
@@ -132,6 +131,12 @@ const UNSUPPORTED = new Map<string, string>(
     yield: "`yield` is not supported",
     doctype: "`doctype` is not supported: a template renders a fragment",
     while: "`while` is not supported: use `each`",
+    unless:
+      "`unless` is not supported — invert the flag in code and use `if` " +
+      "(framework/docs/philosophy.md)",
+    case:
+      "`case` is not supported — comparisons belong to component code, " +
+      "pass ready flags (framework/docs/philosophy.md)",
   }),
 );
 
@@ -409,13 +414,9 @@ class Lexer {
     const unsupported = UNSUPPORTED.get(word);
     if (unsupported) this.fail(unsupported, at);
     switch (word) {
-      case "if":
-      case "unless": {
-        this.i += word.length;
-        const test = this.exprToEol(`\`${word}\` needs a condition`);
-        return word === "if"
-          ? { ...base, kind: "if", test }
-          : { ...base, kind: "if", test: { k: "unary", op: "!", arg: test } };
+      case "if": {
+        this.i += 2;
+        return { ...base, kind: "if", test: this.exprToEol("`if` needs a condition") };
       }
       case "else": {
         this.i += 4;
@@ -435,13 +436,6 @@ class Lexer {
       case "for":
         this.i += word.length;
         return this.each(base);
-      case "case":
-        this.i += 4;
-        return {
-          ...base,
-          kind: "case",
-          subject: this.exprToEol("`case` needs an expression"),
-        };
       case "when":
         return this.when(base);
       case "default": {
@@ -782,6 +776,18 @@ class Lexer {
         return this.exprValue(name, pos);
       }
       const from = this.i + 1;
+      if (name.startsWith("@")) {
+        // an event handler is a message binding, not an expression: keep
+        // the value raw, parseEvent reads it in parse.ts
+        this.i = j + 1;
+        return {
+          name,
+          pos,
+          form: "event",
+          parts: null,
+          inner: { text: src.slice(from, j), at: this.pos(from) },
+        };
+      }
       const parts = this.attrParts(from, j, c);
       this.i = j + 1;
       return {
@@ -790,6 +796,20 @@ class Lexer {
         form: "string",
         parts,
         inner: { text: src.slice(from, j), at: this.pos(from) },
+      };
+    }
+    if (name.startsWith("@")) {
+      // an unquoted event value (`@click=save(item)`): raw, see above
+      const end = this.valueEnd(this.i);
+      if (end === this.i) this.fail(`Expected a value after "${name}="`, this.i);
+      const from = this.i;
+      this.i = end;
+      return {
+        name,
+        pos,
+        form: "event",
+        parts: null,
+        inner: { text: src.slice(from, end), at: this.pos(from) },
       };
     }
     return this.exprValue(name, pos);

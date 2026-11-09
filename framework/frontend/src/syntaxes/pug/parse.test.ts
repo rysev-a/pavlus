@@ -46,7 +46,7 @@ describe("equivalence with the native syntax", () => {
         span.index #{i}.
         span #{item.name}
         button.remove(@click.stop="remove(item)") x
-  if items.length === 0
+  if empty
     p.empty Nothing to do
   else
     p #{items.length} left`,
@@ -59,15 +59,15 @@ describe("equivalence with the native syntax", () => {
         span.index {i}.
         span {item.name}
         button.remove(@click.stop=remove(item)) x
-  if items.length === 0
+  if empty
     p.empty Nothing to do
   else
     p {items.length} left`,
       [
-        { items: [], draft: "" },
-        { items: items(1, 2, 3), draft: "x" },
-        { items: items(3, 1), draft: "" },
-        { items: items(2, 4, 6, 8), draft: "y" },
+        { items: [], draft: "", empty: true },
+        { items: items(1, 2, 3), draft: "x", empty: false },
+        { items: items(3, 1), draft: "", empty: false },
+        { items: items(2, 4, 6, 8), draft: "y", empty: false },
       ],
     );
   });
@@ -100,7 +100,7 @@ table
     );
   });
 
-  test("conditionals: if / else if / else / unless / nesting", () => {
+  test("conditionals: if / else if / else / precomputed negation / nesting", () => {
     same(
       `div
   if a
@@ -111,7 +111,7 @@ table
       i nested
   else
     p none
-  unless a
+  if notA
     p not a
   else
     p is a`,
@@ -124,49 +124,28 @@ table
       i nested
   else
     p none
-  if !a
+  if notA
     p not a
   else
     p is a`,
       [
-        { a: true, b: false, c: false },
-        { a: false, b: true, c: true },
-        { a: false, b: true, c: false },
-        { a: false, b: false, c: false },
+        { a: true, b: false, c: false, notA: false },
+        { a: false, b: true, c: true, notA: true },
+        { a: false, b: true, c: false, notA: true },
+        { a: false, b: false, c: false, notA: true },
       ],
     );
   });
 
-  test("case / when becomes an if chain, with fall-through and default", () => {
-    same(
-      `div
-  case kind
-    when "a"
-      p A
-    when "b"
-    when "c"
-      p B or C
-    default
-      p other`,
-      `div
-  if kind === "a"
-    p A
-  else if kind === "b" || kind === "c"
-    p B or C
-  else
-    p other`,
-      [{ kind: "a" }, { kind: "b" }, { kind: "c" }, { kind: "z" }],
+  test("`case` / `when` is rejected: comparisons belong to component code", () => {
+    const e = error(`div\n  case kind\n    when "a"\n      p A`);
+    expect([e.line, e.col]).toEqual([2, 3]);
+    expect(e.message).toMatch(
+      /^`case` is not supported — comparisons belong to component code, pass ready flags \(framework\/docs\/philosophy\.md\)/,
     );
-    same(
-      `case n
-  when 1: p one
-  when 2: b: i two`,
-      `if n === 1
-  p one
-else if n === 2
-  b
-    i two`,
-      [{ n: 1 }, { n: 2 }, { n: 3 }],
+    // the `when value: tag` expansion form is gone with it
+    expect(() => parsePug(`case n\n  when 1: p one\n  when 2: b: i two`)).toThrow(
+      /philosophy/,
     );
   });
 
@@ -239,14 +218,25 @@ pre
     );
   });
 
-  test("operators in unquoted values and multi-line attribute lists", () => {
+  test("multi-line attribute lists; operators in unquoted values are rejected", () => {
     same(
-      `a(href="/x/" + id  title=id > 1 ? "big" : "small"
+      `a(href=href
+   title=label
    disabled
-   @click="go(id + 1)") link`,
-      `a(href={"/x/" + id} title={id > 1 ? "big" : "small"} disabled @click=go(id + 1)) link`,
-      [{ id: 1 }, { id: 5 }],
+   @click="go(next)") link`,
+      `a(href={href} title={label} disabled @click=go(next)) link`,
+      [
+        { href: "/x/1", label: "small", next: 2 },
+        { href: "/x/5", label: "big", next: 6 },
+      ],
     );
+    const plus = error(`a(href="/x/" + id) link`);
+    expect([plus.line, plus.col]).toEqual([1, 14]);
+    expect(plus.message).toMatch(/the "\+" operator is not allowed/);
+    const cmp = error(`a(title=id > 1) link`);
+    expect([cmp.line, cmp.col]).toEqual([1, 12]);
+    expect(cmp.message).toMatch(/the ">" operator is not allowed/);
+    expect(() => parsePug(`a(@click="go(id + 1)") link`)).toThrow(/philosophy/);
   });
 
   test("embeds: static imported, dynamic, instance names, props, spread, outlet", () => {
@@ -290,11 +280,11 @@ ul.list
 
   test("whole-tree AST equality with the native parser", () => {
     const pug = `- import Card from "./card.pavlus"
-div.app#a(class:on="x > 1" @click.prevent.stop="go(x, y)")
+div.app#a(class:on=big @click.prevent.stop="go(x, y)")
   each u, i in users key u.id
     +Card#card(title=u.name)&attributes(u)`;
     const native = `import Card from "./card.pavlus"
-div.app#a(class:on={x > 1} @click.prevent.stop=go(x, y))
+div.app#a(class:on={big} @click.prevent.stop=go(x, y))
   for u, i in users key u.id
     +Card#card(title=u.name ...u)`;
     expect(parsePug(pug)).toEqual(parseNative(native));
@@ -314,6 +304,9 @@ describe("rejected constructs", () => {
     ["include a.pug", /include/],
     ["doctype html", /doctype/],
     ["while x\n  p", /while/],
+    ["unless a\n  p", /`unless` is not supported/],
+    ["case a\n  when 1\n    p", /`case` is not supported/],
+    ["p #{a ? b : c}", /ternary is not allowed/],
     ["div(&attributes(x))", /in attributes/],
     ["div&attributes(x)", /only supported on component calls/],
   ])("%s", (src, re) => {
@@ -335,11 +328,11 @@ describe("error positions", () => {
     at("div\n  p(a='x)", 2, 7, /Unterminated/);
     at("p\n  | a #{b", 2, 7, /Unclosed \{/);
     at("div\n  p(a=)", 2, 7, /Expected a value/);
-    at("p(@click=1) x", 1, 3, /message id/);
+    at("p(@click=1) x", 1, 10, /message id/);
     at("p(@click.bogus=go) x", 1, 3, /modifier/);
     at("p(class:=a)", 1, 3, /class name/);
     at("p(class:x) x", 1, 3, /needs an expression/);
-    at("div\n  | ok\n  p(a=b +) x", 3, 10);
+    at("div\n  | ok\n  p(a=b +) x", 3, 9, /not allowed/);
   });
 
   test("structure", () => {
@@ -354,10 +347,10 @@ describe("error positions", () => {
     at("if", 1, 3, /needs a condition/);
     at("each x xs", 1, 8, /Expected `item in expr`/);
     at("each x in xs key", 1, 14, /key/);
-    at("case a\n  p x", 2, 3, /Expected `when`/);
-    at("case a\n  default\n    p\n  when 1\n    p", 4, 3, /last/);
-    at("case a", 1, 1, /at least one/);
+    at("div\n  case kind\n    when 1\n      p", 2, 3, /`case` is not supported/);
+    at("case a", 1, 1, /`case` is not supported/);
     at("when 1\n  p", 1, 1, /outside/);
+    at("default\n  p", 1, 1, /outside/);
   });
 
   test("imports and components", () => {
@@ -376,7 +369,7 @@ describe("error positions", () => {
   });
 
   test("expressions report their own position", () => {
-    at("p\n  if a +\n    p", 2, 9, /end of expression/);
+    at("p\n  if a +\n    p", 2, 8, /the "\+" operator is not allowed/);
     at("p #{a b}", 1, 7);
   });
 });

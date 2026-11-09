@@ -4,5 +4,5 @@ import Badge from "./badge.pavlus"
 
 ul.rows
   for item in items key item.id
-    +Row#row(...item selected={selected === item.id} label="Item {item.id}")
-  +Badge#badge(count=items.length)
+    +Row#row(...item selected=item.isSelected label="Item {item.id}")
+  +Badge#badge(count=itemCount)

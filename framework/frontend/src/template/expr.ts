@@ -55,7 +55,14 @@ const KEYWORDS: Record<string, Expr> = {
 const ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r" };
 
 /** Where removed syntax belongs, in one line. */
-const IN_CODE = "Templates only read data; compute this in component code (framework/docs/philosophy.md)";
+const IN_CODE = "compute it in component code (framework/docs/philosophy.md)";
+
+const BINARY_OPS = new Set([
+  "+", "-", "*", "/", "%",
+  "==", "!=", "===", "!==",
+  "<", ">", "<=", ">=",
+  "&&", "||",
+]);
 
 function tokenize(src: string, at: Pos): Token[] {
   const toks: Token[] = [];
@@ -113,22 +120,16 @@ function tokenize(src: string, at: Pos): Token[] {
 
 /** A removed construct, named for the error message. */
 function removed(p: string): string {
-  if (p === "=>") return "arrow functions";
+  if (p === "=>") return "an arrow function";
   if (p === "?.") return "optional chaining";
   if (p === "??") return "the nullish operator";
-  if (p === "?" || p === ":") return "the ternary operator";
-  if (p === "!" ) return "negation";
-  if (p === "(" || p === ")") return "calls (and parentheses)";
+  if (p === "?" || p === ":") return "a ternary";
+  if (p === "!") return "negation (!)";
+  if (p === "(" || p === ")") return "a call (or parentheses)";
+  if (p === "[") return "an array literal";
   if (BINARY_OPS.has(p)) return `the "${p}" operator`;
   return `"${p}"`;
 }
-
-const BINARY_OPS = new Set([
-  "+", "-", "*", "/", "%",
-  "==", "!=", "===", "!==",
-  "<", ">", "<=", ">=",
-  "&&", "||",
-]);
 
 class ExprParser {
   private i = 0;
@@ -154,7 +155,7 @@ class ExprParser {
     const t = this.peek();
     if (t.t === "p") {
       throw this.err(
-        `${IN_CODE}: ${removed(t.v as string)} are not allowed in a template expression`,
+        `${removed(t.v as string)} is not allowed in a template expression — ${IN_CODE}`,
         t,
       );
     }
@@ -249,8 +250,7 @@ export function parseEvent(
   const open = toks[i];
   if (open && open.t === "p" && open.v === "(") {
     i++;
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
+    for (;;) {
       const t = toks[i];
       if (t && t.t === "p" && t.v === ")") break;
       if (t && t.t === "eof")
@@ -271,10 +271,14 @@ export function parseEvent(
         if (tok.t === "p" && (tok.v === ")" || tok.v === "]")) depth--;
         argToks.push(tok);
       }
-      const inner = new ExprParser(
-        argToks.length ? argToks : [{ t: "eof", v: "", pos: 0 }],
-        at,
-      );
+      // ExprParser walks to an eof token; the slice has none of its own
+      const last = argToks[argToks.length - 1];
+      const eof: Token = {
+        t: "eof",
+        v: "",
+        pos: last ? last.pos + String(last.v).length : 0,
+      };
+      const inner = new ExprParser([...argToks, eof], at);
       args.push(inner.parseAll());
       const sep = toks[i];
       if (sep && sep.t === "p" && sep.v === ",") i++;
@@ -298,7 +302,7 @@ export function parseEvent(
     const trailing = toks[i];
     if (trailing && trailing.t !== "eof")
       throw new TemplateError(
-        `${IN_CODE}: ${removed(String(trailing.v))} are not allowed in an event binding`,
+        `${removed(String(trailing.v))} is not allowed in an event binding — ${IN_CODE}`,
         at.line,
         at.col + trailing.pos,
       );

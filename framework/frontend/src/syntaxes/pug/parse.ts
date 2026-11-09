@@ -25,7 +25,7 @@ import type {
   TextNode,
 } from "../../template/ast.ts";
 import { TemplateError } from "../../template/errors.ts";
-import { parseExpr } from "../../template/expr.ts";
+import { parseEvent, parseExpr } from "../../template/expr.ts";
 import {
   isInline,
   lex,
@@ -64,40 +64,6 @@ export function parsePug(source: string): TemplateAst {
 
 function fail(message: string, pos: Pos): never {
   throw new TemplateError(message, pos.line, pos.col);
-}
-
-/** Turns `removeUser(user)` / `users.remove` into a message binding. */
-function toMessage(e: Expr, p: Pos): { msg: string; args: Expr[] } {
-  const name = (x: Expr): string | null =>
-    x.k === "id"
-      ? x.name
-      : x.k === "member"
-        ? name(x.obj) === null
-          ? null
-          : `${name(x.obj)}.${x.prop}`
-        : null;
-  const callee = e.k === "call" ? e.callee : e;
-  const msg = name(callee);
-  if (msg === null) {
-    fail("Event handler must be a message id like `save` or `remove(item)`", p);
-  }
-  return { msg: msg!, args: e.k === "call" ? e.args : [] };
-}
-
-/** `a === b || a === c` for the tests of a `case` branch. */
-function caseTest(subject: Expr, values: Expr[]): Expr {
-  const eq = (v: Expr): Expr => ({
-    k: "binary",
-    op: "===",
-    left: subject,
-    right: v,
-  });
-  return values
-    .slice(1)
-    .reduce<Expr>(
-      (acc, v) => ({ k: "binary", op: "||", left: acc, right: eq(v) }),
-      eq(values[0]),
-    );
 }
 
 class Parser {
@@ -231,9 +197,6 @@ class Parser {
           openEach = n;
           break;
         }
-        case "case":
-          out.push(...this.caseNodes(s));
-          break;
         case "when":
         case "default":
           fail(`\`${s.kind}\` outside of \`case\``, s.pos);
@@ -276,49 +239,7 @@ class Parser {
     this.leaf(s.indent);
   }
 
-  /** `case x` with `when v` / `default`: an if chain on `x === v`. */
-  private caseNodes(s: Stmt & { kind: "case" }): Node[] {
-    const branches: IfBranch[] = [];
-    /** Values of empty `when`s that fall through to the next branch. */
-    let pending: Expr[] = [];
-    let whens = 0;
-    let sawDefault = false;
-    let childIndent: number | null = null;
-    while (this.k < this.stmts.length && this.stmts[this.k].indent > s.indent) {
-      const w = this.stmts[this.k];
-      if (childIndent === null) childIndent = w.indent;
-      else if (w.indent !== childIndent) {
-        throw new TemplateError("Inconsistent indentation", w.pos.line, 1);
-      }
-      if (w.kind !== "when" && w.kind !== "default") {
-        fail("Expected `when` or `default` inside `case`", w.pos);
-      }
-      if (sawDefault)
-        fail("`default` must be the last branch of `case`", w.pos);
-      this.k++;
-      const children = w.inline
-        ? [this.lowerChain(w.inline, w.indent)]
-        : this.block(w.indent, false);
-      if (w.kind === "default") {
-        sawDefault = true;
-        // Empty `when`s above fall into the default, which matches anyway.
-        branches.push({ test: null, children });
-        continue;
-      }
-      whens++;
-      const values = [...pending, w.test];
-      if (children.length === 0) pending = values;
-      else {
-        pending = [];
-        branches.push({ test: caseTest(s.subject, values), children });
-      }
-    }
-    if (whens === 0) fail("`case` needs at least one `when`", s.pos);
-    if (branches.length === 0) return [];
-    if (branches[0].test === null) return branches[0].children;
-    return [{ type: "if", nid: 0, line: s.pos.line, branches }];
-  }
-
+  /** A line without children: anything deeper below it is an error. */
   // ---- text ------------------------------------------------------------------------------
 
   /**
@@ -469,7 +390,10 @@ class Parser {
           fail(`Unknown event modifier ".${m}" (use .prevent or .stop)`, a.pos);
         }
       }
-      const { msg, args } = toMessage(single(), a.pos);
+      if (a.form !== "event" || !a.inner) {
+        fail(`"${a.name}" needs an expression value`, a.pos);
+      }
+      const { msg, args } = parseEvent(a.inner.text, a.inner.at);
       const ev: EventBinding = {
         name,
         msg,

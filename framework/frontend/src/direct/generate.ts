@@ -120,31 +120,11 @@ export function generateDirect(ast: TemplateAst): DirectGenerated {
 }
 
 /**
- * Whether an expression calls anything (`name.toUpperCase()`, `fmt(n)`): its
- * evaluation may be expensive enough to skip when its inputs did not change.
+ * Whether an expression calls anything: with the path-only grammar this is
+ * always false now — kept for the `meta.deps` shape and future audits.
  */
-function hasCall(e: Expr): boolean {
-  switch (e.k) {
-    case "lit":
-    case "id":
-      return false;
-    case "member":
-      return hasCall(e.obj);
-    case "index":
-      return hasCall(e.obj) || hasCall(e.index);
-    case "call":
-      return true;
-    case "unary":
-      return hasCall(e.arg);
-    case "binary":
-      return hasCall(e.left) || hasCall(e.right);
-    case "cond":
-      return hasCall(e.test) || hasCall(e.then) || hasCall(e.else);
-    case "array":
-      return e.items.some(hasCall);
-    case "arrow":
-      return hasCall(e.body);
-  }
+function hasCall(_e: Expr): boolean {
+  return false;
 }
 
 /** One row of `meta.deps`: what a binding reads, for tools and audits. */
@@ -276,28 +256,6 @@ class Generator {
         return `(${this.expr(e.obj, sc)})?.${e.prop}`;
       case "index":
         return `(${this.expr(e.obj, sc)})?.[${this.expr(e.index, sc)}]`;
-      case "call":
-        return `(${this.expr(e.callee, sc)})?.(${e.args
-          .map((a) => this.expr(a, sc))
-          .join(", ")})`;
-      case "unary":
-        return `(${e.op}(${this.expr(e.arg, sc)}))`;
-      case "binary":
-        return `(${this.expr(e.left, sc)} ${e.op} ${this.expr(e.right, sc)})`;
-      case "cond":
-        return `(${this.expr(e.test, sc)} ? ${this.expr(e.then, sc)} : ${this.expr(e.else, sc)})`;
-      case "array":
-        return `[${e.items.map((a) => this.expr(a, sc)).join(", ")}]`;
-      case "arrow": {
-        // fresh, non-colliding JS names; the parameters shadow scope and state
-        const vars = new Map(sc.vars);
-        const params = e.params.map((p) => this.fresh(`$${camel(p) || "p"}`));
-        e.params.forEach((p, i) => vars.set(p, params[i]!));
-        return `(${params.join(", ")}) => (${this.expr(e.body, {
-          ...sc,
-          vars,
-        })})`;
-      }
     }
   }
 

@@ -13,7 +13,7 @@ import type {
   TemplateAst,
 } from "../../template/ast.ts";
 import { TemplateError } from "../../template/errors.ts";
-import { parseExpr } from "../../template/expr.ts";
+import { parseEvent, parseExpr } from "../../template/expr.ts";
 
 /**
  * Block HTML: plain HTML plus Svelte-style logic blocks that live outside the
@@ -104,9 +104,11 @@ interface RawAttr {
   spread?: boolean;
   /** Offset of the attribute in the source. */
   at: number;
+  /** The unparsed source of an event value (`on:click={remove(item)}`). */
+  raw?: string;
 }
 
-/** Turns `removeUser(user)` / `users.remove` into a message binding. */
+/** `save` / `users.remove` — a bare message id (with args it is `parseEvent`). */
 function toMessage(e: Expr, fail: () => never): { msg: string; args: Expr[] } {
   const name = (x: Expr): string | null =>
     x.k === "id"
@@ -116,10 +118,9 @@ function toMessage(e: Expr, fail: () => never): { msg: string; args: Expr[] } {
           ? null
           : `${name(x.obj)}.${x.prop}`
         : null;
-  const callee = e.k === "call" ? e.callee : e;
-  const msg = name(callee);
+  const msg = name(e);
   if (msg === null) fail();
-  return { msg: msg!, args: e.k === "call" ? e.args : [] };
+  return { msg: msg!, args: [] };
 }
 
 class BlockParser {
@@ -160,6 +161,20 @@ class BlockParser {
   /** `parseExpr` for the source slice `[from, to)`. */
   private expr(from: number, to: number): Expr {
     return parseExpr(this.src.slice(from, to), this.pos(from));
+  }
+
+  /** `parseEvent` for a raw event value, with the error moved to its place. */
+  private parseEventAt(raw: string, at: number): { msg: string; args: Expr[] } {
+    const start = this.pos(at);
+    try {
+      return parseEvent(raw, start);
+    } catch (err) {
+      if (err instanceof TemplateError && err.line === start.line) {
+        const message = err.message.replace(/ \(line \d+, col \d+\)$/, "");
+        this.fail(message, at + (err.col - start.col));
+      }
+      throw err;
+    }
   }
 
   /** Offset of the `}` matching the `{` at `open`, skipping strings. */
@@ -435,29 +450,15 @@ class BlockParser {
     const end = this.children(node.children);
     if (end.k === "end" && end.what === "each") return;
     if (end.k === "else") {
-      // `{:else}` of an each is an `if` on the emptiness of the list.
-      const empty: IfNode = {
-        type: "if",
-        nid: this.nid++,
-        line: this.pos(end.at).line,
-        branches: [
-          {
-            test: {
-              k: "unary",
-              op: "!",
-              arg: { k: "member", obj: node.of, prop: "length" },
-            },
-            children: [],
-          },
-        ],
-      };
-      if (end.test)
-        this.fail("`{:else if}` is not allowed in `{#each}`", end.at);
-      into.push(empty);
-      const last = this.children(empty.branches[0].children);
-      if (last.k === "end" && last.what === "each") return;
-      if (last.k === "eof") this.fail("Unclosed {#each}", open);
-      this.fail(this.mismatch(last, "each"), last.at);
+      // `{:else}` of an each needs `if !list.length` — negation left the
+      // template language (a template reads ready flags), so the converter
+      // refuses: pass an isEmpty flag from code instead.
+      this.fail(
+        "`{:else}` of an each needs `!list.length`, which the template " +
+          "language no longer expresses — pass an isEmpty flag from code " +
+          "instead (framework/docs/philosophy.md)",
+        end.at,
+      );
     }
     if (end.k === "eof") this.fail("Unclosed {#each}", open);
     this.fail(this.mismatch(end, "each"), end.at);
@@ -598,6 +599,20 @@ class BlockParser {
         continue;
       }
       this.i++;
+      if (nm![0].startsWith("on:") && s[this.i] === "{") {
+        // an event handler is a message binding, not an expression: keep the
+        // source raw (`on:click={remove(item)}`), parseEvent takes it later
+        const close = this.matchBrace(this.i);
+        attrs.push({
+          name: nm![0],
+          value: null,
+          braced: true,
+          at,
+          raw: s.slice(this.i + 1, close),
+        });
+        this.i = close + 1;
+        continue;
+      }
       const v = this.attrValue();
       attrs.push({ name: nm![0], value: v.parts, braced: v.braced, at });
     }
@@ -677,12 +692,14 @@ class BlockParser {
             a.at,
           );
       }
-      const { msg, args } = toMessage(this.single(a), () =>
+      const failMsg = (): never =>
         this.fail(
           "Event handler must be a message id like `save` or `remove(item)`",
           a.at,
-        ),
-      );
+        );
+      const { msg, args } = a.raw
+        ? this.parseEventAt(a.raw, a.at)
+        : toMessage(this.single(a), failMsg);
       el.events.push({
         name,
         msg,

@@ -1,8 +1,8 @@
-// A real shell: the menu with an active-link expression, and the outlet.
+// A real shell: the menu with a ready active flag, and the outlet.
 header.top
   nav.top-menu
     for item in menu key item.path
-      a.top-menu__link(href=item.path class:top-menu__link--active={item.path === "/" ? route.path === "/" : route.path === item.path || route.path.startsWith(item.path + "/")} @click.prevent=navigate(item.path)) {item.title}
+      a.top-menu__link(href=item.path class:top-menu__link--active=item.active @click.prevent=navigate(item.path)) {item.title}
 
 main.page
   +outlet

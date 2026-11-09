@@ -16,7 +16,10 @@ import type {
   TextNode,
 } from "./ast.ts";
 import { TemplateError } from "./errors.ts";
-import { parseExpr } from "./expr.ts";
+import { parseEvent, parseExpr } from "./expr.ts";
+
+/** A compiler warning: the template parses and renders, but fights the philosophy. */
+export type Warn = (message: string, line: number) => void;
 
 const VOID_TAGS = new Set([
   "area",
@@ -92,7 +95,12 @@ function matchBrace(text: string, open: number, line: Line): number {
 }
 
 /** Splits text into literal strings and `{expr}` parts. `\{` escapes a brace. */
-function parseParts(text: string, base: number, line: Line): Part[] {
+function parseParts(
+  text: string,
+  base: number,
+  line: Line,
+  warn?: Warn,
+): Part[] {
   const parts: Part[] = [];
   let lit = "";
   for (let i = 0; i < text.length; i++) {
@@ -108,29 +116,34 @@ function parseParts(text: string, base: number, line: Line): Part[] {
     } else lit += c;
   }
   if (lit) parts.push(lit);
+  warnHolesOnly(parts, line, warn);
   return parts;
 }
 
-/** Turns `removeUser(user)` / `users.remove` into a message binding. */
-function toMessage(e: Expr, p: Pos): { msg: string; args: Expr[] } {
-  const name = (x: Expr): string | null =>
-    x.k === "id"
-      ? x.name
-      : x.k === "member"
-        ? name(x.obj) === null
-          ? null
-          : `${name(x.obj)}.${x.prop}`
-        : null;
-  const callee = e.k === "call" ? e.callee : e;
-  const msg = name(callee);
-  if (msg === null) {
-    throw new TemplateError(
-      "Event handler must be a message id like `save` or `remove(item)`",
-      p.line,
-      p.col,
-    );
+/**
+ * The philosophy's one warning: two interpolations with nothing static
+ * between them compose a value in the template — code should pass one
+ * ready field instead (`abc {x}` is layout; `{a} {b}` is computation).
+ */
+function warnHolesOnly(parts: Part[], line: Line, warn?: Warn): void {
+  if (!warn) return;
+  for (let i = 0; i < parts.length; i++) {
+    if (typeof parts[i] === "string") continue;
+    let j = i + 1;
+    while (j < parts.length) {
+      const p = parts[j];
+      if (typeof p !== "string" || p.trim()) break;
+      j++;
+    }
+    if (j < parts.length && typeof parts[j] !== "string") {
+      warn(
+        "Two interpolations with no static text between them — compose the value in code and pass one field (framework/docs/philosophy.md)",
+        line.no,
+      );
+      return;
+    }
+    i = j - 1;
   }
-  return { msg, args: e.k === "call" ? e.args : [] };
 }
 
 interface RawAttr {
@@ -140,6 +153,8 @@ interface RawAttr {
   pos: Pos;
   /** `...expr` entry (only valid in component props). */
   spread?: boolean;
+  /** The unparsed source of an event value (`@click=remove(item)`). */
+  raw?: string;
 }
 
 /** End of an unquoted attribute value: first space / comma / `)` at depth 0. */
@@ -167,6 +182,7 @@ function parseAttrs(
   text: string,
   start: number,
   line: Line,
+  warn?: Warn,
 ): { attrs: RawAttr[]; end: number } {
   const attrs: RawAttr[] = [];
   let i = start;
@@ -207,22 +223,27 @@ function parseAttrs(
       continue;
     }
     i++;
-    const c = text[i];
-    if (c === '"' || c === "'") {
+    if (name.startsWith("@")) {
+      // an event value is a message binding, not an expression: keep it raw
+      const j = scanBare(text, i);
+      attrs.push({ name, value: null, bare: true, pos, raw: text.slice(i, j) });
+      i = j;
+    } else if (text[i] === '"' || text[i] === "'") {
+      const q = text[i];
       let j = i + 1;
-      while (j < text.length && text[j] !== c) j += text[j] === "\\" ? 2 : 1;
+      while (j < text.length && text[j] !== q) j += text[j] === "\\" ? 2 : 1;
       if (j >= text.length) {
         const p = at(line, i);
         throw new TemplateError("Unterminated string", p.line, p.col);
       }
       attrs.push({
         name,
-        value: parseParts(text.slice(i + 1, j), i + 1, line),
+        value: parseParts(text.slice(i + 1, j), i + 1, line, warn),
         bare: false,
         pos,
       });
       i = j + 1;
-    } else if (c === "{") {
+    } else if (text[i] === "{") {
       const close = matchBrace(text, i, line);
       attrs.push({
         name,
@@ -247,6 +268,11 @@ function parseAttrs(
 /** Mutable state shared by the line parsers. */
 class Builder {
   nid = 0;
+  warn?: Warn;
+
+  constructor(warn?: Warn) {
+    this.warn = warn;
+  }
 
   element(line: Line): ElementNode {
     const text = line.text;
@@ -280,7 +306,7 @@ class Builder {
       throw new TemplateError(`Cannot parse line "${text}"`, p.line, p.col);
     }
     if (text[i] === "(") {
-      const r = parseAttrs(text, i + 1, line);
+      const r = parseAttrs(text, i + 1, line, this.warn);
       for (const a of r.attrs) this.addAttr(el, a);
       i = r.end;
     }
@@ -295,6 +321,7 @@ class Builder {
         inline,
         i + (rest.length - rest.trimStart().length),
         line,
+        this.warn,
       );
       el.children.push({ type: "text", nid: this.nid++, line: line.no, parts });
     }
@@ -321,7 +348,13 @@ class Builder {
     };
     if (a.name.startsWith("@")) {
       const [name, ...mods] = a.name.slice(1).split(".");
-      const { msg, args } = toMessage(single(), a.pos);
+      if (!a.raw)
+        throw new TemplateError(
+          "Event handler must be a message id like `save` or `remove(item)`",
+          a.pos.line,
+          a.pos.col,
+        );
+      const { msg, args } = parseEvent(a.raw, a.pos);
       const ev: EventBinding = {
         name,
         msg,
@@ -384,7 +417,7 @@ class Builder {
     const props: Prop[] = [];
     let key: Expr | null = null;
     if (text[i] === "(") {
-      const r = parseAttrs(text, i + 1, line);
+      const r = parseAttrs(text, i + 1, line, this.warn);
       for (const a of r.attrs) {
         if (a.spread) props.push({ spread: a.value![0] as Expr });
         else if (!/^[A-Za-z_$][\w$]*$/.test(a.name)) {
@@ -427,7 +460,7 @@ class Builder {
       type: "text",
       nid: this.nid++,
       line: line.no,
-      parts: parseParts(raw, base, line),
+      parts: parseParts(raw, base, line, this.warn),
     };
   }
 }
@@ -455,8 +488,8 @@ interface Frame {
  *     | {items.length} items
  * ```
  */
-export function parse(source: string): TemplateAst {
-  const b = new Builder();
+export function parse(source: string, opts: { warn?: Warn } = {}): TemplateAst {
+  const b = new Builder(opts.warn);
   const lines: Line[] = [];
   source.split(/\r?\n/).forEach((raw, idx) => {
     if (!raw.trim()) return;

@@ -53,9 +53,10 @@ describe("blocks: same AST as native", () => {
   <h1>Hi {name}</h1>
   {#each xs as x, i (x.id)}
     <p class:on={x.on} on:click|preventDefault|stop={pick(x, i)}>{x.t}</p>
-  {:else}
-    <Row name="r" a={1} {...rest} />
   {/each}
+  {#if xsEmpty}
+    <Row name="r" a={1} {...rest} />
+  {/if}
   {#if a}
     <br />
   {:else if b}
@@ -69,7 +70,7 @@ div.a.b#app
   h1 Hi {name}
   for x, i in xs key x.id
     p(class:on=x.on @click.prevent.stop=pick(x, i)) {x.t}
-  if !xs.length
+  if xsEmpty
     +Row#r(a=1 ...rest)
   if a
     br
@@ -95,9 +96,10 @@ describe("blocks: equivalence with native", () => {
         <span>{item.text}</span>
         <button class="rm" on:click={remove(item)}>x</button>
       </li>
-    {:else}
-      <li class="empty">Nothing to do</li>
     {/each}
+    {#if itemsEmpty}
+      <li class="empty">Nothing to do</li>
+    {/if}
   </ul>
   <p>{items.length} items</p>
 </section>`,
@@ -109,10 +111,10 @@ describe("blocks: equivalence with native", () => {
         input(type="checkbox" checked=item.done @change=toggle(item.id))
         span {item.text}
         button.rm(@click=remove(item)) x
-    if !items.length
+    if itemsEmpty
       li.empty Nothing to do
   p {items.length} items`,
-      todos.map((t) => ({ ...t, title: "T" })),
+      todos.map((t) => ({ ...t, title: "T", itemsEmpty: t.items.length === 0 })),
     );
   });
 
@@ -120,7 +122,7 @@ describe("blocks: equivalence with native", () => {
     same(
       `<div>
   {#each groups as g, gi (g.id)}
-    <section class:first={gi === 0}>
+    <section class:first={g.first}>
       <h3>{gi}: {g.name}</h3>
       {#each g.rows as r, ri (r.id)}
         {#if r.ok}
@@ -136,7 +138,7 @@ describe("blocks: equivalence with native", () => {
 </div>`,
       `div
   for g, gi in groups key g.id
-    section(class:first={gi === 0})
+    section(class:first=g.first)
       h3 {gi}: {g.name}
       for r, ri in g.rows key r.id
         if r.ok
@@ -152,6 +154,7 @@ describe("blocks: equivalence with native", () => {
             {
               id: 1,
               name: "a",
+              first: true,
               rows: [
                 { id: 1, ok: true, v: "x" },
                 { id: 2, ok: false, maybe: true, v: "y" },
@@ -164,30 +167,40 @@ describe("blocks: equivalence with native", () => {
             {
               id: 2,
               name: "b",
+              first: true,
               rows: [{ id: 3, ok: false, maybe: false, v: "z" }],
             },
-            { id: 1, name: "a", rows: [{ id: 1, ok: true, v: "w" }] },
+            {
+              id: 1,
+              name: "a",
+              first: false,
+              rows: [{ id: 1, ok: true, v: "w" }],
+            },
           ],
         },
       ],
     );
   });
 
-  test("each without a key and each-else on an expression", () => {
+  test("each without a key, empty list via a flag sibling", () => {
     same(
       `<ul>
   {#each user.tags as t}
     <li>{t}</li>
-  {:else}
-    <li>none</li>
   {/each}
+  {#if user.noTags}
+    <li>none</li>
+  {/if}
 </ul>`,
       `ul
   for t in user.tags
     li {t}
-  if !user.tags.length
+  if user.noTags
     li none`,
-      [{ user: { tags: [] } }, { user: { tags: ["a", "b"] } }],
+      [
+        { user: { tags: [], noTags: true } },
+        { user: { tags: ["a", "b"], noTags: false } },
+      ],
     );
   });
 
@@ -197,21 +210,39 @@ describe("blocks: equivalence with native", () => {
   <input name="q" value={q} placeholder="Search {what}" on:input={setQ} />
   <input type="checkbox" checked={on} disabled />
   <select on:change={pick}>
-    <option value="1" selected={sel === 1}>One</option>
+    <option value="1" selected={selOne}>One</option>
   </select>
   <a href="/x/{id}?y={y}" on:click|stopPropagation={go(id, 'a')}>go</a>
-  <button type="submit" disabled={!q}>Save</button>
+  <button type="submit" disabled={noQ}>Save</button>
 </form>`,
       `form.f(@submit.prevent=save)
   input(name="q" value=q placeholder="Search {what}" @input=setQ)
   input(type="checkbox" checked=on disabled)
   select(@change=pick)
-    option(value="1" selected={sel === 1}) One
+    option(value="1" selected=selOne) One
   a(href="/x/{id}?y={y}" @click.stop=go(id, 'a')) go
-  button(type="submit" disabled=!q) Save`,
+  button(type="submit" disabled=noQ) Save`,
       [
-        { q: "", what: "w", on: false, sel: 1, id: 3, y: "z" },
-        { q: "abc", what: "v", on: true, sel: 2, id: 4, y: "k" },
+        {
+          q: "",
+          what: "w",
+          on: false,
+          sel: 1,
+          selOne: true,
+          noQ: true,
+          id: 3,
+          y: "z",
+        },
+        {
+          q: "abc",
+          what: "v",
+          on: true,
+          sel: 2,
+          selOne: false,
+          noQ: false,
+          id: 4,
+          y: "k",
+        },
       ],
     );
   });
@@ -329,7 +360,7 @@ main
       `{#import Table from "../../blocks/crud-table/view.pavlus"}
 
 <main class="k-ashell__content">
-  {#if view === "list"}
+  {#if isList}
     {#if confirm.open}
       <div class="ui-alert pcrm__alert pcrm__confirm">
         <span class="ui-alert-icon">
@@ -346,7 +377,7 @@ main
       </div>
     {/if}
     <Table name="table" {...grid} />
-  {:else if view === "settings"}
+  {:else if isSettings}
     <div class="pcrm__counts">
       {#each settings.counts as item (item.id)}
         <div class="pcrm__count">
@@ -369,7 +400,7 @@ main
       `import Table from "../../blocks/crud-table/view.pavlus"
 
 main.k-ashell__content
-  if view === "list"
+  if isList
     if confirm.open
       div.ui-alert.pcrm__alert.pcrm__confirm
         span.ui-alert-icon
@@ -381,7 +412,7 @@ main.k-ashell__content
             button.ui-button.ui-button-destructive.ui-button-sm(type="button" @click=confirmYes) Delete
             button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=confirmNo) Cancel
     +Table#table(...grid)
-  else if view === "settings"
+  else if isSettings
     div.pcrm__counts
       for item in settings.counts key item.id
         div.pcrm__count
@@ -396,13 +427,20 @@ main.k-ashell__content
         | Reset all data`,
       [
         {
-          view: "list",
+          isList: true,
+          isSettings: false,
           confirm: { open: true, text: "Delete 3?" },
           grid: { rows: 1 },
         },
-        { view: "list", confirm: { open: false, text: "" }, grid: { rows: 2 } },
         {
-          view: "settings",
+          isList: true,
+          isSettings: false,
+          confirm: { open: false, text: "" },
+          grid: { rows: 2 },
+        },
+        {
+          isList: false,
+          isSettings: true,
           settings: {
             askReset: false,
             counts: [
@@ -411,8 +449,12 @@ main.k-ashell__content
             ],
           },
         },
-        { view: "settings", settings: { askReset: true, counts: [] } },
-        { view: "other" },
+        {
+          isList: false,
+          isSettings: true,
+          settings: { askReset: true, counts: [] },
+        },
+        { isList: false, isSettings: false },
       ],
       { Table: table },
     );
@@ -511,8 +553,31 @@ describe("blocks: errors carry positions", () => {
     expect(errorOf("{#while a}{/while}").message).toMatch(/Unknown block/);
   });
 
+  test("each-else is refused: the flag comes from code", () => {
+    const e = errorOf(
+      "{#each xs as x}\n  <p>{x}</p>\n{:else}\n  <p>none</p>\n{/each}",
+    );
+    expect(e.message).toContain(
+      "`{:else}` of an each needs `!list.length`, which the template " +
+        "language no longer expresses — pass an isEmpty flag from code " +
+        "instead (framework/docs/philosophy.md)",
+    );
+    expect([e.line, e.col]).toEqual([3, 1]);
+  });
+
+  test("removed expression constructs name where the logic goes", () => {
+    expect(errorOf("{a + b}").message).toMatch(
+      /the "\+" operator is not allowed in a template expression — compute it in component code/,
+    );
+    expect(errorOf("{!ok}").message).toMatch("negation (!)");
+    expect(errorOf("{f(x)}").message).toMatch(/a call \(or parentheses\)/);
+    expect(errorOf("{a ? b : c}").message).toMatch(/a ternary/);
+    expect(errorOf("{items?.[0]}").message).toMatch(/optional chaining/);
+  });
+
   test("bad expressions point inside the template", () => {
     let e = errorOf("<p>\n  hello {a +}\n</p>");
+    expect(e.message).toMatch(/not allowed in a template expression/);
     expect(e.line).toBe(2);
     e = errorOf("{#if }\n{/if}");
     expect(e.message).toMatch(/Empty expression/);
@@ -531,7 +596,9 @@ describe("blocks: errors carry positions", () => {
     expect(errorOf('<p on:click="go"></p>').message).toMatch(
       /needs a \{expression\}/,
     );
-    expect(errorOf("<p on:click={a + b}></p>").message).toMatch(/message id/);
+    expect(errorOf("<p on:click={a + b}></p>").message).toMatch(
+      /not allowed in an event binding/,
+    );
     expect(errorOf("<p on:click|nope={go}></p>").message).toMatch(/modifier/);
     expect(errorOf("<p class:a-b></p>").message).toMatch(/needs a/);
     expect(errorOf("<p").message).toMatch(/Unclosed <p/);
@@ -571,6 +638,7 @@ describe("blocks: mounted in the DOM", () => {
   const view = compileToView<{
     items: { id: number; text: string; done: boolean }[];
     draft: string;
+    empty: boolean;
   }>(
     `<form on:submit|preventDefault={add}>
   <input class="draft" value={draft} on:input={setDraft} />
@@ -581,15 +649,16 @@ describe("blocks: mounted in the DOM", () => {
       <span>{item.text}</span>
       <button on:click={toggle(item.id)}>toggle</button>
     </li>
-  {:else}
-    <li class="empty">Nothing yet</li>
   {/each}
+  {#if empty}
+    <li class="empty">Nothing yet</li>
+  {/if}
 </ul>`,
     { parser: parseBlocks },
   );
 
   test("clicks send messages and state changes patch the DOM", () => {
-    const h = mountView(view, { items: [], draft: "" });
+    const h = mountView(view, { items: [], draft: "", empty: true });
     expect(h.root.querySelector(".empty")).not.toBeNull();
     h.set({
       items: [
@@ -597,6 +666,7 @@ describe("blocks: mounted in the DOM", () => {
         { id: 2, text: "b", done: true },
       ],
       draft: "",
+      empty: false,
     });
     expect(h.root.querySelector(".empty")).toBeNull();
     expect(h.root.querySelectorAll("li").length).toBe(2);
@@ -607,12 +677,12 @@ describe("blocks: mounted in the DOM", () => {
     h.root.querySelector("form")!.dispatchEvent(submit);
     expect(submit.defaultPrevented).toBe(true);
     expect(h.messages.at(-1)!.id).toBe("add");
-    h.set({ items: [{ id: 2, text: "b", done: false }], draft: "z" });
+    h.set({ items: [{ id: 2, text: "b", done: false }], draft: "z", empty: false });
     expect(h.root.querySelectorAll("li.done").length).toBe(0);
     expect((h.root.querySelector(".draft") as HTMLInputElement).value).toBe(
       "z",
     );
-    expect(toHtml(view.render({ items: [], draft: "" }))).toContain(
+    expect(toHtml(view.render({ items: [], draft: "", empty: true }))).toContain(
       "Nothing yet",
     );
     h.unmount();

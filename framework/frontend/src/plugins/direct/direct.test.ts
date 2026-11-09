@@ -225,40 +225,22 @@ describe("differential: direct vs vdom, same template, same states", () => {
     }
   });
 
-  test("arrow functions in expressions (filter / map / shadowing)", () => {
-    const t = twin<{
-      users: { id: number; name: string; active: boolean }[];
-      n: number;
-    }>(
-      `ul
+  test("removed syntax is rejected by both pipelines alike", () => {
+    // arrows and calls left the language; both compilers must refuse them
+    // with the same words, so one never drifts from the other
+    const bad = `ul
   for u in users.filter(u => u.active) key u.id
-    li {u.id}:{u.name}:{users.map(x => x.id).join("+")}:{n}`,
-    );
-    const users = (over: Record<number, boolean> = {}): {
-      id: number;
-      name: string;
-      active: boolean;
-    }[] =>
-      [1, 2, 3]
-        .map((id) => ({
-          id,
-          name: `u${id}`,
-          active: over[id] ?? id !== 2,
-        }))
-        // exercise reordering too: keyed diff with an arrow upstream
-        .sort((a, b) => (a.id === b.id ? 0 : (a.id % 2) - (b.id % 2) || a.id - b.id));
-    agree(
-      t,
-      [
-        { users: users(), n: 0 },
-        { users: users({ 1: false }), n: 1 },
-        { users: users({ 3: false }), n: 2 },
-        { users: [], n: 3 },
-        { users: users({ 2: true }), n: 4 },
-      ],
-      undefined,
-      "arrows",
-    );
+    li {u.name}`;
+    const msgs = [compileToView, compileDirectToView].map((compile) => {
+      try {
+        compile(bad);
+        return "";
+      } catch (e) {
+        return (e as Error).message.replace(/ \(line \d+, col \d+\)$/, "");
+      }
+    });
+    expect(msgs[0]).toMatch(/philosophy/);
+    expect(msgs[1]).toBe(msgs[0]);
   });
 
   const ROW = twin<{ id: number; label: string; on: boolean }>(
@@ -270,7 +252,7 @@ describe("differential: direct vs vdom, same template, same states", () => {
     `import Row from "./row.pavlus"
 ul.list
   for it in items key it.id
-    +Row#row(id=it.id label=it.label on={it.id === sel})`,
+    +Row#row(id=it.id label=it.label on=it.on)`,
     { Row: ROW },
   );
   const PLAIN = twin(`p.plain {items.length} items ({title})`);
@@ -297,6 +279,8 @@ div.page
   interface Item {
     id: number;
     label: string;
+    /** Ready flag: `id === sel`, computed where the state is built. */
+    on: boolean;
   }
   interface PState {
     title: string;
@@ -320,6 +304,7 @@ div.page
 
   function randomPage(r: () => number, prev?: PState): PState {
     const pick = <T>(xs: T[]): T => xs[Math.floor(r() * xs.length)];
+    const sel = Math.floor(r() * 10);
     let items: Item[] =
       prev && r() < 0.8
         ? prev.items
@@ -332,14 +317,15 @@ div.page
         items.splice(Math.floor(r() * (items.length + 1)), 0, {
           id,
           label: pick(["x", "y"]),
+          on: id === sel,
         });
     }
     if (r() < 0.2) items = shuffle(r, items);
     return {
       title: prev && r() < 0.7 ? prev.title : pick(["T1", "T2"]),
       show: r() < 0.6,
-      sel: Math.floor(r() * 10),
-      items,
+      sel,
+      items: items.map((i) => ({ ...i, on: i.id === sel })),
       alt: pick([
         "plain",
         "numbered",
@@ -711,7 +697,25 @@ describe("the direct dom plugin", () => {
     let depth = 0;
     let maxDepth = 0;
     const seen: string[] = [];
-    const v = compileDirectToView<any>(`p {read(n)}`);
+    // a path with a getter: the template reads it, code observes the read
+    const mk = (n: number) => ({
+      n,
+      get o(): number {
+        seen.push(`read ${n}`);
+        if (n === 1) {
+          depth++;
+          maxDepth = Math.max(maxDepth, depth);
+          // e.g. a focus handler that dispatches a message that repaints
+          dom.handle(
+            { plugin: "dom", type: "update", prev: first, next: second },
+            ctx,
+          );
+          depth--;
+        }
+        return n;
+      },
+    });
+    const v = compileDirectToView<any>(`p {o}`);
     const dom = createDirectDomPlugin();
     const root = document.createElement("div");
     document.body.appendChild(root);
@@ -720,27 +724,16 @@ describe("the direct dom plugin", () => {
       getState: () => s0,
       dispatchEffect() {},
     };
-    const second = { n: 2, read: (n: number) => (seen.push(`read ${n}`), n) };
-    const first = {
-      n: 1,
-      read: (n: number) => {
-        depth++;
-        maxDepth = Math.max(maxDepth, depth);
-        // e.g. a focus handler that dispatches a message that repaints
-        dom.handle(
-          { plugin: "dom", type: "update", prev: first, next: second },
-          ctx,
-        );
-        depth--;
-        return n;
-      },
-    };
-    const s0 = { n: 0, read: (n: number) => n };
+    const second = mk(2);
+    const first = mk(1);
+    const s0 = mk(0);
     dom.init!(ctx);
     dom.handle({ plugin: "dom", type: "mount", target: root, view: v }, ctx);
     dom.handle({ plugin: "dom", type: "update", prev: s0, next: first }, ctx);
+    // the nested ask was queued (max depth 1) and ran after: text is the
+    // second state, and its read came last
     expect(maxDepth).toBe(1);
-    expect(seen).toEqual(["read 2"]);
+    expect(seen.at(-1)).toBe("read 2");
     expect(root.textContent).toBe("2");
   });
 
@@ -831,22 +824,26 @@ describe("the direct dom plugin", () => {
 
 describe("form controls", () => {
   test("value, checked and selected are properties, so typing then updating works", () => {
-    const v = compileDirectToView<{ q: string; on: boolean; pick: string }>(
+    const view = compileDirectToView<{
+      q: string;
+      on: boolean;
+      opts: { v: string; picked: boolean }[];
+    }>(
       `div
   input.q(value=q)
   input.c(type="checkbox" checked=on)
   select.s(value=pick)
     for o in opts
-      option(value=o selected={o === pick}) {o}`,
+      option(value=o.v selected=o.picked) {o.v}`,
     );
+    void view;
     const view2 = compileDirectToView<any>(`div
   input.q(value=q)
   input.c(type="checkbox" checked=on)
   select.s
-    option(value="a" selected={pick === "a"}) a
-    option(value="b" selected={pick === "b"}) b`);
-    void v;
-    const h = mountDirect<any>(view2, { q: "a", on: false, pick: "a" });
+    option(value="a" selected=isA) a
+    option(value="b" selected=isB) b`);
+    const h = mountDirect<any>(view2, { q: "a", on: false, isA: true, isB: false });
     const q = h.root.querySelector(".q") as HTMLInputElement;
     const c = h.root.querySelector(".c") as HTMLInputElement;
     const s = h.root.querySelector(".s") as HTMLSelectElement;
@@ -854,13 +851,13 @@ describe("form controls", () => {
     expect(s.value).toBe("a");
     q.value = "typed";
     c.checked = true;
-    h.set({ q: "typed", on: true, pick: "b" });
+    h.set({ q: "typed", on: true, isA: false, isB: true });
     expect(s.value).toBe("b");
-    h.set({ q: "", on: false, pick: "a" });
+    h.set({ q: "", on: false, isA: true, isB: false });
     expect(q.value).toBe("");
     expect(c.checked).toBe(false);
     expect(s.value).toBe("a");
-    h.set({ q: "from state", on: true, pick: "b" });
+    h.set({ q: "from state", on: true, isA: false, isB: true });
     expect(q.value).toBe("from state");
     expect(c.checked).toBe(true);
     expect(s.value).toBe("b");
@@ -939,30 +936,40 @@ describe("robustness", () => {
   test("an error in one binding is reported; the other bindings still update", () => {
     const v = compileDirectToView<any>(
       `div
-  p.a {boom(n)}
+  p.a {o.v}
   p.b {n}
   p.c(title=n) {n}`,
     );
-    const boom = (n: number) => {
-      if (n === 2) throw new Error("bad binding");
-      return `ok${n}`;
-    };
-    const h = mountDirect<any>(v, { n: 1, boom });
+    // the throwing binding is a getter on the state: the template still only
+    // reads a path, code decides what that read does
+    const mk = (n: number) => ({
+      n,
+      o: {
+        get v(): string {
+          if (n === 2) throw new Error("bad binding");
+          return `ok${n}`;
+        },
+      },
+    });
+    const h = mountDirect<any>(v, mk(1));
     expect(h.root.querySelector(".a")!.textContent).toBe("ok1");
-    h.set({ n: 2, boom });
+    h.set(mk(2));
     expect(h.errors.map((e) => (e as Error).message)).toEqual(["bad binding"]);
     expect(h.root.querySelector(".a")!.textContent).toBe("ok1"); // kept, not corrupted
     expect(h.root.querySelector(".b")!.textContent).toBe("2");
     expect(h.root.querySelector(".c")!.getAttribute("title")).toBe("2");
-    h.set({ n: 3, boom });
+    h.set(mk(3));
     expect(h.root.querySelector(".a")!.textContent).toBe("ok3");
   });
 
   test("a throwing event payload is reported and sends nothing", () => {
-    const v = compileDirectToView<any>(`button(@click=go(f())) x`);
+    // the payload is a path; reading it throws (a getter), not a call
+    const v = compileDirectToView<any>(`button(@click=go(o.id)) x`);
     const h = mountDirect<any>(v, {
-      f: () => {
-        throw new Error("nope");
+      o: {
+        get id(): number {
+          throw new Error("nope");
+        },
       },
     });
     (h.root.querySelector("button") as HTMLElement).click();
@@ -1109,32 +1116,9 @@ describe("swapping the plugin in an app", () => {
 });
 
 describe("per-binding pre-checks and meta.deps", () => {
-  test("a calling binding is skipped while its inputs are unchanged", () => {
-    let calls = 0;
-    const fmt = (n: number): string => {
-      calls++;
-      return `#${n}`;
-    };
-    const v = compileDirectToView<any>(`div
-  p.a {fmt(n)}
-  p.b {other}`);
-    const h = mountDirect<any>(v, { n: 1, other: "x", fmt });
-    expect(h.root.querySelector(".a")!.textContent).toBe("#1");
-    expect(calls).toBe(1);
-    // a sibling input changed: the block runs, the calling binding does not
-    h.set({ n: 1, other: "y", fmt });
-    expect(calls).toBe(1);
-    expect(h.root.querySelector(".a")!.textContent).toBe("#1");
-    expect(h.root.querySelector(".b")!.textContent).toBe("y");
-    // its own input changed: it recomputes
-    h.set({ n: 2, other: "y", fmt });
-    expect(calls).toBe(2);
-    expect(h.root.querySelector(".a")!.textContent).toBe("#2");
-  });
-
-  test("a pre-checked binding agrees with the vdom pipeline", () => {
+  test("a binding agrees with the vdom pipeline", () => {
     const T = twin(`div
-  p.a {name.toUpperCase()}
+  p.a {name}
   p.b {note}`);
     const states = [
       { name: "ada", note: "x" },
@@ -1147,7 +1131,7 @@ describe("per-binding pre-checks and meta.deps", () => {
   test("meta.deps lists what every binding reads", () => {
     const v = compileDirectToView<any>(`ul
   for u in users key u.id
-    li(class:on=u.done) {u.name.toLowerCase()}
+    li(class:on=u.done) {u.name}
   p.n {users.length}`);
     const meta = v.meta!;
     const rows = meta.deps as Record<string, unknown>[];
@@ -1167,7 +1151,7 @@ describe("per-binding pre-checks and meta.deps", () => {
       line: 3,
       of: "text",
       reads: ["u"],
-      checked: true,
+      checked: false,
     });
     expect(rows).toContainEqual({
       line: 4,

@@ -14,7 +14,7 @@ import type {
   TextNode,
 } from "../../template/ast.ts";
 import { TemplateError } from "../../template/errors.ts";
-import { parseExpr } from "../../template/expr.ts";
+import { parseEvent, parseExpr } from "../../template/expr.ts";
 import { decodeEntities } from "./entities.ts";
 import {
   findInterpEnd,
@@ -108,25 +108,6 @@ function collectIds(e: Expr, name: string, out: Expr[]): void {
     case "index":
       collectIds(e.obj, name, out);
       collectIds(e.index, name, out);
-      break;
-    case "call":
-      collectIds(e.callee, name, out);
-      e.args.forEach((a) => collectIds(a, name, out));
-      break;
-    case "unary":
-      collectIds(e.arg, name, out);
-      break;
-    case "binary":
-      collectIds(e.left, name, out);
-      collectIds(e.right, name, out);
-      break;
-    case "cond":
-      collectIds(e.test, name, out);
-      collectIds(e.then, name, out);
-      collectIds(e.else, name, out);
-      break;
-    case "array":
-      e.items.forEach((a) => collectIds(a, name, out));
       break;
   }
 }
@@ -452,29 +433,15 @@ class AngularParser {
       if (prev?.type !== "for") {
         this.fail("@empty without a matching @for", at);
       }
-      const test: Expr = {
-        k: "unary",
-        op: "!",
-        arg: {
-          k: "member",
-          obj: structuredClone((prev as ForNode).of),
-          prop: "length",
-        },
-      };
-      const node: IfNode = {
-        type: "if",
-        nid: this.nid++,
-        line,
-        branches: [{ test, children: [] }],
-      };
-      this.sealed.add(node);
-      push(parent.list!, node);
-      this.stack.push({
-        kind: "block",
-        name: "@empty",
-        at,
-        list: node.branches[0].children,
-      });
+      // `@empty` needs `if !list.length` — negation left the template language
+      // (a template reads ready flags); the converter cannot express it, so
+      // the ported code must pass an `isEmpty` flag from code instead.
+      this.fail(
+        "@empty needs `!list.length`, which the template language no longer " +
+          "expresses — pass an isEmpty flag from code instead " +
+          "(framework/docs/philosophy.md)",
+        tok.start,
+      );
     } else this.forBlock(tok, line);
   }
 
@@ -617,15 +584,30 @@ class AngularParser {
           );
         }
       }
-      const handler = this.expr(needValue(), a.valueStart);
-      const { msg, args } = this.message(handler, a.valueStart);
+      const raw = needValue();
+      const start = this.src.pos(a.valueStart);
+      let msg: string;
+      let args: Expr[];
+      try {
+        ({ msg, args } = parseEvent(raw, start));
+      } catch (err) {
+        if (err instanceof TemplateError && err.line === start.line) {
+          const message = err.message.replace(/ \(line \d+, col \d+\)$/, "");
+          this.fail(message, a.valueStart + (err.col - start.col));
+        }
+        throw err;
+      }
+      // The DOM event is never part of a message: `save($event)` is `save`.
+      const evArgs = args.filter(
+        (x) => !(x.k === "id" && x.name === "$event"),
+      );
       return {
         k: "event",
         at,
         ev: {
           name,
           msg,
-          args,
+          args: evArgs,
           prevent: mods.includes("prevent"),
           stop: mods.includes("stop"),
         },
@@ -658,18 +640,14 @@ class AngularParser {
             ? null
             : `${name(x.obj)}.${x.prop}`
           : null;
-    const msg = name(e.k === "call" ? e.callee : e);
+    const msg = name(e);
     if (msg === null) {
       this.fail(
         "Event handler must be a message id like `save` or `remove(item)`",
         at,
       );
     }
-    // The DOM event is never part of a message: `save($event)` is `save`.
-    const args = (e.k === "call" ? e.args : []).filter(
-      (a) => !(a.k === "id" && a.name === "$event"),
-    );
-    return { msg: msg!, args };
+    return { msg: msg!, args: [] };
   }
 
   /** `*ngIf="expr"` and `*ngFor="let x of xs; trackBy: k; let i = index"`. */

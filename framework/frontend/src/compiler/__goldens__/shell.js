@@ -31,7 +31,7 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
     const aAttrs = {};
     setAttr(aAttrs, "href", toAttr((item)?.path));
     setAttr(aAttrs, "class", 
-      joinClasses(["top-menu__link", ((((item)?.path === "/") ? ((state.route)?.path === "/") : (((state.route)?.path === (item)?.path) || (((state.route)?.path)?.startsWith)?.(((item)?.path + "/")))) ? "top-menu__link--active" : "")]),
+      joinClasses(["top-menu__link", ((item)?.active ? "top-menu__link--active" : "")]),
     );
     const aEvents = {
       "click": { id: messagePrefix + "navigate", payload: (item)?.path, prevent: true },
@@ -92,8 +92,8 @@ function render(state, idSuffix = "", messagePrefix = "", env) {
 function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
   const patches = [];
   if (prev === next) return patches;
-  // line 2: <header.top> (reads: route, menu)
-  if (prev.route !== next.route || prev.menu !== next.menu) {
+  // line 2: <header.top> (reads: menu)
+  if (prev.menu !== next.menu) {
     // line 3: <nav.top-menu>
     // line 4: for item
     const prevItemList = (prev.menu) || [];
@@ -116,7 +116,7 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
         const aAttrs = {};
         setAttr(aAttrs, "href", toAttr((item)?.path));
         setAttr(aAttrs, "class", 
-          joinClasses(["top-menu__link", ((((item)?.path === "/") ? ((next.route)?.path === "/") : (((next.route)?.path === (item)?.path) || (((next.route)?.path)?.startsWith)?.(((item)?.path + "/")))) ? "top-menu__link--active" : "")]),
+          joinClasses(["top-menu__link", ((item)?.active ? "top-menu__link--active" : "")]),
         );
         const aEvents = {
           "click": { id: messagePrefix + "navigate", payload: (item)?.path, prevent: true },
@@ -137,8 +137,8 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
         const prevItem = prevItemList[prevIndex];
         const nextItem = nextItemList[nextIndex];
         const itemSuffix = idSuffix + "#" + nextItemKeys[nextIndex];
-        // line 5: <a.top-menu__link> (reads: item, route)
-        if (prevItem !== nextItem || prev.route !== next.route) {
+        // line 5: <a.top-menu__link> (reads: item)
+        if (prevItem !== nextItem) {
           const prevHref = toAttr((prevItem)?.path);
           const nextHref = toAttr((nextItem)?.path);
           if (prevHref !== nextHref) {
@@ -146,8 +146,8 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
               ? { op: "rmAttr", id: itemSuffix + "3", name: "href" }
               : { op: "attr", id: itemSuffix + "3", name: "href", value: nextHref });
           }
-          const prevClass = joinClasses(["top-menu__link", ((((prevItem)?.path === "/") ? ((prev.route)?.path === "/") : (((prev.route)?.path === (prevItem)?.path) || (((prev.route)?.path)?.startsWith)?.(((prevItem)?.path + "/")))) ? "top-menu__link--active" : "")]);
-          const nextClass = joinClasses(["top-menu__link", ((((nextItem)?.path === "/") ? ((next.route)?.path === "/") : (((next.route)?.path === (nextItem)?.path) || (((next.route)?.path)?.startsWith)?.(((nextItem)?.path + "/")))) ? "top-menu__link--active" : "")]);
+          const prevClass = joinClasses(["top-menu__link", ((prevItem)?.active ? "top-menu__link--active" : "")]);
+          const nextClass = joinClasses(["top-menu__link", ((nextItem)?.active ? "top-menu__link--active" : "")]);
           if (prevClass !== nextClass) {
             patches.push(nextClass === null
               ? { op: "rmAttr", id: itemSuffix + "3", name: "class" }
@@ -158,12 +158,10 @@ function diff(prev, next, idSuffix = "", messagePrefix = "", env) {
           if (!(prevClickPayload === nextClickPayload)) {
             patches.push({ op: "handler", id: itemSuffix + "3", event: "click", msg: { id: messagePrefix + "navigate", payload: nextClickPayload, prevent: true } });
           }
-          // line 5: text (reads: item)
-          if (prevItem !== nextItem) {
-            const prevText = "" + toText((prevItem)?.title);
-            const nextText = "" + toText((nextItem)?.title);
-            if (prevText !== nextText) patches.push({ op: "text", id: itemSuffix + "4", text: nextText });
-          }
+          // line 5: text
+          const prevText = "" + toText((prevItem)?.title);
+          const nextText = "" + toText((nextItem)?.title);
+          if (prevText !== nextText) patches.push({ op: "text", id: itemSuffix + "4", text: nextText });
         }
       },
     });

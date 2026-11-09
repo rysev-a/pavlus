@@ -15,33 +15,6 @@ export function exprIdents(e: Expr, out: Set<string>): void {
       exprIdents(e.obj, out);
       exprIdents(e.index, out);
       return;
-    case "call":
-      exprIdents(e.callee, out);
-      e.args.forEach((a) => exprIdents(a, out));
-      return;
-    case "unary":
-      exprIdents(e.arg, out);
-      return;
-    case "binary":
-      exprIdents(e.left, out);
-      exprIdents(e.right, out);
-      return;
-    case "cond":
-      exprIdents(e.test, out);
-      exprIdents(e.then, out);
-      exprIdents(e.else, out);
-      return;
-    case "array":
-      e.items.forEach((a) => exprIdents(a, out));
-      return;
-    case "arrow": {
-      // the parameters are bound, not read: collect the body, drop them
-      const inner = new Set<string>();
-      exprIdents(e.body, inner);
-      e.params.forEach((p) => inner.delete(p));
-      inner.forEach((x) => out.add(x));
-      return;
-    }
   }
 }
 

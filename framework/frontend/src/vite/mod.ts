@@ -1,4 +1,4 @@
-import { compileTemplate, type Parser } from "../compiler/mod.ts";
+import { compileTemplate, type Parser, type Warn } from "../compiler/mod.ts";
 import { compileDirectTemplate } from "../direct/mod.ts";
 
 /** The part of a Vite plugin we use (avoids depending on Vite's types). */
@@ -6,7 +6,13 @@ export interface PavlusVitePlugin {
   name: string;
   enforce: "pre";
   transform(
-    this: { error(message: string): never },
+    this: {
+      error(message: string): never;
+      warn?(
+        message: string,
+        position?: number | { line: number; column: number },
+      ): void;
+    },
     code: string,
     id: string,
   ): { code: string; map: { mappings: string } } | null;
@@ -52,6 +58,8 @@ export function pavlus(opts: PavlusPluginOptions = {}): PavlusVitePlugin {
       if (!file.endsWith(ext) && !alt) return null;
       // `?raw`, `?url` and `?inline` want the file itself, not a compiled module.
       if (/(^|&)(raw|url|inline)(&|$)/.test(query)) return null;
+      const warn: Warn = (message, line) =>
+        this.warn?.(message, { line, column: 1 });
       try {
         // `mappings: ""` means "no source map". Without it Vite invents one that
         // maps the generated code onto itself (big, and it hides nothing). A real
@@ -64,6 +72,7 @@ export function pavlus(opts: PavlusPluginOptions = {}): PavlusVitePlugin {
             filename: file,
             runtime: opts.runtime,
             parser: alt ? opts.syntaxes![alt] : undefined,
+            warn,
           }),
           map: { mappings: "" },
         };

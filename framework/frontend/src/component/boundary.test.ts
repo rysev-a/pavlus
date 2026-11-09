@@ -144,15 +144,17 @@ describe("boundaries: sinking messages slice the state, bubbling effects get enr
     }
     const listView = compileToView<{
       byId: Record<string, { id: string; on: boolean }>;
+      rows: { id: string; on: boolean }[];
     }>(
       `import Row from "./row.pavlus"
 table
-  for id in ids key id
-    +Row#row(key=id ...byId[id])`,
+  for row in rows key row.id
+    +Row#row(key=row.id ...row)`,
       { components: { Row: rowView } },
     );
     class List extends Component<{
       byId: Record<string, { id: string; on: boolean }>;
+      rows: { id: string; on: boolean }[];
     }> {
       view = listView;
       children = { row: { component: new Row(), each: "byId" } };
@@ -160,9 +162,17 @@ table
     const h = toHandler(new List());
     const prev = {
       byId: { a: { id: "a", on: false }, b: { id: "b", on: false } },
+      rows: [
+        { id: "a", on: false },
+        { id: "b", on: false },
+      ],
     };
     const next = {
       byId: { a: { id: "a", on: false }, b: { id: "b", on: true } },
+      rows: [
+        { id: "a", on: false },
+        { id: "b", on: true },
+      ],
     };
     const effects = h({ id: "row.b.paint", payload: { prev, next } }, next);
 

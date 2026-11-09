@@ -15,7 +15,7 @@ const same = (
 ) => expectSameAs(parseJsx, jsx, native, states, components);
 
 const todos = [
-  { items: [], title: "T", draft: "" },
+  { items: [], title: "T", draft: "", isEmpty: true },
   {
     items: [
       { id: 1, text: "a", done: false },
@@ -23,8 +23,14 @@ const todos = [
     ],
     title: "Todos",
     draft: "x",
+    isEmpty: false,
   },
-  { items: [{ id: 2, text: "b", done: true }], title: "Todos", draft: "" },
+  {
+    items: [{ id: 2, text: "b", done: true }],
+    title: "Todos",
+    draft: "",
+    isEmpty: false,
+  },
 ];
 
 describe("equivalence with the native syntax", () => {
@@ -38,7 +44,7 @@ describe("equivalence with the native syntax", () => {
       <input id="draft" type="text" value={draft} disabled />
       <button type="submit">Add</button>
     </form>
-    {items.length === 0 && <p className="empty">Nothing to do</p>}
+    {isEmpty && <p className="empty">Nothing to do</p>}
     <ul>
       {items.map((item) => (
         <li key={item.id} class:done={item.done}>
@@ -55,7 +61,7 @@ describe("equivalence with the native syntax", () => {
     label(for="draft") New
     input#draft(type="text" value={draft} disabled)
     button(type="submit") Add
-  if items.length === 0
+  if isEmpty
     p.empty Nothing to do
   ul
     for item in items key item.id
@@ -68,7 +74,7 @@ describe("equivalence with the native syntax", () => {
 
   test("nested loops with index and keys, else-if chain", () => {
     const states = [
-      { groups: [], mode: "a" },
+      { groups: [], modeA: true, modeB: false, notC: true },
       {
         groups: [
           {
@@ -81,9 +87,16 @@ describe("equivalence with the native syntax", () => {
           },
           { id: 2, name: "g2", rows: [] },
         ],
-        mode: "b",
+        modeA: false,
+        modeB: true,
+        notC: true,
       },
-      { groups: [{ id: 2, name: "g2", rows: [{ id: 9, v: "z" }] }], mode: "c" },
+      {
+        groups: [{ id: 2, name: "g2", rows: [{ id: 9, v: "z" }] }],
+        modeA: false,
+        modeB: false,
+        notC: false,
+      },
     ];
     same(
       `<>
@@ -93,24 +106,24 @@ describe("equivalence with the native syntax", () => {
       {g.rows.map((r, ri) => <p key={r.id}>{ri}-{r.v}</p>)}
     </section>
   ))}
-  {mode === "a" ? <i>A</i> : mode === "b" ? <b>B</b> : <u>C</u>}
-  {mode === "a" ? <i>A</i> : null}
-  {mode === "c" ? null : <s>not c</s>}
+  {modeA ? <i>A</i> : modeB ? <b>B</b> : <u>C</u>}
+  {modeA ? <i>A</i> : null}
+  {notC && <s>not c</s>}
 </>`,
       `for g, gi in groups key g.id
   section
     h2 {gi}: {g.name}
     for r, ri in g.rows key r.id
       p {ri}-{r.v}
-if mode === "a"
+if modeA
   i A
-else if mode === "b"
+else if modeB
   b B
 else
   u C
-if mode === "a"
+if modeA
   i A
-if !(mode === "c")
+if notC
   s not c`,
       states,
     );
@@ -170,13 +183,13 @@ if !(mode === "c")
     );
   });
 
-  test("style as a string, class toggles with expressions", () => {
+  test("style as a string, class toggles with flags", () => {
     same(
-      `<p style="color: red" class:on={a && !b} class:off={a || b}>x</p>`,
-      `p(style="color: red" class:on=a&&!b class:off={a || b}) x`,
+      `<p style="color: red" class:on={on} class:off={off}>x</p>`,
+      `p(style="color: red" class:on=on class:off=off) x`,
       [
-        { a: true, b: false },
-        { a: false, b: true },
+        { on: true, off: false },
+        { on: false, off: true },
       ],
     );
   });
@@ -266,12 +279,20 @@ describe("errors carry positions", () => {
 
   test("expression errors land on the offending character, across lines", () => {
     const e = err(`<div>\n  <p>{\n    a +\n  }</p>\n</div>`);
-    expect(e.message).toMatch(/Unexpected end/);
-    expect(e.line).toBe(3);
+    expect(e.message).toMatch(/not allowed in a template expression/);
+    expect([e.line, e.col]).toEqual([3, 7]);
     const f = err(`<p>{a +}</p>`);
-    expect([f.line, f.col]).toEqual([1, 8]);
+    expect([f.line, f.col]).toEqual([1, 7]);
     const g = err(`<p>\n  <a href={x +}/>\n</p>`);
-    expect([g.line, g.col]).toEqual([2, 15]);
+    expect([g.line, g.col]).toEqual([2, 14]);
+  });
+
+  test("a negated branch is not allowed, inverted flags come from component code", () => {
+    const e = err(`<p>{closed ? null : <s>open</s>}</p>`);
+    expect(e.message).toMatch(
+      /`cond \? null : <X\/>` is not allowed — pass an inverted flag from component code/,
+    );
+    expect([e.line, e.col]).toEqual([1, 5]);
   });
 
   test("unknown component, member names, children on components", () => {
@@ -316,7 +337,7 @@ describe("errors carry positions", () => {
 
 describe("mounted in the DOM", () => {
   test("clicks dispatch messages and updates patch", () => {
-    const view = compileToView<{ items: { id: number; t: string }[] }>(
+    const view = compileToView<{ items: { id: number; t: string }[]; empty: boolean }>(
       `export default (
   <ul>
     {items.map((item, i) => (
@@ -324,25 +345,29 @@ describe("mounted in the DOM", () => {
         <button onClick={pick(item)}>{i}:{item.t}</button>
       </li>
     ))}
-    {items.length === 0 && <li className="none">empty</li>}
+    {empty && <li className="none">empty</li>}
   </ul>
 );`,
       { parser: parseJsx },
     );
-    const h = mountView(view, { items: [{ id: 1, t: "a" }] });
+    const h = mountView(view, {
+      items: [{ id: 1, t: "a" }],
+      empty: false,
+    });
     const html = () => h.root.innerHTML.replace(/<!--.*?-->/g, "");
     expect(html()).toBe("<ul><li><button>0:a</button></li></ul>");
     h.root.querySelector("button")!.click();
     expect(h.messages.map((m) => [m.id, m.payload])).toEqual([
       ["pick", { id: 1, t: "a" }],
     ]);
-    h.set({ items: [] });
+    h.set({ items: [], empty: true });
     expect(html()).toBe('<ul><li class="none">empty</li></ul>');
     h.set({
       items: [
         { id: 2, t: "b" },
         { id: 1, t: "a" },
       ],
+      empty: false,
     });
     expect(h.root.querySelectorAll("li").length).toBe(2);
     h.messages.length = 0;
