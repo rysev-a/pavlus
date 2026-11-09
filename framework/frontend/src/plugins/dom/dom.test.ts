@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import { compileToView } from "../../compiler/mod.ts";
 import { mountView } from "../../testing/mod.ts";
 import type { PluginContext } from "../../core/types.ts";
+import { renderToString } from "../../ssr/mod.ts";
 import { DomPlugin } from "./mod.ts";
 
 const DASHBOARD = `
@@ -157,6 +158,75 @@ describe("diff correctness (the main invariant)", () => {
       expect(h.root.innerHTML).toBe("");
       h.root.remove();
     }
+  });
+});
+
+const SVG = "http://www.w3.org/2000/svg";
+
+describe("inline svg: namespaces survive build, patch and hydration", () => {
+  const view = compileToView<{ on: boolean; dots: { id: number; x: number }[] }>(
+    `svg.icon(viewBox="0 0 10 10")
+  defs
+    linearGradient#grad
+      stop(offset="0" stop-color="red")
+      stop(offset="1" stop-color="blue")
+  circle.main(r="4" fill="url(#grad)")
+  if on
+    circle.extra(r="1" cx="5")
+  for d in dots key d.id
+    circle.dot(cx={d.x})`,
+  );
+  const base = { on: false, dots: [{ id: 1, x: 1 }] };
+
+  test("a fresh build creates every element in the SVG namespace", () => {
+    const h = mountView(view, base);
+    for (const sel of ["svg", "defs", "linearGradient", "stop", "circle"])
+      for (const el of h.root.querySelectorAll(sel))
+        expect(el.namespaceURI, sel).toBe(SVG);
+    const grad = h.root.querySelector("#grad") as Element;
+    expect(grad.getAttribute("offset")).toBe(null); // attrs sit where written
+    expect((h.root.querySelector(".main") as Element).getAttribute("r")).toBe(
+      "4",
+    );
+    h.unmount();
+  });
+
+  test("patches inserting into a live <svg> stay in the namespace", () => {
+    const h = mountView(view, base);
+    h.set({ on: true, dots: [
+      { id: 1, x: 1 },
+      { id: 2, x: 2 },
+    ] });
+    for (const el of h.root.querySelectorAll(".extra, .dot"))
+      expect(el.namespaceURI).toBe(SVG);
+    // and back out again
+    h.set(base);
+    expect(h.root.querySelectorAll("circle").length).toBe(2); // main + one dot
+    h.unmount();
+  });
+
+  test("hydration adopts a server render and keeps patching it right", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    root.innerHTML = renderToString(view, base);
+    const dom = new DomPlugin();
+    const messages: unknown[] = [];
+    const ctx = {
+      dispatch: (m: unknown) => messages.push(m),
+      getState: () => base,
+      dispatchEffect() {},
+    } as never;
+    dom.init(ctx);
+    dom.mount(root, view, { ctx });
+    for (const el of root.querySelectorAll("circle, defs, stop"))
+      expect(el.namespaceURI).toBe(SVG); // adopted, but still SVG
+    dom.update(root, view.diff(base, { on: true, dots: [{ id: 1, x: 9 }] }));
+    const extra = root.querySelector(".extra") as Element;
+    expect(extra.namespaceURI).toBe(SVG); // inserted into adopted svg
+    dom.update(root, view.diff({ on: true, dots: [{ id: 1, x: 9 }] }, base));
+    expect(root.querySelector(".extra")).toBe(null);
+    dom.unmount(root);
+    root.remove();
   });
 });
 

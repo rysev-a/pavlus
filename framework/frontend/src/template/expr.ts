@@ -8,6 +8,7 @@ type Token = {
 };
 
 const PUNCT = [
+  "=>",
   "===",
   "!==",
   "??",
@@ -215,10 +216,26 @@ class ExprParser {
       return { k: "lit", value: t.v };
     }
     if (t.t === "id") {
+      // `x => ...`: a one-parameter arrow without parentheses
+      const next = this.toks[this.i + 1];
+      if (
+        !KEYWORDS[t.v as string] &&
+        next &&
+        next.t === "p" &&
+        next.v === "=>"
+      ) {
+        const param = t.v as string;
+        this.i += 2;
+        return { k: "arrow", params: [param], body: this.ternary() };
+      }
       this.i++;
       return KEYWORDS[t.v as string] ?? { k: "id", name: t.v as string };
     }
     if (this.isP("(")) {
+      // `(a, b) => ...` or `() => ...` — but also a parenthesized expression.
+      // Try the parameter list first; anything that does not fit rolls back.
+      const arrow = this.tryArrowParams();
+      if (arrow) return { k: "arrow", params: arrow, body: this.ternary() };
       this.i++;
       const e = this.ternary();
       this.eat(")");
@@ -238,6 +255,44 @@ class ExprParser {
       t.t === "eof" ? "Unexpected end of expression" : `Unexpected "${t.v}"`,
       t,
     );
+  }
+
+  /**
+   * `(` id (`,` id)* `)` `=>`, or null (with the position restored) when the
+   * tokens are not an arrow's parameter list. A parse error inside also rolls
+   * back: `(a.b)` is a parenthesized expression, not a broken parameter.
+   */
+  private tryArrowParams(): string[] | null {
+    const save = this.i;
+    const rollback = (): null => {
+      this.i = save;
+      return null;
+    };
+    if (!this.isP("(")) return null;
+    this.i++;
+    const params: string[] = [];
+    let confirmed = false; // `)` followed by `=>` seen: it IS an arrow
+    try {
+      while (!this.isP(")")) {
+        const t = this.peek();
+        if (t.t !== "id" || KEYWORDS[t.v as string]) return rollback();
+        params.push(t.v as string);
+        this.i++;
+        if (!this.isP(")")) this.eat(",");
+      }
+      this.i++; // )
+      if (!this.isP("=>")) return rollback();
+      confirmed = true;
+      // only an arrow from here on: duplicates are a real error, not a rollback
+      const dup = params.find((p, i) => params.indexOf(p) !== i);
+      if (dup !== undefined)
+        throw this.err(`duplicate parameter "${dup}"`, this.toks[save]!);
+      this.i++; // =>
+      return params;
+    } catch (e) {
+      if (confirmed || !(e instanceof TemplateError)) throw e;
+      return rollback();
+    }
   }
 }
 

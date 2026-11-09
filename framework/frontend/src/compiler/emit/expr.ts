@@ -44,6 +44,19 @@ export class ExprEmitter extends EmitBase {
         )})`;
       case "array":
         return `[${e.items.map((a) => this.expr(a, ctx, side)).join(", ")}]`;
+      case "arrow": {
+        // fresh, non-colliding JS names; the parameters shadow scope and state
+        const scope = new Map(ctx.scope);
+        const params = e.params.map((p) => this.name(p));
+        e.params.forEach((p, i) =>
+          scope.set(p, { prev: params[i]!, next: params[i]! }),
+        );
+        return `(${params.join(", ")}) => (${this.expr(
+          e.body,
+          { ...ctx, scope },
+          side,
+        )})`;
+      }
     }
   }
 

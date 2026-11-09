@@ -85,15 +85,38 @@ export function fail(env: Env, e: unknown): void {
 
 type Spec = string | 0 | [string, string[], ...Spec[]];
 
-function build(doc: Document, spec: Spec): Node {
+const SVG_NS = "http://www.w3.org/2000/svg";
+const MATH_NS = "http://www.w3.org/1998/Math/MathML";
+/** The mnemonics the generator emits (`skel(specs, single, "svg")`). */
+const NS_URI: Record<string, string> = { svg: SVG_NS, math: MATH_NS };
+
+function build(doc: Document, spec: Spec, ns: string | null = null): Node {
   if (typeof spec === "string") return doc.createTextNode(spec);
   if (spec === 0) return doc.createComment("");
-  const el = doc.createElement(spec[0]);
+  const tag = spec[0];
+  // svg/math open their namespace; below an svg everything is SVG unless it
+  // is the HTML inside a foreignObject
+  const el =
+    tag === "svg"
+      ? doc.createElementNS(SVG_NS, tag)
+      : tag === "math"
+        ? doc.createElementNS(MATH_NS, tag)
+        : ns
+          ? doc.createElementNS(ns, tag)
+          : doc.createElement(tag);
+  const childNs =
+    tag === "svg"
+      ? SVG_NS
+      : tag === "math"
+        ? MATH_NS
+        : tag === "foreignObject"
+          ? null
+          : ns;
   const attrs = spec[1];
   for (let i = 0; i < attrs.length; i += 2)
     el.setAttribute(attrs[i], attrs[i + 1]);
   for (let i = 2; i < spec.length; i++)
-    el.appendChild(build(doc, spec[i] as Spec));
+    el.appendChild(build(doc, spec[i] as Spec, childNs));
   return el;
 }
 
@@ -103,16 +126,21 @@ function build(doc: Document, spec: Spec): Node {
  * rules cannot change the shape the compiled paths rely on). `single`: one
  * root node, cloned on its own; otherwise a fragment.
  */
-export function skel(roots: Spec[], single: boolean): (doc: Document) => Node {
+export function skel(
+  roots: Spec[],
+  single: boolean,
+  ns?: string,
+): (doc: Document) => Node {
+  const uri = ns ? (NS_URI[ns] ?? null) : null;
   let doc: Document | undefined;
   let node: Node;
   return (d) => {
     if (d !== doc) {
       doc = d;
-      if (single) node = build(d, roots[0]);
+      if (single) node = build(d, roots[0], uri);
       else {
         node = d.createDocumentFragment();
-        for (const r of roots) node.appendChild(build(d, r));
+        for (const r of roots) node.appendChild(build(d, r, uri));
       }
     }
     return node;

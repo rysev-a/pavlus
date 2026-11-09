@@ -43,7 +43,10 @@ view as its owner.
 static attributes and text) is built once, with `createElement` /
 `setAttribute` calls (never from HTML, so the HTML parser's restructuring of
 `<p><div>` or nested `<a>` cannot change the shape the compiled paths rely on),
-and cloned with `cloneNode(true)` per instance. Dynamic nodes are reached
+and cloned with `cloneNode(true)` per instance. `svg` and `math` elements are
+created in their own namespace, and the generator passes the enclosing
+namespace down to an `if`/`for` body's skeleton, so inline `<svg>` works
+(including dynamic children inside it). Dynamic nodes are reached
 from the clone by a precomputed chain of `firstChild` / `nextSibling`. Dynamic
 text starts as an empty text node; `if` / `for` / embeds / `+outlet` each own
 one empty comment (the anchor) that marks where their content goes (content is

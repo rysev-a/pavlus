@@ -36,6 +36,8 @@ export function exprSrc(e: Expr): string {
       return `${wrap(e.test)} ? ${wrap(e.then)} : ${wrap(e.else)}`;
     case "array":
       return `[${e.items.map(exprSrc).join(", ")}]`;
+    case "arrow":
+      return `(${e.params.join(", ")}) => ${exprSrc(e.body)}`;
   }
 }
 

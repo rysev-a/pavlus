@@ -33,6 +33,15 @@ export function exprIdents(e: Expr, out: Set<string>): void {
       return;
     case "array":
       e.items.forEach((a) => exprIdents(a, out));
+      return;
+    case "arrow": {
+      // the parameters are bound, not read: collect the body, drop them
+      const inner = new Set<string>();
+      exprIdents(e.body, inner);
+      e.params.forEach((p) => inner.delete(p));
+      inner.forEach((x) => out.add(x));
+      return;
+    }
   }
 }
 

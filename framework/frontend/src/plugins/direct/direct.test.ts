@@ -225,6 +225,42 @@ describe("differential: direct vs vdom, same template, same states", () => {
     }
   });
 
+  test("arrow functions in expressions (filter / map / shadowing)", () => {
+    const t = twin<{
+      users: { id: number; name: string; active: boolean }[];
+      n: number;
+    }>(
+      `ul
+  for u in users.filter(u => u.active) key u.id
+    li {u.id}:{u.name}:{users.map(x => x.id).join("+")}:{n}`,
+    );
+    const users = (over: Record<number, boolean> = {}): {
+      id: number;
+      name: string;
+      active: boolean;
+    }[] =>
+      [1, 2, 3]
+        .map((id) => ({
+          id,
+          name: `u${id}`,
+          active: over[id] ?? id !== 2,
+        }))
+        // exercise reordering too: keyed diff with an arrow upstream
+        .sort((a, b) => (a.id === b.id ? 0 : (a.id % 2) - (b.id % 2) || a.id - b.id));
+    agree(
+      t,
+      [
+        { users: users(), n: 0 },
+        { users: users({ 1: false }), n: 1 },
+        { users: users({ 3: false }), n: 2 },
+        { users: [], n: 3 },
+        { users: users({ 2: true }), n: 4 },
+      ],
+      undefined,
+      "arrows",
+    );
+  });
+
   const ROW = twin<{ id: number; label: string; on: boolean }>(
     `li.row(class:on=on @click=pick(id))
   span {label}
@@ -769,6 +805,25 @@ describe("the direct dom plugin", () => {
     expect(renderToString(v, { xs: ["a", "<b>"], f: true })).toBe(
       "<ul><li>a</li><li>&lt;b&gt;</li><i>yes</i></ul>",
     );
+  });
+
+  test("inline svg: the skeleton creates elements in the SVG namespace", () => {
+    const v = compileDirectToView<{ on: boolean; xs: number[] }>(
+      `svg.icon(viewBox="0 0 10 10")
+  circle.main(r="4")
+  if on
+    circle.extra(r="1")
+  for x in xs key x
+    circle.dot(cx={x})`,
+    );
+    const h = mountDirect(v, { on: false, xs: [1] });
+    const SVG = "http://www.w3.org/2000/svg";
+    for (const el of h.root.querySelectorAll("svg, circle"))
+      expect(el.namespaceURI).toBe(SVG);
+    h.set({ on: true, xs: [1, 2] });
+    for (const el of h.root.querySelectorAll(".extra, .dot"))
+      expect(el.namespaceURI).toBe(SVG);
+    h.unmount();
   });
 });
 

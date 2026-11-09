@@ -101,6 +101,49 @@ else
     ).toBe(`<ul><li>0:a</li><li>1:b</li></ul>`);
   });
 
+  test("arrow functions: filter/map, params, zero params, shadowing", () => {
+    expect(
+      html(`ul
+  for u in users.filter(u => u.active)
+    li {u.name}`, {
+        users: [
+          { name: "a", active: true },
+          { name: "b", active: false },
+          { name: "c", active: true },
+        ],
+      }),
+    ).toBe(`<ul><li>a</li><li>c</li></ul>`);
+    // several parameters, parentheses, nested arrows, a parameter shadowing state
+    expect(
+      html(
+        `p {pick((a, b) => a + b + n)} {call(() => 7)} {xs.map(x => xs.map(y => x * y).join(",")).join(";")}`,
+        {
+          pick: (f: (a: number, b: number) => number) => f(1, 2),
+          call: (f: () => number) => f(),
+          xs: [1, 2],
+          n: 10,
+        },
+      ),
+    ).toBe(`<p>13 7 1,2;2,4</p>`);
+  });
+
+  test("arrows: a parenthesized expression is still an expression", () => {
+    expect(html(`p {(a.b)}`, { a: { b: 5 } })).toBe(`<p>5</p>`);
+    expect(html(`p {((a.b))}`, { a: { b: 5 } })).toBe(`<p>5</p>`);
+  });
+
+  test("arrows: parse errors keep their kind", () => {
+    expect(() => parse("p {a =>}")).toThrow(TemplateError);
+    // `a.b` is not a parameter list: rolls back, then the stray `=>` errors
+    expect(() => parse("p {(a.b) => 1}")).toThrow(TemplateError);
+    try {
+      parse("p {(a, a) => 1}");
+      expect.unreachable();
+    } catch (e) {
+      expect((e as TemplateError).message).toMatch(/duplicate/u);
+    }
+  });
+
   test("html is escaped, expressions are null safe", () => {
     expect(html(`p {a.b.c}{x}`, { x: "<b>" })).toBe(`<p>&lt;b&gt;</p>`);
   });

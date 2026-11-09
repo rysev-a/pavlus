@@ -436,21 +436,51 @@ export class DomPlugin implements Plugin<DomEffect, any> {
     }
   }
 
-  private build(v: VNode, inst: Instance): Node {
+  private build(v: VNode, inst: Instance, ns: string | null = null): Node {
     let node: Node;
     if (v.t === "text") node = this.doc.createTextNode(v.text);
     else if (v.t === "marker") node = this.doc.createComment("");
     else {
-      const el = this.doc.createElement(v.tag);
+      const el = DomPlugin.create(this.doc, v.tag, ns);
+      const childNs = DomPlugin.childNs(v.tag, ns);
       for (const [k, val] of Object.entries(v.attrs))
         DomPlugin.writeAttr(el, k, val);
       for (const [ev, msg] of Object.entries(v.events))
         this.setHandler(el, ev, msg);
-      for (const c of v.children) el.appendChild(this.build(c, inst));
+      for (const c of v.children) el.appendChild(this.build(c, inst, childNs));
       node = el;
     }
     this.register(v, node, inst);
     return node;
+  }
+
+  private static readonly SVG_NS = "http://www.w3.org/2000/svg";
+  private static readonly MATH_NS = "http://www.w3.org/1998/Math/MathML";
+
+  /**
+   * An element for `tag` in (or under) the namespace `ns`: `svg` and `math`
+   * open their own namespace, an element below an `svg` belongs to it (an
+   * HTML `createElement` there would render but never work — gradients,
+   * transforms and friends silently do nothing).
+   */
+  private static create(
+    doc: Document,
+    tag: string,
+    ns: string | null,
+  ): Element {
+    if (tag === "svg") return doc.createElementNS(DomPlugin.SVG_NS, tag);
+    if (tag === "math") return doc.createElementNS(DomPlugin.MATH_NS, tag);
+    if (ns === DomPlugin.SVG_NS || ns === DomPlugin.MATH_NS)
+      return doc.createElementNS(ns, tag);
+    return doc.createElement(tag);
+  }
+
+  /** The namespace the children of `tag` under `ns` live in. */
+  private static childNs(tag: string, ns: string | null): string | null {
+    if (tag === "svg") return DomPlugin.SVG_NS;
+    if (tag === "math") return DomPlugin.MATH_NS;
+    if (tag === "foreignObject") return null; // HTML inside SVG
+    return ns;
   }
 
   /** The comments `renderToString` put around a server render, if any. */
@@ -602,8 +632,14 @@ export class DomPlugin implements Plugin<DomEffect, any> {
         case "insert": {
           const ref = this.get(inst, p.before);
           const parent = ref.parentNode!;
+          // the DOM parent knows the namespace (an insert into a live <svg>
+          // must create SVG elements, whatever the patch says)
+          const ns =
+            parent.nodeType === 1
+              ? (parent as Element).namespaceURI
+              : undefined;
           for (const v of p.nodes)
-            parent.insertBefore(this.build(v, inst), ref);
+            parent.insertBefore(this.build(v, inst, ns ?? null), ref);
           break;
         }
         case "clear":

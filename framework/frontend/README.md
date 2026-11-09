@@ -53,8 +53,10 @@ main
 | Comment         | `// to end of line` (only after whitespace, so `http://` is safe)                                                                                     |
 
 Expressions are a small pure subset of JS: paths (null safe), literals,
-`! - + * / % == != === !== < > <= >= && \|\| ??`, `a ? b : c`, calls, arrays.
-Identifiers read the state object (`items` is `state.items`) or a loop variable.
+`! - + * / % == != === !== < > <= >= && \|\| ??`, `a ? b : c`, calls, arrays,
+arrow functions with an expression body (`xs.filter(x => x.on)`; the params
+shadow state names and are not counted as reads). Identifiers read the state
+object (`items` is `state.items`) or a loop variable.
 
 **Events are messages, not functions.** `@click=removeUser(user)` renders as
 the data `{ id: "removeUser", payload: user }`. One argument becomes the

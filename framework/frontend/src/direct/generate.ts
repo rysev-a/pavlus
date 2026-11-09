@@ -142,6 +142,8 @@ function hasCall(e: Expr): boolean {
       return hasCall(e.test) || hasCall(e.then) || hasCall(e.else);
     case "array":
       return e.items.some(hasCall);
+    case "arrow":
+      return hasCall(e.body);
   }
 }
 
@@ -286,6 +288,16 @@ class Generator {
         return `(${this.expr(e.test, sc)} ? ${this.expr(e.then, sc)} : ${this.expr(e.else, sc)})`;
       case "array":
         return `[${e.items.map((a) => this.expr(a, sc)).join(", ")}]`;
+      case "arrow": {
+        // fresh, non-colliding JS names; the parameters shadow scope and state
+        const vars = new Map(sc.vars);
+        const params = e.params.map((p) => this.fresh(`$${camel(p) || "p"}`));
+        e.params.forEach((p, i) => vars.set(p, params[i]!));
+        return `(${params.join(", ")}) => (${this.expr(e.body, {
+          ...sc,
+          vars,
+        })})`;
+      }
     }
   }
 
@@ -341,8 +353,10 @@ class Generator {
   /**
    * Generates the function for one block (the template, an `if` branch or a
    * loop body) and returns its name. It takes `(env, s, ...loop variables)`.
+   * `ns`: the namespace the block's roots are born into ("svg" / "math" when
+   * the `if` / `for` sits inside an `<svg>` / `<math>` element).
    */
-  private block(nodes: Node[], sc: Scope): string {
+  private block(nodes: Node[], sc: Scope, ns: string | null = null): string {
     const name = this.fresh("block");
     const roots: SNode[] = [];
     const decls: string[] = [];
@@ -358,6 +372,9 @@ class Generator {
       ref: "",
       ...extra,
     });
+    // The namespace of the node currently being written; `element` keeps it
+    // current as it descends (an `if` / `for` body inherits it).
+    let curNs: string | null = ns;
     const ref = (x: SNode): string => {
       x.need = true;
       return `\u0001${x.ref || (x.ref = this.fresh("r"))}\u0002`;
@@ -583,7 +600,19 @@ class Generator {
         }
       }
 
+      // svg/math open their namespace; below an svg everything is SVG unless
+      // it is the HTML inside a foreignObject
+      const prevNs = curNs;
+      curNs =
+        el.tag === "svg"
+          ? "svg"
+          : el.tag === "math"
+            ? "math"
+            : el.tag === "foreignObject"
+              ? null
+              : curNs;
       for (const c of el.children) visit(c, x.kids);
+      curNs = prevNs;
       updates.push(...late);
     };
 
@@ -596,7 +625,7 @@ class Generator {
         `if (${b}) ${this.h("pushNodes")}(${b}, out);`,
       );
       destroys.push(`if (${b}) ${b}.d();`);
-      const fns = n.branches.map((br) => this.block(br.children, sc));
+      const fns = n.branches.map((br) => this.block(br.children, sc, curNs));
       {
         const reads = new Set<string>();
         for (const br of n.branches) if (br.test) exprIdents(br.test, reads);
@@ -643,7 +672,7 @@ class Generator {
       const vars = new Map(sc.vars).set(n.item, item);
       if (n.index) vars.set(n.index, idx);
       const inner: Scope = { vars, params: [...sc.params, item, idx] };
-      const fn = this.block(n.children, inner);
+      const fn = this.block(n.children, inner, curNs);
       {
         const reads = new Set<string>();
         exprIdents(n.of, reads);
@@ -848,8 +877,9 @@ class Generator {
       return `[${[json(x.tag), `[${attrs.join(", ")}]`, ...x.kids.map(spec)].join(", ")}]`;
     };
     const skName = this.fresh("sk");
+    const nsArg = ns ? `, ${json(ns)}` : "";
     this.top.push(
-      `const ${skName} = ${this.h("skel")}([${roots.map(spec).join(", ")}], ${single});`,
+      `const ${skName} = ${this.h("skel")}([${roots.map(spec).join(", ")}], ${single}${nsArg});`,
       "",
     );
 

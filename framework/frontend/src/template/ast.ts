@@ -4,7 +4,11 @@ export interface Pos {
   col: number;
 }
 
-/** Expression AST. Only a small pure subset of JS is supported. */
+/**
+ * Expression AST. Only a small pure subset of JS is supported: literals,
+ * identifiers, member/index access, calls, operators, ternaries, arrays and
+ * arrow functions (expression bodies only).
+ */
 export type Expr =
   | { k: "lit"; value: string | number | boolean | null | undefined }
   | { k: "id"; name: string }
@@ -14,7 +18,8 @@ export type Expr =
   | { k: "unary"; op: string; arg: Expr }
   | { k: "binary"; op: string; left: Expr; right: Expr }
   | { k: "cond"; test: Expr; then: Expr; else: Expr }
-  | { k: "array"; items: Expr[] };
+  | { k: "array"; items: Expr[] }
+  | { k: "arrow"; params: string[]; body: Expr };
 
 /** Text with `{expr}` interpolations: literal strings and expressions. */
 export type Part = string | Expr;
