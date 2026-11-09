@@ -58,3 +58,56 @@ if [1, 2.5, .5, 1e3, "s", 's', true, false, null, undefined]
       (boolean)
       (null)
       (undefined))))
+
+================
+arrow functions
+================
+p {items.map(x => x.name)}
+p {sort((a, b) => a - b)}
+p {check(() => ready ? "yes" : "no")}
+p {(x) => x}
+---
+
+(source_file
+  (element_line
+    (tag_name)
+    (interpolation
+      (call_expression
+        (member_expression
+          (identifier)
+          (property_identifier))
+        (arrow_function
+          (identifier)
+          (member_expression
+            (identifier)
+            (property_identifier))))))
+  (element_line
+    (tag_name)
+    (interpolation
+      (call_expression
+        (identifier)
+        (arrow_function
+          (formal_parameters
+            (identifier)
+            (identifier))
+          (binary_expression
+            (identifier)
+            (identifier))))))
+  (element_line
+    (tag_name)
+    (interpolation
+      (call_expression
+        (identifier)
+        (arrow_function
+          (formal_parameters)
+          (ternary_expression
+            (identifier)
+            (string)
+            (string))))))
+  (element_line
+    (tag_name)
+    (interpolation
+      (arrow_function
+        (formal_parameters
+          (identifier))
+        (identifier)))))

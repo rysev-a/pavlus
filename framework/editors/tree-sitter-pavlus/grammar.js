@@ -27,20 +27,21 @@ const PREC = {
   postfix: 9,
 };
 
-const commaSep = (rule) => optional(seq(rule, repeat(seq(',', rule))));
+const commaSep = (rule) => optional(seq(rule, repeat(seq(",", rule))));
 
 module.exports = grammar({
   name: "pavlus",
+
+  // `(x)` can be a grouping or the parameter list of `(x) => …`; the parser
+  // keeps both alive until the `=>` (or its absence) decides.
+  conflicts: ($) => [[$._expression, $.formal_parameters]],
 
   // Newlines are significant (they end a line); other whitespace is not.
   extras: ($) => [/[ \t\f]+/, $.comment],
 
   rules: {
     source_file: ($) =>
-      seq(
-        repeat(seq(optional($._line), $._newline)),
-        optional($._line),
-      ),
+      seq(repeat(seq(optional($._line), $._newline)), optional($._line)),
 
     _newline: () => /\r?\n/,
 
@@ -63,8 +64,7 @@ module.exports = grammar({
     // ---- structure lines -------------------------------------------------
 
     // import Row from "./row.pavlus"
-    import_line: ($) =>
-      seq("import", $.component_name, "from", $.import_path),
+    import_line: ($) => seq("import", $.component_name, "from", $.import_path),
 
     import_path: () => token(choice(/"[^"\r\n]*"/, /'[^'\r\n]*'/)),
 
@@ -96,7 +96,10 @@ module.exports = grammar({
 
     // | text with {interpolation}
     pipe_line: ($) =>
-      seq(alias("|", $.pipe), repeat(choice($.pipe_text, $.interpolation, $.escape))),
+      seq(
+        alias("|", $.pipe),
+        repeat(choice($.pipe_text, $.interpolation, $.escape)),
+      ),
 
     // Everything up to `{` or a backslash escape, `//` included.
     pipe_text: () => token(prec(2, /([^{\\\r\n]|\\[^{}\r\n])+/)),
@@ -144,10 +147,7 @@ module.exports = grammar({
     tag_name: () => /[A-Za-z][\w-]*/,
 
     _first_selector: ($) =>
-      choice(
-        alias(/\.[\w-]+/, $.class_name),
-        alias(/#[\w-]+/, $.id_name),
-      ),
+      choice(alias(/\.[\w-]+/, $.class_name), alias(/#[\w-]+/, $.id_name)),
 
     _selector: ($) =>
       choice(
@@ -168,13 +168,22 @@ module.exports = grammar({
 
     // class:active=cond
     class_toggle: ($) =>
-      seq(alias(token(prec(1, /class:[\w-]+/)), $.class_toggle_name), "=", $._attr_value),
+      seq(
+        alias(token(prec(1, /class:[\w-]+/)), $.class_toggle_name),
+        "=",
+        $._attr_value,
+      ),
 
     // @click.prevent=remove(user)
     event_attribute: ($) =>
       seq(
         $.event_name,
-        optional(seq("=", choice($.handler, alias($._braced_handler, $.interpolation)))),
+        optional(
+          seq(
+            "=",
+            choice($.handler, alias($._braced_handler, $.interpolation)),
+          ),
+        ),
       ),
 
     event_name: () => /@[\w-]+(\.[\w-]+)*/,
@@ -185,7 +194,8 @@ module.exports = grammar({
 
     message_id: () => /[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*/,
 
-    handler_arguments: ($) => seq(token.immediate("("), commaSep($._expression), ")"),
+    handler_arguments: ($) =>
+      seq(token.immediate("("), commaSep($._expression), ")"),
 
     // Quoted values are text with interpolations. The quote has a lexical
     // precedence over expression strings so `"a {b}"` is never one string.
@@ -196,12 +206,24 @@ module.exports = grammar({
       choice(
         seq(
           token(prec(3, '"')),
-          repeat(choice(alias(/[^"{\\\r\n]+/, $.string_content), $.interpolation, $.escape)),
+          repeat(
+            choice(
+              alias(/[^"{\\\r\n]+/, $.string_content),
+              $.interpolation,
+              $.escape,
+            ),
+          ),
           '"',
         ),
         seq(
           token(prec(3, "'")),
-          repeat(choice(alias(/[^'{\\\r\n]+/, $.string_content), $.interpolation, $.escape)),
+          repeat(
+            choice(
+              alias(/[^'{\\\r\n]+/, $.string_content),
+              $.interpolation,
+              $.escape,
+            ),
+          ),
           "'",
         ),
       ),
@@ -223,6 +245,7 @@ module.exports = grammar({
     _expression: ($) =>
       choice(
         $.ternary_expression,
+        $.arrow_function,
         $.binary_expression,
         $.unary_expression,
         $.call_expression,
@@ -237,6 +260,29 @@ module.exports = grammar({
         $.null,
         $.undefined,
       ),
+
+    // `x => x.on`, `(a, b) => a - b`: an expression body only, like the
+    // template language itself. The params list only takes identifiers, so
+    // `(a, b)` cannot be a grouping; a single `(x)` is decided by GLR (see
+    // `conflicts`). The body binds looser than a ternary, like in JS.
+    // `x => x.on`, `(a, b) => a - b`: an expression body only, like the
+    // template language itself. The dynamic precedence beats the grouping
+    // reading of `(x)`; the -1 makes the body bind looser than a ternary,
+    // like in JS (`x => a ? b : c` is `x => (a ? b : c)`).
+    arrow_function: ($) =>
+      prec.dynamic(
+        1,
+        prec.right(
+          -1,
+          seq(
+            field("parameters", choice($.identifier, $.formal_parameters)),
+            "=>",
+            field("body", $._expression),
+          ),
+        ),
+      ),
+
+    formal_parameters: ($) => seq("(", commaSep($.identifier), ")"),
 
     ternary_expression: ($) =>
       prec.right(
@@ -264,17 +310,35 @@ module.exports = grammar({
           ["/", PREC.multiplicative],
           ["%", PREC.multiplicative],
         ].map(([op, p]) =>
-          prec.left(p, seq(field("left", $._expression), field("operator", op), field("right", $._expression)))
+          prec.left(
+            p,
+            seq(
+              field("left", $._expression),
+              field("operator", op),
+              field("right", $._expression),
+            ),
+          ),
         ),
       ),
 
     unary_expression: ($) =>
-      prec(PREC.unary, seq(field("operator", choice("!", "-", "+")), field("argument", $._expression))),
+      prec(
+        PREC.unary,
+        seq(
+          field("operator", choice("!", "-", "+")),
+          field("argument", $._expression),
+        ),
+      ),
 
     call_expression: ($) =>
       prec(
         PREC.postfix,
-        seq(field("function", $._expression), "(", commaSep($._expression), ")"),
+        seq(
+          field("function", $._expression),
+          "(",
+          commaSep($._expression),
+          ")",
+        ),
       ),
 
     member_expression: ($) =>
@@ -288,7 +352,10 @@ module.exports = grammar({
       ),
 
     index_expression: ($) =>
-      prec(PREC.postfix, seq(field("object", $._expression), "[", $._expression, "]")),
+      prec(
+        PREC.postfix,
+        seq(field("object", $._expression), "[", $._expression, "]"),
+      ),
 
     parenthesized_expression: ($) => seq("(", $._expression, ")"),
 
