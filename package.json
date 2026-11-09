@@ -12,7 +12,7 @@
     "applications/mobile-dev",
     "applications/phone-crm",
     "applications/coffee-shop",
-    "applications/social-network"
+    "applications/team-up"
   ],
   "scripts": {
     "test": "npm test --workspaces",
