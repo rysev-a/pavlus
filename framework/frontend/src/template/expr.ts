@@ -1,12 +1,20 @@
 import type { Expr, Pos } from "./ast.ts";
 import { TemplateError } from "./errors.ts";
 
+/**
+ * The expression grammar is deliberately tiny (see framework/docs/
+ * philosophy.md): a template only reads ready data, so an expression is a
+ * path into the state or a literal. Nothing else parses — operators,
+ * calls, arrows and ternaries are errors that say where the logic belongs.
+ */
+
 type Token = {
   t: "num" | "str" | "id" | "p" | "eof";
   v: string | number;
   pos: number;
 };
 
+/** Every punctuator that was ever part of the language, kept so a removed one gets a named error. */
 const PUNCT = [
   "=>",
   "===",
@@ -37,25 +45,6 @@ const PUNCT = [
   "]",
 ];
 
-const BINARY: Record<string, number> = {
-  "??": 1,
-  "||": 2,
-  "&&": 3,
-  "==": 4,
-  "!=": 4,
-  "===": 4,
-  "!==": 4,
-  "<": 5,
-  ">": 5,
-  "<=": 5,
-  ">=": 5,
-  "+": 6,
-  "-": 6,
-  "*": 7,
-  "/": 7,
-  "%": 7,
-};
-
 const KEYWORDS: Record<string, Expr> = {
   true: { k: "lit", value: true },
   false: { k: "lit", value: false },
@@ -64,6 +53,9 @@ const KEYWORDS: Record<string, Expr> = {
 };
 
 const ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r" };
+
+/** Where removed syntax belongs, in one line. */
+const IN_CODE = "Templates only read data; compute this in component code (framework/docs/philosophy.md)";
 
 function tokenize(src: string, at: Pos): Token[] {
   const toks: Token[] = [];
@@ -119,6 +111,25 @@ function tokenize(src: string, at: Pos): Token[] {
   return toks;
 }
 
+/** A removed construct, named for the error message. */
+function removed(p: string): string {
+  if (p === "=>") return "arrow functions";
+  if (p === "?.") return "optional chaining";
+  if (p === "??") return "the nullish operator";
+  if (p === "?" || p === ":") return "the ternary operator";
+  if (p === "!" ) return "negation";
+  if (p === "(" || p === ")") return "calls (and parentheses)";
+  if (BINARY_OPS.has(p)) return `the "${p}" operator`;
+  return `"${p}"`;
+}
+
+const BINARY_OPS = new Set([
+  "+", "-", "*", "/", "%",
+  "==", "!=", "===", "!==",
+  "<", ">", "<=", ">=",
+  "&&", "||",
+]);
+
 class ExprParser {
   private i = 0;
   private toks: Token[];
@@ -139,117 +150,13 @@ class ExprParser {
     const t = this.peek();
     return t.t === "p" && t.v === v;
   }
-  private eat(v: string): void {
-    if (!this.isP(v)) throw this.err(`Expected "${v}"`, this.peek());
-    this.i++;
-  }
-
-  parseAll(): Expr {
-    const e = this.ternary();
+  private refuse(): never {
     const t = this.peek();
-    if (t.t !== "eof") throw this.err(`Unexpected "${t.v}"`, t);
-    return e;
-  }
-
-  private ternary(): Expr {
-    const test = this.binary(1);
-    if (!this.isP("?")) return test;
-    this.i++;
-    const then = this.ternary();
-    this.eat(":");
-    const els = this.ternary();
-    return { k: "cond", test, then, else: els };
-  }
-
-  private binary(minPrec: number): Expr {
-    let left = this.unary();
-    for (;;) {
-      const t = this.peek();
-      const prec = t.t === "p" ? BINARY[t.v as string] : undefined;
-      if (prec === undefined || prec < minPrec) return left;
-      this.i++;
-      const right = this.binary(prec + 1);
-      left = { k: "binary", op: t.v as string, left, right };
-    }
-  }
-
-  private unary(): Expr {
-    const t = this.peek();
-    if (t.t === "p" && (t.v === "!" || t.v === "-" || t.v === "+")) {
-      this.i++;
-      return { k: "unary", op: t.v, arg: this.unary() };
-    }
-    return this.postfix();
-  }
-
-  private postfix(): Expr {
-    let e = this.primary();
-    for (;;) {
-      if (this.isP(".") || this.isP("?.")) {
-        this.i++;
-        const t = this.peek();
-        if (t.t !== "id") throw this.err("Expected property name", t);
-        this.i++;
-        e = { k: "member", obj: e, prop: t.v as string };
-      } else if (this.isP("[")) {
-        this.i++;
-        const index = this.ternary();
-        this.eat("]");
-        e = { k: "index", obj: e, index };
-      } else if (this.isP("(")) {
-        this.i++;
-        const args: Expr[] = [];
-        while (!this.isP(")")) {
-          args.push(this.ternary());
-          if (!this.isP(")")) this.eat(",");
-        }
-        this.eat(")");
-        e = { k: "call", callee: e, args };
-      } else return e;
-    }
-  }
-
-  private primary(): Expr {
-    const t = this.peek();
-    if (t.t === "num" || t.t === "str") {
-      this.i++;
-      return { k: "lit", value: t.v };
-    }
-    if (t.t === "id") {
-      // `x => ...`: a one-parameter arrow without parentheses
-      const next = this.toks[this.i + 1];
-      if (
-        !KEYWORDS[t.v as string] &&
-        next &&
-        next.t === "p" &&
-        next.v === "=>"
-      ) {
-        const param = t.v as string;
-        this.i += 2;
-        return { k: "arrow", params: [param], body: this.ternary() };
-      }
-      this.i++;
-      return KEYWORDS[t.v as string] ?? { k: "id", name: t.v as string };
-    }
-    if (this.isP("(")) {
-      // `(a, b) => ...` or `() => ...` — but also a parenthesized expression.
-      // Try the parameter list first; anything that does not fit rolls back.
-      const arrow = this.tryArrowParams();
-      if (arrow) return { k: "arrow", params: arrow, body: this.ternary() };
-      this.i++;
-      const e = this.ternary();
-      this.eat(")");
-      return e;
-    }
-    if (this.isP("[")) {
-      this.i++;
-      const items: Expr[] = [];
-      while (!this.isP("]")) {
-        items.push(this.ternary());
-        if (!this.isP("]")) this.eat(",");
-      }
-      this.eat("]");
-      return { k: "array", items };
+    if (t.t === "p") {
+      throw this.err(
+        `${IN_CODE}: ${removed(t.v as string)} are not allowed in a template expression`,
+        t,
+      );
     }
     throw this.err(
       t.t === "eof" ? "Unexpected end of expression" : `Unexpected "${t.v}"`,
@@ -257,50 +164,144 @@ class ExprParser {
     );
   }
 
-  /**
-   * `(` id (`,` id)* `)` `=>`, or null (with the position restored) when the
-   * tokens are not an arrow's parameter list. A parse error inside also rolls
-   * back: `(a.b)` is a parenthesized expression, not a broken parameter.
-   */
-  private tryArrowParams(): string[] | null {
-    const save = this.i;
-    const rollback = (): null => {
-      this.i = save;
-      return null;
-    };
-    if (!this.isP("(")) return null;
-    this.i++;
-    const params: string[] = [];
-    let confirmed = false; // `)` followed by `=>` seen: it IS an arrow
-    try {
-      while (!this.isP(")")) {
-        const t = this.peek();
-        if (t.t !== "id" || KEYWORDS[t.v as string]) return rollback();
-        params.push(t.v as string);
-        this.i++;
-        if (!this.isP(")")) this.eat(",");
-      }
-      this.i++; // )
-      if (!this.isP("=>")) return rollback();
-      confirmed = true;
-      // only an arrow from here on: duplicates are a real error, not a rollback
-      const dup = params.find((p, i) => params.indexOf(p) !== i);
-      if (dup !== undefined)
-        throw this.err(`duplicate parameter "${dup}"`, this.toks[save]!);
-      this.i++; // =>
-      return params;
-    } catch (e) {
-      if (confirmed || !(e instanceof TemplateError)) throw e;
-      return rollback();
+  parseAll(): Expr {
+    const e = this.expr();
+    if (this.peek().t !== "eof") this.refuse();
+    return e;
+  }
+
+  private expr(): Expr {
+    const t = this.peek();
+    if (t.t === "num" || t.t === "str") {
+      this.i++;
+      return { k: "lit", value: t.v };
     }
+    if (t.t === "id") {
+      this.i++;
+      const kw = KEYWORDS[t.v as string];
+      if (kw) return kw;
+      // a path: id, then .prop / [literal] as far as it goes
+      let e: Expr = { k: "id", name: t.v as string };
+      for (;;) {
+        if (this.isP(".")) {
+          this.i++;
+          const p = this.peek();
+          if (p.t !== "id") this.refuse();
+          this.i++;
+          e = { k: "member", obj: e, prop: p.v as string };
+        } else if (this.isP("[")) {
+          this.i++;
+          const ix = this.peek();
+          if (ix.t !== "num" && ix.t !== "str") this.refuse();
+          this.i++;
+          if (!this.isP("]")) this.refuse();
+          this.i++;
+          e = { k: "index", obj: e, index: { k: "lit", value: ix.v } };
+        } else return e;
+      }
+    }
+    this.refuse();
   }
 }
 
 /**
- * Parses a template expression. `at` is the source position of the first
+ * Parses a template expression: a literal, or a path into the state such as
+ * `user.name` or `items[0]`. `at` is the source position of the first
  * character, used for error locations.
  */
 export function parseExpr(src: string, at: Pos): Expr {
   if (!src.trim()) throw new TemplateError("Empty expression", at.line, at.col);
   return new ExprParser(tokenize(src, at), at).parseAll();
+}
+
+/**
+ * Parses an event binding: `save`, `remove(item.id)`, `pick(user, 2)` — a
+ * dotted message id with literal/path arguments. The one place a call-like
+ * shape survives: it is not a computation, it is the message's payload.
+ */
+export function parseEvent(
+  src: string,
+  at: Pos,
+): { msg: string; args: Expr[] } {
+  const toks = tokenize(src, at);
+  const p = new ExprParser(toks, at);
+  // message id: id ("." id)*  — consume tokens directly
+  let msg = "";
+  const first = toks[0];
+  if (!first || first.t !== "id") {
+    throw new TemplateError(
+      "Event handler must be a message id like `save` or `remove(item)`",
+      at.line,
+      at.col,
+    );
+  }
+  msg = first.v as string;
+  let i = 1;
+  for (;;) {
+    const dot = toks[i];
+    const name = toks[i + 1];
+    if (dot && dot.t === "p" && dot.v === "." && name && name.t === "id") {
+      msg += `.${name.v as string}`;
+      i += 2;
+    } else break;
+  }
+  const args: Expr[] = [];
+  const open = toks[i];
+  if (open && open.t === "p" && open.v === "(") {
+    i++;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const t = toks[i];
+      if (t && t.t === "p" && t.v === ")") break;
+      if (t && t.t === "eof")
+        throw new TemplateError(
+          "Unclosed ( in event arguments",
+          at.line,
+          at.col + t.pos,
+        );
+      const argToks: Token[] = [];
+      let depth = 0;
+      // one argument: everything up to a top-level , or )
+      for (; i < toks.length; i++) {
+        const tok = toks[i];
+        if (tok.t === "eof") break;
+        if (tok.t === "p" && depth === 0 && (tok.v === "," || tok.v === ")"))
+          break;
+        if (tok.t === "p" && (tok.v === "(" || tok.v === "[")) depth++;
+        if (tok.t === "p" && (tok.v === ")" || tok.v === "]")) depth--;
+        argToks.push(tok);
+      }
+      const inner = new ExprParser(
+        argToks.length ? argToks : [{ t: "eof", v: "", pos: 0 }],
+        at,
+      );
+      args.push(inner.parseAll());
+      const sep = toks[i];
+      if (sep && sep.t === "p" && sep.v === ",") i++;
+      else if (sep && sep.t === "p" && sep.v === ")") break;
+      else
+        throw new TemplateError(
+          "Unclosed ( in event arguments",
+          at.line,
+          at.col,
+        );
+    }
+    i++; // )
+    const trailing = toks[i];
+    if (trailing && trailing.t !== "eof")
+      throw new TemplateError(
+        `Unexpected "${trailing.v}" after event arguments`,
+        at.line,
+        at.col + trailing.pos,
+      );
+  } else {
+    const trailing = toks[i];
+    if (trailing && trailing.t !== "eof")
+      throw new TemplateError(
+        `${IN_CODE}: ${removed(String(trailing.v))} are not allowed in an event binding`,
+        at.line,
+        at.col + trailing.pos,
+      );
+  }
+  return { msg, args };
 }
