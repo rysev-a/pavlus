@@ -1,8 +1,0 @@
-import Profile from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title A profile with a userpic
-    p.k-demo__note "Change userpic" turns the hue of the initials.
-    div.k-preview.k-preview--block
-      +Profile#profile(profile=profile stats=stats)

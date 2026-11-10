@@ -1,8 +1,0 @@
-import Pricing from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Three plans, monthly or yearly
-    div.k-preview.k-preview--block
-      +Pricing#pricing(...pricing)
-    p.k-hint Billing: {pricing.yearly ? "yearly" : "monthly"}. The prices come from a pure function of the plan, the period and the discount.

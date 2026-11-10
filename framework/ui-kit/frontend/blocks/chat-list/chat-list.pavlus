@@ -1,9 +1,0 @@
-import List from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Chats with search and tabs
-    p.k-demo__note Pinned chats first, then by the newest message. Opening a chat clears its badge; the muted Book Club has a quiet one. Search looks at names and messages.
-    div.k-preview.k-preview--block
-      div.k-chatlist-demo
-        +List#cl(title="Chats" query=query tabs=tabs rows=rows emptyText=emptyText)

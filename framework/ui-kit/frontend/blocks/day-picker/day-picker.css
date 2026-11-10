@@ -1,3 +1,0 @@
-.k-days { width: 100%; max-width: 340px; }
-.k-days .ui-calendar-day:disabled { opacity: .35; text-decoration: line-through; cursor: not-allowed; }
-.k-days .ui-calendar-nav:disabled { opacity: .35; cursor: not-allowed; }

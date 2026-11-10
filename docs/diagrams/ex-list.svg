@@ -37,7 +37,7 @@
 <rect x="24" y="650" width="1192" height="525" rx="10" fill="#0f172a" stroke="#1e293b"/>
 <text x="38" y="673" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#e2e8f0" font-weight="600" xml:space="preserve">3 · target functions</text>
 <text x="1202" y="673" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#7d8ca6" text-anchor="end" xml:space="preserve">codegen.generate()</text>
-<text x="38" y="694" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">import { diffKeyedList, joinClasses, setAttr, toText } from &quot;@pavlus/frontend/runtime&quot;;</text>
+<text x="38" y="694" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">import { diffKeyedList, joinClasses, setAttr, toText } from &quot;@pavlus/client/runtime&quot;;</text>
 <text x="38" y="709" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">const meta = { embeds: {}, outlet: false };</text>
 <text x="38" y="724" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function render(state, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
 <text x="38" y="739" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;ul.users&gt;</text>

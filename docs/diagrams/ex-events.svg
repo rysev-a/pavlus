@@ -7,8 +7,8 @@
 <text x="340" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" fill="#667085" text-anchor="end" xml:space="preserve">what you write</text>
 <text x="38" y="106" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 1  </tspan><tspan fill="#1d4ed8">ul</tspan>.<tspan fill="#b45309">pager</tspan></text>
 <text x="38" y="123" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 2  </tspan>  <tspan fill="#1d4ed8">li</tspan><tspan fill="#64748b">(</tspan><tspan fill="#7c3aed">@click</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">go</tspan>(<tspan fill="#dc2626">1</tspan>)<tspan fill="#64748b">)</tspan> first</text>
-<text x="38" y="140" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 3  </tspan>  <tspan fill="#1d4ed8">li</tspan><tspan fill="#64748b">(</tspan><tspan fill="#7c3aed">@click</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">go</tspan>(<tspan fill="#dc2626">page</tspan> <tspan fill="#dc2626">-</tspan> <tspan fill="#dc2626">1</tspan>)<tspan fill="#64748b">)</tspan> prev</text>
-<text x="38" y="157" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 4  </tspan>  <tspan fill="#1d4ed8">li</tspan><tspan fill="#64748b">(</tspan><tspan fill="#7c3aed">@click</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">go</tspan>(<tspan fill="#dc2626">page</tspan> + <tspan fill="#dc2626">1</tspan>)<tspan fill="#64748b">)</tspan> next</text>
+<text x="38" y="140" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 3  </tspan>  <tspan fill="#1d4ed8">li</tspan><tspan fill="#64748b">(</tspan><tspan fill="#7c3aed">@click</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">go</tspan>(<tspan fill="#dc2626">prevPage</tspan>)<tspan fill="#64748b">)</tspan> prev</text>
+<text x="38" y="157" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 4  </tspan>  <tspan fill="#1d4ed8">li</tspan><tspan fill="#64748b">(</tspan><tspan fill="#7c3aed">@click</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">go</tspan>(<tspan fill="#dc2626">nextPage</tspan>)<tspan fill="#64748b">)</tspan> next</text>
 <text x="38" y="174" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#1f2430" xml:space="preserve"><tspan fill="#98a2b3"> 5  </tspan>  <tspan fill="#1d4ed8">li</tspan><tspan fill="#64748b">(</tspan><tspan fill="#7c3aed">@click</tspan><tspan fill="#64748b">=</tspan><tspan fill="#dc2626">go</tspan>(<tspan fill="#dc2626">total</tspan>)<tspan fill="#64748b">)</tspan> last</text>
 <rect x="400" y="60" width="816" height="428" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
 <text x="414" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#1f2430" font-weight="600" xml:space="preserve">2 · middle data — AST + dependencies</text>
@@ -17,11 +17,11 @@
 <path d="M 308.4 264 C 308.4 288, 308.4 288, 308.4 312" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
 <path d="M 559.6 264 C 559.6 288, 559.6 288, 559.6 312" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
 <path d="M 810.8000000000001 264 C 810.8000000000001 288, 810.8000000000001 288, 810.8000000000001 312" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
-<path d="M 470.29999999999995 160 C 470.29999999999995 184, 96.8 184, 96.8 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
-<path d="M 470.29999999999995 160 C 470.29999999999995 184, 308.4 184, 308.4 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
-<path d="M 470.29999999999995 160 C 470.29999999999995 184, 559.6 184, 559.6 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
-<path d="M 470.29999999999995 160 C 470.29999999999995 184, 810.8000000000001 184, 810.8000000000001 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
-<path d="M 470.3 30 C 470.3 67, 470.29999999999995 67, 470.29999999999995 104" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 470.30000000000007 160 C 470.30000000000007 184, 96.8 184, 96.8 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 470.30000000000007 160 C 470.30000000000007 184, 308.4 184, 308.4 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 470.30000000000007 160 C 470.30000000000007 184, 559.6 184, 559.6 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 470.30000000000007 160 C 470.30000000000007 184, 810.8000000000001 184, 810.8000000000001 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 470.3 30 C 470.3 67, 470.30000000000007 67, 470.30000000000007 104" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
 <rect x="6.6000000000000085" y="312" width="180.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
 <text x="96.8" y="329" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">text  first</text>
 <text x="96.8" y="342" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 2</text>
@@ -35,17 +35,17 @@
 <text x="308.4" y="342" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 4</text>
 <text x="308.4" y="355" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: — (reads nothing)</text>
 <rect x="191.8" y="208" width="233.2" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
-<text x="308.4" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  li(@click=go(page - 1)) p…</text>
+<text x="308.4" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  li(@click=go(prevPage)) p…</text>
 <text x="308.4" y="238" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 3</text>
-<text x="308.4" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: page</text>
+<text x="308.4" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: prevPage</text>
 <rect x="469.4" y="312" width="180.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
 <text x="559.5999999999999" y="329" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">text  next</text>
 <text x="559.5999999999999" y="342" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 6</text>
 <text x="559.5999999999999" y="355" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: — (reads nothing)</text>
 <rect x="443" y="208" width="233.2" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
-<text x="559.6" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  li(@click=go(page + 1)) n…</text>
+<text x="559.6" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  li(@click=go(nextPage)) n…</text>
 <text x="559.6" y="238" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 5</text>
-<text x="559.6" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: page</text>
+<text x="559.6" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: nextPage</text>
 <rect x="720.6" y="312" width="180.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
 <text x="810.8" y="329" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">text  last</text>
 <text x="810.8" y="342" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 8</text>
@@ -54,10 +54,10 @@
 <text x="810.8" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  li(@click=go(total)) last</text>
 <text x="810.8" y="238" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 7</text>
 <text x="810.8" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: total</text>
-<rect x="399.9" y="104" width="140.8" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
-<text x="470.29999999999995" y="121" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  ul.pager</text>
-<text x="470.29999999999995" y="134" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 0</text>
-<text x="470.29999999999995" y="147" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: page, total</text>
+<rect x="353.70000000000005" y="104" width="233.2" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="470.30000000000007" y="121" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  ul.pager</text>
+<text x="470.30000000000007" y="134" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 0</text>
+<text x="470.30000000000007" y="147" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: nextPage, prevPage, to…</text>
 <rect x="432.3" y="0" width="76" height="30" rx="6" fill="none" stroke="#98a2b3" stroke-dasharray="4 3"/>
 <text x="470.3" y="17" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">template</text>
 </g>
@@ -83,11 +83,11 @@
 <text x="38" y="815" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve"> </text>
 <text x="38" y="830" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function diff(prev, next, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
 <text x="38" y="845" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev === next) return patches;</text>
-<text x="38" y="860" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;ul.pager&gt; (reads: page, total)</text>
-<text x="38" y="875" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev.page !== next.page || prev.total !== next.total) {</text>
-<text x="38" y="890" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 3: &lt;li&gt; (reads: page)</text>
+<text x="38" y="860" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;ul.pager&gt; (reads: prevPage, nextPage, total)</text>
+<text x="38" y="875" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev.prevPage !== next.prevPage || prev.nextPage !== next.nextPage || prev.total !== next.total) {</text>
+<text x="38" y="890" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 3: &lt;li&gt; (reads: prevPage)</text>
 <text x="38" y="905" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push({ op: &quot;handler&quot;, id: idSuffix + &quot;3&quot;, event: &quot;click&quot;, msg: { id: messagePrefix + &quot;go&quot;, payload: nextClickPayload } });</text>
-<text x="38" y="920" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 4: &lt;li&gt; (reads: page)</text>
+<text x="38" y="920" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 4: &lt;li&gt; (reads: nextPage)</text>
 <text x="38" y="935" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push({ op: &quot;handler&quot;, id: idSuffix + &quot;5&quot;, event: &quot;click&quot;, msg: { id: messagePrefix + &quot;go&quot;, payload: nextClickPayload } });</text>
 <text x="38" y="950" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 5: &lt;li&gt; (reads: total)</text>
 <text x="38" y="965" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push({ op: &quot;handler&quot;, id: idSuffix + &quot;7&quot;, event: &quot;click&quot;, msg: { id: messagePrefix + &quot;go&quot;, payload: nextClickPayload } });</text>

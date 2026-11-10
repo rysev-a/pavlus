@@ -1,8 +1,0 @@
-// Highlighted lines of code. State = the props: `lines` (from `highlight`).
-pre.k-source__code.k-docs__code
-  for line in lines key line.n
-    div.k-source__line
-      span.k-source__n {line.n}
-      span.k-source__text
-        for tok in line.tokens key tok.i
-          span(class={"k-tok k-tok-" + tok.c}) {tok.t}

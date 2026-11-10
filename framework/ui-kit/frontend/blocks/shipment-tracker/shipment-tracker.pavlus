@@ -1,9 +1,0 @@
-import Board from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title The tracking board
-    p.k-demo__note Click a shipment to select it. The vehicle sits where the shipment is on its way.
-    div.k-preview.k-preview--block
-      +Board#board(lanes=lanes)
-      p.k-shtrack__out {said}

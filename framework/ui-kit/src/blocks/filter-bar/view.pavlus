@@ -1,0 +1,32 @@
+// A filter bar, to embed as `+FilterBar#bar(...bar)`. State = the props (see
+// `barOf` in filter-bar.ts): query, placeholder, groups, toggles, ranges, sorts,
+// resultLabel, dirty. Messages: search, pick(group, option), flip(id), slide(id),
+// sort, clear. A shop extends `FilterHost` to answer them.
+section.k-fbar
+  div.k-fbar__top
+    div.k-fbar__search
+      span.k-icon.k-icon-search
+      input.ui-input(type="search" placeholder=placeholder aria-label=placeholder value=query @input=search)
+    select.ui-select-control.k-fbar__sort(aria-label="Sort by" @change=sort)
+      for s in sorts key s.id
+        option(value=s.id selected={s.selected}) {s.label}
+  for group in groups key group.id
+    div.k-fbar__group(role="group" aria-label=group.label)
+      span.k-fbar__label {group.label}
+      div.k-fbar__chips
+        if group.hasAll
+          button.ui-button.ui-button-outline.ui-button-sm.k-fbar__chip(type="button" aria-pressed=group.allPressed @click=pick(group.id, "")) {group.allLabel}
+        for o in group.options key o.id
+          button.ui-button.ui-button-outline.ui-button-sm.k-fbar__chip(type="button" aria-pressed=o.pressed @click=pick(group.id, o.id)) {o.label}
+  div.k-fbar__extras
+    for r in ranges key r.id
+      div.ui-slider.k-fbar__range
+        label.ui-slider-label(for="fb-{r.id}") {r.label}: {r.text}
+        input.ui-slider-input(id="fb-{r.id}" type="range" min=r.min max=r.max step=r.step value=r.value @input=slide(r.id))
+    for t in toggles key t.id
+      div.ui-switch
+        input.ui-switch-input(id="fb-{t.id}" type="checkbox" role="switch" checked={t.on} @change=flip(t.id))
+        label.ui-switch-label(for="fb-{t.id}") {t.label}
+    span.k-fbar__count(aria-live="polite") {resultLabel}
+    if dirty
+      button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=clear) Clear filters

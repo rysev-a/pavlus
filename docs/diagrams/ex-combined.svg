@@ -13,26 +13,26 @@
 <rect x="400" y="60" width="816" height="636" rx="10" fill="#ffffff" stroke="#d4d9e0"/>
 <text x="414" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#1f2430" font-weight="600" xml:space="preserve">2 · middle data — AST + dependencies</text>
 <text x="1202" y="83" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" fill="#667085" text-anchor="end" xml:space="preserve">parser.parse() → analyze.nodeDeps()</text>
-<g transform="translate(408 98) scale(1)"><path d="M 387.59999999999997 264 C 387.59999999999997 288, 387.59999999999997 288, 387.59999999999997 312" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<g transform="translate(408 98) scale(1)"><path d="M 331.5 264 C 331.5 288, 331.5 288, 331.5 312" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
 <path d="M 582.6999999999999 472 C 582.6999999999999 496, 582.6999999999999 496, 582.6999999999999 520" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
 <path d="M 602.5 342 C 602.5 379, 582.6999999999999 379, 582.6999999999999 416" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
 <path d="M 602.5 264 C 602.5 288, 602.5 288, 602.5 312" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
 <path d="M 338.09999999999997 160 C 338.09999999999997 184, 123.19999999999999 184, 123.19999999999999 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
-<path d="M 338.09999999999997 160 C 338.09999999999997 184, 387.59999999999997 184, 387.59999999999997 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
+<path d="M 338.09999999999997 160 C 338.09999999999997 184, 331.5 184, 331.5 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
 <path d="M 338.09999999999997 160 C 338.09999999999997 184, 602.5 184, 602.5 208" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
 <path d="M 338.09999999999997 30 C 338.09999999999997 67, 338.09999999999997 67, 338.09999999999997 104" fill="none" stroke="#98a2b3" stroke-width="1.2"/>
 <rect x="0" y="208" width="246.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
 <text x="123.19999999999999" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  input(value=name disabled…</text>
 <text x="123.19999999999999" y="238" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 1</text>
 <text x="123.19999999999999" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: busy, name</text>
-<rect x="264.4" y="312" width="246.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
-<text x="387.59999999999997" y="329" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">text  {busy ? &quot;Saving...&quot; : &quot;…</text>
-<text x="387.59999999999997" y="342" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 3</text>
-<text x="387.59999999999997" y="355" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: busy</text>
-<rect x="264.4" y="208" width="246.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
-<text x="387.59999999999997" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  button(class:busy=busy di…</text>
-<text x="387.59999999999997" y="238" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 2</text>
-<text x="387.59999999999997" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: busy</text>
+<rect x="264.4" y="312" width="134.2" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="331.5" y="329" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">text  {saveLabel}</text>
+<text x="331.5" y="342" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 3</text>
+<text x="331.5" y="355" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: saveLabel</text>
+<rect x="208.29999999999998" y="208" width="246.39999999999998" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<text x="331.5" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  button(class:busy=busy di…</text>
+<text x="331.5" y="238" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 2</text>
+<text x="331.5" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: busy, saveLabel</text>
 <rect x="528.8" y="520" width="107.8" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
 <text x="582.6999999999999" y="537" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">text  {error}</text>
 <text x="582.6999999999999" y="550" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 6</text>
@@ -47,10 +47,10 @@
 <text x="602.5" y="225" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">if  if error</text>
 <text x="602.5" y="238" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 4</text>
 <text x="602.5" y="251" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: error</text>
-<rect x="228.09999999999997" y="104" width="220" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
+<rect x="211.59999999999997" y="104" width="253" height="56" rx="6" fill="#ffffff" stroke="#d4d9e0"/>
 <text x="338.09999999999997" y="121" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">el  form(@submit.prevent=save)</text>
 <text x="338.09999999999997" y="134" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#52607a" text-anchor="middle" xml:space="preserve">nid 0</text>
-<text x="338.09999999999997" y="147" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: busy, error, name</text>
+<text x="338.09999999999997" y="147" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10" fill="#059669" text-anchor="middle" xml:space="preserve">reads: busy, error, name, sav…</text>
 <rect x="300.09999999999997" y="0" width="76" height="30" rx="6" fill="none" stroke="#98a2b3" stroke-dasharray="4 3"/>
 <text x="338.09999999999997" y="17" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="11" fill="#1f2430" text-anchor="middle" font-weight="600" xml:space="preserve">template</text>
 </g>
@@ -65,7 +65,7 @@
 <text x="38" y="873" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  setAttr(inputAttrs, &quot;disabled&quot;, toAttr(state.busy));</text>
 <text x="38" y="888" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    t: &quot;el&quot;,</text>
 <text x="38" y="903" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 3: &lt;button&gt;</text>
-<text x="38" y="918" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  buttonChildren.push({ t: &quot;text&quot;, id: idSuffix + &quot;3&quot;, text: &quot;&quot; + toText((state.busy ? &quot;Saving...&quot; : &quot;Save&quot;)) });</text>
+<text x="38" y="918" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  buttonChildren.push({ t: &quot;text&quot;, id: idSuffix + &quot;3&quot;, text: &quot;&quot; + toText(state.saveLabel) });</text>
 <text x="38" y="933" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  setAttr(buttonAttrs, &quot;disabled&quot;, toAttr(state.busy));</text>
 <text x="38" y="948" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  setAttr(buttonAttrs, &quot;class&quot;, joinClasses([(state.busy ? &quot;busy&quot; : &quot;&quot;)]));</text>
 <text x="38" y="963" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">    t: &quot;el&quot;,</text>
@@ -75,18 +75,18 @@
 <text x="38" y="1023" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve"> </text>
 <text x="38" y="1038" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">function diff(prev, next, idSuffix = &quot;&quot;, messagePrefix = &quot;&quot;, env) {</text>
 <text x="38" y="1053" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev === next) return patches;</text>
-<text x="38" y="1068" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;form&gt; (reads: name, busy, error)</text>
-<text x="38" y="1083" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev.name !== next.name || prev.busy !== next.busy || prev.error !== next.error) {</text>
+<text x="38" y="1068" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">  // line 1: &lt;form&gt; (reads: name, busy, saveLabel, error)</text>
+<text x="38" y="1083" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">  if (prev.name !== next.name || prev.busy !== next.busy || prev.saveLabel !== next.saveLabel || prev.error !== next.error) {</text>
 <text x="38" y="1098" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 2: &lt;input&gt; (reads: name, busy)</text>
 <text x="38" y="1113" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push(nextValue === null</text>
 <text x="38" y="1128" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push(nextDisabled === null</text>
-<text x="38" y="1143" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 3: &lt;button&gt; (reads: busy)</text>
+<text x="38" y="1143" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 3: &lt;button&gt; (reads: busy, saveLabel)</text>
 <text x="38" y="1158" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push(nextDisabled === null</text>
 <text x="38" y="1173" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        patches.push(nextClass === null</text>
-<text x="38" y="1188" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">      // line 3: text</text>
-<text x="38" y="1203" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      const prevText = &quot;&quot; + toText((prev.busy ? &quot;Saving...&quot; : &quot;Save&quot;));</text>
-<text x="38" y="1218" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      const nextText = &quot;&quot; + toText((next.busy ? &quot;Saving...&quot; : &quot;Save&quot;));</text>
-<text x="38" y="1233" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">      if (prevText !== nextText) patches.push({ op: &quot;text&quot;, id: idSuffix + &quot;3&quot;, text: nextText });</text>
+<text x="38" y="1188" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">      // line 3: text (reads: saveLabel)</text>
+<text x="38" y="1203" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        const prevText = &quot;&quot; + toText(prev.saveLabel);</text>
+<text x="38" y="1218" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        const nextText = &quot;&quot; + toText(next.saveLabel);</text>
+<text x="38" y="1233" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#e2e8f0" xml:space="preserve">        if (prevText !== nextText) patches.push({ op: &quot;text&quot;, id: idSuffix + &quot;3&quot;, text: nextText });</text>
 <text x="38" y="1248" font-family="ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace" font-size="10.5" fill="#7d8ca6" xml:space="preserve">    // line 4: if (reads: error)</text>
 <text x="38" y="1271" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#667085" text-anchor="start" font-style="italic" xml:space="preserve">full module below — this is the code the browser runs</text>
 <line x1="360" y1="378" x2="394" y2="378" stroke="#98a2b3" stroke-width="1.5"/>

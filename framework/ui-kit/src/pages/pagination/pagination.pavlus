@@ -1,0 +1,22 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Pages
+    div.k-preview.k-preview--block
+      nav.ui-pagination(aria-label="Pagination")
+        ul.ui-pagination-content
+          li
+            a.ui-pagination-link(href="/" class:is-disabled=prevDisabled @click.prevent=prev)
+              span.k-icon.k-icon-chevron-left
+              | Previous
+          for item in items key item.key
+            li
+              if item.gap
+                span.ui-pagination-ellipsis
+                  span.k-icon.k-icon-more
+              else
+                a.ui-pagination-link(href="/" class:is-current=item.current aria-current=item.currentAttr @click.prevent=go(item.n)) {item.n}
+          li
+            a.ui-pagination-link(href="/" class:is-disabled=nextDisabled @click.prevent=next)
+              | Next
+              span.k-icon.k-icon-chevron-right
+    p.k-hint Page {page} of {pages}

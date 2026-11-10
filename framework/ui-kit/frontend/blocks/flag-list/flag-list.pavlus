@@ -1,8 +1,0 @@
-import Flags from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Product flags
-    div.k-preview.k-preview--block
-      +Flags#flags(rows=rows)
-    p.k-demo__note {count} of {total} flags are on.

@@ -1,8 +1,0 @@
-import Certificate from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title A certificate of completion
-    p.k-demo__note The date comes from the app (a block has no clock); the serial number is worked out from the name and the course.
-    div.k-preview.k-preview--block
-      +Certificate#cert(...cert)

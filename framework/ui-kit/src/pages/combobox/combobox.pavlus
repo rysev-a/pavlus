@@ -1,0 +1,23 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Framework picker
+    div.k-preview
+      div.k-popover-host
+        button.ui-button.ui-button-outline(type="button" role="combobox" aria-expanded=expanded @click=toggle)
+          | {buttonLabel}
+          span.k-icon.k-icon-chevrons-up-down
+        if open
+          div.k-dismiss(@click=close)
+          div.ui-navigation-panel.k-above(style="width: 260px")
+            input.ui-command-input(type="text" placeholder="Search framework..." value=query @input=search)
+            if empty
+              p.k-command-empty No framework found.
+            for item in filtered key item.label
+              button(type="button" @click=choose(item.label))
+                | {item.label}
+                if item.selected
+                  span.k-icon.k-icon-check.k-menu-shortcut
+    p.k-hint
+      | Value:
+      |
+      span.k-state {valueLabel}

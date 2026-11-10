@@ -1,0 +1,17 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Text direction
+    div.k-preview
+      div.ui-button-group.ui-button-group-horizontal(role="group")
+        button.ui-button.ui-button-outline(type="button" class:ui-button-secondary={isLtr} @click=set("ltr")) Left to right
+        button.ui-button.ui-button-outline(type="button" class:ui-button-secondary={isRtl} @click=set("rtl")) Right to left
+    div.k-dir(dir=dir)
+      div.k-preview.k-preview--block
+        div.ui-card.k-narrow
+          div.ui-card-header
+            h3.ui-card-title {cardTitle}
+            p.ui-card-description {cardDescription}
+          div.ui-card-content
+            div.ui-switch
+              input.ui-switch-input#dir-switch(type="checkbox" role="switch" checked)
+              label.ui-switch-label(for="dir-switch") {switchLabel}

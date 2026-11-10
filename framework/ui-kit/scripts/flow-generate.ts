@@ -4,9 +4,9 @@
 // the JSON a design was exported as.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { demoOf, DEMOS } from "../frontend/templates/flow-studio/demos.ts";
-import { parseProject } from "../frontend/templates/flow-studio/model.ts";
-import { generateProject } from "../frontend/templates/flow-studio/project.ts";
+import { demoOf, DEMOS } from "../src/templates/flow-studio/demos.ts";
+import { parseProject } from "../src/templates/flow-studio/model.ts";
+import { generateProject } from "../src/templates/flow-studio/project.ts";
 
 const args = process.argv.slice(2);
 const flag = (name: string): string | undefined => {

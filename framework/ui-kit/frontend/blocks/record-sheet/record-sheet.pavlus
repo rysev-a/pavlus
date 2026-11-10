@@ -1,9 +1,0 @@
-import Sheet from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Edit a product
-    div.k-preview
-      button.ui-button.ui-button-outline(type="button" @click=show) Edit "{name}"
-      span.k-muted {message}
-  +Sheet#sheet(open=open title="Edit product" description="Change the product and save it." details=details fields=fields buttons=buttons)

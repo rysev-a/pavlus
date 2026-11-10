@@ -1,9 +1,0 @@
-.k-rtab { display: grid; gap: calc(16px * var(--k-block, 1)); min-width: 0; }
-.k-rtab > * { min-width: 0; }
-.k-rtab__mono { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 13px; }
-.k-rtab__risk { margin-left: 8px; }
-.k-rtab__note { color: var(--muted-foreground); }
-.k-rtab__end { text-align: right; }
-.k-rtab__form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: calc(12px * var(--k-block, 1)); align-items: start; padding: calc(16px * var(--k-block, 1)); border: 1px dashed var(--border); border-radius: var(--radius-lg); }
-.k-rtab__submit { display: flex; align-items: end; height: 100%; }
-.k-rtab__submit .k-icon { width: 14px; height: 14px; }

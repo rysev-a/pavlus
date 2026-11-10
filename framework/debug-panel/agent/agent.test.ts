@@ -5,9 +5,9 @@
  *     node debug-panel/agent/agent.test.ts
  */
 import assert from "node:assert/strict";
-import type { Children, Routing } from "@pavlus/frontend";
-import { Component, createApp } from "@pavlus/frontend";
-import { createStorePlugin } from "@pavlus/frontend/plugins/store";
+import type { Children, Routing } from "@pavlus/client";
+import { Component, createApp } from "@pavlus/client";
+import { createStorePlugin } from "@pavlus/client/plugins/store";
 import { createPavlusDebug, type DebugHost } from "./pavlus-debug-agent.ts";
 
 /** Minimal sync runner so the file works with plain `node file.ts`. */

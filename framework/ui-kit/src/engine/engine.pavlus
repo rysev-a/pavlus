@@ -1,0 +1,249 @@
+// The Template engine page: a template and two states you can edit, the eleven
+// stages from the text to the DOM updates, each run for real beside the
+// reference of its functions. State = the EngineState of engine-page.ts.
+import Inline from "../blocks/docs-layout/inline.pavlus"
+import Code from "./code.pavlus"
+import GCode from "./gcode.pavlus"
+
+section.k-eng
+  div.k-eng__head
+    h1.k-docs__title Template engine
+    p.k-docs__lead A template and two states go in; DOM updates come out. Edit them below and follow every stage of the way: each one runs for real, in your browser, on your own template, next to a reference of the functions behind it.
+
+  div.k-eng__lab
+    div.k-eng__presets
+      span.k-docs__muted Examples:
+      for p in presets key p.id
+        button.ui-button.ui-button-sm(type="button" class:ui-button-secondary={p.active} class:ui-button-outline={p.inactive} @click=loadPreset(p.id)) {p.name}
+      if running
+        span.k-docs__muted compiling…
+    div.k-eng__editors
+      label.k-docs__pg-field
+        span Template (.pavlus)
+        textarea.ui-textarea.k-docs__pg-edit(rows="11" spellcheck="false" value=tpl @input=edit("tpl"))
+      label.k-docs__pg-field
+        span prev state (JSON)
+        textarea.ui-textarea.k-docs__pg-edit(rows="11" spellcheck="false" value=prevState @input=edit("prev"))
+      label.k-docs__pg-field
+        span next state (JSON)
+        textarea.ui-textarea.k-docs__pg-edit(rows="11" spellcheck="false" value=nextState @input=edit("next"))
+    if trace.error
+      p.k-docs__error {trace.error}
+    if trace.stateError
+      p.k-docs__error The state is not valid JSON: {trace.stateError}
+
+  nav.k-eng__strip(aria-label="Stages")
+    for s in stages key s.id
+      button.k-eng__pill(type="button" class:is-active={s.active} class:is-done={s.done} @click=go(s.idx))
+        span.k-eng__pill-n {s.n}
+        span.k-eng__pill-t {s.title}
+
+  article.k-eng__stage
+    div.k-eng__stage-head
+      h2.k-docs__h2 {stageNo}. {stageTitle}
+      p.k-eng__flow
+        strong {stageTakes}
+        span  →
+        strong {stageGives}
+
+    if ref.present
+      for para, i in ref.intro key i
+        p.k-docs__p
+          +Inline#intro(runs=para)
+    else
+      p.k-docs__muted The reference of this stage is not written yet.
+
+    h3.k-docs__h3 Live: your template at this stage
+
+    if stageIs.source
+      p.k-docs__p The parser starts from the text only. Each line has an indentation, which decides nesting, and a kind: blank, comment or code. Click a line to pick it; picked lines light up in the generated code of the later stages.
+      div.k-eng__two
+        div
+          div.k-eng__rows
+            for l in lines key l.n
+              div.k-eng__row(class:is-hit={l.hit} @click=pick(l.n))
+                span.k-eng__rown {l.n}
+                span.k-eng__chip indent {l.indent}
+                span.k-eng__chip(data-kind={l.kind}) {l.kind}
+                code.k-eng__rowtext {l.text}
+    else if stageIs.ast
+      p.k-docs__p The AST of your template as the parser returns it (nid numbers every node that can change; pos is where it started), and the same tree as a listing.
+      div.k-eng__two
+        div
+          h4.k-eng__h Tree
+          +Code#astlist(lines=trace.astList)
+        div
+          h4.k-eng__h JSON
+          +Code#astjson(lines=trace.astJson)
+    else if stageIs.expr
+      p.k-docs__p Every interpolation hole and every expression attribute is parsed on its own into a small tree. These are the real trees for your template.
+      div.k-eng__table
+        table.ui-table
+          thead.ui-table-header
+            tr.ui-table-row
+              th.ui-table-head Template line
+              th.ui-table-head Where
+              th.ui-table-head Expression
+              th.ui-table-head Tree
+          tbody.ui-table-body
+            for e, i in trace.exprs key i
+              tr.ui-table-row
+                td.ui-table-cell {e.line}
+                td.ui-table-cell {e.where}
+                td.ui-table-cell
+                  code {e.src}
+                td.ui-table-cell
+                  code.k-eng__json {e.json}
+    else if stageIs.analyze
+      p.k-docs__p For each node, the names of the state it reads. diff looks at a node only if one of these names changed. A node that reads nothing is never compared.
+      +Code#deps(lines=trace.deps)
+    else if stageIs.codegen
+      p.k-docs__p The generator walks the AST once for render and once for diff, writes JavaScript lines, and collects the runtime helpers it used. Click a template line to see which generated lines came from it (marked T1, T2, …).
+      div.k-eng__chips
+        span.k-docs__muted Helpers imported:
+        for h in trace.helpersUsed key h
+          code.k-eng__chip {h}
+        if noHelpers
+          span.k-docs__muted none
+      div.k-eng__chips
+        span.k-docs__muted All helpers of the runtime:
+        for h in trace.helpersAll key h
+          code.k-eng__chip.k-eng__chip--dim {h}
+      div.k-eng__two
+        div
+          h4.k-eng__h Your template
+          +Code#cgsrc(lines=trace.source)
+        div
+          h4.k-eng__h Generated, in total: {trace.render.length} lines of render and {trace.diff.length} lines of diff
+          +GCode#gen(lines=render)
+    else if stageIs.render
+      p.k-docs__p The function render(state) the generator wrote. Click a line of it, or a template line, to see how they match.
+      div.k-eng__rows.k-eng__rows--src
+        for l in lines key l.n
+          div.k-eng__row(class:is-hit={l.hit} @click=pick(l.n))
+            span.k-eng__rown {l.n}
+            code.k-eng__rowtext {l.text}
+      +GCode#gen(lines=render)
+    else if stageIs.diff
+      p.k-docs__p The function diff(prev, next). Each block is guarded by the names that node reads; click a template line to light up its guard and its patches.
+      div.k-eng__rows.k-eng__rows--src
+        for l in lines key l.n
+          div.k-eng__row(class:is-hit={l.hit} @click=pick(l.n))
+            span.k-eng__rown {l.n}
+            code.k-eng__rowtext {l.text}
+      +GCode#gen(lines=diff)
+    else if stageIs.module
+      p.k-docs__p What compileTemplate returns: one readable ES module. This is what a bundler imports when you write import view from "./x.pavlus".
+      ul.k-docs__list
+        for part in trace.moduleParts key part.label
+          li Lines {part.from}–{part.to}: {part.label}
+      +GCode#gen(lines=module)
+    else if stageIs.instantiate
+      p.k-docs__p compileToView does not import the module: it strips the import and export lines and builds a function with new Function(...). The parameters are the names of the runtime helpers (the generated code finds them as free variables) and the child views; the body is the generated code plus a return line.
+      div.k-eng__chips
+        span.k-docs__muted Parameters ({trace.newFunction.params.length}):
+        for h in trace.newFunction.params key h
+          code.k-eng__chip {h}
+      p.k-docs__muted Body: {trace.newFunction.chars} characters, then a final return line for render, diff and meta.
+      +GCode#gen(lines=body)
+    else if stageIs.run
+      p.k-docs__p The two functions are now real functions. render(prev) and render(next) return plain data (vnodes); diff(prev, next) returns the patches that turn the first into the second.
+      div.k-eng__two
+        div
+          h4.k-eng__h render(prev) as HTML
+          +Code#htmlprev(lines=trace.htmlPrev)
+        div
+          h4.k-eng__h render(next) as HTML
+          +Code#htmlnext(lines=trace.htmlNext)
+      h4.k-eng__h Patches from diff(prev, next): {trace.patches.length}
+      if noPatches
+        p.k-docs__muted No patches: nothing to change.
+      div.k-eng__patches
+        for p, i in trace.patches key i
+          div.k-eng__patch
+            span.k-eng__op {p.op}
+            span {p.text}
+            code.k-eng__json {p.json}
+      div.k-eng__two
+        div
+          h4.k-eng__h render(prev) vnodes
+          +Code#vprev(lines=trace.vnodesPrev)
+        div
+          h4.k-eng__h render(next) vnodes
+          +Code#vnext(lines=trace.vnodesNext)
+    else if stageIs.dom
+      p.k-docs__p The real DOM plugin mounts render(prev) in a detached document, attaches {trace.listeners} event listener(s), then receives next and applies the patches. The browser reports exactly which nodes changed.
+      div.k-eng__two
+        div
+          h4.k-eng__h DOM before
+          +Code#dombefore(lines=trace.domBefore)
+        div
+          h4.k-eng__h DOM after
+          +Code#domafter(lines=trace.domAfter)
+      h4.k-eng__h What the browser saw change ({trace.mutations.length})
+      if noMutations
+        p.k-docs__muted No DOM mutations: the patches list is empty.
+      ul.k-docs__list
+        for m, i in trace.mutations key i
+          li
+            code {m}
+
+    if ref.present
+      h3.k-docs__h3 How this stage works
+      ol.k-eng__steps
+        for s in ref.steps key s.n
+          li
+            strong {s.title}
+            p.k-docs__p
+              +Inline#steprun(runs=s.runs)
+            if s.code
+              +Code#stepcode(lines=s.code)
+
+      h3.k-docs__h3 Functions, classes and constants
+      div.k-eng__fns
+        for f in ref.functions key f.name
+          div.k-eng__fn
+            div.k-eng__fn-head
+              code.k-eng__fn-name {f.name}
+              span.ui-badge.ui-badge-outline {f.kind}
+              span.k-docs__muted {f.file}
+            code.k-eng__sig {f.signature}
+            p.k-docs__p
+              +Inline#fnrun(runs=f.runs)
+
+      if ref.hasPatterns
+        h3.k-docs__h3 Strings, patterns and formats
+        div.k-eng__table
+          table.ui-table
+            thead.ui-table-header
+              tr.ui-table-row
+                th.ui-table-head String
+                th.ui-table-head Meaning
+                th.ui-table-head Where
+            tbody.ui-table-body
+              for p, i in ref.patterns key i
+                tr.ui-table-row
+                  td.ui-table-cell
+                    code {p.text}
+                  td.ui-table-cell
+                    +Inline#patrun(runs=p.runs)
+                  td.ui-table-cell {p.where}
+
+      if ref.hasPitfalls
+        h3.k-docs__h3 Surprises and pitfalls
+        ul.k-docs__list
+          for para, i in ref.pitfalls key i
+            li
+              +Inline#pitrun(runs=para)
+
+    div.k-docs__pager
+      if hasPrev
+        button.k-dl__pager-link(type="button" @click=stepPrev)
+          small Previous stage
+          strong {prevTitle}
+      else
+        span
+      if hasNext
+        button.k-dl__pager-link.k-dl__pager-link--next(type="button" @click=stepNext)
+          small Next stage
+          strong {nextTitle}

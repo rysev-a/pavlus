@@ -1,8 +1,0 @@
-import Score from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Rate five skills
-    p.k-demo__note Click a number to rate; click it again to clear. Only the skills that are rated count in the average.
-    div.k-preview.k-preview--block
-      +Score#card(...card)

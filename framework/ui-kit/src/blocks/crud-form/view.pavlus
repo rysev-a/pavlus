@@ -1,0 +1,77 @@
+// A create / update form, to embed. State = the props: `title`, `description`,
+// `fields` (from `fieldsView()` in form.ts), `saveLabel`, `editing` (true for an
+// existing row: a Delete button shows) and `problems` (how many fields are wrong).
+// Events, with the name of the embed in front: `change(key)` (text, number,
+// date, textarea, select: the value is in the event), `toggle(key)` (a switch),
+// `check(key, value)`, `checkAll(key)`, `checkNone(key)`, `lineAdd(key)`,
+// `lineRemove(key, i)`, `lineSet(key, i, part)`, `save`, `cancel`, `remove`.
+div.k-cform
+  div.k-cform__head
+    button.ui-button.ui-button-ghost.ui-button-sm(type="button" @click=cancel)
+      span.k-icon.k-icon-chevron-left
+      | Back to the list
+    div.k-cform__titles
+      h2.k-cform__title {title}
+      if description
+        p.k-cform__desc {description}
+  div.ui-card.k-cform__card
+    div.ui-card-content.k-cform__body
+      for field in fields key field.key
+        div.ui-field.k-cform__field(data-invalid=field.invalid data-kind={field.kind})
+          label.ui-field-label {field.label}
+            if field.required
+              span.k-cform__req  *
+          if field.isTextarea
+            textarea.ui-textarea-control(rows={field.rows} placeholder={field.placeholder} value={field.value} aria-invalid=field.invalid @input=change(field.key))
+          else if field.isSelect
+            select.ui-select-control(aria-invalid=field.invalid @change=change(field.key))
+              for opt in field.options key opt.value
+                option(value={opt.value} selected={opt.selected}) {opt.label}
+          else if field.isSwitch
+            div.ui-switch
+              input.ui-switch-input(type="checkbox" role="switch" checked={field.checked} @change=toggle(field.key))
+              span.ui-switch-label {field.hint}
+          else if field.isChecks
+            div.k-cform__checks
+              div.k-cform__checkbar
+                span.k-cform__count {field.count}
+                button.ui-button.ui-button-ghost.ui-button-xs(type="button" @click=checkAll(field.key)) All
+                button.ui-button.ui-button-ghost.ui-button-xs(type="button" @click=checkNone(field.key)) None
+              div.k-cform__checklist
+                for opt in field.options key opt.value
+                  label.ui-checkbox.k-cform__check
+                    input.ui-checkbox-input(type="checkbox" checked={opt.selected} @change=check(field.key, opt.value))
+                    span.ui-checkbox-label {opt.label}
+          else if field.isLines
+            div.k-cform__lines
+              for line in field.lines key line.i
+                div.k-cform__line
+                  select.ui-select-control.k-cform__product(aria-label="Product" @change=lineSet(field.key, line.i, "productId"))
+                    for opt in line.options key opt.value
+                      option(value={opt.value} selected={opt.selected}) {opt.label}
+                  input.ui-input.k-cform__qty(type="number" min="1" step="1" aria-label="Quantity" value={line.qty} @input=lineSet(field.key, line.i, "qty"))
+                  input.ui-input.k-cform__price(type="number" min="0" step="0.01" aria-label="Unit price" value={line.price} @input=lineSet(field.key, line.i, "price"))
+                  span.k-cform__sum {line.sum}
+                  button.ui-button.ui-button-ghost.ui-button-icon-sm.k-cform__x(type="button" aria-label="Remove the line" @click=lineRemove(field.key, line.i))
+                    span.k-icon.k-icon-x
+              div.k-cform__linebar
+                button.ui-button.ui-button-outline.ui-button-sm(type="button" @click=lineAdd(field.key))
+                  span.k-icon.k-icon-plus
+                  | Add a line
+                span.k-cform__count {field.count}
+          else if field.isReadonly
+            input.ui-input(type="text" value={field.value} readonly=true)
+          else
+            input.ui-input(type=field.type step={field.step} placeholder={field.placeholder} value={field.value} aria-invalid=field.invalid @input=change(field.key))
+          if field.error
+            p.ui-field-error {field.error}
+          else if field.hasDescription
+            p.ui-field-description {field.hint}
+    div.ui-card-footer.k-cform__foot
+      if editing
+        button.ui-button.ui-button-outline.k-cform__delete(type="button" @click=remove) Delete
+      span.k-cform__spacer
+      if problems
+        span.ui-field-error {problems} field(s) need a look
+      button.ui-button.ui-button-outline(type="button" @click=cancel) Cancel
+      button.ui-button.ui-button-default(type="button" @click=save) {saveLabel}

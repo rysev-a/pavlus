@@ -1,0 +1,100 @@
+// A documentation layout: search bar, menu with folding groups, the page,
+// the table of contents, neighbours. A part with its own state (docs-layout.ts):
+// embed it as a child, `+Docs#docs(...docs)`.
+import SearchBox from "../search-box/view.pavlus"
+import Inline from "./inline.pavlus"
+import Callout from "../callout/view.pavlus"
+import CodeBlock from "../code-block/view.pavlus"
+
+div.k-dl
+  div.k-dl__bar
+    button.k-dl__menu.ui-button.ui-button-outline.ui-button-icon(type="button" aria-label="Menu" aria-expanded={menuAria} @click=toggleMenu)
+      span.k-icon.k-icon-menu
+    div.k-dl__search
+      +SearchBox#search(placeholder="Search the docs" query=query open=searchOpen results=results foundLabel=foundLabel)
+    span.ui-badge.ui-badge-outline.k-dl__version {badge}
+  div.k-dl__body
+    nav.k-dl__nav(aria-label="Documentation" data-open={menuData})
+      for group in nav key group.id
+        div.k-dl__group
+          button.k-dl__group-btn(type="button" aria-expanded={group.ariaOpen} @click=toggleGroup(group.id))
+            span.k-dl__group-title {group.title}
+            span.k-icon.k-icon-chevron-right.k-dl__chev
+          if group.open
+            ul.k-dl__links
+              for item in group.pages key item.id
+                li
+                  a.k-dl__link(href="#" aria-current={item.ariaCurrent} @click.prevent=open(item.id)) {item.title}
+    article.k-dl__main
+      nav.ui-breadcrumb(aria-label="Breadcrumb")
+        ol.ui-breadcrumb-list
+          for crumb, i in crumbs key i
+            if crumb.sep
+              li.ui-breadcrumb-separator
+                span.k-icon.k-icon-chevron-right
+            li.ui-breadcrumb-item
+              if crumb.id
+                a.ui-breadcrumb-link(href="#" @click.prevent=open(crumb.id)) {crumb.title}
+              else
+                span.ui-breadcrumb-page(aria-current="page") {crumb.title}
+      h1.k-dl__title#dl-title(tabindex="-1") {page.title}
+      p.k-dl__lead {page.summary}
+      div.k-dl__content
+        for block, i in page.blocks key i
+          if block.isH2
+            h2.k-dl__h2(id=block.id tabindex="-1") {block.text}
+          else if block.isH3
+            h3.k-dl__h3(id=block.id tabindex="-1") {block.text}
+          else if block.isP
+            p.k-dl__p
+              +Inline#runs(runs=block.runs)
+          else if block.isUl
+            ul.k-dl__list
+              for item, j in block.items key j
+                li
+                  +Inline#runs(runs=item)
+          else if block.isOl
+            ol.k-dl__list
+              for item, j in block.items key j
+                li
+                  +Inline#runs(runs=item)
+          else if block.isCode
+            +CodeBlock#code(title=block.title lang=block.lang lines=block.lines bar=block.bar numbered=block.numbered)
+          else if block.isCallout
+            +Callout#callout(...block.callout)
+          else if block.isTable
+            div.k-dl__table
+              table.ui-table
+                thead.ui-table-header
+                  tr.ui-table-row
+                    for cell, j in block.head key j
+                      th.ui-table-head
+                        +Inline#runs(runs=cell)
+                tbody.ui-table-body
+                  for row, r in block.rows key r
+                    tr.ui-table-row
+                      for cell, j in row key j
+                        td.ui-table-cell
+                          +Inline#runs(runs=cell)
+      div.k-dl__pager
+        if prev
+          a.k-dl__pager-link(href="#" @click.prevent=open(prev.id))
+            small
+              span.k-icon.k-glyph(data-glyph="arrow-left")
+              | Previous
+            strong {prev.title}
+        else
+          span
+        if next
+          a.k-dl__pager-link.k-dl__pager-link--next(href="#" @click.prevent=open(next.id))
+            small
+              | Next
+              span.k-icon.k-glyph(data-glyph="arrow-right")
+            strong {next.title}
+    aside.k-dl__toc
+      if hasToc
+        p.k-dl__toc-title On this page
+        ul.k-dl__toc-list
+          for item in toc key item.id
+            li(data-level={item.level})
+              a(href="#" @click.prevent=jump(item.id)) {item.text}

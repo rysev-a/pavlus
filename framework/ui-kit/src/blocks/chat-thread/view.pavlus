@@ -1,0 +1,22 @@
+// A conversation, to embed: `+Chat#chat(...chat)`. State = title, subtitle,
+// sub (what the sub line shows: "typing..." while the other side types),
+// initials, tone (1-5), messages ({ id, mine, text, time }), draft, canSend,
+// sendDisabled (the send button), typing. Messages (`<name>.draft`,
+// `<name>.send`): draft (read `msg.event.value`), send.
+section.ui-card.k-chat
+  header.k-chat__head
+    span.k-chat__av(style="--t: var(--chart-{tone})") {initials}
+    div.k-chat__who
+      strong.k-chat__title {title}
+      span.k-chat__sub(class:is-typing={typing}) {sub}
+  div.k-chat__log(role="log" aria-live="polite")
+    div.k-chat__inner
+      for m in messages key m.id
+        div.k-chat__row(class:is-mine={m.mine})
+          p.k-chat__bubble {m.text}
+          span.k-chat__time {m.time}
+  form.k-chat__form(novalidate @submit.prevent=send)
+    input.ui-input(type="text" aria-label="Message" placeholder="Write a message..." autocomplete="off" value=draft @input=draft)
+    button.ui-button.ui-button-default(type="submit" disabled=sendDisabled)
+      span.k-icon.k-glyph(data-glyph="send")
+      | Send

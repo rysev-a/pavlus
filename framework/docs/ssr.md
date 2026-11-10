@@ -13,12 +13,12 @@ createApp({ app, plugins })  ──state──▶  createApp({ app, plugins, mou
 
 ## On the server
 
-`@pavlus/frontend/ssr` has what the server needs:
+`@pavlus/client/ssr` has what the server needs:
 
 ```ts
-import { createApp, viewOf } from "@pavlus/frontend";
-import { createHttpPlugin, createStorePlugin } from "@pavlus/frontend/plugins";
-import { renderToString, serializeState } from "@pavlus/frontend/ssr";
+import { createApp, viewOf } from "@pavlus/client";
+import { createHttpPlugin, createStorePlugin } from "@pavlus/client/plugins";
+import { renderToString, serializeState } from "@pavlus/client/ssr";
 
 const store = createStorePlugin(initialState);
 const http = createHttpPlugin({ fetch: inProcess }); // answers the API without a socket
@@ -56,7 +56,7 @@ the JSON in a `<script>` before the application's own, escaping `<` as
 ## In the browser
 
 ```ts
-import { reviveState } from "@pavlus/frontend/ssr";
+import { reviveState } from "@pavlus/client/ssr";
 
 const json = (globalThis as { __STATE__?: string }).__STATE__;
 const store = createStorePlugin(json ? reviveState(json, { list, table }) : initialState);
@@ -75,8 +75,8 @@ console and renders afresh: the page still works.
 The first `routeChanged` after hydration carries the location the server
 rendered, so `setRoute` sends no `enter`: the data is not loaded twice.
 
-A complete example, with Vite in development and a build for production, is
-the [admin-app](../../applications/admin/README.md#server-side-rendering)
-(`@pavlus/backend`'s pages plugin and flow fetch, `@pavlus/backend/ssr`'s
-render, wired in `backend/server.ts`, with `app/entry-server.ts` as the
-module the server loads).
+The pieces are ready to wire: `@pavlus/server`'s `renderPage`
+(`framework/server/src/ssr/mod.ts`) runs the app, waits for the requests and
+returns the HTML with the serialized state, and the framework's own tests
+(`framework/client/src/plugins/dom/dom.test.ts`, hydration) keep the two
+sides honest.

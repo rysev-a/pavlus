@@ -1,0 +1,210 @@
+// One element of a page, drawn from its view (`vb-builder/stage.ts`). The same
+// part draws the Design canvas (where the CSS makes it inert) and the Preview
+// (where its events are real): the page answers `e.onClick`, `e.onInput`, ...
+div.vb-el(inert={design} data-kind=kind data-tone=toneAttr data-radius=radiusAttr data-size=sizeAttr data-align=alignAttr data-weight=weightAttr data-ghost=ghostAttr @mouseenter=onHover(id))
+  if isHeading
+    if h1
+      h1.vb-h(@click=onClick(id)) {text}
+    else if h3
+      h3.vb-h(@click=onClick(id)) {text}
+    else
+      h2.vb-h(@click=onClick(id)) {text}
+  else if isText
+    p.vb-p(@click=onClick(id)) {text}
+  else if isButton
+    button.ui-button.ui-button-default(type="button" data-variant=variant disabled={disabled} @click=onClick(id) @focus=onFocus(id) @blur=onBlur(id)) {text}
+  else if isLink
+    a.vb-link(href=href @click.prevent=onLink(id)) {text}
+  else if isImage
+    if hasSrc
+      img.vb-img(src=src alt=alt @click=onClick(id))
+    else
+      div.vb-img.vb-img--empty(role="img" aria-label=alt @click=onClick(id))
+        span.k-icon.k-icon-image
+        span {alt}
+  else if isBadge
+    span.ui-badge.vb-badge(data-variant=variant @click=onClick(id)) {text}
+  else if isProgress
+    div.vb-progress(@click=onClick(id))
+      div.vb-progress__head
+        span {label}
+        span {percentText}
+      div.ui-progress(role="progressbar" aria-label=label aria-valuemin="0" aria-valuemax="100" aria-valuenow="{percent}")
+        div.ui-progress-indicator(style="width: {percent}%")
+  else if isCard
+    div.ui-card.vb-card(@click=onClick(id))
+      div.ui-card-content
+        h3.vb-card__title {title}
+        p.vb-card__text {text}
+  else if isKpi
+    div.ui-card.vb-kpi(@click=onClick(id))
+      div.ui-card-content
+        span.vb-kpi__label {label}
+        strong.vb-kpi__value {text}
+        if delta
+          span.vb-kpi__delta {delta}
+  else if isInput
+    label.vb-field
+      span.vb-field__label {label}
+      input.ui-input(type=inputType value=value placeholder=placeholder @input=onInput(id) @change=onChange(id) @focus=onFocus(id) @blur=onBlur(id) @keydown=onKey(id))
+  else if isTextarea
+    label.vb-field
+      span.vb-field__label {label}
+      textarea.ui-textarea-control(rows="3" value=value placeholder=placeholder @input=onInput(id) @change=onChange(id) @focus=onFocus(id) @blur=onBlur(id))
+  else if isSelect
+    label.vb-field
+      span.vb-field__label {label}
+      select.ui-select-control(@change=onChange(id) @focus=onFocus(id) @blur=onBlur(id))
+        option(value="") -
+        for o in options key o.k
+          option(value=o.label selected={o.selected}) {o.label}
+  else if isCheckbox
+    label.vb-check
+      input(type="checkbox" checked={checked} @change=onChange(id) @focus=onFocus(id) @blur=onBlur(id))
+      span {label}
+  else if isList
+    div.vb-listbox
+      if isEmpty
+        p.vb-empty {empty}
+      else
+        ul.vb-list
+          for it in items key it.k
+            li.vb-list__item
+              button.vb-list__main(type="button" @click=onItem(id, it.index)) {it.title}
+              if removable
+                button.ui-button.ui-button-ghost.ui-button-sm.vb-list__x(type="button" aria-label="Remove {it.title}" @click=onRemove(id, it.index)) Remove
+  else if isRepeater
+    div.vb-cards
+      if isEmpty
+        p.vb-empty {empty}
+      for it in items key it.k
+        div.ui-card.vb-card(@click=onItem(id, it.index))
+          div.ui-card-content
+            h3.vb-card__title {it.title}
+            p.vb-card__text {it.text}
+            if it.footer
+              span.vb-card__foot {it.footer}
+  else if isTable
+    div.ui-data-table.vb-datatable
+      if searchBox
+        div.ui-data-toolbar
+          div.ui-data-search
+            span.k-icon.k-icon-search(style="position: absolute; left: 12px; color: var(--muted-foreground)")
+            input.ui-input(type="search" value=q placeholder="Filter..." aria-label="Filter the table" @input=onSearch(id))
+      div.ui-data-scroll
+        table
+          thead
+            tr
+              if selectable
+                th.ui-resource-check
+                  input.ui-data-check(type="checkbox" aria-label="Select all rows" checked={allChecked} @change=onSelectAll(id))
+              for col in columns key col.k
+                th(aria-sort=col.sort style=col.rightStyle)
+                  button.ui-resource-sort(type="button" @click=onSort(id, col.k)) {col.label}
+                    span.k-icon.k-icon-chevrons-up-down(class:ui-sort-idle={col.idle})
+              if hasActions
+                th(style="text-align: right") Actions
+          tbody
+            if isEmpty
+              tr
+                td.ui-resource-empty(colspan={span}) {empty}
+            for r in rows key r.k
+              tr.vb-tr(data-selected=r.selAttr @click=onItem(id, r.index))
+                if selectable
+                  td.ui-resource-check
+                    input.ui-data-check(type="checkbox" aria-label="Select row" checked={r.checked} @click.stop=onSelect(id, r.index))
+                for c in r.cells key c.k
+                  td(class:ui-cell-number={c.right} style=c.rightStyle)
+                    if c.pill
+                      span.ui-pill {c.text}
+                    else
+                      | {c.text}
+                if hasActions
+                  td(style="text-align: right")
+                    div.vb-rowactions
+                      for a in rowActions key a.k
+                        button.ui-button.ui-button-outline.ui-button-sm(type="button" class:ui-button-destructive={a.destructive} @click.stop=onRowAction(id, r.index, a.label)) {a.label}
+      div.ui-resource-footer
+        if selectable
+          span {checkedCount} of {total} row(s) selected.
+        else
+          span {total} row(s).
+        if paged
+          div.ui-data-footer-controls
+            span Page {pageNo} of {pages}
+            div.ui-resource-pager
+              button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={prevOff} @click=onPrev(id)) Previous
+              button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={nextOff} @click=onNext(id)) Next
+  else if isChart
+    div.vb-chart
+      h3.vb-chart__title {title}
+      div.vb-chart__plot(id=chartId role="img" aria-label="{title}: {summary}" @click=onClick(id))
+  else if isTabs
+    div.vb-tabs
+      div.vb-tabs__bar(role="tablist")
+        for t in tabs key t.k
+          button.vb-tabs__tab(type="button" role="tab" aria-selected=t.sel @click=onTab(id, t.label)) {t.label}
+      p.vb-tabs__panel(role="tabpanel") {panel}
+  else if isAccordion
+    div.vb-acc
+      for t in tabs key t.k
+        div.vb-acc__item
+          button.vb-acc__head(type="button" aria-expanded=t.expanded @click=onTab(id, t.label)) {t.label}
+          if t.active
+            p.vb-acc__panel {t.panel}
+  else if isModal
+    if open
+      div.vb-modal(role="dialog" aria-modal="true" aria-label=title data-inline=inlineAttr)
+        div.vb-modal__box
+          h3 {title}
+          p {text}
+          button.ui-button.ui-button-default(type="button" @click=onClose(id)) {closeLabel}
+    else if design
+      div.vb-modal(role="dialog" aria-label=title data-inline="true")
+        div.vb-modal__box
+          h3 {title}
+          p {text}
+          button.ui-button.ui-button-default(type="button" @click=onClose(id)) {closeLabel}
+  else if isForm
+    form.ui-form.vb-form(novalidate @submit.prevent=onSubmit(id))
+      if title
+        h3.vb-form__title {title}
+      div.ui-field-group
+        for f in fields key f.k
+          div.ui-field(data-invalid=f.invalidAttr)
+            if f.isCheck
+              div.ui-checkbox
+                input.ui-checkbox-input(id=f.fid type="checkbox" checked={f.checked} aria-invalid=f.invalid @change=onField(id, f.name, "check"))
+                label.ui-checkbox-label(for=f.fid) {f.label}
+            else if f.isSwitch
+              div.ui-switch
+                input.ui-switch-input(id=f.fid type="checkbox" role="switch" checked={f.checked} aria-invalid=f.invalid @change=onField(id, f.name, "check"))
+                label.ui-switch-label(for=f.fid) {f.label}
+            else if f.isRadio
+              fieldset.ui-radio-group
+                legend.ui-radio-group-label {f.label}
+                div.ui-radio-group-options
+                  for o in f.options key o.k
+                    div.ui-radio-option
+                      input.ui-radio-input(id="{f.fid}-{o.k}" type="radio" name=f.fid value=o.label checked={o.selected} @change=onField(id, f.name, "text"))
+                      label.ui-radio-label(for="{f.fid}-{o.k}") {o.label}
+            else if f.isArea
+              label.ui-field-label(for=f.fid) {f.label}
+              textarea.ui-textarea-control(id=f.fid rows="3" value=f.value placeholder=f.placeholder aria-invalid=f.invalid @input=onField(id, f.name, "text"))
+            else if f.isSelect
+              label.ui-field-label(for=f.fid) {f.label}
+              select.ui-select-control(id=f.fid aria-invalid=f.invalid @change=onField(id, f.name, "text"))
+                option(value="") {f.selectLabel}
+                for o in f.options key o.k
+                  option(value=o.label selected={o.selected}) {o.label}
+            else
+              label.ui-field-label(for=f.fid) {f.label}
+              input.ui-input(id=f.fid type=f.inputType value=f.value placeholder=f.placeholder aria-invalid=f.invalid @input=onField(id, f.name, "text"))
+            if f.description
+              p.ui-field-description {f.description}
+            if f.error
+              p.ui-field-error(role="alert") {f.error}
+      if formError
+        p.ui-field-error(role="alert") {formError}
+      div.ui-form-actions
+        button.ui-button.ui-button-default(type="submit") {submitLabel}

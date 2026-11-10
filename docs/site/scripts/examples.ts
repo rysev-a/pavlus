@@ -96,33 +96,36 @@ export const examples: Example[] = [
   {
     id: "events",
     title: "4. Events",
-    intro: `An event attribute (<code>@click=go(page + 1)</code>) is not a
-      function: <code>render</code> evaluates its arguments on the current state
+    intro: `An event attribute (<code>@click=go(nextPage)</code>) is not a
+      function: <code>render</code> reads its arguments from the current state
       and attaches plain message data (<code>{ id: "go", payload: … }</code>).
+      The numbers themselves (<code>prevPage</code>, <code>nextPage</code>) are
+      computed in the component, not in the template: an expression is a path
+      or a literal, never <code>page + 1</code>.
       <code>diff</code> compares the data by value — when only a payload changes,
       one <code>handler</code> patch rebinds the message on the same element;
       the DOM listener itself is attached once and never changes.`,
     template: `ul.pager
   li(@click=go(1)) first
-  li(@click=go(page - 1)) prev
-  li(@click=go(page + 1)) next
+  li(@click=go(prevPage)) prev
+  li(@click=go(nextPage)) next
   li(@click=go(total)) last`,
-    state: { page: 2, total: 5 },
+    state: { prevPage: 1, nextPage: 3, total: 5 },
     steps: [
       {
         label: "page 2 → 3: two payloads change",
-        prev: { page: 2, total: 5 },
-        next: { page: 3, total: 5 },
+        prev: { prevPage: 1, nextPage: 3, total: 5 },
+        next: { prevPage: 2, nextPage: 4, total: 5 },
       },
       {
         label: "total 5 → 9: one payload changes",
-        prev: { page: 3, total: 5 },
-        next: { page: 3, total: 9 },
+        prev: { prevPage: 2, nextPage: 4, total: 5 },
+        next: { prevPage: 2, nextPage: 4, total: 9 },
       },
     ],
     notes: [
       "The <code>@click</code> data is in <code>render</code>'s output like an attribute; the DOM plugin keeps one stable listener per element and event type.",
-      "<code>go(page - 1)</code> produced <code>{ id: 'go', payload: 1 }</code> for page 2 and <code>{ id: 'go', payload: 2 }</code> for page 3: one <code>handler</code> patch, no re-render of the element.",
+      "<code>go(prevPage)</code> produced <code>{ id: 'go', payload: 1 }</code> for page 2 and <code>{ id: 'go', payload: 2 }</code> for page 3: one <code>handler</code> patch, no re-render of the element.",
       "Modifiers (<code>@click.prevent</code>, <code>@submit.prevent</code>, <code>@click.stop</code>) are part of the same data; <code>preventDefault</code> / <code>stopPropagation</code> are the DOM plugin's business.",
     ],
     diagram: "events",
@@ -233,27 +236,32 @@ else
   {
     id: "combined",
     title: "8. A condition and attributes together",
-    intro: `A real form: attributes that depend on <code>busy</code>, a text that
-      depends on it too, and an error block. Every node is guarded by the state
+    intro: `A real form: attributes that depend on <code>busy</code>, a label
+      the component derives from it (<code>saveLabel</code>), and an error block. Every node is guarded by the state
       roots it reads (the <code>// (reads: …)</code> comments in the generated
       code), so a change to <code>busy</code> is looked at by the button and the
       input but not by the error block.`,
     template: `form(@submit.prevent=save)
   input(value=name disabled={busy} @input=changed)
-  button(class:busy=busy disabled={busy}) {busy ? "Saving..." : "Save"}
+  button(class:busy=busy disabled={busy}) {saveLabel}
   if error
     p.error {error}`,
-    state: { name: "Ann", busy: false, error: "" },
+    state: { name: "Ann", busy: false, saveLabel: "Save", error: "" },
     steps: [
       {
         label: "busy false → true",
-        prev: { name: "Ann", busy: false, error: "" },
-        next: { name: "Ann", busy: true, error: "" },
+        prev: { name: "Ann", busy: false, saveLabel: "Save", error: "" },
+        next: { name: "Ann", busy: true, saveLabel: "Saving...", error: "" },
       },
       {
         label: "busy true → false, an error arrives",
-        prev: { name: "Ann", busy: true, error: "" },
-        next: { name: "Ann", busy: false, error: "Name taken" },
+        prev: { name: "Ann", busy: true, saveLabel: "Saving...", error: "" },
+        next: {
+          name: "Ann",
+          busy: false,
+          saveLabel: "Save",
+          error: "Name taken",
+        },
       },
     ],
     notes: [

@@ -1,8 +1,0 @@
-.k-sstrip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--border); }
-.k-sstrip__item { display: grid; gap: 4px; padding: calc(24px * var(--k-block, 1)); background: var(--card); color: var(--card-foreground); text-align: center; }
-.k-sstrip__value { margin: 0; font-size: clamp(26px, 4vw, 38px); font-weight: 700; letter-spacing: -.03em; line-height: 1.1; color: var(--primary); }
-.k-sstrip__label { margin: 0; font-size: 13px; color: var(--muted-foreground); }
-.k-sstrip--primary { border-color: transparent; background: color-mix(in srgb, var(--primary-foreground) 22%, transparent); }
-.k-sstrip--primary .k-sstrip__item { background: var(--primary); color: var(--primary-foreground); }
-.k-sstrip--primary .k-sstrip__value, .k-sstrip--primary .k-sstrip__label { color: var(--primary-foreground); }
-.k-sstrip--primary .k-sstrip__label { opacity: .85; }

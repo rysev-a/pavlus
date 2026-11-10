@@ -1,7 +1,0 @@
-import Gantt from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Three projects over eight weeks
-    div.k-preview.k-preview--block
-      +Gantt#gantt(weeks=weeks rows=rows today=today)

@@ -28,10 +28,10 @@ DOM event / HTTP reply / timer tick / WS frame
 ## Using plugins
 
 ```ts
-import { createApp } from "@pavlus/frontend";
-import { createStorePlugin } from "@pavlus/frontend/plugins/store";
-import { DomPlugin } from "@pavlus/frontend/plugins/dom";
-import { createHttpPlugin } from "@pavlus/frontend/plugins/http";
+import { createApp } from "@pavlus/client";
+import { createStorePlugin } from "@pavlus/client/plugins/store";
+import { DomPlugin } from "@pavlus/client/plugins/dom";
+import { createHttpPlugin } from "@pavlus/client/plugins/http";
 
 createApp({
   app: dashboard, // a function, or an instance of a class extending Component
@@ -51,7 +51,7 @@ createApp({
   `pavlus: no plugin "x" for effect "y"`. Two plugins with the same name throw
   at start-up.
 - Import plugins one by one from
-  `@pavlus/frontend/plugins/<name>`, or everything from one place:
+  `@pavlus/client/plugins/<name>`, or everything from one place:
 
   ```ts
   import {
@@ -59,7 +59,7 @@ createApp({
     createHttpPlugin,
     createStorePlugin,
     storeEffector as store,
-  } from "@pavlus/frontend/plugins";
+  } from "@pavlus/client/plugins";
   ```
 
   Importing the barrel runs no code (the package is marked `sideEffects:
@@ -78,9 +78,9 @@ that returns exactly that object, typed, so a wrong field is a compile error
 and handlers read like sentences. Import it with a short alias:
 
 ```ts
-import { storeEffector as store } from "@pavlus/frontend/plugins/store";
-import { httpEffector as http } from "@pavlus/frontend/plugins/http";
-import { loggerEffector as log } from "@pavlus/frontend/plugins/logger";
+import { storeEffector as store } from "@pavlus/client/plugins/store";
+import { httpEffector as http } from "@pavlus/client/plugins/http";
+import { loggerEffector as log } from "@pavlus/client/plugins/logger";
 
 class Users extends Component {
   load() {
@@ -184,7 +184,7 @@ component with a message and a state and compare the returned effects (with
 effectors, compare against `store.set(...)` itself).
 
 ```ts
-import { toHandler } from "@pavlus/frontend";
+import { toHandler } from "@pavlus/client";
 
 expect(toHandler(dashboard)({ id: "reload" }, state)).toEqual([
   store.set("users.status", "loading"),
@@ -204,7 +204,7 @@ effector so using it feels like the built-in ones.
 
 ```ts
 // clipboard/mod.ts
-import type { Plugin } from "@pavlus/frontend";
+import type { Plugin } from "@pavlus/client";
 
 export type ClipboardEffect = {
   plugin: "clipboard";

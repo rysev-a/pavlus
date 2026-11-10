@@ -3,16 +3,11 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "framework/frontend",
-    "framework/backend",
+    "framework/client",
+    "framework/server",
     "framework/core",
     "framework/ui-kit",
-    "applications/admin",
-    "applications/visual-design",
-    "applications/mobile-dev",
-    "applications/phone-crm",
-    "applications/coffee-shop",
-    "applications/team-up"
+    "applications/diagram-programming"
   ],
   "scripts": {
     "test": "npm test --workspaces",

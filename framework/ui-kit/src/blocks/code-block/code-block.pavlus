@@ -1,0 +1,15 @@
+import CodeBlock from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title TypeScript with a title
+    div.k-preview.k-preview--block
+      +CodeBlock#ts(...ts)
+  section.k-demo
+    h2.k-demo__title Shell, no line numbers
+    div.k-preview.k-preview--block
+      +CodeBlock#sh(...sh)
+  section.k-demo
+    h2.k-demo__title JSON
+    div.k-preview.k-preview--block
+      +CodeBlock#json(...json)

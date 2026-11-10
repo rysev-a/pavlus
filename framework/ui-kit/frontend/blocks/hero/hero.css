@@ -1,5 +1,0 @@
-.k-hero { display: grid; justify-items: start; gap: calc(16px * var(--k-block, 1)); padding: calc(32px * var(--k-block, 1)) 0; }
-.k-hero--center { justify-items: center; text-align: center; }
-.k-hero__title { margin: 0; max-width: 18ch; font-size: clamp(32px, 5vw, 56px); font-weight: 700; letter-spacing: -.03em; line-height: 1.05; }
-.k-hero__text { margin: 0; max-width: 52ch; font-size: 18px; line-height: 1.55; color: var(--muted-foreground); }
-.k-hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }

@@ -1,8 +1,0 @@
-import Bar from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Tabs, search and a button
-    div.k-preview.k-preview--block
-      +Bar#bar(filters=filters query=query placeholder="Search orders" actions=actions)
-    p.k-demo__note Showing {shown.length} of {orders.length}: {names}

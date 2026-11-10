@@ -1,9 +1,0 @@
-.rp__picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); }
-.rp__picker .ui-select-control { width: min(100%, 24rem); }
-.rp__cols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: calc(18px * var(--k-block, 1)); align-items: start; }
-.rp__stack { display: grid; gap: calc(16px * var(--k-block, 1)); min-width: 0; }
-.rp .ui-card.rp__card { gap: calc(12px * var(--k-block, 1)); padding: calc(18px * var(--k-block, 1)); min-width: 0; }
-.rp__card h3 { margin: 0; font-size: 15px; font-weight: 600; }
-.rp__hint { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--muted-foreground); }
-.rp__offer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; font-size: 13.5px; }
-@media (max-width: 900px) { .rp__cols { grid-template-columns: minmax(0, 1fr); } }

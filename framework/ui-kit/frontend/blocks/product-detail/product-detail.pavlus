@@ -1,8 +1,0 @@
-import Detail from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title A product in full
-    div.k-preview.k-preview--block
-      +Detail#detail(...detail)
-      p.k-hint(style="margin-top: 16px") {last}

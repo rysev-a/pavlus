@@ -1,8 +1,0 @@
-import Suggest from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Knowledge base search
-    div.k-preview.k-preview--block
-      +Suggest#kb(query=query placeholder="Search the help center" items=items empty="No article matches. Try other words.")
-    p.k-demo__note {message}

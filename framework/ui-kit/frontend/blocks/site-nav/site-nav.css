@@ -1,7 +1,0 @@
-.k-sitenav { display: flex; align-items: center; gap: 16px; padding: 12px 0; }
-.k-sitenav__brand { display: inline-flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
-.k-sitenav__links { display: flex; flex: 1; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
-.k-sitenav__link { padding: 6px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--muted-foreground); transition: background-color .15s, color .15s; }
-.k-sitenav__link:hover { background: var(--accent); color: var(--accent-foreground); }
-.k-sitenav > .ui-button { margin-left: auto; }
-.k-sitenav__links + .ui-button { margin-left: 0; }

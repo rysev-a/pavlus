@@ -1,8 +1,0 @@
-import Grid from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Four rooms, ten days
-    div.k-preview.k-preview--block
-      +Grid#grid(days=days rows=rows)
-    p.k-demo__note {message}

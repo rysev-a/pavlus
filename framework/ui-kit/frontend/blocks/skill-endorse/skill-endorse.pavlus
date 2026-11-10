@@ -1,9 +1,0 @@
-import Skills from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Endorse a skill
-    p.k-demo__note An endorsement adds one to the count and the bar; click again to take it back.
-    div.k-preview.k-preview--block
-      div.k-wide-demo
-        +Skills#skills(...skills)

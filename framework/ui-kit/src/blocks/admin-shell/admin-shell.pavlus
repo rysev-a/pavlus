@@ -1,0 +1,18 @@
+import Nav from "./view.pavlus"
+import Top from "./topbar.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Sidebar, top bar and content
+    div.k-ashell.k-ashell--frame(data-nav=navData)
+      aside.k-ashell__side
+        +Nav#nav(...nav)
+      div.k-ashell__scrim(@click=close)
+      div.k-ashell__main
+        +Top#top(title=title subtitle="Everything in one place" notice=notice actions=actions user=user)
+        main.k-ashell__content
+          div.ui-empty-state
+            p The view "{title}" goes here.
+  section.k-demo
+    h2.k-demo__title How to use it
+    p.k-demo__note The template puts the two parts in a grid of its own: a div.k-ashell with an aside.k-ashell__side for the navigation and a div.k-ashell__main for the top bar and the main.k-ashell__content. Below 800px the sidebar is a drawer that the menu button opens (set data-nav="open" on the root).

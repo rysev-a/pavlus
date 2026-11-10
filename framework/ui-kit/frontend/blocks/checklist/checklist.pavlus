@@ -1,9 +1,0 @@
-import List from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Groups with progress
-    p.k-demo__note Today is November 3, 2026: a task due earlier and not done is overdue.
-    div.k-preview.k-preview--block
-      +List#list(groups=groups layout="columns")
-    p.k-demo__note {message}

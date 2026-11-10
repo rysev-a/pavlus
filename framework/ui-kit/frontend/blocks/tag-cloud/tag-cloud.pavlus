@@ -1,9 +1,0 @@
-import Cloud from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Tags sized by how often they are used
-    p.k-demo__note The more entries have a tag, the bigger it is. Click one to pick it, again to clear it.
-    div.k-preview.k-preview--block
-      +Cloud#cloud(tags=tags)
-      p.k-tcloud__out {said}

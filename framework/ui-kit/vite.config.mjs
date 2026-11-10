@@ -1,5 +1,7 @@
 // @ts-check
-import { pavlus } from "@pavlus/frontend/vite";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { pavlus } from "@pavlus/client/vite";
 
 // GitHub Pages serves a project site from /<repo>/, so the workflow builds
 // with UI_KIT_BASE=/pavlus/. Locally it is "/".
@@ -32,7 +34,7 @@ const scaleSizes = () => ({
   transform(code, id) {
     const file = id.split("?")[0];
     if (
-      !/(admin\/frontend\/styles|ui-kit\/frontend\/(kit|(blocks|templates)\/[^/]+\/[^/]+))\.css$/.test(
+      !/ui-kit\/src\/(kit|(blocks|templates)\/[^/]+\/[^/]+)\.css$/.test(
         file,
       )
     )
@@ -64,10 +66,61 @@ const spaFallback = () => ({
   },
 });
 
+/**
+ * The documentation is a site of its own: docs/site (built by `npm run
+ * docs:build`) is served under /docs/ — index.html at /docs/, docs.html and
+ * about.html next to it. /docs/overview, where the docs used to be, redirects.
+ */
+const DOCS_PAGES = ["index.html", "docs.html", "about.html"];
+const docsFile = (name) =>
+  readFileSync(
+    fileURLToPath(new URL(`../../docs/site/${name}`, import.meta.url)),
+    "utf8",
+  );
+const OVERVIEW = `<!doctype html>
+<meta charset="utf-8">
+<title>Pavlus — documentation</title>
+<meta http-equiv="refresh" content="0; url=${base}docs/">
+<link rel="canonical" href="${base}docs/">
+<p><a href="${base}docs/">The documentation moved to ${base}docs/.</a></p>
+`;
+const docsSite = () => ({
+  name: "ui-kit:docs-site",
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      const path = (req.url ?? "").split("?")[0];
+      const rel = path.startsWith(base) ? path.slice(base.length) : path.slice(1);
+      let html;
+      if (rel === "docs" || rel === "docs/" || rel === "docs/index.html")
+        html = docsFile("index.html");
+      else if (rel === "docs/docs.html") html = docsFile("docs.html");
+      else if (rel === "docs/about.html") html = docsFile("about.html");
+      else if (rel === "docs/overview" || rel === "docs/overview/")
+        html = OVERVIEW;
+      if (html === undefined) return next();
+      res.setHeader("content-type", "text/html; charset=utf-8");
+      res.end(html);
+    });
+  },
+  generateBundle() {
+    for (const name of DOCS_PAGES)
+      this.emitFile({
+        type: "asset",
+        fileName: `docs/${name}`,
+        source: docsFile(name),
+      });
+    this.emitFile({
+      type: "asset",
+      fileName: "docs/overview/index.html",
+      source: OVERVIEW,
+    });
+  },
+});
+
 export default {
   base,
   // Compiles *.pavlus templates into pure render/diff functions.
-  plugins: [scaleSizes(), pavlus(), spaFallback()],
+  plugins: [scaleSizes(), pavlus(), spaFallback(), docsSite()],
   server: {
     // the Visual Builder demo of the coffee shop asks /crm-api for the generated
     // server (coffee-shop-app, port 3020) when its simulated backend is switched off

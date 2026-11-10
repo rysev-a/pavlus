@@ -1,10 +1,10 @@
 # cluster
 
-`runCluster(main, opts)` in `@pavlus/backend` runs the app in N processes on
+`runCluster(main, opts)` in `@pavlus/server` runs the app in N processes on
 one port, on `node:cluster` — no process manager needed:
 
 ```ts
-import { runCluster } from "@pavlus/backend";
+import { runCluster } from "@pavlus/server";
 
 runCluster(() => startServer(), { workers: "max" }); // node backend/server.ts
 ```

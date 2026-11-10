@@ -45,14 +45,14 @@ import type {
   Plugin,
   PluginContext,
   Routing,
-} from "@pavlus/frontend";
-import { routeName, setComponentTrace } from "@pavlus/frontend";
+} from "@pavlus/client";
+import { routeName, setComponentTrace } from "@pavlus/client";
 import type {
   HistoryEntry,
   StoreChange,
   StorePlugin,
   UpdateEffect,
-} from "@pavlus/frontend/plugins/store";
+} from "@pavlus/client/plugins/store";
 
 /** Everything the agent needs from its environment (fake-able in tests). */
 export interface DebugHost {

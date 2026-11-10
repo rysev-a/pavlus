@@ -1,0 +1,47 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Payments
+    div.ui-data-table
+      div.ui-data-toolbar
+        div.ui-data-search
+          span.k-icon.k-icon-search(style="position: absolute; left: 12px; color: var(--muted-foreground)")
+          input.ui-input(type="search" placeholder="Filter names or emails..." value=query @input=search)
+      div.ui-data-scroll
+        table
+          thead
+            tr
+              th.ui-resource-check
+                input.ui-data-check(type="checkbox" aria-label="Select all rows on this page" checked={allSelected} @change=toggleAll)
+              th
+                button.ui-resource-sort(type="button" @click=sort("name")) Name
+                  span.k-icon.k-icon-chevrons-up-down(class:ui-sort-idle={nameIdle})
+              th
+                button.ui-resource-sort(type="button" @click=sort("status")) Status
+                  span.k-icon.k-icon-chevrons-up-down(class:ui-sort-idle={statusIdle})
+              th(style="text-align: right")
+                button.ui-resource-sort(type="button" @click=sort("amount")) Amount
+                  span.k-icon.k-icon-chevrons-up-down(class:ui-sort-idle={amountIdle})
+          tbody
+            if empty
+              tr
+                td.ui-resource-empty(colspan="4") No results.
+            for row in visible key row.id
+              tr(data-selected=row.selectedAttr)
+                td.ui-resource-check
+                  input.ui-data-check(type="checkbox" aria-label="Select row" checked={row.checked} @change=toggleRow(row.id))
+                td
+                  div.ui-person
+                    span.ui-person-avatar(style="--hue: {row.hue}") {row.initials}
+                    span.ui-person-text
+                      span.ui-person-name {row.name}
+                      span.ui-person-sub {row.email}
+                td
+                  span.ui-pill(class:ui-pill-success={row.isPaid} class:ui-pill-warning={row.isPending} class:ui-pill-destructive={row.isFailed}) {row.status}
+                td.ui-cell-number(style="text-align: right") {row.amountLabel}
+      div.ui-resource-footer
+        span {selectedCount} of {total} row(s) selected.
+        div.ui-data-footer-controls
+          span Page {page} of {pages}
+          div.ui-resource-pager
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={prevDisabled} @click=prev) Previous
+            button.ui-button.ui-button-outline.ui-button-sm(type="button" disabled={nextDisabled} @click=next) Next

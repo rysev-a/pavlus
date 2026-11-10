@@ -9,7 +9,7 @@ and can be restarted or cancelled by it.
 import {
   createTimePlugin,
   timeEffector as time,
-} from "@pavlus/frontend/plugins/time";
+} from "@pavlus/client/plugins/time";
 
 createApp({ app, plugins: [store, createTimePlugin()] });
 ```

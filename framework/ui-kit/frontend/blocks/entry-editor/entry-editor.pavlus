@@ -1,9 +1,0 @@
-import Editor from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Write an entry
-    p.k-demo__note Press Publish with an empty form to see the checks. Tags are cleaned up as you type.
-    div.k-preview.k-preview--block
-      +Editor#editor(draft=draft errors=errors privacies=privacies editing=false counter=counter)
-      p.k-jedit-demo__out {said}

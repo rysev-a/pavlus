@@ -1,0 +1,37 @@
+// The shell: the bar (the way back, the name of the project, its two editors, the
+// state of the saves, the theme) and the page the route selects. The theme panel is
+// the ui-kit's own; its events reach the shell as `themepanel.<message>`.
+// The bar reads `bar.*`: fields worked out in app.ts (`barOf`), never compared here.
+import ThemePanel from "../../../framework/ui-kit/src/components/theme-panel/theme-panel.pavlus"
+
+div.vd.ui-shell(class:k-with-panel={panelOpen})
+  header.vd-bar
+    a.vd-brand(href="/" @click.prevent=navigate("/")) Visual Design
+    if projectId
+      span.vd-sep /
+      input.ui-input.vd-name(type="text" value=projectName aria-label="Project name" maxlength="120" @change=renameProject)
+      nav.vd-tabs(aria-label="Editors")
+        a.vd-tab(href=bar.flowHref class:vd-tab--on={bar.onFlow} aria-current=bar.flowCurrent @click.prevent=navigate(bar.flowHref)) Diagram
+        a.vd-tab(href=bar.interfaceHref class:vd-tab--on={bar.onInterface} aria-current=bar.interfaceCurrent @click.prevent=navigate(bar.interfaceHref)) Interface
+      span.vd-save(role="status" class:vd-save--busy={bar.saveBusy} class:vd-save--error={bar.saveError}) {saveText}
+    else
+      span.vd-tag Programming with diagrams and pages
+    div.vd-actions
+      if projectId
+        button.ui-button.ui-button-ghost.ui-button-sm.vd-follow(type="button" aria-pressed=bar.followPressed class:k-header-on={bar.follows} title="The app being designed wears the editor's theme and changes with it" @click=toggleFollow)
+          | Follow editor
+        button.ui-button.ui-button-ghost.ui-button-sm.vd-apptheme(type="button" aria-label="Color theme of the app" aria-pressed=bar.appPanelPressed class:k-header-on={bar.appPanelOn} @click=openPanel("app"))
+          span.k-icon.k-icon-palette
+          | App theme
+      button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Color theme of the editor" aria-pressed=bar.editorPanelPressed class:k-header-on={bar.editorPanelOn} @click=openPanel("editor"))
+        span.k-icon.k-icon-palette
+      button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Toggle light and dark" @click=toggleMode)
+        if bar.isDark
+          span.k-icon.k-icon-sun
+        else
+          span.k-icon.k-icon-moon
+  main.ui-shell-content.k-wide.vd-main
+    if notice
+      p.vd-notice(role="alert") {notice}
+    +outlet
+  +ThemePanel#themepanel(look=bar.panelLook options=bar.panel open=panelOpen hiddenAttr=bar.panelHidden exportNote=exportNote)

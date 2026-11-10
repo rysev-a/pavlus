@@ -1,0 +1,30 @@
+// Columns of cards, to embed. State = the props: `columns` (boardOf: { id,
+// title, count, cards: [{ id, title, sub, who, due, tag, tone, canLeft,
+// canRight, leftDisabled, rightDisabled }] }). Events, with the name of the
+// embed in front: `move` (card id, "left" or "right") and `open` (card id).
+div.k-kanban
+  for col in columns key col.id
+    section.k-kanban__col
+      header.k-kanban__head
+        h3.k-kanban__title {col.title}
+        span.ui-badge.ui-badge-secondary {col.count}
+      div.k-kanban__cards
+        if col.count
+          for card in col.cards key card.id
+            article.k-kanban__card(@click=open(card.id))
+              div.k-kanban__top
+                span(class="ui-pill ui-pill-{card.tone}") {card.tag}
+                if card.due
+                  small.k-kanban__due {card.due}
+              strong.k-kanban__name {card.title}
+              p.k-kanban__sub {card.sub}
+              footer.k-kanban__foot
+                span.ui-avatar.ui-avatar-sm
+                  span.ui-avatar-fallback {card.who}
+                  div.k-kanban__moves
+                    button.ui-button.ui-button-outline.ui-button-icon-xs(type="button" aria-label="Move left" disabled=card.leftDisabled @click.stop=move(card.id, "left"))
+                      span.k-icon.k-ai-arrow-left
+                    button.ui-button.ui-button-outline.ui-button-icon-xs(type="button" aria-label="Move right" disabled=card.rightDisabled @click.stop=move(card.id, "right"))
+                      span.k-icon.k-ai-arrow-right
+        else
+          p.k-kanban__empty Nothing here

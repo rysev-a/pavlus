@@ -87,8 +87,9 @@ const app = createApp({
   60 ms). `flushMs: 0` streams each change as it happens — the store
   timeline updates in realtime.
 
-`applications/admin/frontend/main.ts` is wired like this and is the reference
-example.
+Wire it in the app's `frontend/main.ts`, where the plugins are assembled:
+wrap the plugins the panel watches with `debug.watch(plugins)` and add the
+panel's own plugin to the list.
 
 ## What the panel shows
 

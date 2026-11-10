@@ -1,7 +1,0 @@
-div.app-failed
-  div.ui-card.app-failed__card
-    div.ui-card-header
-      h1.ui-card-title Page not found
-      p.ui-card-description There is no such screen in the CRM.
-    div.ui-card-footer
-      a.ui-button.ui-button-default.ui-button-sm(href="/orders" @click.prevent=navigate("/orders")) Back to the orders

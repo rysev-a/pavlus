@@ -7,7 +7,7 @@ an effect.
 import {
   createLoggerPlugin,
   loggerEffector as log,
-} from "@pavlus/frontend/plugins/logger";
+} from "@pavlus/client/plugins/logger";
 
 createApp({ app, plugins: [store, createLoggerPlugin()] });
 ```
@@ -35,7 +35,7 @@ present. The plugin sends no messages back.
 each message it handles, with the payload and the effects it returned:
 
 ```ts
-import { withLogging } from "@pavlus/frontend";
+import { withLogging } from "@pavlus/client";
 
 createApp({
   app: withLogging(dashboard, "dashboard"),

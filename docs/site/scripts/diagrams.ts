@@ -8,10 +8,10 @@
  *         between plugins (core, dom, http, store) and the browser.
  */
 
-import { nodeDeps } from "../../../framework/frontend/src/compiler/analyze.ts";
-import { compileTemplate } from "../../../framework/frontend/src/compiler/mod.ts";
-import type { Node } from "../../../framework/frontend/src/template/ast.ts";
-import { parse } from "../../../framework/frontend/src/template/parser.ts";
+import { nodeDeps } from "../../../framework/client/src/compiler/analyze.ts";
+import { compileTemplate } from "../../../framework/client/src/compiler/mod.ts";
+import type { Node } from "../../../framework/client/src/template/ast.ts";
+import { parse } from "../../../framework/client/src/template/parser.ts";
 import { exprSrc } from "./ast-view.ts";
 import { pavlusTokens, type Tok, tok, tsTokens } from "./highlight.ts";
 import { type Compiled } from "./run.ts";

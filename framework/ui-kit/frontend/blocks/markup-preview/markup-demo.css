@@ -1,3 +1,0 @@
-.k-mkp-demo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(16px * var(--k-block, 1)); }
-.k-mkp-demo__out { min-width: 0; padding: calc(12px * var(--k-block, 1)); border: 1px dashed var(--border); border-radius: var(--radius-md); }
-@media (max-width: 720px) { .k-mkp-demo { grid-template-columns: minmax(0, 1fr); } }

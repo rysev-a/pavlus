@@ -1,8 +1,9 @@
 # Child views and component composition (design)
 
 Status: **implemented** (decisions in section 8). Working example:
-[`applications/admin/frontend`](../../applications/admin/frontend). Differences from the first
-draft are marked "as built".
+[`applications/diagram-programming/app`](../../applications/diagram-programming/app)
+(the shell routes the projects page and the two editors as keyed children).
+Differences from the first draft are marked "as built".
 
 ## 1. The scenario
 

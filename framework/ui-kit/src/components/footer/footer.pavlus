@@ -1,0 +1,8 @@
+// The bottom bar. State = the props passed by the shell (`current` and
+// `sourceUrl`, the address of the open page's template).
+footer.ui-shell-footer
+  p.k-footer
+    span The look is the admin-app's (shadcn new-york), the markup is pavlus.
+    a(href="https://github.com/rysev-a/pavlus/tree/main/admin-app" target="_blank" rel="noreferrer") admin-app
+    if current
+      a(href=sourceUrl target="_blank" rel="noreferrer") Source of this page

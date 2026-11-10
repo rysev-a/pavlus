@@ -1,8 +1,0 @@
-import Logs from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Live logs
-    div.k-preview.k-preview--block
-      +Logs#logs(view=view query=logs.query paused=logs.paused following=logs.following)
-    p.k-demo__note A timer of the time plugin adds a line every 1.2 seconds. The lines come from a seeded list, so the same page always tells the same story.

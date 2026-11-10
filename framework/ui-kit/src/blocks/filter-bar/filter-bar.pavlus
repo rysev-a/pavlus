@@ -1,0 +1,14 @@
+import Bar from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Search, chips, a range, a switch and a sort
+    p.k-demo__note Everything the bar sends is plain data; the page keeps the filters and derives the list.
+    div.k-preview.k-preview--block
+      +Bar#bar(...bar)
+      ul.k-fbar-demo__list
+        if rows.length
+          for row in rows key row.id
+            li {row.text}
+        else
+          li.k-muted Nothing matches.

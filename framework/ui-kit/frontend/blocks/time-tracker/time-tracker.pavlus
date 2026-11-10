@@ -1,8 +1,0 @@
-import Tracker from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Start, stop and log
-    p.k-demo__note The tick comes from the time plugin (one message a second). Stopping adds an entry to today's log. Turn on the demo speed to see minutes pass.
-    div.k-preview.k-preview--block
-      +Tracker#tt(...track)

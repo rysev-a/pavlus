@@ -8,7 +8,7 @@ location as messages and changes it with effects; it never reads
 import {
   createRouterPlugin,
   routerEffector as router,
-} from "@pavlus/frontend/plugins/router";
+} from "@pavlus/client/plugins/router";
 
 createApp({ app, plugins: [store, createRouterPlugin()] });
 ```

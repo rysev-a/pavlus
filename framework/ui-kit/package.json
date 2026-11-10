@@ -13,7 +13,7 @@
     "gen:plugins": "node scripts/gen-plugin-library.ts"
   },
   "dependencies": {
-    "@pavlus/frontend": "*"
+    "@pavlus/client": "*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

@@ -1,8 +1,0 @@
-import Faq from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Questions and answers
-    div.k-preview.k-preview--block
-      div.k-faq-wrap
-        +Faq#faq(items=items group="demo-faq")

@@ -1,0 +1,57 @@
+// The shell: the top menu, the sidebar of the section, the page the route
+// selects, and the footer.
+import Sidebar from "./components/sidebar/sidebar.pavlus"
+import Header from "./components/header/header.pavlus"
+import Footer from "./components/footer/footer.pavlus"
+import ThemePanel from "./components/theme-panel/theme-panel.pavlus"
+
+div.app.ui-shell(data-sidebar={sidebarAttr} class:k-with-panel={panelOpen})
+  aside.ui-shell-aside
+    +Sidebar#sidebar(nav=navItems rootUrl=rootUrl)
+  div.ui-shell-scrim(@click=closeSidebar)
+  div.ui-shell-body
+    +Header#header(menu=menuLinks hasNav=hasNav rootUrl=rootUrl panelOpen=panelOpen menuOpen=menuOpen menuAria=menuAria panelAria=panelAria isDark=modeDark)
+    main.ui-shell-content(class:k_wide={contentWide})
+      if current
+        if isTemplates
+          // a template is a whole site: only a thin bar says which one
+          div.k-template-bar
+            a(href={templatesUrl} @click.prevent=navigate("/templates")) Templates
+            span.k-template-bar__sep /
+            strong {current.title}
+            span.k-muted {current.description}
+        else
+          // the title of a component or block comes from its entry, the pages hold only demos
+          div.ui-page-header
+            div
+              h1.ui-page-title {current.title}
+              p.ui-page-description {current.description}
+      if current
+        div.k-viewtabs
+          div.ui-tabs-list(role="tablist")
+            button.ui-tabs-trigger(type="button" role="tab" aria-selected={tabPreviewSel} @click=setTab("preview")) Preview
+            button.ui-tabs-trigger(type="button" role="tab" aria-selected={tabSourceSel} @click=setTab("source")) Source
+      // the page stays mounted under the Source tab, so its state is kept
+      div.k-pane(class:k-pane--hidden={sourceShown})
+        +outlet
+      if sourceShown
+        section.k-source
+          div.k-source__files
+            for f in srcFiles key f.name
+              button.ui-button.ui-button-sm(type="button" class:ui-button-secondary={f.active} class:ui-button-outline={f.inactive} @click=openFile(f.name)) {f.name}
+            a.ui-button.ui-button-ghost.ui-button-sm(href=srcUrl target="_blank" rel="noreferrer") Open on GitHub
+          if srcLoading
+            p.k-hint Loading the source...
+          if srcFailed
+            p.ui-field-error The source of this file could not be loaded.
+          pre.k-source__code
+            for line in srcLines key line.n
+              div.k-source__line
+                span.k-source__n {line.n}
+                span.k-source__text
+                  for tok in line.tokens key tok.i
+                    span(class="k-tok k-tok-{tok.c}") {tok.t}
+          if srcCut
+            p.k-hint Only the first lines are shown: the whole file is on GitHub.
+    +Footer#footer(current=current sourceUrl=currentSourceUrl)
+  +ThemePanel#themepanel(look=look options=panel open=panelOpen hiddenAttr=panelHidden exportNote=exportNote)

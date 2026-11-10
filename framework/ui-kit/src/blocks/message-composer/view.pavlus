@@ -1,0 +1,40 @@
+// A message form with merge fields and a live preview, to embed. State = the
+// props from composerView() in compose.ts: `to`, `subject`, `body`, `errors`
+// ({ subject, body }), `fields` (the chips, `{first_name}`), `templates`
+// ([{ id, label, active }]), `previewSubject`, `previewBody`, `sent` (a
+// confirmation, or empty). Events, with the name of the embed in front:
+// `template` (id), `setsubject`, `setbody`, `insert` (a chip), `send`.
+div.k-composer
+  div.ui-card.k-composer__form
+    div.k-composer__templates(role="group" aria-label="Template")
+      for t in templates key t.id
+        button(type="button" class="k-composer__tpl" class:is-active={t.active} aria-pressed=t.pressed @click=template(t.id)) {t.label}
+    div.ui-field
+      label.ui-label To
+      p.k-composer__to {to}
+    div.ui-field(data-invalid=subjectInvalid)
+      label.ui-label(for="composer-subject") Subject
+      input.ui-input#composer-subject(type="text" value=subject @input=setsubject)
+      if errors.subject
+        p.ui-field-error {errors.subject}
+    div.ui-field(data-invalid=bodyInvalid)
+      label.ui-label(for="composer-body") Message
+      textarea.ui-textarea-control#composer-body(rows="8" value=body @input=setbody)
+      if errors.body
+        p.ui-field-error {errors.body}
+    div.k-composer__chips
+      span.k-composer__hint Insert a field:
+      for chip in fields key chip
+        button.k-composer__chip(type="button" @click=insert(chip)) {chip}
+    div.k-composer__send
+      button.ui-button.ui-button-default(type="button" @click=send)
+        span.k-icon.k-icon-mail
+        | Send message
+      if sent
+        span.ui-pill.ui-pill-success.k-composer__sent
+          span.k-icon.k-icon-check
+          | {sent}
+  div.ui-card.k-composer__preview
+    p.k-composer__previewlabel Preview as the newcomer sees it
+    h4.k-composer__subject {previewSubject}
+    p.k-composer__text {previewBody}

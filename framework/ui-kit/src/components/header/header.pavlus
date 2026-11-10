@@ -1,0 +1,44 @@
+// The top bar: the sidebar switch, the sections (Components, Blocks, Templates,
+// Theming), a link to the code and the light/dark switch. State = the props
+// passed by the shell: the menu's links (the open one marked), `menuAria`,
+// `panelAria`, `isDark` and `rootUrl`. Its clicks reach the shell as
+// `header.toggleSidebar`, `header.toggleTheme` and `header.navigate`.
+header.ui-shell-header
+  // on a narrow screen: the burger (which opens the sections), the logo and the two theme buttons
+  button.ui-button.ui-button-ghost.ui-button-icon.k-burger(type="button" aria-label="Menu" aria-expanded=menuAria @click=toggleMenu)
+    if menuOpen
+      span.k-icon.k-icon-x
+    else
+      span.k-icon.k-icon-menu
+  a.k-header-logo(href=rootUrl @click.prevent=navigate("/"))
+    span.ui-brand-mark P
+    span.k-header-logo__name pavlus
+  if hasNav
+    button.ui-button.ui-button-ghost.ui-button-icon.k-sidebar-toggle(type="button" aria-label="Toggle the sidebar" @click=toggleSidebar)
+      span.k-icon.k-icon-menu
+  nav.k-topmenu(aria-label="Sections")
+    for item in menu key item.path
+      if item.external
+        a.k-topmenu__link(href=item.href) {item.title}
+      else
+        a.k-topmenu__link(href=item.href class:is-active={item.active} @click.prevent=navigate(item.path)) {item.title}
+  div.ui-shell-header-start
+  div.ui-shell-header-actions
+    a.ui-button.ui-button-ghost.ui-button-sm.k-github(href="https://github.com/rysev-a/pavlus/tree/main/ui-kit" target="_blank" rel="noreferrer") GitHub
+    button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Theming panel" aria-pressed=panelAria class:k-header-on={panelOpen} @click=togglePanel)
+      span.k-icon.k-icon-palette
+    button.ui-button.ui-button-ghost.ui-button-icon(type="button" aria-label="Toggle light and dark" @click=toggleTheme)
+      if isDark
+        span.k-icon.k-icon-sun
+      else
+        span.k-icon.k-icon-moon
+  if menuOpen
+    nav.k-mobilemenu(aria-label="Sections")
+      for item in menu key item.path
+        if item.external
+          a.k-mobilemenu__link(href=item.href) {item.title}
+        else
+          a.k-mobilemenu__link(href=item.href class:is-active={item.active} @click.prevent=navigate(item.path)) {item.title}
+      if hasNav
+        button.k-mobilemenu__link.k-mobilemenu__pages(type="button" @click=openPages) Pages of this section
+      a.k-mobilemenu__link(href="https://github.com/rysev-a/pavlus/tree/main/ui-kit" target="_blank" rel="noreferrer") GitHub

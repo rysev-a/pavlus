@@ -1,0 +1,9 @@
+// A note in a text, to embed. State = the props (see `calloutOf` in
+// callout.ts): `title`, `text`, `alert` (the tone's `ui-alert-*` class) and
+// `icon` (the tone's icon class).
+div.ui-alert.k-callout(class={alert} role="note")
+  span.ui-alert-icon
+    span(class="k-icon {icon}")
+  div.ui-alert-body
+    p.ui-alert-title {title}
+    div.ui-alert-description {text}

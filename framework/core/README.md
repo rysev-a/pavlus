@@ -14,7 +14,7 @@ in a browser, in Node and in a worker.
 - `store.ts` — the pure store half: `Path`, `StoreEffect`, `StoreChange`,
   `getIn`, `applyChange`.
 
-The frontend package (`@pavlus/frontend`) adds `mount` on top of `createApp`
-and the stateful store plugin; the backend package (`@pavlus/backend`) adds
+The frontend package (`@pavlus/client`) adds `mount` on top of `createApp`
+and the stateful store plugin; the backend package (`@pavlus/server`) adds
 the per-request runtime and its server plugins. Both depend on this one, and
 application code that only needs the contract can depend on it directly.

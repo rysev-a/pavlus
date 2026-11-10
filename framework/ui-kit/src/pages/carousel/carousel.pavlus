@@ -1,0 +1,14 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Slides
+    div.k-preview.k-preview--block
+      div.ui-carousel.k-narrow
+        div.ui-carousel-slide
+          strong {slide.title}
+          p.k-muted {slide.text}
+        div.ui-carousel-controls
+          button.ui-carousel-control(type="button" aria-label="Previous slide" disabled={atStart} @click=prev)
+            span.k-icon.k-icon-chevron-left
+          span.ui-carousel-position {position}
+          button.ui-carousel-control(type="button" aria-label="Next slide" disabled={atEnd} @click=next)
+            span.k-icon.k-icon-chevron-right

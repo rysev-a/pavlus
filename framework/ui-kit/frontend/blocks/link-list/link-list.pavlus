@@ -1,8 +1,0 @@
-import LinkList from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Links
-    div.k-preview.k-preview--block
-      div.k-narrow
-        +LinkList#list(links=links)

@@ -1,0 +1,23 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Single date
+    div.k-preview.k-preview--center
+      div.ui-calendar
+        div.ui-calendar-header
+          button.ui-calendar-nav(type="button" aria-label="Previous month" @click=prev)
+            span.k-icon.k-icon-chevron-left
+          h3.ui-calendar-title {title}
+          button.ui-calendar-nav(type="button" aria-label="Next month" @click=next)
+            span.k-icon.k-icon-chevron-right
+        div.ui-calendar-grid
+          for name in weekdays key name
+            span.ui-calendar-weekday {name}
+          for cell in cells key cell.key
+            if cell.day
+              button.ui-calendar-day(type="button" class:ui-calendar-day-selected={cell.sel} aria-pressed=cell.pressed @click=pick(cell.iso)) {cell.day}
+            else
+              span.ui-calendar-empty
+    p.k-hint
+      | Selected:
+      |
+      span.k-state {selectedLabel}

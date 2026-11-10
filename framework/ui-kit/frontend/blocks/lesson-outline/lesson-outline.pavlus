@@ -1,8 +1,0 @@
-import Outline from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Modules and lessons
-    p.k-demo__note Click a module to fold it, a lesson to mark one more of its exercises as solved. The lesson to take next is marked, and one lesson here is locked.
-    div.k-preview.k-preview--block
-      +Outline#outline(modules=modules)

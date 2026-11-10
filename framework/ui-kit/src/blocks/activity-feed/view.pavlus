@@ -1,0 +1,19 @@
+// A timeline of activities, to embed. State = the props: `items` (feedItems():
+// { id, kind, title, text, who, when, icon, tone }, newest first) and `empty`
+// (the text when there is nothing). No events.
+ol.k-feed
+  if items.length
+    for item in items key item.id
+      li(class="k-feed__item k-adm-t-{item.tone}")
+        span.k-feed__dot
+          span(class="k-icon {item.icon}")
+        div.k-feed__body
+          div.k-feed__head
+            strong.k-feed__title {item.title}
+            small.k-feed__when {item.when}
+          if item.text
+            p.k-feed__text {item.text}
+          if item.who
+            small.k-feed__who {item.who}
+  else
+    li.k-feed__empty {empty}

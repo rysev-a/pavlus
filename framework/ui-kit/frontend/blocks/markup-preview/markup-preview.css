@@ -1,8 +1,0 @@
-.k-mkp { display: grid; gap: calc(8px * var(--k-block, 1)); min-width: 0; line-height: 1.55; overflow-wrap: anywhere; }
-.k-mkp__empty { margin: 0; font-size: 14px; color: var(--muted-foreground); }
-.k-mkp__block[data-kind="h"] { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
-.k-mkp__block[data-kind="li"] { position: relative; padding-left: 20px; }
-.k-mkp__block[data-kind="li"]::before { content: ""; position: absolute; left: 6px; top: .7em; width: 6px; height: 6px; border-radius: 999px; background: var(--primary); }
-.k-mkp__block[data-kind="quote"] { padding: 4px 0 4px 14px; border-left: 3px solid var(--border); color: var(--muted-foreground); font-style: italic; }
-.k-mkp__block[data-kind="code"] { padding: 10px 12px; border-radius: var(--radius-md); background: var(--muted); font-family: var(--font-mono); font-size: 13px; white-space: pre-wrap; }
-.k-mkp__code { padding: 1px 5px; border-radius: var(--radius-sm); background: var(--muted); font-family: var(--font-mono); font-size: .9em; }

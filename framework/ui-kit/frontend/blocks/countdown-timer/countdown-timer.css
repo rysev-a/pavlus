@@ -1,9 +1,0 @@
-.k-timer { display: grid; gap: calc(8px * var(--k-block, 1)); width: 100%; }
-.k-timer__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.k-timer__label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted-foreground); }
-.k-timer__clock { font-family: var(--font-mono); font-size: 22px; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
-.k-timer[data-tone="warn"] .k-timer__clock { color: var(--warning); }
-.k-timer[data-tone="danger"] .k-timer__clock { color: var(--destructive); }
-.k-timer.is-finished .k-timer__clock { animation: k-timer-blink 1s steps(2, start) infinite; }
-@keyframes k-timer-blink { to { visibility: hidden; } }
-.k-icon.k-icon-clock { --k-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 6v6l4 2'/%3E%3C/svg%3E"); }

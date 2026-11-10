@@ -1,7 +1,0 @@
-// A tag cloud, to embed. State = the props: `tags`, a list of { tag, count,
-// size (1..5), active } from `cloud()` in tags.ts. A click sends
-// `<name>.pick` with the tag.
-div.k-tcloud
-  for item in tags key item.tag
-    button.k-tcloud__tag(type="button" data-size={item.size} data-active={item.active ? "true" : null} title="{item.count} entries" @click=pick(item.tag))
-      | #{item.tag}

@@ -14,7 +14,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { compileToView } from "../../../framework/frontend/src/compiler/mod.ts";
+import { compileToView } from "../../../framework/client/src/compiler/mod.ts";
 import {
   afterRemoveState,
   bootState,
@@ -89,8 +89,9 @@ const usersSvg = usersScenarioSvg(
 
 /* ---- source excerpts (always in sync with the code) */
 
-const rel = (p: string) => join(root, "framework", "frontend", "src", p);
-const appRel = (p: string) => join(root, "applications", "admin", "app", p);
+const rel = (p: string) => join(root, "framework", "client", "src", p);
+const appRel = (p: string) =>
+  join(root, "applications", "diagram-programming", "app", p);
 const sliceIn =
   (base: (p: string) => string) =>
   (p: string, from: number, to: number): string =>
@@ -115,13 +116,13 @@ const excerpts = {
   timeType: { code: slice("plugins/time/mod.ts", 3, 24), from: 3 },
   wsType: { code: slice("plugins/ws/mod.ts", 3, 16), from: 3 },
   wsFrames: { code: slice("plugins/ws/mod.ts", 59, 70), from: 59 },
-  outletShell: { code: sliceApp("app.pavlus", 12, 16), from: 12 },
+  outletShell: { code: sliceApp("app.pavlus", 33, 36), from: 33 },
   embedValue: {
     code: slice("compiler/__fixtures__/embed-dynamic.pavlus", 1, 5),
     from: 1,
   },
-  routingDecl: { code: sliceApp("app.ts", 38, 55), from: 38 },
-  childPaint: { code: sliceApp("user-list/user-list.ts", 84, 93), from: 84 },
+  routingDecl: { code: sliceApp("app.ts", 240, 248), from: 240 },
+  childPaint: { code: sliceApp("app.ts", 234, 238), from: 234 },
   pluginCtx: { code: slice("core/types.ts", 24, 35), from: 24 },
   pluginType: { code: slice("core/types.ts", 47, 54), from: 47 },
 };

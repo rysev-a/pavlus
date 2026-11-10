@@ -1,16 +1,16 @@
 # Authoring guide: blocks and templates
 
 For anyone (or any agent) adding to the kit. Read one existing example first:
-`frontend/blocks/auth/` (a block with state), `frontend/blocks/hero/` (a part
-to embed), `frontend/templates/links-hub/` (a template).
+`src/blocks/auth/` (a block with state), `src/blocks/callout/` (a part to
+embed), `src/templates/flow-studio/` (a template).
 
 ## What goes where
 
 | Folder | What | Page |
 | --- | --- | --- |
-| `frontend/pages/<slug>/` | one shadcn component (listed in `registry.ts`) | `/<slug>` |
-| `frontend/blocks/<slug>/` | a block: a form, a player, or a part a template is built from | `/blocks/<slug>` |
-| `frontend/templates/<slug>/` | a whole site or app, built **from blocks** | `/templates/<slug>` |
+| `src/pages/<slug>/` | one shadcn component (listed in `registry.ts`) | `/<slug>` |
+| `src/blocks/<slug>/` | a block: a form, a player, or a part a template is built from | `/blocks/<slug>` |
+| `src/templates/<slug>/` | a whole site or app, built **from blocks** | `/templates/<slug>` |
 
 A block or template folder holds:
 
@@ -51,14 +51,17 @@ most, and the traps:
 
 - Indentation-based. `tag.class#id(attr=expr other="text {expr}" flag) text`.
   A line of text is `| text`. `{expr}` interpolates; `\{` is a literal brace.
-- Expressions are a small pure subset of JS. Index access (`a[0]`) and arrow
-  functions with an expression body (`xs.filter(x => x.on)`) work; object
-  literals and template literals do not. Compute what you need in the handler
-  and keep it in the state (a `title`, a `total`, a list already filtered).
+- An expression is a **literal or a path**, nothing else: `item.title`,
+  `rows[0].name`, `"text"`, `3`, `true`. No operators, calls, ternaries or
+  arrows: each is a compile error that points to
+  `framework/docs/philosophy.md`. Compute what you need in the handler and keep
+  it in the state (a `title`, a `total`, a list already filtered, a flag
+  `isEmpty`, a ready `ariaPressed` string). Two holes with nothing between them
+  (`{a} {b}`) are a warning: compose one field in code.
 - `for item in list key item.id` and `if` / `else if` / `else`. A boolean attribute
   is a flag (`disabled`) or `disabled={cond}`; `null` removes an attribute, a
-  boolean `true` renders an empty value, so for `[data-x="true"]` selectors use
-  `data-x={cond ? "true" : null}`.
+  boolean `true` renders an empty value, so for `[data-x="true"]` selectors
+  compute the string (or `null`) in code and write `data-x=state.dataX`.
 - Events are data: `@click=add(item.id)` is the message `add` with the payload.
   With several arguments the payload is an array. The DOM plugin adds
   `msg.event` (`value`, `checked`, `key`): read `msg.event?.value` for `@input`,
@@ -69,7 +72,7 @@ most, and the traps:
   including what an `if`/`for` adds inside), but the kit's own icons stay
   `span.k-icon.k-icon-<name>` (CSS masks, see `kit.css`); drawings are
   built from boxes, gradients, `clip-path` and emoji.
-- Embedding: `import X from "../hero/view.pavlus"` at the top, then
+- Embedding: `import X from "../callout/view.pavlus"` at the top, then
   `+X#name(title="Hi" list=items ...stateObject)` (static) or `+{expr}#name(...)`
   (the view is a value). Props are attributes: strings in quotes, state paths bare.
   The embedded template's events are sent as `name.<message>` to the parent.
@@ -98,14 +101,14 @@ most, and the traps:
 ```sh
 npm run typecheck --workspace ui-kit
 npm test --workspace ui-kit        # visits every page, so yours must render
-npx prettier --write "ui-kit/**/*.ts"
+npm run format -- framework/ui-kit/src/<your files>   # Biome, from the repo root
 ```
 
 Then open it in a browser (`npm run dev --workspace ui-kit`) and click through
 your page: jsdom does not draw anything. Check the light and the dark mode, and a
 narrow window (390px). Put what you learned about the traps above in your report.
 
-Tests for logic go in `frontend/tests/<slug>.test.ts` (pure functions: import
+Tests for logic go in `src/tests/<slug>.test.ts` (pure functions: import
 them from your `<slug>.ts`).
 
 ## Pitfalls found while building the first 20 templates
@@ -173,7 +176,7 @@ Templates and state:
 
 Naming and merging (twelve workers built blocks at the same time and collided three times):
 
-- **Check the name first**: `ls frontend/blocks` before creating a block, and grep
+- **Check the name first**: `ls src/blocks` before creating a block, and grep
   `\.k-yourprefix` in all CSS before choosing a prefix. A block slug is also a folder,
   so two blocks with one slug merge as a conflict; `agenda-list`, `pick-list`,
   `conversation-list` and `filter-bar` each existed twice and had to be renamed. A
@@ -226,7 +229,7 @@ CSS:
   the template's stack container) has `min-width: 0`; use
   `minmax(min(150px, 100%), 1fr)` for card grids.
 
-## Designs are variables (`frontend/design.css`)
+## Designs are variables (`src/design.css`)
 
 A design system (Ant Design, Material...) is a block of CSS variables selected
 by `<html data-style="...">`, not a pile of overrides. `design.css` asks the

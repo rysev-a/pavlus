@@ -1,7 +1,7 @@
 /**
  * Checks that every fragment link in the built site resolves: same-page
  * #anchors, cross-page page.html#anchor, page-to-page links and repo-relative
- * links (../../framework/...). Run after `npm run docs:build`:
+ * links (GitHub URLs of the repository). Run after `npm run docs:build`:
  * node docs/site/scripts/check-anchors.ts
  */
 import { existsSync, readFileSync } from "node:fs";
@@ -49,11 +49,11 @@ for (const [page, html] of htmls) {
     }
   }
 
-  // repo-relative links (../../framework/... from the site dir)
-  for (const [, rel] of [
-    ...html.matchAll(/href="(\.\.\/[A-Za-z0-9_./-]+)"/g),
-  ]) {
-    if (!existsSync(join(site, rel))) fail(`${page}: ${rel} does not exist`);
+  // links into the repository (GitHub URLs): the file or folder must exist
+  for (const [, rel] of html.matchAll(
+    /href="https:\/\/github\.com\/rysev-a\/pavlus\/(?:blob|tree)\/main\/([A-Za-z0-9_./-]+)"/g,
+  )) {
+    if (!existsSync(join(repo, rel))) fail(`${page}: ${rel} does not exist`);
   }
 }
 

@@ -9,7 +9,7 @@ The plugin is a class: an instance is the executor (mounted into
 `createApp`), and its **static methods build the effects**.
 
 ```ts
-import { DomPlugin } from "@pavlus/frontend/plugins/dom";
+import { DomPlugin } from "@pavlus/client/plugins/dom";
 
 createApp({ app, plugins: [store, new DomPlugin()], mount: "#app" });
 ```
@@ -137,7 +137,7 @@ new DomPlugin({ document }); // default: the global document
 ## In tests
 
 Use jsdom (`// @vitest-environment jsdom`). `mountView` from
-`@pavlus/frontend/testing` mounts a view without the core:
+`@pavlus/client/testing` mounts a view without the core:
 
 ```ts
 const h = mountView(view, { count: 0 });

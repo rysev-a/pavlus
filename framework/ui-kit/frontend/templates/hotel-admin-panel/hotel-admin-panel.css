@@ -1,6 +1,0 @@
-.hp__cols { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: calc(20px * var(--k-block, 1)); align-items: start; }
-.hp__cols--even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.hp .ui-card-content.hp__flush { padding: calc(12px * var(--k-block, 1)) 0 0; }
-.hp .hp__flush .k-slist { border: 0; border-top: 1px solid var(--border); border-radius: 0 0 var(--radius-xl) var(--radius-xl); box-shadow: none; }
-.hp__legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: 13px; }
-@media (max-width: 1000px) { .hp__cols, .hp__cols--even { grid-template-columns: minmax(0, 1fr); } }

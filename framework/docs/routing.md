@@ -1,6 +1,6 @@
 # Declarative routing
 
-Status: **implemented**. Working example: the shell of `applications/admin/frontend`
+Status: **implemented**. Working example: the shell of `applications/diagram-programming/app`
 (`app.ts`, one level). Nesting is covered by the framework's own tests
 (`src/component/routing.test.ts`, `src/plugins/dom/outlet.test.ts`). Where the
 built version differs from the first proposal it is marked "as built".
@@ -40,7 +40,9 @@ class Admin extends Component<AdminState> {
     "/": { component: roles, key: "roles", name: "roles" }, // /admin
     "/tasks": { component: tasks, key: "tasks" }, // /admin/tasks, which routes again
   };
-  "tabs.go"(msg: Message) { return [router.navigate((msg.payload as string) || "/")]; } // → /admin/tasks
+  "tabs.go"(msg: Message) {
+    return [router.navigate((msg.payload as string) || "/")];
+  } // → /admin/tasks
 }
 ```
 
@@ -49,9 +51,9 @@ class Admin extends Component<AdminState> {
 A `routing` entry has the shape of a `children` entry (`component` or `select`,
 `key`, `props`) plus:
 
-| Field | Meaning |
-|---|---|
-| `view` | instead of `component`, for a page that has a template but no logic |
+| Field  | Meaning                                                                                                                                                                   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `view` | instead of `component`, for a page that has a template but no logic                                                                                                       |
 | `name` | the instance name (message prefix). Default: the last static path segment (`"/admin/tasks"` → `tasks`, `"/users/:id"` → `users`), `index` for `"/"`, `fallback` for `"*"` |
 
 Everything that works for children works for routed children: messages
@@ -66,8 +68,9 @@ names the fix (`name`). Routing adds:
    { path: "/tasks", base: "/admin", params: {}, search: "", hash: "" }
    ```
 
-   `path` is what is left *below* the child's base, `base` the path above and
+   `path` is what is left _below_ the child's base, `base` the path above and
    including it, `params` the `:name` captures of every level so far.
+
 2. **Relative `router.navigate`.** A navigate leaving a routed child gets that
    child's base put in front (`"/tasks"` from `admin` becomes `/admin/tasks`;
    `"/"` means the page itself). `navigate(url, { absolute: true })` opts out.
@@ -75,7 +78,7 @@ names the fix (`name`). Routing adds:
    payload is a url, also as `header.navigate` from an embedded template or
    `about.navigate` from a view-only page, becomes `router.navigate(url)` by
    default, relative to the component that receives it.
-   *As built:* the innermost routed child adds the whole base once and marks
+   _As built:_ the innermost routed child adds the whole base once and marks
    the effect `absolute`, so levels above do not add theirs again.
    Plain `href`s are not rewritten: write `href="{base}{to}"`.
 3. **`enter` and `leave` messages**, sent by `ctx.setRoute` (section 4):
@@ -123,16 +126,16 @@ embed whose view, instance name and state come from the matched entry:
   markers is cleared and the new page rendered, like `+{expr}`.
 - **The same page**: only its own `diff` runs.
 
-*As built:* the compiled `render(state, idSuffix, messagePrefix, env)` and
+_As built:_ the compiled `render(state, idSuffix, messagePrefix, env)` and
 `diff(prev, next, idSuffix, messagePrefix, env)` take a fifth argument, `env`:
 the component that owns the template. That is how `+outlet` finds `routing`.
 
-| Who passes `env` | to |
-|---|---|
-| `viewOf(component)`, done by `createApp({ mount })` (and `mountView(component, ...)` in tests) | the root template |
-| a static `+Child#name` embed | `children[name]` or the routing entry named `name` |
-| `+{expr}#name` | the value itself, when it is a component |
-| `+outlet` | the matched entry's component |
+| Who passes `env`                                                                               | to                                                 |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `viewOf(component)`, done by `createApp({ mount })` (and `mountView(component, ...)` in tests) | the root template                                  |
+| a static `+Child#name` embed                                                                   | `children[name]` or the routing entry named `name` |
+| `+{expr}#name`                                                                                 | the value itself, when it is a component           |
+| `+outlet`                                                                                      | the matched entry's component                      |
 
 Mounting a bare view whose template has an `+outlet` fails with an error that
 says to mount the component. The DOM plugin itself only knows `View`:

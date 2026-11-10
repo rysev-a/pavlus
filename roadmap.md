@@ -33,10 +33,10 @@ application when the component is loaded and mounted.
 Facts, from the source:
 
 - A template is compiled by the Vite plugin into `{ render, diff }`
-  (`framework/frontend/src/vite/mod.ts`); a page imports it statically
+  (`framework/client/src/vite/mod.ts`); a page imports it statically
   (`import view from "./x.pavlus"`), so every template is in the first bundle.
 - A routing entry holds the component **instance** or a view
-  (`framework/frontend/src/routing/mod.ts`, `resolveOutlet`). `+outlet` and
+  (`framework/client/src/routing/mod.ts`, `resolveOutlet`). `+outlet` and
   `children` resolve it synchronously when they render.
 - A **dynamic embed** `+{expr}` takes a view or a component *value* from the
   state. `asView(value)` returns its view (`runtime/helpers.ts`); when the view
@@ -53,7 +53,7 @@ Facts, from the source:
   `unmounted`.
 - Plugins already do lazy things: the ui-kit's **`source` plugin** loads a file
   with a dynamic `import()` when asked and answers with a message
-  (`framework/ui-kit/frontend/source.ts`). That is the shape to copy.
+  (`framework/ui-kit/src/source.ts`). That is the shape to copy.
 - SSR serializes a component value in the state **by name**, through a
   `components` map (`applications/admin/frontend/app.ts`, `serializeState`). So the state
   holding a component value is already a known awkward spot: functions do not
@@ -92,7 +92,7 @@ export default function define({ Component, runtime, effectors, component }) {
 define.api = 1;                                        // the host API it was compiled for
 ```
 
-Why a **factory** and not "an ES module that imports `@pavlus/frontend`":
+Why a **factory** and not "an ES module that imports `@pavlus/client`":
 
 1. **One `Component` class.** `toHandler` refuses an object that is not an
    `instanceof Component` (`component/mod.ts`). A module that bundled its own
@@ -399,7 +399,7 @@ The current error style (`line:col`, with the fix in the message) carries over.
 | `switch x` / `case "a"` (JavaScript's words) | familiar, but implies fall-through and `break`; patterns beyond literals read oddly. The cost of a new word `match` is small: no HTML element has that name |
 | Extend `if`: `else if x is "a"` | fine as the `is` companion, but it does not group the arms, so there is still no place to check them as a set |
 | Elixir `cond` (boolean arms) | covered by `_ when <condition>` arms, without a second keyword |
-| `ts-pattern`-style matching **in the handlers** (`match(msg).with(...)`) | useful and independent: the TypeScript side of the same idea. A tiny helper in `@pavlus/frontend`, later; it needs no compiler work |
+| `ts-pattern`-style matching **in the handlers** (`match(msg).with(...)`) | useful and independent: the TypeScript side of the same idea. A tiny helper in `@pavlus/client`, later; it needs no compiler work |
 | Erlang-style **function clauses for messages** (`on "loaded"(data)` ...) | the current rule "a method is the handler of the message with that name" already reads well; patterns on the *payload* are the part worth borrowing, and they are the `match(msg)` helper above |
 
 ### 2.6 Order of work and acceptance

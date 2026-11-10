@@ -1,8 +1,0 @@
-import Board from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Tickets with a running timer
-    div.k-preview.k-preview--block
-      +Board#board(columns=columns)
-    p.k-demo__note The clock is {clockText}. A ticket is amber after about 10 minutes and red after 15. Serving a ticket stops its timer.

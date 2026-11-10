@@ -1,9 +1,0 @@
-import Notes from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Notifications
-    p.k-demo__note Click a row to read it, or mark everything as read.
-    div.k-preview.k-preview--block
-      div.k-narrow
-        +Notes#notes(...notes)

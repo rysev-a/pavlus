@@ -1,0 +1,11 @@
+import Callout from "./view.pavlus"
+
+section.k-page
+  section.k-demo
+    h2.k-demo__title Four tones
+    div.k-preview.k-preview--block
+      div.k-callout-stack
+        +Callout#note(...note)
+        +Callout#tip(...tip)
+        +Callout#warning(...warning)
+        +Callout#danger(...danger)

@@ -8,12 +8,12 @@
 import {
   compileTemplate,
   compileToView,
-} from "../../../framework/frontend/src/compiler/mod.ts";
+} from "../../../framework/client/src/compiler/mod.ts";
 import {
   type Patch,
   toHtml,
   type VNode,
-} from "../../../framework/frontend/src/runtime/vnode.ts";
+} from "../../../framework/client/src/runtime/vnode.ts";
 import { astView } from "./ast-view.ts";
 import { type Example, examples } from "./examples.ts";
 import { fit } from "./svg.ts";

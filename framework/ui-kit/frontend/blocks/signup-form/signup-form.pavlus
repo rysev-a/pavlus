@@ -1,8 +1,0 @@
-import Signup from "./view.pavlus"
-
-section.k-page
-  section.k-demo
-    h2.k-demo__title Sign-up form
-    div.k-preview.k-preview--block
-      div.k-signup-wrap
-        +Signup#signup(...signup)

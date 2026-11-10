@@ -1,4 +1,0 @@
-.ht__cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: calc(20px * var(--k-block, 1)); align-items: start; }
-.ht__cols--form { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
-.ht__hint p { margin: 0; color: var(--muted-foreground); font-size: 14px; }
-@media (max-width: 1000px) { .ht__cols, .ht__cols--form { grid-template-columns: minmax(0, 1fr); } }

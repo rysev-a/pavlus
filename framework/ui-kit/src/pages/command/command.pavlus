@@ -1,0 +1,21 @@
+section.k-page
+  section.k-demo
+    h2.k-demo__title Command palette
+    div.k-preview.k-preview--block
+      div.ui-command
+        input.ui-command-input(type="text" placeholder="Type a command or search..." value=query @input=search)
+        if empty
+          p.k-command-empty No results found.
+        for group in groups key group.heading
+          p.ui-command-label {group.heading}
+          ul.ui-command-results
+            for item in group.items key item.id
+              li
+                button.ui-command-option(type="button" @click=run(item.label))
+                  span.k-icon(class="k-icon-{item.icon}")
+                  span(style="margin-left: 8px") {item.label}
+                  span.k-menu-shortcut {item.shortcut}
+    p.k-hint
+      | Last command:
+      |
+      span.k-state {lastLabel}

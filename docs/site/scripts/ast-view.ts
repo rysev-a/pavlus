@@ -5,12 +5,9 @@
  * compiler computes (`analyze.nodeDeps`) — the thing that makes `diff` cheap.
  */
 
-import { nodeDeps } from "../../../framework/frontend/src/compiler/analyze.ts";
-import type {
-  Expr,
-  Node,
-} from "../../../framework/frontend/src/template/ast.ts";
-import { parse } from "../../../framework/frontend/src/template/parser.ts";
+import { nodeDeps } from "../../../framework/client/src/compiler/analyze.ts";
+import type { Expr, Node } from "../../../framework/client/src/template/ast.ts";
+import { parse } from "../../../framework/client/src/template/parser.ts";
 import { fit, type TreeNode } from "./svg.ts";
 
 /** Reconstructs expression source from the expression AST. */
@@ -26,23 +23,8 @@ export function exprSrc(e: Expr): string {
       return `${exprSrc(e.obj)}.${e.prop}`;
     case "index":
       return `${exprSrc(e.obj)}[${exprSrc(e.index)}]`;
-    case "call":
-      return `${exprSrc(e.callee)}(${e.args.map(exprSrc).join(", ")})`;
-    case "unary":
-      return `${e.op}${exprSrc(e.arg)}`;
-    case "binary":
-      return `${wrap(e.left)} ${e.op} ${wrap(e.right)}`;
-    case "cond":
-      return `${wrap(e.test)} ? ${wrap(e.then)} : ${wrap(e.else)}`;
-    case "array":
-      return `[${e.items.map(exprSrc).join(", ")}]`;
-    case "arrow":
-      return `(${e.params.join(", ")}) => ${exprSrc(e.body)}`;
   }
 }
-
-const wrap = (e: Expr): string =>
-  e.k === "binary" || e.k === "cond" ? `(${exprSrc(e)})` : exprSrc(e);
 
 const depsOf = (n: Node): string => {
   const deps = [...nodeDeps(n)].sort();

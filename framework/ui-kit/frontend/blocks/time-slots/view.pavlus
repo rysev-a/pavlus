@@ -1,9 +1,0 @@
-// A grid of time buttons, to embed. State = the props: `slots`, a list of
-// { time, label, taken, selected }, and `empty`, the text for a day without
-// slots. A click sends `pick(time)` (`<id>.pick` in a parent).
-div.k-slots(role="group" aria-label="Available times")
-  if slots.length > 0
-    for slot in slots key slot.time
-      button.k-slots__slot(type="button" disabled={slot.taken} data-taken={slot.taken ? "true" : null} aria-pressed={slot.selected ? "true" : "false"} class:is-selected={slot.selected} @click=pick(slot.time)) {slot.label}
-  else
-    p.k-slots__empty {empty}
