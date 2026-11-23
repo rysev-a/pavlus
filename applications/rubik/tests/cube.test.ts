@@ -11,7 +11,16 @@ import {
   scramble,
   solved,
 } from "../app/cube.ts";
-import { netCell, netOps, polysOf, sceneOf } from "../app/scene.ts";
+import {
+  circlesOf,
+  dotsOf,
+  netCell,
+  netOps,
+  polysOf,
+  ringsOps,
+  sceneOf,
+  slotOf,
+} from "../app/scene.ts";
 
 const key = (s: { p: readonly number[]; n: readonly number[] }) =>
   `${s.p}|${s.n}`;
@@ -107,5 +116,48 @@ describe("drawings", () => {
     expect(
       sceneOf(solved(), { move: { face: "U", dir: 1 }, t: 0.5 }, camera).polys,
     ).toHaveLength(still.length);
+  });
+});
+
+describe("the diagram of circles", () => {
+  const size = { width: 440, height: 420 };
+  const circles = circlesOf(size);
+
+  it("gives all 54 stickers their own place, at the crossing of two circles", () => {
+    const all = solved();
+    const places = all.map((s) => slotOf(circles, s.p, s.n));
+    expect(
+      new Set(places.map((q) => `${Math.round(q.x)},${Math.round(q.y)}`)).size,
+    ).toBe(54);
+    for (const [q, s] of places.map((q, i) => [q, all[i]] as const)) {
+      const on = circles.flatMap((f, a) =>
+        f.filter(
+          (c, l) =>
+            Math.abs(Math.hypot(q.x - c.x, q.y - c.y) - c.r) < 1e-6 &&
+            s.p[a] === l - 1,
+        ),
+      );
+      expect(on).toHaveLength(2);
+    }
+  });
+
+  it("the geometry is fixed: a turn only moves the colours between places", () => {
+    const after = applyAll(solved(), ["R", "U'"]);
+    const places = (st: typeof after) =>
+      new Set(st.map((s) => JSON.stringify(slotOf(circles, s.p, s.n))));
+    expect(places(after)).toEqual(places(solved()));
+  });
+
+  it("dots slide along a ring mid-turn and land on the next state", () => {
+    const move = { face: "U" as const, dir: 1 as const };
+    const still = dotsOf(solved(), null, circles);
+    const mid = dotsOf(solved(), { move, t: 0.5 }, circles);
+    expect(mid).not.toEqual(still);
+    const end = dotsOf(solved(), { move, t: 1 }, circles);
+    const next = dotsOf(applyAll(solved(), ["U"]), null, circles);
+    const key = (d: { x: number; y: number; c: string }) =>
+      `${Math.round(d.x)},${Math.round(d.y)},${d.c}`;
+    expect(new Set(end.map(key))).toEqual(new Set(next.map(key)));
+    expect(validateOps(ringsOps(solved(), { move, t: 0.5 }, size))).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-// The page: the cube in 3D, the flat net, and the buttons. The two canvases are
+// The page: the cube in 3D, the flat net, and the buttons. The three canvases are
 // drawn by the canvas plugins (the app answers every change with drawings); the
 // template only holds them and the controls.
 main.rb
@@ -7,6 +7,9 @@ main.rb
     p.rb-status(class:rb-status--solved={isSolved}) {status}
 
   div.rb-stage
+    figure.rb-figure
+      canvas#rings.rb-canvas(aria-label="The cube as a diagram of circles")
+      figcaption Circles — a turn slides the dots along a ring
     figure.rb-figure
       canvas#cube.rb-canvas(aria-label="The cube in 3D. Drag to rotate")
       figcaption 3D — drag to look around

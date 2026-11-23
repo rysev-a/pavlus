@@ -1,5 +1,5 @@
-// Rubik: a cube you can turn, drawn twice — in 3D on the canvas3d plugin and as
-// the flat net on the plain canvas plugin. The app is pure: it turns the model
+// Rubik: a cube you can turn, drawn three times — in 3D on the canvas3d plugin,
+// as the diagram of circles and as the flat net on the plain canvas plugin. The app is pure: it turns the model
 // (cube.ts), asks scene.ts for drawings, and returns them as effects.
 import { Component, type Message } from "@pavlus/client";
 import { canvasEffector as canvas } from "@pavlus/client/plugins/canvas";
@@ -22,10 +22,11 @@ import {
   type Sticker,
   solved,
 } from "./cube.ts";
-import { netOps, sceneOf } from "./scene.ts";
+import { netOps, ringsOps, sceneOf } from "./scene.ts";
 import view from "./app.pavlus";
 
 export const CUBE = { width: 520, height: 420 };
+export const RINGS = { width: 440, height: 420 };
 export const NET = { width: 432, height: 324 };
 /** how long one quarter turn takes, ms (shorter when many are queued) */
 export const TURN_MS = 260;
@@ -94,12 +95,13 @@ export function initialState(): RubikState {
   };
 }
 
-/** both drawings of a state */
+/** the drawings of a state: 3D, the circles, the flat net */
 export function drawings(s: RubikState) {
   const m = s.turn ? parseMove(s.turn.name) : null;
   const turn = s.turn && m ? { move: m, t: ease(s.turn.t) } : null;
   return [
     canvas3d.render("#cube", sceneOf(s.stickers, turn, s.camera), CUBE),
+    canvas.draw("#rings", ringsOps(s.stickers, turn, RINGS)),
     canvas.draw("#net", netOps(s.stickers, NET)),
   ];
 }
@@ -141,6 +143,7 @@ class Rubik extends Component<RubikState> {
   mounted(_msg: Message, s: RubikState) {
     return [
       canvas.size("#cube", CUBE.width, CUBE.height),
+      canvas.size("#rings", RINGS.width, RINGS.height),
       canvas.size("#net", NET.width, NET.height),
       canvas.pointer("mouse", "#cube", "mouse"),
       canvas.frames("loop", "tick"),

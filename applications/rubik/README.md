@@ -1,7 +1,7 @@
 # rubik
 
 A Rubik's cube in pavlus: the cube in **3D** (the new `canvas3d` plugin) next to its **flat net**
-(the unfolded cross, on the plain `canvas` plugin). Turn faces with the buttons, drag the 3D view
+(the unfolded cross, on the plain `canvas` plugin) and as a **diagram of circles**: 3 families of 3 nested circles, one circle per layer; the 54 dots sit where two circles cross, the geometry is fixed, and a turn slides the dots along the lit ring. Turn faces with the buttons, drag the 3D view
 to look around, scramble, undo, reset.
 
 ```sh
