@@ -1,6 +1,6 @@
 # Builds the ui-kit (every shadcn component as a pavlus template) and publishes
 # it on GitHub Pages at /<repo>/, with the documentation (docs/site) under
-# /<repo>/docs/. Pull requests only build and test; the deploy runs on main.
+# /<repo>/docs/, and the Rubik's cube demo under /<repo>/rubik/. Pull requests only build and test; the deploy runs on main.
 #
 # One-time setup: Settings -> Pages -> Build and deployment -> Source:
 # "GitHub Actions".
@@ -12,6 +12,7 @@ on:
     paths:
       - "framework/ui-kit/**"
       - "framework/**"
+      - "applications/rubik/**"
       - "docs/site/*.html"
       - "package-lock.json"
       - ".github/workflows/ui-kit-pages.yml"
@@ -19,6 +20,7 @@ on:
     paths:
       - "framework/ui-kit/**"
       - "framework/**"
+      - "applications/rubik/**"
       - "docs/site/*.html"
       - "package-lock.json"
       - ".github/workflows/ui-kit-pages.yml"
@@ -49,6 +51,14 @@ jobs:
         run: npm run build --workspace @pavlus/ui-kit
         env:
           UI_KIT_BASE: /${{ github.event.repository.name }}/
+      - name: Rubik's cube (the canvas3d demo) at /<repo>/rubik/
+        run: |
+          npm run typecheck --workspace rubik
+          npm test --workspace rubik
+          npm run build --workspace rubik
+          cp -r applications/rubik/dist framework/ui-kit/dist/rubik
+        env:
+          BASE: /${{ github.event.repository.name }}/rubik/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: framework/ui-kit/dist

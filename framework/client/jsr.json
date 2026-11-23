@@ -19,6 +19,7 @@
     "./plugins/time": "./src/plugins/time/mod.ts",
     "./plugins/logger": "./src/plugins/logger/mod.ts",
     "./plugins/canvas": "./src/plugins/canvas/mod.ts",
+    "./plugins/canvas3d": "./src/plugins/canvas3d/mod.ts",
     "./plugins/svg": "./src/plugins/svg/mod.ts",
     "./plugins/video": "./src/plugins/video/mod.ts",
     "./plugins/audio": "./src/plugins/audio/mod.ts",

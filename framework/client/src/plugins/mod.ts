@@ -17,6 +17,7 @@ export type {
 } from "./audio/mod.ts";
 export * from "./audio/mod.ts";
 export * from "./canvas/mod.ts";
+export * from "./canvas3d/mod.ts";
 export * from "./dom/mod.ts";
 export * from "./geolocation/mod.ts";
 export * from "./http/mod.ts";

@@ -1,0 +1,27 @@
+// The page: the cube in 3D, the flat net, and the buttons. The two canvases are
+// drawn by the canvas plugins (the app answers every change with drawings); the
+// template only holds them and the controls.
+main.rb
+  header.rb-head
+    h1.rb-title Rubik
+    p.rb-status(class:rb-status--solved={isSolved}) {status}
+
+  div.rb-stage
+    figure.rb-figure
+      canvas#cube.rb-canvas(aria-label="The cube in 3D. Drag to rotate")
+      figcaption 3D — drag to look around
+    figure.rb-figure
+      canvas#net.rb-canvas(aria-label="The cube unfolded")
+      figcaption Flat net
+
+  div.rb-controls
+    div.rb-moves(role="group" aria-label="Moves")
+      for m in moves key m.name
+        button.rb-move(type="button" @click=turn(m.name)) {m.label}
+    div.rb-actions
+      button.rb-button(type="button" disabled={isBusy} @click=scramble) Scramble
+      button.rb-button(type="button" @click=undo) Undo
+      button.rb-button(type="button" @click=reset) Reset
+
+  p.rb-log Moves: {count}
+    span.rb-history {history}

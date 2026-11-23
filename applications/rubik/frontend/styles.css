@@ -1,0 +1,121 @@
+:root {
+  color-scheme: dark;
+  --bg: #0f0f14;
+  --panel: #16161d;
+  --line: #2a2a36;
+  --text: #ecebf2;
+  --dim: #9a98ab;
+  --accent: #7c9cff;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, sans-serif;
+}
+.rb {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+.rb-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.rb-title {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: 0.02em;
+}
+.rb-status {
+  margin: 0;
+  color: var(--dim);
+}
+.rb-status--solved {
+  color: #5bd68a;
+  font-weight: 600;
+}
+.rb-stage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 20px 0;
+}
+.rb-figure {
+  margin: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+.rb-figure figcaption {
+  margin-top: 8px;
+  color: var(--dim);
+  font-size: 13px;
+  text-align: center;
+}
+.rb-canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  touch-action: none;
+  cursor: grab;
+  border-radius: 8px;
+}
+.rb-controls {
+  display: grid;
+  gap: 12px;
+}
+.rb-moves {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 6px;
+}
+.rb-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rb-move,
+.rb-button {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.rb-move {
+  font-weight: 600;
+  padding: 8px 0;
+}
+.rb-move:hover,
+.rb-button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.rb-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.rb-log {
+  color: var(--dim);
+  margin: 16px 0 0;
+}
+.rb-history {
+  margin-left: 8px;
+  font-family: ui-monospace, monospace;
+  color: var(--text);
+}
+@media (max-width: 640px) {
+  .rb-moves {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
