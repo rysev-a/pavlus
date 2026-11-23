@@ -18,7 +18,12 @@ const merged = (effects: any[]) =>
 
 describe("rubik app", () => {
   it("draws the cube twice: 3D through canvas3d and the net through canvas", () => {
-    const [d3, flat] = drawings(initialState());
+    const [d3, rings, flat] = drawings(initialState());
+    expect(rings).toMatchObject({
+      plugin: "canvas",
+      type: "draw",
+      target: "#rings",
+    });
     expect(d3).toMatchObject({
       plugin: "canvas3d",
       type: "render",

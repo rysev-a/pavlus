@@ -195,3 +195,158 @@ export function netOps(
   }
   return ops;
 }
+
+// ------------------------------------------------------------ the rings diagram
+//
+// The flat diagram of many circles. Three families of three nested circles, one
+// family per axis of the cube, one circle per layer: a circle is the ring of 12
+// stickers that a turn of that layer carries around. Every sticker lies on
+// exactly two rings (the two axes of its face), so its dot sits where two
+// circles of different families cross: 3 pairs of families × 9 pairs of circles
+// × 2 crossings = 54 places. The geometry never changes; the cube's state is
+// mapped onto the places, and a turn slides the dots along the circles.
+
+export interface Circle {
+  x: number;
+  y: number;
+  r: number;
+}
+
+/** the nine circles: `[axis][layer + 1]` */
+export function circlesOf(size: { width: number; height: number }): Circle[][] {
+  const s = Math.min(size.width * 0.31, size.height * 0.33);
+  const R = s / Math.sqrt(3);
+  const cx = size.width / 2;
+  const cy = size.height / 2 + s * 0.04;
+  const radii = [0.6, 0.77, 0.94].map((k) => k * s);
+  // x on top, y at the bottom left, z at the bottom right
+  return [90, 210, 330].map((deg) => {
+    const a = (deg * Math.PI) / 180;
+    const x = cx + R * Math.cos(a);
+    const y = cy - R * Math.sin(a);
+    return radii.map((r) => ({ x, y, r }));
+  });
+}
+
+type Pt = { x: number; y: number };
+
+function cross2(a: Circle, b: Circle): [Pt, Pt] {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const d = Math.hypot(dx, dy);
+  const l = (a.r * a.r - b.r * b.r + d * d) / (2 * d);
+  const h = Math.sqrt(Math.max(0, a.r * a.r - l * l));
+  const mx = a.x + (l * dx) / d;
+  const my = a.y + (l * dy) / d;
+  return [
+    { x: mx + (h * dy) / d, y: my - (h * dx) / d },
+    { x: mx - (h * dy) / d, y: my + (h * dx) / d },
+  ];
+}
+
+const axisOf = (v: Vec): number => (v[0] !== 0 ? 0 : v[1] !== 0 ? 1 : 2);
+
+/** where the sticker at cubie `p` facing `n` has its dot */
+export function slotOf(circles: Circle[][], p: Vec, n: Vec): Pt {
+  const c = axisOf(n);
+  const [a, b] = [0, 1, 2].filter((i) => i !== c);
+  const [u, v] = cross2(circles[a][p[a] + 1], circles[b][p[b] + 1]);
+  // the two crossings are the two faces on axis c: the one farther from c's centre is +
+  const centre = circles[c][1];
+  const far = (q: Pt) => Math.hypot(q.x - centre.x, q.y - centre.y);
+  const [outer, inner] = far(u) >= far(v) ? [u, v] : [v, u];
+  return n[c] > 0 ? outer : inner;
+}
+
+const wrap = (a: number): number =>
+  a > Math.PI ? a - 2 * Math.PI : a < -Math.PI ? a + 2 * Math.PI : a;
+
+/** every dot where the state and the turn in flight put it */
+export function dotsOf(
+  stickers: Sticker[],
+  turn: { move: Move; t: number } | null,
+  circles: Circle[][],
+): { x: number; y: number; c: Face }[] {
+  return stickers.map((s) => {
+    const here = slotOf(circles, s.p, s.n);
+    if (!turn || !inLayer(s, turn.move.face)) return { ...here, c: s.c };
+    const axis = NORMAL[turn.move.face];
+    const a = axisOf(axis);
+    const at = (t: number): Pt => {
+      const p = rotate(s.p, axis, angleOf(turn.move, t)).map(
+        Math.round,
+      ) as unknown as Vec;
+      const n = rotate(s.n, axis, angleOf(turn.move, t)).map(
+        Math.round,
+      ) as unknown as Vec;
+      return slotOf(circles, p, n);
+    };
+    const there = at(1);
+    if (s.n[a] === 0) {
+      // on the ring of this layer: slide along its circle
+      const ring = circles[a][s.p[a] + 1];
+      const t0 = Math.atan2(here.y - ring.y, here.x - ring.x);
+      const d = wrap(Math.atan2(there.y - ring.y, there.x - ring.x) - t0);
+      const t1 = t0 + d * turn.t;
+      return {
+        x: ring.x + ring.r * Math.cos(t1),
+        y: ring.y + ring.r * Math.sin(t1),
+        c: s.c,
+      };
+    }
+    // the turning face's own stickers: they cross over to their new place
+    return {
+      x: here.x + (there.x - here.x) * turn.t,
+      y: here.y + (there.y - here.y) * turn.t,
+      c: s.c,
+    };
+  });
+}
+
+/** The diagram of circles: the nine rings (the turning one lit) and the 54 dots. */
+export function ringsOps(
+  stickers: Sticker[],
+  turn: { move: Move; t: number } | null,
+  size: { width: number; height: number },
+): CanvasOp[] {
+  const circles = circlesOf(size);
+  const ops: CanvasOp[] = [
+    { op: "fillStyle", value: "#16161d" },
+    { op: "fillRect", x: 0, y: 0, w: size.width, h: size.height },
+  ];
+  const lit = turn ? axisOf(NORMAL[turn.move.face]) : -1;
+  const litLayer = turn ? NORMAL[turn.move.face][lit] + 1 : -1;
+  circles.forEach((family, a) =>
+    family.forEach((ring, l) => {
+      const on = a === lit && l === litLayer;
+      ops.push(
+        { op: "strokeStyle", value: on ? "#7c9cff" : "#4b4b5c" },
+        { op: "lineWidth", value: on ? 2.5 : 1.2 },
+        { op: "beginPath" },
+        {
+          op: "arc",
+          x: ring.x,
+          y: ring.y,
+          r: ring.r,
+          start: 0,
+          end: Math.PI * 2,
+        },
+        { op: "stroke" },
+      );
+    }),
+  );
+  ops.push(
+    { op: "lineWidth", value: 1 },
+    { op: "strokeStyle", value: "#0c0c0f" },
+  );
+  for (const d of dotsOf(stickers, turn, circles)) {
+    ops.push(
+      { op: "fillStyle", value: COLOR[d.c] },
+      { op: "beginPath" },
+      { op: "arc", x: d.x, y: d.y, r: 7, start: 0, end: Math.PI * 2 },
+      { op: "fill" },
+      { op: "stroke" },
+    );
+  }
+  return ops;
+}
